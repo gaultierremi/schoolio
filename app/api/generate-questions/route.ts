@@ -3,6 +3,10 @@ import Anthropic from "@anthropic-ai/sdk";
 import { createHash } from "crypto";
 import { createClient } from "@supabase/supabase-js";
 import { SUBJECTS } from "@/lib/subjects";
+import {
+  inferConceptsFromQuestion,
+  tagQuestionWithConcepts,
+} from "@/lib/concepts";
 
 function getDb() {
   return createClient(
@@ -19,6 +23,8 @@ type GeneratedQuestion = {
   explanation: string;
   period: string;
 };
+
+type PersistedQuestion = GeneratedQuestion & { id: string };
 
 const SUBJECT_INSTRUCTIONS: Record<string, string> = {
   histoire:
@@ -100,7 +106,7 @@ export async function POST(req: NextRequest) {
       .maybeSingle();
 
     if (cached?.questions) {
-      const questions = (cached.questions as GeneratedQuestion[]).slice(0, count);
+      const questions = (cached.questions as PersistedQuestion[]).slice(0, count);
       return NextResponse.json({ questions, cached: true });
     }
 
@@ -171,14 +177,62 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Format inattendu" }, { status: 500 });
     }
 
-    // Persist to cache (best-effort)
+    // Insert into quiz_questions and retrieve real UUIDs
+    const { data: insertedRows, error: insertError } = await db
+      .from("quiz_questions")
+      .insert(
+        parsed.questions.map((q) => ({
+          type: q.type,
+          question: q.question,
+          options: q.options,
+          answer_index: q.answer_index,
+          explanation: q.explanation ?? null,
+          period: q.period ?? null,
+          subject,
+          difficulty: difficulty as 1 | 2 | 3,
+          status: "approved" as const,
+          is_ai_generated: true,
+        }))
+      )
+      .select("id");
+
+    if (insertError || !insertedRows) {
+      return NextResponse.json(
+        { error: "Erreur d'insertion des questions" },
+        { status: 500 }
+      );
+    }
+
+    // Merge real UUIDs with Claude-generated data
+    const persistedQuestions: PersistedQuestion[] = parsed.questions.map(
+      (q, i) => ({
+        ...q,
+        id: (insertedRows[i] as { id: string }).id,
+      })
+    );
+
+    // Tag concepts in parallel — errors are non-blocking
+    await Promise.allSettled(
+      persistedQuestions.map(async (q) => {
+        const conceptIds = await inferConceptsFromQuestion(
+          q.question,
+          q.period ?? null,
+          subject
+        );
+        if (conceptIds.length > 0) {
+          await tagQuestionWithConcepts(q.id, q.type, conceptIds);
+        }
+      })
+    );
+
+    // Persist to cache with real IDs (best-effort)
     try {
       await db
         .from("generated_questions_cache")
-        .insert({ cache_key: cacheKey, subject, questions: parsed.questions });
+        .insert({ cache_key: cacheKey, subject, questions: persistedQuestions });
     } catch {}
 
-    return NextResponse.json({ questions: parsed.questions });
+    return NextResponse.json({ questions: persistedQuestions });
   } catch (err) {
     const msg = err instanceof Error ? err.message : "Erreur inconnue";
     return NextResponse.json({ error: msg }, { status: 500 });

@@ -47,6 +47,7 @@ export default function StudySessionPage() {
   const [recommendations, setRecommendations] = useState<Recommendation[]>([]);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
+  const [sessionId, setSessionId] = useState<string | null>(null);
 
   useEffect(() => {
     const raw = sessionStorage.getItem("study_session");
@@ -73,7 +74,7 @@ export default function StudySessionPage() {
 
     setSession(parsed);
 
-    // Fire-and-forget: record session in study_sessions table
+    // Record session and capture the returned session_id
     fetch("/api/study-session", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -85,7 +86,12 @@ export default function StudySessionPage() {
         difficulty: parsed.difficulty ?? 1,
         topic: parsed.topic,
       }),
-    }).catch(() => {});
+    })
+      .then((r) => r.json())
+      .then((json: { sessionId?: string }) => {
+        if (json.sessionId) setSessionId(json.sessionId);
+      })
+      .catch(() => {});
 
     async function loadEnrichment(questions: QuizQuestion[]) {
       const supabase = createClient();
@@ -209,6 +215,7 @@ export default function StudySessionPage() {
           weakConcepts={weakConcepts}
           questionConcepts={questionConcepts}
           initialMastery={initialMastery}
+          sessionId={sessionId ?? undefined}
         />
 
         {recommendations.length > 0 && (
