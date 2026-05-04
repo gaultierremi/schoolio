@@ -39,7 +39,7 @@ export default function Header() {
         href="/"
         className="text-lg font-black tracking-tight text-white transition-colors hover:text-amber-400"
       >
-        Histo<span className="text-amber-400">Guess</span>
+        School<span className="text-amber-400">io</span>
       </Link>
 
       <div className="flex items-center gap-3">
