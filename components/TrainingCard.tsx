@@ -254,11 +254,13 @@ export default function TrainingCard({
   weakConcepts,
   questionConcepts,
   initialMastery,
+  sessionId,
 }: {
   questions: QuizQuestion[];
   weakConcepts: ConceptMastery[];
   questionConcepts: Record<string, { id: string; name: string }[]>;
   initialMastery: Record<string, number>;
+  sessionId?: string;
 }) {
   const [step, setStep] = useState(0);
   const [answers, setAnswers] = useState<AnswerRecord[]>([]);
@@ -379,6 +381,18 @@ export default function TrainingCard({
           question: question.question,
         }),
       }).catch(() => {});
+
+      if (sessionId) {
+        fetch("/api/study-progress", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            sessionId,
+            questionId: question.id,
+            correct: isCorrect,
+          }),
+        }).catch(() => {});
+      }
     }
 
     const newAnswers = [

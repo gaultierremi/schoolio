@@ -20,6 +20,7 @@ type Phase =
 type SourceType = "mine" | "library" | "pdf" | "manual" | "topic";
 
 type GeneratedQuestion = {
+  id?: string;
   type: "mcq" | "truefalse";
   question: string;
   options: string[];
@@ -30,7 +31,7 @@ type GeneratedQuestion = {
 
 function mapGenerated(q: GeneratedQuestion, i: number): QuizQuestion {
   return {
-    id: `gen-${i}-${Date.now()}`,
+    id: q.id ?? `gen-${i}-${Date.now()}`,
     type: q.type as QuizQuestionType,
     question: q.question,
     options: q.options,
