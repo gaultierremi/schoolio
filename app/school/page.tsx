@@ -144,6 +144,33 @@ function ActionCard({
   );
 }
 
+function VisionCard({
+  emoji,
+  title,
+  description,
+}: {
+  emoji: string;
+  title: string;
+  description: string;
+}) {
+  return (
+    <div className="relative rounded-2xl border-2 border-dashed border-gray-700 bg-gray-900/50 p-5">
+      <span className="absolute right-4 top-4 rounded-full bg-purple-500/20 px-2 py-0.5 text-xs text-purple-300">
+        Bientôt
+      </span>
+      <span className="text-3xl">{emoji}</span>
+      <p className="mt-3 font-bold text-white">{title}</p>
+      <p className="mt-1 text-sm text-gray-400">{description}</p>
+      <button
+        disabled
+        className="mt-4 cursor-not-allowed rounded-full border border-gray-700 px-3 py-1 text-xs text-gray-600 opacity-50"
+      >
+        Notifie-moi quand c'est prêt
+      </button>
+    </div>
+  );
+}
+
 // ── Page ──────────────────────────────────────────────────────────────────────
 
 export default function SchoolDashboardPage() {
@@ -231,6 +258,16 @@ export default function SchoolDashboardPage() {
   return (
     <main className="min-h-screen bg-gray-950 px-4 py-8 text-white">
       <div className="mx-auto w-full max-w-5xl">
+
+        {/* ── BANDEAU BASELINE ── */}
+        <div className="mb-6">
+          <p className="text-xs font-bold uppercase tracking-widest text-purple-300">
+            ✨ Schoolio — La plateforme qui révèle ton potentiel
+          </p>
+          <p className="mt-0.5 text-xs text-gray-600">
+            Plateforme en construction active · beta enseignant
+          </p>
+        </div>
 
         {/* ── HEADER ── */}
         <header>
@@ -393,6 +430,58 @@ export default function SchoolDashboardPage() {
               description="Toutes mes questions organisées"
               href="/school/questions"
             />
+          </div>
+        </section>
+
+        {/* ── SECTION VISION ── */}
+        <section className="mt-10">
+          <h2 className="text-lg font-black text-white">🚀 Bientôt sur Schoolio</h2>
+          <p className="mt-1 text-sm text-gray-500">Ce qui arrive dans les prochaines semaines</p>
+          <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2">
+            <VisionCard
+              emoji="📚"
+              title="Mes classes"
+              description="Crée tes classes en quelques clics. Invite tes élèves avec un simple code. Suis leur progression en temps réel."
+            />
+            <VisionCard
+              emoji="📖"
+              title="Bibliothèque de cours"
+              description="Uploade tes PDF de cours par chapitre. Schoolio les organise et les rend exploitables pour générer des questions adaptées."
+            />
+            <VisionCard
+              emoji="🎯"
+              title="Devoirs adaptatifs"
+              description="Un clic sur 'Devoir' à la fin d'un chapitre. Tes élèves reçoivent un set de questions personnalisé selon leurs lacunes. Ils font dans le bus, tu vois les résultats le matin."
+            />
+            <VisionCard
+              emoji="📊"
+              title="Suivi élèves intelligent"
+              description="Visualise qui galère sur quoi, qui décroche, qui maîtrise. Reçois des alertes ciblées pour intervenir au bon moment."
+            />
+          </div>
+        </section>
+
+        {/* ── SECTION ROADMAP ── */}
+        <section className="mt-8">
+          <div className="rounded-2xl border border-gray-800 bg-gray-900 p-5">
+            <h3 className="text-xs font-bold uppercase tracking-widest text-gray-500">
+              🛤️ Feuille de route
+            </h3>
+            <ul className="mt-4 space-y-2">
+              {[
+                "✅ Adaptatif IA multi-matières",
+                "✅ Génération de questions depuis PDF",
+                "✅ Espace enseignant",
+                "🔄 Classes et élèves (en développement)",
+                "📋 Devoirs asynchrones (à venir)",
+                "📋 Suivi élèves temps réel (à venir)",
+                "💭 Repérage bienveillant des profils d'apprentissage atypiques (TDAH, dys, HPI) — orientation, jamais diagnostic",
+                "💭 Intégration Pronote / Smartschool (idée)",
+                "💭 App mobile native (idée)",
+              ].map((item) => (
+                <li key={item} className="text-sm text-gray-400">{item}</li>
+              ))}
+            </ul>
           </div>
         </section>
 
