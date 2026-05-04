@@ -78,17 +78,17 @@ export default async function TrainPage() {
           </h1>
           <p className="max-w-md text-base leading-relaxed text-gray-400">
             Ce mode analyse tes lacunes et sélectionne les questions qui te
-            feront progresser. Joue quelques parties en mode Quiz pour
-            l&apos;activer.
+            feront progresser. Crée d&apos;abord un quiz personnalisé pour
+            activer le mode adaptatif.
           </p>
         </div>
 
         <div className="flex w-full max-w-xs flex-col gap-3">
           <Link
-            href="/quiz"
+            href="/study"
             className="rounded-2xl bg-amber-500 px-6 py-4 text-center font-black text-gray-950 transition hover:bg-amber-400 active:scale-[0.98]"
           >
-            Jouer au Quiz d&apos;abord →
+            Crée ton premier quiz →
           </Link>
           <Link
             href="/"
