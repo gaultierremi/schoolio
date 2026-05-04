@@ -150,12 +150,18 @@ Si aucun concept ne correspond, réponds: []`,
     ],
   });
 
+  const text =
+    response.content[0].type === "text"
+      ? response.content[0].text.trim()
+      : "[]";
+  // Strip markdown code fences if Claude wraps the JSON
+  const cleaned = text
+    .replace(/^```(?:json)?\s*/i, "")
+    .replace(/\s*```\s*$/i, "")
+    .trim();
+
   try {
-    const text =
-      response.content[0].type === "text"
-        ? response.content[0].text.trim()
-        : "[]";
-    const ids = JSON.parse(text) as string[];
+    const ids = JSON.parse(cleaned) as string[];
     const validIds = new Set((concepts as { id: string }[]).map((c) => c.id));
     return ids.filter((id) => typeof id === "string" && validIds.has(id));
   } catch {

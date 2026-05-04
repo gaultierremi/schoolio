@@ -197,10 +197,14 @@ export async function POST(req: NextRequest) {
       .select("id");
 
     if (insertError || !insertedRows) {
-      return NextResponse.json(
-        { error: "Erreur d'insertion des questions" },
-        { status: 500 }
-      );
+      console.error("[generate-questions] Insert error:", insertError);
+      console.error("[generate-questions] First question payload:", parsed.questions[0]);
+      return NextResponse.json({
+        error: "Erreur d'insertion des questions",
+        details: insertError?.message,
+        hint: insertError?.hint,
+        code: insertError?.code,
+      }, { status: 500 });
     }
 
     // Merge real UUIDs with Claude-generated data
