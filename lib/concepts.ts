@@ -1,5 +1,7 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { createClient } from "@supabase/supabase-js";
+import { isValidSubject } from "@/lib/subjects";
+import type { SubjectId } from "@/lib/subjects";
 
 function getDb() {
   return createClient(
@@ -111,60 +113,140 @@ export async function tagQuestionWithConcepts(
     .upsert(rows, { onConflict: "question_id,concept_id", ignoreDuplicates: true });
 }
 
+function stripFences(text: string): string {
+  return text
+    .replace(/^```(?:json)?\s*/i, "")
+    .replace(/\s*```\s*$/i, "")
+    .trim();
+}
+
 export async function inferConceptsFromQuestion(
   question: string,
   period: string | null,
-  subject = "histoire"
+  subject?: string | null
 ): Promise<string[]> {
   const db = getDb();
-  const { data: concepts } = await db
-    .from("concepts")
-    .select("id, name")
-    .order("name");
-
-  if (!concepts || concepts.length === 0) return [];
-
-  const conceptList = (concepts as { id: string; name: string }[])
-    .map((c) => `- ${c.id}: ${c.name}`)
-    .join("\n");
-
   const client = new Anthropic();
-  const response = await client.messages.create({
-    model: "claude-haiku-4-5-20251001",
-    max_tokens: 256,
-    messages: [
-      {
-        role: "user",
-        content: `Tu es un assistant pédagogique. Identifie les concepts historiques liés à cette question de quiz.
+
+  // Narrow to SubjectId (rejects arbitrary strings from untyped callers)
+  const typedSubject: SubjectId | null =
+    subject && isValidSubject(subject) ? subject : null;
+
+  // Phase 1: fetch concepts (filtered by subject if provided)
+  let query = db.from("concepts").select("id, name").order("name");
+  if (typedSubject) query = query.eq("subject_enum", typedSubject);
+  const { data: concepts } = await query;
+
+  const typedConcepts = (concepts ?? []) as { id: string; name: string }[];
+
+  if (typedConcepts.length > 0) {
+    const conceptList = typedConcepts.map((c) => `- ${c.id}: ${c.name}`).join("\n");
+
+    const phase1Response = await client.messages.create({
+      model: "claude-haiku-4-5-20251001",
+      max_tokens: 256,
+      messages: [
+        {
+          role: "user",
+          content: `Tu es un assistant pédagogique. Identifie les concepts liés à cette question de quiz.
 
 Question: "${question}"
 Période: ${period ?? "inconnue"}
-Matière: ${subject}
+Matière: ${typedSubject ?? "générale"}
 
 Concepts disponibles:
 ${conceptList}
 
 Réponds UNIQUEMENT avec un tableau JSON d'IDs (max 3 concepts), exemple: ["id1","id2"]
 Si aucun concept ne correspond, réponds: []`,
+        },
+      ],
+    });
+
+    const phase1Text =
+      phase1Response.content[0].type === "text"
+        ? phase1Response.content[0].text.trim()
+        : "[]";
+
+    try {
+      const ids = JSON.parse(stripFences(phase1Text)) as string[];
+      const validIds = new Set(typedConcepts.map((c) => c.id));
+      const matched = ids.filter((id) => typeof id === "string" && validIds.has(id));
+      if (matched.length > 0) return matched;
+    } catch {
+      // fall through to phase 2 if subject is present
+    }
+  }
+
+  // Legacy path: no subject → no auto-creation
+  if (!typedSubject) return [];
+
+  // Phase 2: propose and auto-create new concepts
+  console.log(
+    `[inferConceptsFromQuestion] Phase 2 (auto-generation) for subject=${typedSubject}, question="${question.slice(0, 60)}..."`
+  );
+
+  const phase2Response = await client.messages.create({
+    model: "claude-haiku-4-5-20251001",
+    max_tokens: 128,
+    messages: [
+      {
+        role: "user",
+        content: `Tu es un assistant pédagogique. Cette question de ${typedSubject} porte sur quel(s) concept(s) clé(s) ?
+
+Question: "${question}"
+Période: ${period ?? "inconnue"}
+
+Propose 1 à 3 noms de concepts courts et précis (max 4 mots chacun).
+Réponds UNIQUEMENT avec un tableau JSON de chaînes, exemple: ["Atomes","Liaisons ioniques"]
+Si tu ne peux pas identifier de concept précis, réponds: []`,
       },
     ],
   });
 
-  const text =
-    response.content[0].type === "text"
-      ? response.content[0].text.trim()
+  const phase2Text =
+    phase2Response.content[0].type === "text"
+      ? phase2Response.content[0].text.trim()
       : "[]";
-  // Strip markdown code fences if Claude wraps the JSON
-  const cleaned = text
-    .replace(/^```(?:json)?\s*/i, "")
-    .replace(/\s*```\s*$/i, "")
-    .trim();
 
+  let proposedNames: string[] = [];
   try {
-    const ids = JSON.parse(cleaned) as string[];
-    const validIds = new Set((concepts as { id: string }[]).map((c) => c.id));
-    return ids.filter((id) => typeof id === "string" && validIds.has(id));
+    proposedNames = JSON.parse(stripFences(phase2Text)) as string[];
   } catch {
     return [];
   }
+
+  if (!Array.isArray(proposedNames) || proposedNames.length === 0) return [];
+
+  const createdIds: string[] = [];
+
+  for (const raw of proposedNames) {
+    if (typeof raw !== "string" || !raw.trim()) continue;
+    const name = raw.trim();
+
+    const { data: existing } = await db
+      .from("concepts")
+      .select("id")
+      .eq("subject_enum", typedSubject)
+      .eq("name", name)
+      .maybeSingle();
+
+    if (existing) {
+      createdIds.push((existing as { id: string }).id);
+    } else {
+      const { data: created } = await db
+        .from("concepts")
+        .insert({ name, subject_enum: typedSubject, category: "thème", is_auto_generated: true })
+        .select("id")
+        .maybeSingle();
+      if (created) {
+        console.log(
+          `[inferConceptsFromQuestion] Created new auto-generated concept: "${name}" for subject=${typedSubject}`
+        );
+        createdIds.push((created as { id: string }).id);
+      }
+    }
+  }
+
+  return createdIds;
 }

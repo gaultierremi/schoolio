@@ -2,6 +2,14 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { createClient } from "@/lib/supabase-browser";
+import {
+  SUBJECTS,
+  SUBJECTS_BY_ID,
+  LEVELS,
+  type SubjectId,
+  type SchoolLevel,
+  isValidSubject,
+} from "@/lib/subjects";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -16,6 +24,8 @@ type TeacherQuestion = {
   answer_index: number;
   explanation: string | null;
   subject: string | null;
+  subject_enum: SubjectId | null;
+  level: number | null;
   period: string | null;
   is_public: boolean;
   created_at: string;
@@ -80,7 +90,8 @@ const BLANK_FORM = {
   options: ["", "", "", ""],
   answer_index: 0,
   explanation: "",
-  subject: "",
+  subjectId: "autre" as SubjectId,
+  level: null as SchoolLevel | null,
   period: "",
 };
 
@@ -199,6 +210,113 @@ function QuestionPreview({ form }: { form: typeof BLANK_FORM }) {
 }
 
 // ---------------------------------------------------------------------------
+// SubjectLevelSelector
+// ---------------------------------------------------------------------------
+
+const QUICK_SUBJECTS = ["chimie", "physique", "biologie", "histoire"] as const;
+
+const QUICK_ACTIVE_STYLE: Record<string, string> = {
+  chimie:   "border-blue-500 bg-blue-500/10 text-blue-300",
+  physique: "border-cyan-500 bg-cyan-500/10 text-cyan-300",
+  biologie: "border-green-500 bg-green-500/10 text-green-300",
+  histoire: "border-amber-500 bg-amber-500/10 text-amber-300",
+};
+
+function SubjectLevelSelector({
+  subjectId,
+  level,
+  onSubjectChange,
+  onLevelChange,
+}: {
+  subjectId: SubjectId;
+  level: SchoolLevel | null;
+  onSubjectChange: (id: SubjectId) => void;
+  onLevelChange: (level: SchoolLevel | null) => void;
+}) {
+  const isQuick = (QUICK_SUBJECTS as readonly string[]).includes(subjectId);
+
+  return (
+    <div className="flex flex-col gap-3">
+      <div>
+        <p className="mb-2 text-xs font-black uppercase tracking-widest text-gray-500">
+          Matière
+        </p>
+        <div className="grid grid-cols-4 gap-2">
+          {QUICK_SUBJECTS.map((id) => {
+            const meta = SUBJECTS_BY_ID[id];
+            const isActive = subjectId === id;
+            return (
+              <button
+                key={id}
+                type="button"
+                onClick={() => onSubjectChange(id)}
+                className={`flex flex-col items-center gap-1 rounded-xl border px-2 py-3 text-xs font-bold transition ${
+                  isActive
+                    ? QUICK_ACTIVE_STYLE[id]
+                    : "border-gray-700 bg-gray-900 text-gray-400 hover:border-gray-500 hover:text-white"
+                }`}
+              >
+                <span className="text-lg leading-none">{meta.emoji}</span>
+                <span>{meta.label}</span>
+              </button>
+            );
+          })}
+        </div>
+        <select
+          value={isQuick ? "" : subjectId}
+          onChange={(e) => {
+            if (e.target.value) onSubjectChange(e.target.value as SubjectId);
+          }}
+          className="mt-2 w-full rounded-xl border border-gray-700 bg-gray-900 px-3 py-2 text-sm text-white outline-none focus:border-amber-500"
+        >
+          <option value="">Autre matière…</option>
+          {SUBJECTS.filter(
+            (s) => !(QUICK_SUBJECTS as readonly string[]).includes(s.id)
+          ).map((s) => (
+            <option key={s.id} value={s.id}>
+              {s.emoji} {s.label}
+            </option>
+          ))}
+        </select>
+      </div>
+
+      <div>
+        <p className="mb-2 text-xs font-black uppercase tracking-widest text-gray-500">
+          Niveau
+        </p>
+        <div className="grid grid-cols-4 gap-1.5 sm:grid-cols-7">
+          {LEVELS.map((l) => (
+            <button
+              key={l.id}
+              type="button"
+              onClick={() => onLevelChange(l.id)}
+              className={`rounded-xl border px-2 py-2 text-xs font-bold transition ${
+                level === l.id
+                  ? "border-purple-500 bg-purple-500/10 text-purple-300"
+                  : "border-gray-700 bg-gray-900 text-gray-400 hover:border-gray-500 hover:text-white"
+              }`}
+            >
+              {l.shortLabel}
+            </button>
+          ))}
+          <button
+            type="button"
+            onClick={() => onLevelChange(null)}
+            className={`rounded-xl border px-2 py-2 text-xs font-bold transition ${
+              level === null
+                ? "border-purple-500 bg-purple-500/10 text-purple-300"
+                : "border-gray-700 bg-gray-900 text-gray-400 hover:border-gray-500 hover:text-white"
+            }`}
+          >
+            Tous
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
 // QuestionForm
 // ---------------------------------------------------------------------------
 
@@ -279,18 +397,13 @@ function QuestionForm({
             </div>
           </div>
 
-          {/* Subject */}
-          <div>
-            <label className="text-xs font-black uppercase tracking-widest text-gray-500">
-              Matière (optionnel)
-            </label>
-            <input
-              value={form.subject}
-              onChange={(e) => setForm({ ...form, subject: e.target.value })}
-              placeholder="Ex : Histoire, SVT, Géographie..."
-              className="mt-1 w-full rounded-xl border border-gray-700 bg-gray-950 px-3 py-2 text-white outline-none placeholder:text-gray-600 focus:border-amber-500"
-            />
-          </div>
+          {/* Subject + Level */}
+          <SubjectLevelSelector
+            subjectId={form.subjectId}
+            level={form.level}
+            onSubjectChange={(id) => setForm({ ...form, subjectId: id })}
+            onLevelChange={(l) => setForm({ ...form, level: l })}
+          />
 
           {/* Question text */}
           <div>
@@ -876,6 +989,8 @@ export default function SchoolQuestionsPage() {
   const [pdfStats, setPdfStats] = useState<PdfStats | null>(null);
   const [drafts, setDrafts] = useState<DraftQuestion[]>([]);
   const [savingDrafts, setSavingDrafts] = useState(false);
+  const [pdfSubject, setPdfSubject] = useState<SubjectId>("autre");
+  const [pdfLevel, setPdfLevel] = useState<SchoolLevel | null>(null);
 
   // AI explanation generation
   const [generatingExplanation, setGeneratingExplanation] = useState(false);
@@ -951,7 +1066,8 @@ export default function SchoolQuestionsPage() {
           : [...q.options, "", "", "", ""].slice(0, 4),
       answer_index: q.answer_index,
       explanation: q.explanation ?? "",
-      subject: q.subject ?? "",
+      subjectId: isValidSubject(q.subject_enum) ? q.subject_enum : "autre",
+      level: (q.level ?? null) as SchoolLevel | null,
       period: q.period ?? "",
     });
     setEditingId(q.id);
@@ -989,7 +1105,9 @@ export default function SchoolQuestionsPage() {
       options,
       answer_index: Math.min(form.answer_index, options.length - 1),
       explanation: form.explanation.trim() || null,
-      subject: form.subject.trim() || null,
+      subject: null,
+      subject_enum: form.subjectId,
+      level: form.level,
       period: form.period || null,
     };
 
@@ -1041,7 +1159,9 @@ export default function SchoolQuestionsPage() {
       options: q.options,
       answer_index: q.answer_index,
       explanation: q.explanation,
-      subject: q.subject,
+      subject: null,
+      subject_enum: q.subject_enum ?? null,
+      level: q.level ?? null,
       period: q.period,
       is_public: false,
     });
@@ -1180,7 +1300,7 @@ export default function SchoolQuestionsPage() {
         const res = await fetch("/api/extract-questions", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ pdf: base64 }),
+          body: JSON.stringify({ pdf: base64, subject: pdfSubject, level: pdfLevel }),
         });
 
         const json = await res.json();
@@ -1247,6 +1367,8 @@ export default function SchoolQuestionsPage() {
         explanation: d.explanation || null,
         period: d.period || null,
         subject: null,
+        subject_enum: pdfSubject,
+        level: pdfLevel,
       }))
     );
 
@@ -1484,14 +1606,22 @@ export default function SchoolQuestionsPage() {
           {tab === "pdf" && (
             <div>
               {drafts.length === 0 ? (
-                <PdfUploadZone
-                  loading={pdfLoading}
-                  error={pdfError}
-                  warning={pdfWarning}
-                  progress={pdfProgress}
-                  pdfStats={pdfStats}
-                  onFile={handlePdfUpload}
-                />
+                <div className="space-y-4">
+                  <SubjectLevelSelector
+                    subjectId={pdfSubject}
+                    level={pdfLevel}
+                    onSubjectChange={setPdfSubject}
+                    onLevelChange={setPdfLevel}
+                  />
+                  <PdfUploadZone
+                    loading={pdfLoading}
+                    error={pdfError}
+                    warning={pdfWarning}
+                    progress={pdfProgress}
+                    pdfStats={pdfStats}
+                    onFile={handlePdfUpload}
+                  />
+                </div>
               ) : (
                 <div>
                   <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
