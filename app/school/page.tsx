@@ -1,38 +1,211 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
+import type { User } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase-browser";
+import { SUBJECTS_BY_ID } from "@/lib/subjects";
+import type { SubjectId } from "@/lib/subjects";
+
+// ── Types ─────────────────────────────────────────────────────────────────────
+
+type SchoolStats = {
+  totalQuestions: number;
+  questionsBySubject: { subject_enum: SubjectId; label: string; emoji: string; count: number }[];
+  questionsByLevel: { level: number | null; count: number }[];
+  publicQuestions: number;
+  lastQuestionCreatedAt: string | null;
+  sessionsCreated: number;
+  aiGeneratedShare: number;
+};
+
+// ── Static maps ───────────────────────────────────────────────────────────────
+
+const SUBJECT_BAR_COLOR: Record<string, string> = {
+  amber:  "bg-amber-500",
+  blue:   "bg-blue-500",
+  cyan:   "bg-cyan-500",
+  green:  "bg-green-500",
+  teal:   "bg-teal-500",
+  purple: "bg-purple-500",
+  red:    "bg-red-500",
+  orange: "bg-orange-500",
+  pink:   "bg-pink-500",
+  indigo: "bg-indigo-500",
+  gray:   "bg-gray-500",
+};
+
+const LEVEL_SHORT: Record<number, string> = {
+  1: "1ère", 2: "2ème", 3: "3ème", 4: "4ème", 5: "5ème", 6: "6ème",
+};
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
+
+function formatRelativeTime(dateStr: string): string {
+  const diffMs = Date.now() - new Date(dateStr).getTime();
+  const diffH  = Math.floor(diffMs / (1000 * 60 * 60));
+  const diffD  = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+  if (diffH  <  1) return "à l'instant";
+  if (diffH  < 24) return `il y a ${diffH} heure${diffH > 1 ? "s" : ""}`;
+  if (diffD === 1) return "hier";
+  if (diffD  <  7) return `il y a ${diffD} jours`;
+  const w = Math.floor(diffD / 7);
+  return `il y a ${w} semaine${w > 1 ? "s" : ""}`;
+}
+
+// ── Sub-components ────────────────────────────────────────────────────────────
+
+function SkeletonBlock({ className }: { className?: string }) {
+  return <div className={`animate-pulse rounded-xl bg-gray-800 ${className ?? ""}`} />;
+}
+
+function StatCard({
+  emoji,
+  label,
+  displayValue,
+  isEmpty,
+  subtext,
+}: {
+  emoji: string;
+  label: string;
+  displayValue: string | number;
+  isEmpty: boolean;
+  subtext?: string;
+}) {
+  return (
+    <div className="rounded-2xl border border-gray-800 bg-gray-900 p-5">
+      <p className="text-xs font-bold uppercase tracking-widest text-gray-500">
+        {emoji}&nbsp;{label}
+      </p>
+      {isEmpty ? (
+        <p className="mt-3 text-sm italic text-gray-600">Aucune pour l'instant</p>
+      ) : (
+        <>
+          <p className="mt-2 text-3xl font-black text-white">{displayValue}</p>
+          {subtext && (
+            <p className="mt-1 text-xs text-gray-500">{subtext}</p>
+          )}
+        </>
+      )}
+    </div>
+  );
+}
+
+function BarRow({
+  label,
+  count,
+  total,
+  colorClass,
+}: {
+  label: string;
+  count: number;
+  total: number;
+  colorClass: string;
+}) {
+  const pct = total > 0 ? Math.round((count / total) * 100) : 0;
+  return (
+    <div>
+      <div className="mb-1.5 flex items-center justify-between text-sm">
+        <span className="text-gray-300">{label}</span>
+        <span className="font-bold tabular-nums text-white">{count}</span>
+      </div>
+      <div className="h-1.5 w-full rounded-full bg-gray-800">
+        <div
+          className={`h-1.5 rounded-full transition-all duration-500 ${colorClass}`}
+          style={{ width: `${pct}%` }}
+        />
+      </div>
+    </div>
+  );
+}
+
+function ActionCard({
+  emoji,
+  title,
+  description,
+  href,
+}: {
+  emoji: string;
+  title: string;
+  description: string;
+  href: string;
+}) {
+  return (
+    <a
+      href={href}
+      className="flex items-center gap-4 rounded-2xl border border-gray-800 bg-gray-900 p-5 transition hover:border-purple-500/50 hover:bg-gray-800/60"
+    >
+      <span className="shrink-0 text-3xl">{emoji}</span>
+      <div className="min-w-0">
+        <p className="font-black text-white">{title}</p>
+        <p className="mt-0.5 text-sm text-gray-500">{description}</p>
+      </div>
+    </a>
+  );
+}
+
+// ── Page ──────────────────────────────────────────────────────────────────────
 
 export default function SchoolDashboardPage() {
   const supabase = useMemo(() => createClient(), []);
+  const router   = useRouter();
 
-  const [isTeacher, setIsTeacher] = useState(false);
-  const [loading, setLoading] = useState(true);
+  const [user,         setUser]         = useState<User | null>(null);
+  const [isTeacher,    setIsTeacher]    = useState(false);
+  const [loading,      setLoading]      = useState(true);
+  const [stats,        setStats]        = useState<SchoolStats | null>(null);
+  const [statsLoading, setStatsLoading] = useState(false);
 
   useEffect(() => {
-    async function checkAccess() {
-      const { data, error } = await supabase.rpc(
-        "is_current_user_school_teacher"
-      );
+    async function init() {
+      const [{ data: userData }, { data: rpcData, error: rpcError }] = await Promise.all([
+        supabase.auth.getUser(),
+        supabase.rpc("is_current_user_school_teacher"),
+      ]);
 
-      setIsTeacher(data === true && !error);
+      const teacher = rpcData === true && !rpcError;
+      setUser(userData.user);
+      setIsTeacher(teacher);
       setLoading(false);
+
+      if (!teacher) return;
+
+      setStatsLoading(true);
+      const res = await fetch("/api/school/stats");
+      if (res.status === 403) {
+        router.replace("/");
+        return;
+      }
+      setStats((await res.json()) as SchoolStats);
+      setStatsLoading(false);
     }
 
-    checkAccess();
-  }, [supabase]);
+    init();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // ── Loading (phase 1 : RPC + auth) ────────────────────────────────────────
 
   if (loading) {
     return (
-      <main className="min-h-screen bg-gray-950 p-8 text-white">
-        Chargement...
+      <main className="min-h-screen bg-gray-950 px-4 py-8">
+        <div className="mx-auto w-full max-w-5xl space-y-4">
+          <SkeletonBlock className="h-5 w-32" />
+          <SkeletonBlock className="h-10 w-64" />
+          <SkeletonBlock className="h-4 w-48" />
+          <div className="mt-8 grid grid-cols-2 gap-4 md:grid-cols-4">
+            {[...Array(4)].map((_, i) => <SkeletonBlock key={i} className="h-28" />)}
+          </div>
+        </div>
       </main>
     );
   }
 
+  // ── Accès refusé ──────────────────────────────────────────────────────────
+
   if (!isTeacher) {
     return (
-      <main className="min-h-screen bg-gray-950 p-8 text-white">
+      <main className="min-h-screen bg-gray-950 px-4 py-8 text-white">
         <div className="mx-auto max-w-xl rounded-3xl border border-red-500/30 bg-red-500/10 p-6">
           <h1 className="text-2xl font-black text-red-300">Accès refusé</h1>
           <p className="mt-2 text-gray-300">
@@ -43,50 +216,196 @@ export default function SchoolDashboardPage() {
     );
   }
 
+  // ── Données ───────────────────────────────────────────────────────────────
+
+  const displayName =
+    (user?.user_metadata?.full_name as string | undefined) ??
+    (user?.user_metadata?.name  as string | undefined) ??
+    user?.email ??
+    "Enseignant";
+
+  const totalQ = stats?.totalQuestions ?? 0;
+
+  // ── Render ────────────────────────────────────────────────────────────────
+
   return (
     <main className="min-h-screen bg-gray-950 px-4 py-8 text-white">
-      <div className="mx-auto w-full max-w-6xl">
-        <p className="text-sm font-bold uppercase tracking-widest text-amber-400">
-          Espace professeur
-        </p>
+      <div className="mx-auto w-full max-w-5xl">
 
-        <h1 className="mt-2 text-4xl font-black">School</h1>
-
-        <p className="mt-2 text-gray-400">
-          Gère tes quiz, crée des sessions de classe et prépare tes questions.
-        </p>
-
-        <div className="mt-8 grid gap-5 md:grid-cols-3">
-          <a
-            href="/school/session/new"
-            className="rounded-3xl border border-gray-800 bg-gray-900 p-6 transition hover:border-amber-500/50 hover:bg-gray-800"
-          >
-            <div className="text-4xl">🚀</div>
-            <h2 className="mt-4 text-xl font-black">Créer une session</h2>
-            <p className="mt-2 text-sm text-gray-400">
-              Lance un quiz live que les élèves rejoignent avec un code.
-            </p>
-          </a>
-
-          <a
-            href="/school/questions"
-            className="rounded-3xl border border-gray-800 bg-gray-900 p-6 transition hover:border-amber-500/50 hover:bg-gray-800"
-          >
-            <div className="text-4xl">📚</div>
-            <h2 className="mt-4 text-xl font-black">Mes questions</h2>
-            <p className="mt-2 text-sm text-gray-400">
-              Crée, importe depuis un PDF et gère tes questions de quiz.
-            </p>
-          </a>
-
-          <div className="rounded-3xl border border-gray-800 bg-gray-900 p-6 opacity-70">
-            <div className="text-4xl">📄</div>
-            <h2 className="mt-4 text-xl font-black">Importer un PDF</h2>
-            <p className="mt-2 text-sm text-gray-400">
-              Bientôt : générer automatiquement des questions depuis un cours.
-            </p>
+        {/* ── HEADER ── */}
+        <header>
+          <div className="flex items-center gap-3">
+            <span className="text-3xl">🎓</span>
+            <h1 className="text-3xl font-black text-white">Espace enseignant</h1>
           </div>
-        </div>
+          <p className="mt-1 text-sm text-gray-500">
+            {displayName}
+            <span className="mx-2 text-gray-700">·</span>
+            <span className="italic text-gray-600">École en mode beta</span>
+          </p>
+        </header>
+
+        {/* ── SECTION 1 — KPI ── */}
+        <section className="mt-10">
+          {statsLoading ? (
+            <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
+              {[...Array(4)].map((_, i) => <SkeletonBlock key={i} className="h-28" />)}
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
+              <StatCard
+                emoji="📚"
+                label="Mes questions"
+                displayValue={totalQ}
+                isEmpty={totalQ === 0}
+              />
+              <StatCard
+                emoji="🎯"
+                label="Sessions créées"
+                displayValue={stats?.sessionsCreated ?? 0}
+                isEmpty={(stats?.sessionsCreated ?? 0) === 0}
+              />
+              <StatCard
+                emoji="🌍"
+                label="Questions publiques"
+                displayValue={stats?.publicQuestions ?? 0}
+                isEmpty={(stats?.publicQuestions ?? 0) === 0}
+                subtext="partagées avec la communauté"
+              />
+              <StatCard
+                emoji="🤖"
+                label="% IA dans la base"
+                displayValue={
+                  (stats?.aiGeneratedShare ?? 0) === 0
+                    ? "—"
+                    : `${stats!.aiGeneratedShare}%`
+                }
+                isEmpty={false}
+              />
+            </div>
+          )}
+        </section>
+
+        {/* ── SECTION 2 — VUE D'ENSEMBLE ── */}
+        <section className="mt-8">
+          <h2 className="text-lg font-black text-white">Vue d'ensemble</h2>
+          <div className="mt-4 grid grid-cols-1 gap-6 md:grid-cols-2">
+
+            {/* Colonne A — Par matière */}
+            <div className="rounded-2xl border border-gray-800 bg-gray-900 p-5">
+              <h3 className="text-xs font-bold uppercase tracking-widest text-gray-500">
+                Répartition par matière
+              </h3>
+              {statsLoading ? (
+                <div className="mt-4 space-y-3">
+                  {[...Array(5)].map((_, i) => <SkeletonBlock key={i} className="h-8" />)}
+                </div>
+              ) : !stats || stats.questionsBySubject.length === 0 ? (
+                <div className="mt-6 text-center">
+                  <p className="text-sm italic text-gray-600">
+                    Crée ta première question pour voir la répartition
+                  </p>
+                  <a
+                    href="/school/questions"
+                    className="mt-3 inline-block text-sm font-bold text-purple-400 underline underline-offset-2 hover:text-purple-300"
+                  >
+                    Créer une question →
+                  </a>
+                </div>
+              ) : (
+                <div className="mt-4 space-y-4">
+                  {stats.questionsBySubject.slice(0, 5).map((s) => {
+                    const meta       = SUBJECTS_BY_ID[s.subject_enum];
+                    const colorClass = SUBJECT_BAR_COLOR[meta?.color ?? ""] ?? "bg-purple-500";
+                    return (
+                      <BarRow
+                        key={s.subject_enum}
+                        label={`${s.emoji} ${s.label}`}
+                        count={s.count}
+                        total={totalQ}
+                        colorClass={colorClass}
+                      />
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+
+            {/* Colonne B — Par niveau */}
+            <div className="rounded-2xl border border-gray-800 bg-gray-900 p-5">
+              <h3 className="text-xs font-bold uppercase tracking-widest text-gray-500">
+                Répartition par niveau
+              </h3>
+              {statsLoading ? (
+                <div className="mt-4 space-y-3">
+                  {[...Array(6)].map((_, i) => <SkeletonBlock key={i} className="h-8" />)}
+                </div>
+              ) : !stats || stats.questionsByLevel.length === 0 ? (
+                <p className="mt-6 text-center text-sm italic text-gray-600">
+                  Aucun niveau renseigné pour l'instant
+                </p>
+              ) : (
+                <div className="mt-4 space-y-4">
+                  {stats.questionsByLevel.map((l) => (
+                    <BarRow
+                      key={l.level ?? "null"}
+                      label={
+                        l.level !== null
+                          ? (LEVEL_SHORT[l.level] ?? `${l.level}ème`)
+                          : "Tous niveaux"
+                      }
+                      count={l.count}
+                      total={totalQ}
+                      colorClass="bg-purple-500"
+                    />
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        </section>
+
+        {/* ── SECTION 3 — ACTIONS RAPIDES ── */}
+        <section className="mt-8">
+          <h2 className="text-lg font-black text-white">Actions rapides</h2>
+          <div className="mt-4 grid grid-cols-2 gap-4 md:grid-cols-4">
+            <ActionCard
+              emoji="✏️"
+              title="Créer une question"
+              description="QCM ou Vrai/Faux, manuel ou IA"
+              href="/school/questions"
+            />
+            <ActionCard
+              emoji="📄"
+              title="Importer un PDF"
+              description="Génère 5-25 questions automatiquement depuis un cours"
+              href="/school/questions"
+            />
+            <ActionCard
+              emoji="🎮"
+              title="Lancer une session"
+              description="Quiz live avec ta classe"
+              href="/school/session/new"
+            />
+            <ActionCard
+              emoji="📊"
+              title="Voir ma bibliothèque"
+              description="Toutes mes questions organisées"
+              href="/school/questions"
+            />
+          </div>
+        </section>
+
+        {/* ── SECTION 4 — DERNIÈRE ACTIVITÉ ── */}
+        {stats?.lastQuestionCreatedAt && (
+          <p className="mt-8 border-t border-gray-800 pt-6 text-sm text-gray-500">
+            Dernière question créée&nbsp;:{" "}
+            <span className="text-gray-400">
+              {formatRelativeTime(stats.lastQuestionCreatedAt)}
+            </span>
+          </p>
+        )}
+
       </div>
     </main>
   );
