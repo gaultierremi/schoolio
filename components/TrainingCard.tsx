@@ -6,6 +6,7 @@ import type { QuizQuestion } from "@/lib/types";
 import type { ConceptMastery } from "@/lib/concepts";
 import { isCashCorrect, MODE_POINTS, MODE_LABELS } from "@/components/QuizCard";
 import type { McqMode } from "@/components/QuizCard";
+import MasteryProgressBar from "@/components/MasteryProgressBar";
 
 type AnswerRecord = {
   question: QuizQuestion;
@@ -77,10 +78,12 @@ function ModeSelector({ onSelect }: { onSelect: (mode: McqMode) => void }) {
 function ConceptPanel({
   concepts,
   masteryState,
+  conceptsWorked,
   isCorrect,
 }: {
   concepts: { id: string; name: string }[];
   masteryState: Record<string, number>;
+  conceptsWorked: Record<string, { name: string; before: number; after: number }>;
   isCorrect: boolean;
 }) {
   if (concepts.length === 0) return null;
@@ -96,24 +99,25 @@ function ConceptPanel({
       </p>
       <div className="flex flex-col gap-3">
         {concepts.map((c) => {
-          const score = masteryState[c.id] ?? 0;
+          const before = conceptsWorked[c.id]?.before ?? 0;
+          const after = conceptsWorked[c.id]?.after ?? masteryState[c.id] ?? 0;
           return (
             <div key={c.id} className="flex flex-col gap-1">
               <div className="flex items-center justify-between text-sm">
                 <span className="font-medium text-gray-300">{c.name}</span>
                 <span
                   className={`text-xs font-bold ${
-                    score < 30
+                    after < 30
                       ? "text-red-400"
-                      : score < 60
+                      : after < 60
                         ? "text-orange-400"
                         : "text-green-400"
                   }`}
                 >
-                  {score}/100
+                  {after}/100
                 </span>
               </div>
-              <MasteryBar score={score} thin />
+              <MasteryProgressBar from={before} to={after} size="sm" showDelta={true} />
             </div>
           );
         })}
@@ -584,6 +588,7 @@ export default function TrainingCard({
           <ConceptPanel
             concepts={currentConcepts}
             masteryState={masteryState}
+            conceptsWorked={conceptsWorked}
             isCorrect={isCorrect}
           />
         </div>
