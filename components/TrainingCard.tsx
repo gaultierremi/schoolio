@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import confetti from "canvas-confetti";
 import type { QuizQuestion } from "@/lib/types";
 import type { ConceptMastery } from "@/lib/concepts";
 import { isCashCorrect, MODE_POINTS, MODE_LABELS } from "@/components/QuizCard";
@@ -355,6 +356,8 @@ export default function TrainingCard({
   function applyMasteryUpdate(correct: boolean) {
     const newMastery = { ...masteryState };
     const newWorked = { ...conceptsWorked };
+    let crossedThreshold = false;
+
     for (const c of currentConcepts) {
       const before = newWorked[c.id]?.before ?? (masteryState[c.id] ?? 0);
       const current = masteryState[c.id] ?? 0;
@@ -363,9 +366,21 @@ export default function TrainingCard({
         : Math.max(0, current - 8);
       newMastery[c.id] = after;
       newWorked[c.id] = { name: c.name, before, after };
+      // Zone H — first time crossing 80 (mastery milestone)
+      if (before < 80 && after >= 80) crossedThreshold = true;
     }
+
     setMasteryState(newMastery);
     setConceptsWorked(newWorked);
+
+    if (crossedThreshold) {
+      confetti({
+        particleCount: 50,
+        colors: ["#8b5cf6", "#ec4899"],
+        spread: 60,
+        origin: { y: 0.7 },
+      });
+    }
   }
 
   function handleSelectMode(selectedMode: McqMode) {
