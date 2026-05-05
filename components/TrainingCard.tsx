@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import type { QuizQuestion } from "@/lib/types";
 import type { ConceptMastery } from "@/lib/concepts";
@@ -21,6 +21,34 @@ type ConceptProgress = {
   before: number;
   after: number;
 };
+
+// Zone G — typewriter effect for question text
+function useTypewriter(text: string) {
+  const [displayed, setDisplayed] = useState("");
+
+  useEffect(() => {
+    const reduced =
+      typeof window !== "undefined" &&
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+    if (reduced || !text) {
+      setDisplayed(text);
+      return;
+    }
+
+    setDisplayed("");
+    const speed = Math.min(15, Math.floor(1000 / text.length));
+    let i = 0;
+    const id = setInterval(() => {
+      i++;
+      setDisplayed(text.slice(0, i));
+      if (i >= text.length) clearInterval(id);
+    }, speed);
+    return () => clearInterval(id);
+  }, [text]);
+
+  return displayed;
+}
 
 function DifficultyStars({ level }: { level: number }) {
   return (
@@ -283,6 +311,9 @@ export default function TrainingCard({
 
   const total = questions.length;
 
+  // Zone G — must be before early returns (Rules of Hooks)
+  const typedQuestion = useTypewriter(questions[step]?.question ?? "");
+
   if (total === 0) {
     return (
       <div className="py-16 text-center text-gray-500">
@@ -453,7 +484,10 @@ export default function TrainingCard({
       {/* Question */}
       <div className="rounded-2xl border border-gray-800 bg-gray-900 px-5 py-5">
         <p className="text-lg font-medium leading-snug text-white">
-          {question.question}
+          {typedQuestion}
+          {typedQuestion.length < question.question.length && (
+            <span className="animate-pulse opacity-70">▋</span>
+          )}
         </p>
         {(mode !== null || isTrueFalse) && (
           <p className="mt-2 text-xs text-gray-500">

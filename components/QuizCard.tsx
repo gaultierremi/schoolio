@@ -63,6 +63,34 @@ export function isCashCorrect(player: string, correct: string): boolean {
   return correctWords.some((kw) => playerWords.has(kw));
 }
 
+// Zone G — typewriter effect for question text
+function useTypewriter(text: string) {
+  const [displayed, setDisplayed] = useState("");
+
+  useEffect(() => {
+    const reduced =
+      typeof window !== "undefined" &&
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+    if (reduced || !text) {
+      setDisplayed(text);
+      return;
+    }
+
+    setDisplayed("");
+    const speed = Math.min(15, Math.floor(1000 / text.length));
+    let i = 0;
+    const id = setInterval(() => {
+      i++;
+      setDisplayed(text.slice(0, i));
+      if (i >= text.length) clearInterval(id);
+    }, speed);
+    return () => clearInterval(id);
+  }, [text]);
+
+  return displayed;
+}
+
 function DifficultyStars({ level }: { level: number }) {
   return (
     <span className="text-sm tracking-widest text-purple-500">
@@ -236,6 +264,9 @@ export default function QuizCard({
 
   checkValidator();
 }, []);
+
+  // Zone G — must be before early returns (Rules of Hooks)
+  const typedQuestion = useTypewriter(question?.question ?? "");
 
   async function sendQuizToRevision(questionId: string) {
     const supabase = createClient();
@@ -462,7 +493,10 @@ export default function QuizCard({
 
       <div className="rounded-2xl border border-gray-800 bg-gray-900 px-5 py-5">
         <p className="text-lg font-medium leading-snug text-white">
-          {question.question}
+          {typedQuestion}
+          {typedQuestion.length < question.question.length && (
+            <span className="animate-pulse opacity-70">▋</span>
+          )}
         </p>
 
         {(mode !== null || isTrueFalse) && (
