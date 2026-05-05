@@ -1,0 +1,13 @@
+{
+  "functions": {
+    "app/api/courses/infer-metadata/route.ts": {
+      "maxDuration": 120
+    },
+    "app/api/courses/generate-questions/route.ts": {
+      "maxDuration": 180
+    },
+    "app/api/extract-questions/route.ts": {
+      "maxDuration": 120
+    }
+  }
+}
