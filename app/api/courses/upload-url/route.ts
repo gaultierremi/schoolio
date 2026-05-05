@@ -110,19 +110,21 @@ export async function POST(req: NextRequest) {
 
     // ── Création du record course ─────────────────────────────────────────────
     const title = filename.replace(/\.pdf$/i, "");
+    const courseId = crypto.randomUUID();
+    const storagePath = `${user.id}/${courseId}/${filename}`;
 
-    const { data: newCourse, error: insertError } = await admin
+    const { error: insertError } = await admin
       .from("courses")
       .insert({
+        id: courseId,
         teacher_id: user.id,
         title,
         pdf_hash: fileHash,
         pdf_size_bytes: fileSize,
-      })
-      .select("id")
-      .single();
+        pdf_storage_path: storagePath,
+      });
 
-    if (insertError || !newCourse) {
+    if (insertError) {
       console.error("[courses/upload-url]", insertError);
       return NextResponse.json(
         { error: "Erreur lors de la création du cours" },
@@ -130,10 +132,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const courseId: string = newCourse.id;
-
     // ── Génération du signed URL ──────────────────────────────────────────────
-    const storagePath = `${user.id}/${courseId}/${filename}`;
 
     const { data: signedData, error: storageError } = await admin.storage
       .from("course-pdfs")
