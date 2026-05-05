@@ -13,6 +13,8 @@ type FileStatus =
   | "inferring"
   | "ready"
   | "validated"
+  | "generating"
+  | "generated"
   | "cached"
   | "error";
 
@@ -64,6 +66,8 @@ type FileItem = {
   retryFrom: "start" | "upload" | "infer" | null;
 };
 
+type GenProgress = { done: number; total: number; failed: number };
+
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
 async function sha256hex(file: File): Promise<string> {
@@ -93,6 +97,23 @@ function xhrUpload(
     xhr.addEventListener("error", () => reject(new Error("Erreur réseau lors de l'upload")));
     xhr.send(file);
   });
+}
+
+// Worker-pool: consumes a shared queue with at most `concurrency` workers in flight.
+async function runWithPool(
+  tasks: (() => Promise<void>)[],
+  concurrency: number
+): Promise<void> {
+  const queue = [...tasks];
+  async function worker() {
+    while (queue.length > 0) {
+      const task = queue.shift();
+      if (task) await task();
+    }
+  }
+  await Promise.all(
+    Array.from({ length: Math.min(concurrency, tasks.length) }, () => worker())
+  );
 }
 
 const SUBJECT_LABELS: Record<CourseSubject, string> = {
@@ -274,7 +295,7 @@ function FileRow({
   onValidate,
   onCachedDecision,
 }: FileRowProps) {
-  const statusIcon = {
+  const statusIcon: Record<FileStatus, React.ReactNode> = {
     pending: <span className="text-white/40 text-xs">En attente</span>,
     hashing: <span className="flex items-center gap-1 text-white/60 text-xs"><Spinner />Calcul hash…</span>,
     uploading: (
@@ -292,6 +313,19 @@ function FileRow({
         Validé
       </span>
     ),
+    generating: (
+      <span className="flex items-center gap-1 text-purple-300 text-xs">
+        <Spinner />Génération…
+      </span>
+    ),
+    generated: (
+      <span className="flex items-center gap-1 text-green-400 text-xs">
+        <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+        </svg>
+        Questions générées
+      </span>
+    ),
     cached: null,
     error: (
       <button
@@ -305,13 +339,13 @@ function FileRow({
         Réessayer
       </button>
     ),
-  }[item.status];
+  };
 
   return (
     <div className="min-h-[60px] rounded-xl border border-white/10 bg-white/5 px-4 py-3 flex flex-col gap-1">
       <div className="flex items-center justify-between gap-2">
         <span className="text-sm text-white truncate flex-1">{item.file.name}</span>
-        <div className="shrink-0">{statusIcon}</div>
+        <div className="shrink-0">{statusIcon[item.status]}</div>
       </div>
 
       {item.status === "uploading" && (
@@ -416,6 +450,12 @@ export default function ImportPage() {
   const [items, setItems] = useState<FileItem[]>([]);
   const [toast, setToast] = useState<string | null>(null);
 
+  // Generation state
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [genProgress, setGenProgress] = useState<GenProgress>({ done: 0, total: 0, failed: 0 });
+  const [genDone, setGenDone] = useState(false);
+  const [totalQGenerated, setTotalQGenerated] = useState(0);
+
   function patchItem(id: string, patch: Partial<FileItem>) {
     setItems((prev) =>
       prev.map((item) => (item.id === id ? { ...item, ...patch } : item))
@@ -424,10 +464,10 @@ export default function ImportPage() {
 
   function showToast(msg: string) {
     setToast(msg);
-    setTimeout(() => setToast(null), 3000);
+    setTimeout(() => setToast(null), 4000);
   }
 
-  // ── Pipeline ───────────────────────────────────────────────────────────────
+  // ── Upload + infer pipeline ────────────────────────────────────────────────
 
   async function doInfer(id: string, courseId: string) {
     patchItem(id, { status: "inferring" });
@@ -552,6 +592,55 @@ export default function ImportPage() {
     }
   }
 
+  // ── Generation pipeline ────────────────────────────────────────────────────
+
+  async function runGeneration() {
+    const toGenerate = items.filter(
+      (i) => i.status === "validated" && i.courseId !== null
+    );
+    if (!toGenerate.length) return;
+
+    setIsGenerating(true);
+    setGenDone(false);
+    setGenProgress({ done: 0, total: toGenerate.length, failed: 0 });
+
+    let totalQ = 0;
+
+    const tasks = toGenerate.map((item) => async () => {
+      patchItem(item.id, { status: "generating" });
+      try {
+        const res = await fetch("/api/courses/generate-questions", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ courseId: item.courseId }),
+        });
+        const data = (await res.json()) as {
+          success?: boolean;
+          questionsGenerated?: number;
+          error?: string;
+        };
+        if (!res.ok || !data.success) {
+          throw new Error(data.error ?? "Erreur de génération");
+        }
+        patchItem(item.id, { status: "generated" });
+        totalQ += data.questionsGenerated ?? 0;
+        setGenProgress((p) => ({ ...p, done: p.done + 1 }));
+      } catch (err) {
+        patchItem(item.id, {
+          status: "error",
+          error: err instanceof Error ? err.message : "Erreur de génération",
+        });
+        setGenProgress((p) => ({ ...p, done: p.done + 1, failed: p.failed + 1 }));
+      }
+    });
+
+    await runWithPool(tasks, 3);
+
+    setIsGenerating(false);
+    setGenDone(true);
+    setTotalQGenerated(totalQ);
+  }
+
   // ── File addition ──────────────────────────────────────────────────────────
 
   function addFiles(files: File[]) {
@@ -575,7 +664,6 @@ export default function ImportPage() {
     }));
 
     setItems((prev) => [...prev, ...newItems]);
-
     for (const item of newItems) {
       processFile(item.id, item.file);
     }
@@ -586,9 +674,7 @@ export default function ImportPage() {
   function handleValidate(id: string) {
     setItems((prev) =>
       prev.map((item) =>
-        item.id === id
-          ? { ...item, status: "validated", editing: false }
-          : item
+        item.id === id ? { ...item, status: "validated", editing: false } : item
       )
     );
   }
@@ -608,8 +694,10 @@ export default function ImportPage() {
 
   const validatedCount = items.filter((i) => i.status === "validated").length;
   const hasActive = items.some((i) =>
-    ["hashing", "uploading", "inferring"].includes(i.status)
+    (["hashing", "uploading", "inferring", "generating"] as FileStatus[]).includes(i.status)
   );
+
+  // ── Render ─────────────────────────────────────────────────────────────────
 
   return (
     <main className="min-h-screen bg-gray-950 text-white px-4 py-10">
@@ -627,7 +715,7 @@ export default function ImportPage() {
           </p>
         </div>
 
-        <DropZone onFiles={addFiles} disabled={false} />
+        <DropZone onFiles={addFiles} disabled={isGenerating} />
 
         {items.length > 0 && (
           <div className="flex flex-col gap-2">
@@ -649,19 +737,71 @@ export default function ImportPage() {
           </div>
         )}
 
-        {validatedCount > 0 && (
-          <div className="flex items-center justify-between rounded-2xl border border-purple-500/30 bg-purple-500/10 px-5 py-4">
-            <p className="text-sm text-white/80">
-              <span className="font-semibold text-white">{validatedCount}</span> cours prêt
-              {validatedCount > 1 ? "s" : ""} à publier
-            </p>
-            <button
-              disabled={hasActive}
-              onClick={() => showToast("Fonctionnalité bientôt disponible !")}
-              className="px-5 py-2 rounded-xl bg-purple-600 hover:bg-purple-500 disabled:opacity-40 disabled:cursor-not-allowed text-white text-sm font-semibold transition-colors"
-            >
-              Lancer
-            </button>
+        {/* ── Bottom banner ── */}
+        {(validatedCount > 0 || isGenerating || genDone) && (
+          <div className="rounded-2xl border border-purple-500/30 bg-purple-500/10 px-5 py-4">
+
+            {/* Generating state */}
+            {isGenerating && (
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <Spinner />
+                  <p className="text-sm text-white/80">
+                    <span className="font-semibold text-white">{genProgress.done}</span>
+                    <span className="text-white/50">/{genProgress.total}</span>
+                    {" "}cours traité{genProgress.done > 1 ? "s" : ""}…
+                  </p>
+                </div>
+                <button
+                  disabled
+                  className="px-5 py-2 rounded-xl bg-purple-600 opacity-40 cursor-not-allowed text-white text-sm font-semibold"
+                >
+                  En cours…
+                </button>
+              </div>
+            )}
+
+            {/* Done state */}
+            {genDone && !isGenerating && (
+              <div className="flex items-center justify-between gap-4">
+                <div>
+                  <p className="text-sm font-semibold text-green-400">
+                    ✓ {totalQGenerated} question{totalQGenerated > 1 ? "s" : ""} générée{totalQGenerated > 1 ? "s" : ""}
+                    {genProgress.failed > 0 && (
+                      <span className="ml-2 text-red-400 font-normal">
+                        · {genProgress.failed} échec{genProgress.failed > 1 ? "s" : ""}
+                      </span>
+                    )}
+                  </p>
+                  <p className="text-xs text-white/40 mt-0.5">
+                    {genProgress.done - genProgress.failed} cours sur {genProgress.total} traités avec succès
+                  </p>
+                </div>
+                <Link
+                  href="/school/questions"
+                  className="shrink-0 px-5 py-2 rounded-xl bg-purple-600 hover:bg-purple-500 text-white text-sm font-semibold transition-colors"
+                >
+                  Voir mes questions →
+                </Link>
+              </div>
+            )}
+
+            {/* Idle state */}
+            {!isGenerating && !genDone && validatedCount > 0 && (
+              <div className="flex items-center justify-between">
+                <p className="text-sm text-white/80">
+                  <span className="font-semibold text-white">{validatedCount}</span> cours prêt
+                  {validatedCount > 1 ? "s" : ""} à générer
+                </p>
+                <button
+                  disabled={hasActive}
+                  onClick={runGeneration}
+                  className="px-5 py-2 rounded-xl bg-purple-600 hover:bg-purple-500 disabled:opacity-40 disabled:cursor-not-allowed text-white text-sm font-semibold transition-colors"
+                >
+                  Lancer la génération sur {validatedCount} cours
+                </button>
+              </div>
+            )}
           </div>
         )}
       </div>
