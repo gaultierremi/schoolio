@@ -149,13 +149,13 @@ export default function NewSchoolSessionPage() {
       <div className="mx-auto w-full max-w-2xl">
         <a
           href="/school"
-          className="text-sm font-bold text-gray-500 transition hover:text-amber-400"
+          className="text-sm font-bold text-gray-500 transition hover:text-purple-400"
         >
           ← Espace professeur
         </a>
 
         <div className="mt-4 rounded-3xl border border-gray-800 bg-gray-900 p-6 shadow-2xl shadow-black/40">
-          <p className="text-sm font-bold uppercase tracking-widest text-amber-400">
+          <p className="text-sm font-bold uppercase tracking-widest text-purple-400">
             Espace professeur
           </p>
 
@@ -173,7 +173,7 @@ export default function NewSchoolSessionPage() {
             <input
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              className="mt-2 w-full rounded-2xl border border-gray-700 bg-gray-950 px-4 py-3 text-white outline-none placeholder:text-gray-600 focus:border-amber-500"
+              className="mt-2 w-full rounded-2xl border border-gray-700 bg-gray-950 px-4 py-3 text-white outline-none placeholder:text-gray-600 focus:border-purple-500"
               placeholder="Ex : Révolution française"
             />
           </div>
@@ -185,7 +185,7 @@ export default function NewSchoolSessionPage() {
                 Questions
               </label>
               {selectedIds.length > 0 && (
-                <span className="rounded-full bg-amber-500/20 px-3 py-1 text-xs font-black text-amber-300">
+                <span className="rounded-full bg-purple-500/20 px-3 py-1 text-xs font-black text-purple-300">
                   {selectedIds.length} sélectionnée(s)
                 </span>
               )}
@@ -197,7 +197,7 @@ export default function NewSchoolSessionPage() {
                 onClick={() => setQTab("mine")}
                 className={`rounded-t-xl px-4 py-2 text-xs font-black transition ${
                   qTab === "mine"
-                    ? "bg-gray-950 text-amber-400"
+                    ? "bg-gray-950 text-purple-400"
                     : "text-gray-500 hover:text-white"
                 }`}
               >
@@ -207,7 +207,7 @@ export default function NewSchoolSessionPage() {
                 onClick={() => setQTab("public")}
                 className={`rounded-t-xl px-4 py-2 text-xs font-black transition ${
                   qTab === "public"
-                    ? "bg-gray-950 text-amber-400"
+                    ? "bg-gray-950 text-purple-400"
                     : "text-gray-500 hover:text-white"
                 }`}
               >
@@ -221,7 +221,7 @@ export default function NewSchoolSessionPage() {
                 value={filter}
                 onChange={(e) => setFilter(e.target.value)}
                 placeholder="Filtrer..."
-                className="w-full rounded-xl border border-gray-700 bg-gray-900 px-3 py-2 text-sm text-white outline-none placeholder:text-gray-600 focus:border-amber-500"
+                className="w-full rounded-xl border border-gray-700 bg-gray-900 px-3 py-2 text-sm text-white outline-none placeholder:text-gray-600 focus:border-purple-500"
               />
 
               {questionsLoading ? (
@@ -235,7 +235,7 @@ export default function NewSchoolSessionPage() {
                       Aucune question.{" "}
                       <a
                         href="/school/questions"
-                        className="font-bold text-amber-400 underline"
+                        className="font-bold text-purple-400 underline"
                       >
                         Crée-en depuis Mes questions
                       </a>
@@ -249,7 +249,7 @@ export default function NewSchoolSessionPage() {
                 <div className="mt-2">
                   <button
                     onClick={() => toggleAll(filtered)}
-                    className="mb-2 text-xs font-bold text-gray-500 hover:text-amber-400 transition"
+                    className="mb-2 text-xs font-bold text-gray-500 hover:text-purple-400 transition"
                   >
                     {filtered.every((q) => selectedIds.includes(q.id))
                       ? "Tout désélectionner"
@@ -266,14 +266,14 @@ export default function NewSchoolSessionPage() {
                           onClick={() => toggleQuestion(q.id)}
                           className={`flex w-full items-start gap-3 rounded-xl px-3 py-2.5 text-left transition ${
                             selected
-                              ? "bg-amber-500/15 border border-amber-500/30"
+                              ? "bg-purple-500/15 border border-purple-500/30"
                               : "border border-transparent hover:bg-gray-800"
                           }`}
                         >
                           <span
                             className={`mt-0.5 h-4 w-4 shrink-0 rounded border-2 transition ${
                               selected
-                                ? "border-amber-500 bg-amber-500"
+                                ? "border-purple-500 bg-purple-500"
                                 : "border-gray-600"
                             }`}
                           />
@@ -309,7 +309,7 @@ export default function NewSchoolSessionPage() {
 
           {/* Errors */}
           {message && (
-            <div className="mt-4 rounded-2xl border border-amber-500/30 bg-amber-500/10 p-3 text-sm font-bold text-amber-300">
+            <div className="mt-4 rounded-2xl border border-purple-500/30 bg-purple-500/10 p-3 text-sm font-bold text-purple-300">
               {message}
             </div>
           )}
@@ -319,7 +319,7 @@ export default function NewSchoolSessionPage() {
             type="button"
             onClick={createSession}
             disabled={loading || selectedIds.length === 0}
-            className="mt-6 w-full rounded-2xl bg-amber-500 px-5 py-4 font-black text-gray-950 transition hover:bg-amber-400 disabled:cursor-not-allowed disabled:opacity-50"
+            className="mt-6 w-full rounded-2xl bg-purple-500 px-5 py-4 font-black text-gray-950 transition hover:bg-purple-400 disabled:cursor-not-allowed disabled:opacity-50"
           >
             {loading
               ? "Création..."
@@ -330,7 +330,7 @@ export default function NewSchoolSessionPage() {
 
           <a
             href="/join"
-            className="mt-3 block text-center text-sm font-bold text-gray-500 transition hover:text-amber-400"
+            className="mt-3 block text-center text-sm font-bold text-gray-500 transition hover:text-purple-400"
           >
             Rejoindre une session élève
           </a>

@@ -138,13 +138,13 @@ function FilterBar({
           value={filterText ?? ""}
           onChange={(e) => setFilterText(e.target.value)}
           placeholder="Rechercher..."
-          className="flex-1 min-w-[160px] rounded-xl border border-gray-700 bg-gray-900 px-3 py-2 text-sm text-white outline-none placeholder:text-gray-600 focus:border-amber-500"
+          className="flex-1 min-w-[160px] rounded-xl border border-gray-700 bg-gray-900 px-3 py-2 text-sm text-white outline-none placeholder:text-gray-600 focus:border-purple-500"
         />
       )}
       <select
         value={filterType}
         onChange={(e) => setFilterType(e.target.value)}
-        className="rounded-xl border border-gray-700 bg-gray-900 px-3 py-2 text-sm text-white outline-none focus:border-amber-500"
+        className="rounded-xl border border-gray-700 bg-gray-900 px-3 py-2 text-sm text-white outline-none focus:border-purple-500"
       >
         <option value="">Tous les types</option>
         <option value="mcq">QCM</option>
@@ -153,7 +153,7 @@ function FilterBar({
       <select
         value={filterPeriod}
         onChange={(e) => setFilterPeriod(e.target.value)}
-        className="rounded-xl border border-gray-700 bg-gray-900 px-3 py-2 text-sm text-white outline-none focus:border-amber-500"
+        className="rounded-xl border border-gray-700 bg-gray-900 px-3 py-2 text-sm text-white outline-none focus:border-purple-500"
       >
         <option value="">Toutes les périodes</option>
         {PERIODS.map((p) => (
@@ -267,7 +267,7 @@ function SubjectLevelSelector({
           onChange={(e) => {
             if (e.target.value) onSubjectChange(e.target.value as SubjectId);
           }}
-          className="mt-2 w-full rounded-xl border border-gray-700 bg-gray-900 px-3 py-2 text-sm text-white outline-none focus:border-amber-500"
+          className="mt-2 w-full rounded-xl border border-gray-700 bg-gray-900 px-3 py-2 text-sm text-white outline-none focus:border-purple-500"
         >
           <option value="">Autre matière…</option>
           {SUBJECTS.filter(
@@ -348,7 +348,7 @@ function QuestionForm({
       form.options.filter((o) => o.trim()).length >= 2);
 
   return (
-    <div className="mb-6 rounded-3xl border border-amber-500/30 bg-gray-900 p-5">
+    <div className="mb-6 rounded-3xl border border-purple-500/30 bg-gray-900 p-5">
       <h2 className="text-lg font-black text-white">
         {isEdit ? "Modifier la question" : "Nouvelle question"}
       </h2>
@@ -371,7 +371,7 @@ function QuestionForm({
                     answer_index: 0,
                   })
                 }
-                className="mt-1 w-full rounded-xl border border-gray-700 bg-gray-950 px-3 py-2 text-white outline-none focus:border-amber-500"
+                className="mt-1 w-full rounded-xl border border-gray-700 bg-gray-950 px-3 py-2 text-white outline-none focus:border-purple-500"
               >
                 <option value="mcq">QCM — Carré (4 options)</option>
                 <option value="truefalse">Vrai / Faux — Duo (2 options)</option>
@@ -385,7 +385,7 @@ function QuestionForm({
               <select
                 value={form.period}
                 onChange={(e) => setForm({ ...form, period: e.target.value })}
-                className="mt-1 w-full rounded-xl border border-gray-700 bg-gray-950 px-3 py-2 text-white outline-none focus:border-amber-500"
+                className="mt-1 w-full rounded-xl border border-gray-700 bg-gray-950 px-3 py-2 text-white outline-none focus:border-purple-500"
               >
                 <option value="">Sélectionner une période</option>
                 {PERIODS.map((p) => (
@@ -415,7 +415,7 @@ function QuestionForm({
               onChange={(e) => setForm({ ...form, question: e.target.value })}
               rows={2}
               placeholder="Énonce ta question..."
-              className="mt-1 w-full rounded-xl border border-gray-700 bg-gray-950 px-3 py-2 text-white outline-none placeholder:text-gray-600 focus:border-amber-500"
+              className="mt-1 w-full rounded-xl border border-gray-700 bg-gray-950 px-3 py-2 text-white outline-none placeholder:text-gray-600 focus:border-purple-500"
             />
           </div>
 
@@ -460,7 +460,7 @@ function QuestionForm({
                         setForm({ ...form, options: next });
                       }}
                       placeholder={`Option ${String.fromCharCode(65 + i)}`}
-                      className={`w-full rounded-xl border px-3 py-2 text-sm text-white outline-none placeholder:text-gray-600 focus:border-amber-500 ${
+                      className={`w-full rounded-xl border px-3 py-2 text-sm text-white outline-none placeholder:text-gray-600 focus:border-purple-500 ${
                         form.answer_index === i
                           ? "border-green-500/50 bg-green-500/10"
                           : "border-gray-700 bg-gray-950"
@@ -491,7 +491,7 @@ function QuestionForm({
               value={form.explanation}
               onChange={(e) => setForm({ ...form, explanation: e.target.value })}
               placeholder="Explication affichée après la réponse..."
-              className="mt-1 w-full rounded-xl border border-gray-700 bg-gray-950 px-3 py-2 text-white outline-none placeholder:text-gray-600 focus:border-amber-500"
+              className="mt-1 w-full rounded-xl border border-gray-700 bg-gray-950 px-3 py-2 text-white outline-none placeholder:text-gray-600 focus:border-purple-500"
             />
           </div>
         </div>
@@ -517,7 +517,7 @@ function QuestionForm({
               ? "Complète la question et sélectionne une bonne réponse"
               : undefined
           }
-          className="rounded-2xl bg-amber-500 px-5 py-3 font-black text-gray-950 hover:bg-amber-400 disabled:opacity-40"
+          className="rounded-2xl bg-purple-500 px-5 py-3 font-black text-gray-950 hover:bg-purple-400 disabled:opacity-40"
         >
           {saving ? "Sauvegarde..." : isEdit ? "Enregistrer" : "Ajouter"}
         </button>
@@ -563,7 +563,7 @@ function QuestionCard({
   return (
     <div
       className={`rounded-2xl border bg-gray-900 p-4 transition ${
-        selected ? "border-amber-500/50" : "border-gray-800"
+        selected ? "border-purple-500/50" : "border-gray-800"
       }`}
     >
       <div className="flex items-start gap-3">
@@ -573,7 +573,7 @@ function QuestionCard({
           onClick={onToggleSelect}
           className={`mt-0.5 flex shrink-0 h-5 w-5 items-center justify-center rounded border-2 transition ${
             selected
-              ? "border-amber-500 bg-amber-500"
+              ? "border-purple-500 bg-purple-500"
               : "border-gray-600 hover:border-gray-400"
           }`}
           aria-label={selected ? "Désélectionner" : "Sélectionner"}
@@ -647,7 +647,7 @@ function QuestionCard({
           </button>
           <button
             onClick={onEdit}
-            className="rounded-xl border border-gray-700 px-3 py-1.5 text-xs font-bold text-gray-300 hover:border-amber-500/50 hover:text-amber-300"
+            className="rounded-xl border border-gray-700 px-3 py-1.5 text-xs font-bold text-gray-300 hover:border-purple-500/50 hover:text-purple-300"
           >
             Éditer
           </button>
@@ -760,20 +760,20 @@ function PdfUploadZone({
         onClick={() => !loading && inputRef.current?.click()}
         className={`flex cursor-pointer flex-col items-center justify-center rounded-3xl border-2 border-dashed p-12 transition ${
           dragging
-            ? "border-amber-500 bg-amber-500/5"
+            ? "border-purple-500 bg-purple-500/5"
             : loading
             ? "cursor-default border-gray-800"
-            : "border-gray-700 bg-gray-900 hover:border-amber-500/50"
+            : "border-gray-700 bg-gray-900 hover:border-purple-500/50"
         }`}
       >
         {loading ? (
           <>
-            <div className="h-10 w-10 animate-spin rounded-full border-4 border-gray-700 border-t-amber-500" />
-            <p className="mt-4 font-bold text-amber-400">Analyse en cours…</p>
+            <div className="h-10 w-10 animate-spin rounded-full border-4 border-gray-700 border-t-purple-500" />
+            <p className="mt-4 font-bold text-purple-400">Analyse en cours…</p>
             <div className="mt-4 w-full max-w-xs">
               <div className="h-2 w-full overflow-hidden rounded-full bg-gray-800">
                 <div
-                  className="h-full rounded-full bg-amber-500 transition-all duration-300"
+                  className="h-full rounded-full bg-purple-500 transition-all duration-300"
                   style={{ width: `${progress}%` }}
                 />
               </div>
@@ -894,7 +894,7 @@ function DraftCard({
         value={draft.question}
         onChange={(e) => onChange({ ...draft, question: e.target.value })}
         rows={2}
-        className="mt-3 w-full rounded-xl border border-gray-700 bg-gray-950 px-3 py-2 text-sm font-bold text-white outline-none focus:border-amber-500"
+        className="mt-3 w-full rounded-xl border border-gray-700 bg-gray-950 px-3 py-2 text-sm font-bold text-white outline-none focus:border-purple-500"
       />
 
       <div className="mt-3 grid grid-cols-2 gap-2">
@@ -919,7 +919,7 @@ function DraftCard({
                   next[i] = e.target.value;
                   onChange({ ...draft, options: next });
                 }}
-                className="w-full rounded-lg border border-gray-700 bg-gray-950 px-2 py-1.5 text-xs text-white outline-none focus:border-amber-500"
+                className="w-full rounded-lg border border-gray-700 bg-gray-950 px-2 py-1.5 text-xs text-white outline-none focus:border-purple-500"
               />
             )}
           </div>
@@ -930,7 +930,7 @@ function DraftCard({
         <select
           value={draft.period}
           onChange={(e) => onChange({ ...draft, period: e.target.value })}
-          className="rounded-xl border border-gray-700 bg-gray-950 px-3 py-2 text-xs text-white outline-none focus:border-amber-500"
+          className="rounded-xl border border-gray-700 bg-gray-950 px-3 py-2 text-xs text-white outline-none focus:border-purple-500"
         >
           <option value="">Période (optionnel)</option>
           {PERIODS.map((p) => (
@@ -944,7 +944,7 @@ function DraftCard({
           value={draft.explanation}
           onChange={(e) => onChange({ ...draft, explanation: e.target.value })}
           placeholder="Explication..."
-          className="rounded-xl border border-gray-700 bg-gray-950 px-3 py-2 text-xs text-gray-300 outline-none placeholder:text-gray-600 focus:border-amber-500"
+          className="rounded-xl border border-gray-700 bg-gray-950 px-3 py-2 text-xs text-gray-300 outline-none placeholder:text-gray-600 focus:border-purple-500"
         />
       </div>
     </div>
@@ -1462,7 +1462,7 @@ export default function SchoolQuestionsPage() {
       <div className="mx-auto w-full max-w-4xl">
         <a
           href="/school"
-          className="text-sm font-bold text-gray-500 transition hover:text-amber-400"
+          className="text-sm font-bold text-gray-500 transition hover:text-purple-400"
         >
           ← Espace professeur
         </a>
@@ -1489,7 +1489,7 @@ export default function SchoolQuestionsPage() {
               onClick={() => setTab(key)}
               className={`rounded-t-xl px-4 py-3 text-sm font-black transition ${
                 tab === key
-                  ? "bg-gray-900 text-amber-400"
+                  ? "bg-gray-900 text-purple-400"
                   : "text-gray-500 hover:text-white"
               }`}
             >
@@ -1520,7 +1520,7 @@ export default function SchoolQuestionsPage() {
                     setEditingId(null);
                     setShowForm(true);
                   }}
-                  className="mb-6 rounded-2xl bg-amber-500 px-5 py-3 font-black text-gray-950 transition hover:bg-amber-400"
+                  className="mb-6 rounded-2xl bg-purple-500 px-5 py-3 font-black text-gray-950 transition hover:bg-purple-400"
                 >
                   + Nouvelle question
                 </button>
@@ -1539,7 +1539,7 @@ export default function SchoolQuestionsPage() {
                   onChange={(e) =>
                     setSortBy(e.target.value as "date" | "type" | "period")
                   }
-                  className="rounded-xl border border-gray-700 bg-gray-900 px-3 py-2 text-sm text-white outline-none focus:border-amber-500"
+                  className="rounded-xl border border-gray-700 bg-gray-900 px-3 py-2 text-sm text-white outline-none focus:border-purple-500"
                 >
                   <option value="date">Trier par date</option>
                   <option value="type">Trier par type</option>
@@ -1549,15 +1549,15 @@ export default function SchoolQuestionsPage() {
 
               {/* Export bar */}
               {selectedIds.size > 0 && (
-                <div className="mb-4 flex flex-wrap items-center gap-3 rounded-2xl border border-amber-500/20 bg-amber-500/10 px-4 py-3">
-                  <span className="flex-1 text-sm font-bold text-amber-300">
+                <div className="mb-4 flex flex-wrap items-center gap-3 rounded-2xl border border-purple-500/20 bg-purple-500/10 px-4 py-3">
+                  <span className="flex-1 text-sm font-bold text-purple-300">
                     {selectedIds.size} question
                     {selectedIds.size > 1 ? "s" : ""} sélectionnée
                     {selectedIds.size > 1 ? "s" : ""}
                   </span>
                   <button
                     onClick={exportSelected}
-                    className="rounded-xl bg-amber-500 px-4 py-2 text-sm font-black text-gray-950 transition hover:bg-amber-400"
+                    className="rounded-xl bg-purple-500 px-4 py-2 text-sm font-black text-gray-950 transition hover:bg-purple-400"
                   >
                     ⬇ Exporter JSON
                   </button>
@@ -1731,7 +1731,7 @@ export default function SchoolQuestionsPage() {
                     <button
                       onClick={() => addPublicQuestion(q)}
                       disabled={addingId === q.id}
-                      className="shrink-0 rounded-xl bg-amber-500/20 px-3 py-2 text-xs font-black text-amber-300 transition hover:bg-amber-500/30 disabled:opacity-40"
+                      className="shrink-0 rounded-xl bg-purple-500/20 px-3 py-2 text-xs font-black text-purple-300 transition hover:bg-purple-500/30 disabled:opacity-40"
                     >
                       {addingId === q.id ? "..." : "+ Ajouter"}
                     </button>

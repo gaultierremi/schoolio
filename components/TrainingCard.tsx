@@ -24,7 +24,7 @@ type ConceptProgress = {
 
 function DifficultyStars({ level }: { level: number }) {
   return (
-    <span className="text-sm tracking-widest text-amber-500">
+    <span className="text-sm tracking-widest text-purple-500">
       {"★".repeat(level)}
       <span className="text-white/20">{"★".repeat(3 - level)}</span>
     </span>

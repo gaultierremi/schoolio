@@ -25,7 +25,7 @@ type Recommendation = {
 
 const REC_COLORS = {
   révision: "border-red-800 bg-red-950/30 text-red-300",
-  progression: "border-amber-800 bg-amber-950/30 text-amber-300",
+  progression: "border-purple-800 bg-purple-950/30 text-purple-300",
   défi: "border-green-800 bg-green-950/30 text-green-300",
 } as const;
 

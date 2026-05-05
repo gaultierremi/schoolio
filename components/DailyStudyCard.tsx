@@ -28,7 +28,7 @@ export default async function DailyStudyCard({ userId }: { userId: string }) {
           Tu es à jour pour aujourd&apos;hui !
         </p>
         {streak > 0 && (
-          <span className="flex items-center gap-1 rounded-full bg-orange-500/10 px-2 py-0.5 text-xs font-black text-orange-400">
+          <span className="flex items-center gap-1 rounded-full bg-purple-500/10 px-2 py-0.5 text-xs font-black text-purple-400">
             🔥 {streak}j
           </span>
         )}
@@ -42,7 +42,7 @@ export default async function DailyStudyCard({ userId }: { userId: string }) {
         <div className="mb-1 flex items-center gap-2">
           <p className="text-sm font-black text-white">Révision du jour</p>
           {streak > 0 && (
-            <span className="flex items-center gap-1 rounded-full bg-orange-500/10 px-2 py-0.5 text-xs font-black text-orange-400">
+            <span className="flex items-center gap-1 rounded-full bg-purple-500/10 px-2 py-0.5 text-xs font-black text-purple-400">
               🔥 {streak} jour{streak > 1 ? "s" : ""}
             </span>
           )}

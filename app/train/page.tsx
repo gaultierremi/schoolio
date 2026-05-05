@@ -86,7 +86,7 @@ export default async function TrainPage() {
         <div className="flex w-full max-w-xs flex-col gap-3">
           <Link
             href="/study"
-            className="rounded-2xl bg-amber-500 px-6 py-4 text-center font-black text-gray-950 transition hover:bg-amber-400 active:scale-[0.98]"
+            className="rounded-2xl bg-purple-500 px-6 py-4 text-center font-black text-gray-950 transition hover:bg-purple-400 active:scale-[0.98]"
           >
             Crée ton premier quiz →
           </Link>

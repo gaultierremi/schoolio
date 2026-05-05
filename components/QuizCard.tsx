@@ -65,7 +65,7 @@ export function isCashCorrect(player: string, correct: string): boolean {
 
 function DifficultyStars({ level }: { level: number }) {
   return (
-    <span className="text-sm tracking-widest text-amber-500">
+    <span className="text-sm tracking-widest text-purple-500">
       {"★".repeat(level)}
       <span className="text-white/20">{"★".repeat(3 - level)}</span>
     </span>
@@ -91,10 +91,10 @@ function ModeSelector({ onSelect }: { onSelect: (mode: McqMode) => void }) {
             key={mode.id}
             type="button"
             onClick={() => onSelect(mode.id)}
-            className="flex flex-col items-center gap-1 rounded-xl border border-gray-700 bg-gray-900 px-3 py-4 transition-all hover:border-amber-500/50 hover:bg-gray-800 active:scale-95"
+            className="flex flex-col items-center gap-1 rounded-xl border border-gray-700 bg-gray-900 px-3 py-4 transition-all hover:border-purple-500/50 hover:bg-gray-800 active:scale-95"
           >
             <span className="text-base font-bold text-white">{mode.label}</span>
-            <span className="text-sm font-semibold text-amber-400">
+            <span className="text-sm font-semibold text-purple-400">
               +{mode.pts}
             </span>
             <span className="text-xs text-gray-500">{mode.desc}</span>
@@ -129,7 +129,7 @@ function ResultsScreen({
           {score}
           <span className="text-2xl text-gray-600"> / {maxScore}</span>
         </p>
-        <p className="text-lg text-amber-500">
+        <p className="text-lg text-purple-500">
           {correctCount} bonne{correctCount > 1 ? "s" : ""} réponse
           {correctCount > 1 ? "s" : ""} sur {answers.length}
         </p>
@@ -188,7 +188,7 @@ function ResultsScreen({
           onClick={() => {
             window.location.href = `/quiz?difficulty=${difficulty}`;
           }}
-          className="rounded-lg bg-amber-500 px-8 py-3 font-semibold text-gray-950 transition-colors hover:bg-amber-400"
+          className="rounded-lg bg-purple-500 px-8 py-3 font-semibold text-gray-950 transition-colors hover:bg-purple-400"
         >
           Rejouer
         </button>
@@ -415,7 +415,7 @@ export default function QuizCard({
     if (onComplete) {
       return (
         <div className="flex flex-col items-center gap-4 py-16 text-center">
-          <div className="h-8 w-8 animate-spin rounded-full border-2 border-amber-500 border-t-transparent" />
+          <div className="h-8 w-8 animate-spin rounded-full border-2 border-purple-500 border-t-transparent" />
           <p className="text-sm text-gray-400">
             En attente de l&apos;adversaire…
           </p>
@@ -454,7 +454,7 @@ export default function QuizCard({
 
         <div className="h-1 w-full overflow-hidden rounded-full bg-white/10">
           <div
-            className="h-full rounded-full bg-amber-500 transition-all duration-500"
+            className="h-full rounded-full bg-purple-500 transition-all duration-500"
             style={{ width: `${(step / total) * 100}%` }}
           />
         </div>
@@ -489,14 +489,14 @@ export default function QuizCard({
               }}
               placeholder="Votre réponse…"
               autoFocus
-              className="flex-1 rounded-xl border border-gray-700 bg-gray-900 px-4 py-3 text-sm text-white placeholder-gray-600 focus:border-amber-500 focus:outline-none"
+              className="flex-1 rounded-xl border border-gray-700 bg-gray-900 px-4 py-3 text-sm text-white placeholder-gray-600 focus:border-purple-500 focus:outline-none"
             />
 
             <button
               type="button"
               onClick={handleCashSubmit}
               disabled={!cashInput.trim()}
-              className="shrink-0 rounded-xl bg-amber-500 px-5 py-3 text-sm font-bold text-gray-950 transition-colors hover:bg-amber-400 disabled:cursor-not-allowed disabled:opacity-30"
+              className="shrink-0 rounded-xl bg-purple-500 px-5 py-3 text-sm font-bold text-gray-950 transition-colors hover:bg-purple-400 disabled:cursor-not-allowed disabled:opacity-30"
             >
               Valider
             </button>
@@ -512,7 +512,7 @@ export default function QuizCard({
                 key={index}
                 type="button"
                 onClick={() => handleClickOption(index)}
-                className={`rounded-xl border border-gray-700 bg-gray-900 px-4 py-3.5 text-sm font-medium text-gray-200 transition-all hover:border-amber-500/50 hover:bg-gray-800 ${
+                className={`rounded-xl border border-gray-700 bg-gray-900 px-4 py-3.5 text-sm font-medium text-gray-200 transition-all hover:border-purple-500/50 hover:bg-gray-800 ${
                   isTwoCol ? "text-center" : "text-left"
                 }`}
               >
@@ -623,7 +623,7 @@ export default function QuizCard({
                 <button
                   type="button"
                   onClick={handleNext}
-                  className="rounded-lg bg-amber-500 px-5 py-2 text-sm font-semibold text-gray-950 transition-colors hover:bg-amber-400"
+                  className="rounded-lg bg-purple-500 px-5 py-2 text-sm font-semibold text-gray-950 transition-colors hover:bg-purple-400"
                 >
                   {step < total - 1 ? "Suivante →" : "Résultats →"}
                 </button>

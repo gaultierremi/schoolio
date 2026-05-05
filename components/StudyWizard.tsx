@@ -890,7 +890,7 @@ export default function StudyWizard() {
                       className={`rounded px-1.5 py-0.5 text-[10px] font-bold ${
                         q.type === "truefalse"
                           ? "bg-blue-500/10 text-blue-400"
-                          : "bg-amber-500/10 text-amber-400"
+                          : "bg-purple-500/10 text-purple-400"
                       }`}
                     >
                       {q.type === "truefalse" ? "V/F" : "QCM"}

@@ -24,7 +24,7 @@ export default async function ProfilePage() {
         </p>
         <Link
           href="/"
-          className="mt-6 inline-flex rounded-2xl bg-amber-500 px-6 py-3 font-black text-white transition hover:bg-amber-600"
+          className="mt-6 inline-flex rounded-2xl bg-purple-500 px-6 py-3 font-black text-white transition hover:bg-purple-600"
         >
           Retour à l’accueil
         </Link>
