@@ -144,7 +144,7 @@ function BarRow({
           className={`h-1.5 rounded-full ${colorClass}`}
           initial={reduced ? undefined : { width: 0 }}
           animate={{ width: `${pct}%` }}
-          transition={reduced ? undefined : { duration: 0.8, ease: "easeOut", delay: index * 0.1 }}
+          transition={reduced ? undefined : { duration: 0.8, ease: "easeOut" as const, delay: index * 0.1 }}
         />
       </div>
     </div>

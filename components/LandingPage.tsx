@@ -11,7 +11,7 @@ function fadeUpProps(delay = 0, reduced: boolean | null) {
     initial: { opacity: 0, y: 20 },
     whileInView: { opacity: 1, y: 0 },
     viewport: { once: true, margin: "-50px" },
-    transition: { duration: 0.5, ease: "easeOut", delay },
+    transition: { duration: 0.5, ease: "easeOut" as const, delay },
   };
 }
 
