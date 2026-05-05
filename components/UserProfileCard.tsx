@@ -48,7 +48,7 @@ export default function UserProfileCard({ stats }: { stats: UserStats }) {
         {/* Favorite mode badge */}
         {stats.favorite_mode && (
           <div className="mt-2">
-            <span className="rounded-full border border-amber-500/30 bg-amber-500/10 px-2 py-0.5 text-xs font-medium text-amber-400">
+            <span className="rounded-full border border-purple-500/30 bg-purple-500/10 px-2 py-0.5 text-xs font-medium text-purple-400">
               {stats.favorite_mode}
             </span>
           </div>

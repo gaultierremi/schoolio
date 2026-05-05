@@ -3,6 +3,7 @@ import { Suspense } from "react";
 import { createClient } from "@/lib/supabase-server";
 import Header from "@/components/Header";
 import DailyStudyCard from "@/components/DailyStudyCard";
+import LandingCTA from "@/components/LandingCTA";
 
 export const dynamic = "force-dynamic";
 
@@ -14,29 +15,29 @@ function NavCard({
   label,
   desc,
   tag,
-  color = "amber",
+  color = "purple",
 }: {
   href: string;
   emoji: string;
   label: string;
   desc: string;
   tag?: string;
-  color?: "amber" | "purple" | "blue" | "green";
+  color?: "purple" | "blue" | "green";
 }) {
   const borders = {
-    amber: "border-amber-500/30 hover:border-amber-500/60 hover:bg-amber-500/5",
+    amber: "border-purple-500/30 hover:border-purple-500/60 hover:bg-purple-500/5",
     purple: "border-purple-500/30 hover:border-purple-500/60 hover:bg-purple-500/5",
     blue: "border-blue-500/30 hover:border-blue-500/60 hover:bg-blue-500/5",
     green: "border-green-500/30 hover:border-green-500/60 hover:bg-green-500/5",
   };
   const tags = {
-    amber: "bg-amber-500/20 text-amber-300",
+    amber: "bg-purple-500/20 text-purple-300",
     purple: "bg-purple-500/20 text-purple-300",
     blue: "bg-blue-500/20 text-blue-300",
     green: "bg-green-500/20 text-green-300",
   };
   const icons = {
-    amber: "bg-amber-500/10",
+    amber: "bg-purple-500/10",
     purple: "bg-purple-500/10",
     blue: "bg-blue-500/10",
     green: "bg-green-500/10",
@@ -154,12 +155,7 @@ export default async function SchoolioHomePage() {
           </p>
 
           <div className="mt-10 flex flex-wrap items-center justify-center gap-4">
-            <Link
-              href="/auth/callback"
-              className="rounded-2xl bg-purple-600 px-8 py-4 font-black text-white transition hover:bg-purple-500 hover:scale-105"
-            >
-              Commencer gratuitement →
-            </Link>
+            <LandingCTA />
             <a
               href="#how"
               className="rounded-2xl border border-gray-700 px-8 py-4 font-black text-gray-300 transition hover:border-gray-500 hover:text-white"
@@ -252,12 +248,7 @@ export default async function SchoolioHomePage() {
           <p className="mt-4 text-base text-gray-500">
             Connexion en 5 secondes avec Google. Aucune carte requise.
           </p>
-          <Link
-            href="/auth/callback"
-            className="mt-8 inline-block rounded-2xl bg-purple-600 px-8 py-4 font-black text-white transition hover:bg-purple-500 hover:scale-105"
-          >
-            Commencer gratuitement →
-          </Link>
+          <LandingCTA className="mt-8" />
         </section>
 
         {/* §6 — FOOTER */}
@@ -280,13 +271,13 @@ export default async function SchoolioHomePage() {
       <div className="mx-auto w-full max-w-xl flex-1 px-4 py-10">
         {/* Hero */}
         <div className="mb-10 text-center">
-          <div className="inline-flex items-center gap-2 rounded-full border border-amber-500/20 bg-amber-500/10 px-4 py-1.5 text-xs font-black uppercase tracking-widest text-amber-400">
+          <div className="inline-flex items-center gap-2 rounded-full border border-purple-500/20 bg-purple-500/10 px-4 py-1.5 text-xs font-black uppercase tracking-widest text-purple-400">
             🎓 Schoolio
           </div>
           <h1 className="mt-4 text-4xl font-black tracking-tight text-white sm:text-5xl">
             Ta plateforme
             <br />
-            <span className="text-amber-400">d&apos;apprentissage adaptatif</span>
+            <span className="text-purple-400">d&apos;apprentissage adaptatif</span>
           </h1>
           <p className="mt-3 text-base text-gray-500">
             Étudie à ton rythme · Révision espacée · IA personnalisée
@@ -312,7 +303,7 @@ export default async function SchoolioHomePage() {
             label="Étudier"
             desc="10 matières · Génération IA · Sessions personnalisées"
             tag="IA"
-            color="amber"
+            color="purple"
           />
 
           <NavCard

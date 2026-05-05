@@ -37,9 +37,9 @@ export default function Header() {
     <header className="sticky top-0 z-50 flex h-14 shrink-0 items-center justify-between border-b border-gray-800 bg-gray-900 px-4">
       <Link
         href="/"
-        className="text-lg font-black tracking-tight text-white transition-colors hover:text-amber-400"
+        className="text-lg font-black tracking-tight text-white transition-colors hover:text-purple-400"
       >
-        School<span className="text-amber-400">io</span>
+        School<span className="text-purple-400">io</span>
       </Link>
 
       <div className="flex items-center gap-3">
@@ -55,7 +55,7 @@ export default function Header() {
                 className="h-7 w-7 rounded-full object-cover ring-1 ring-gray-700"
               />
             ) : (
-              <div className="flex h-7 w-7 items-center justify-center rounded-full bg-amber-500 text-xs font-bold text-gray-950">
+              <div className="flex h-7 w-7 items-center justify-center rounded-full bg-purple-500 text-xs font-bold text-gray-950">
                 {initial}
               </div>
             )}
@@ -72,7 +72,7 @@ export default function Header() {
         ) : (
           <button
             onClick={signIn}
-            className="flex items-center gap-1.5 rounded-full border border-gray-700 bg-gray-900 px-3 py-1.5 text-xs font-medium text-gray-300 transition-all hover:border-amber-500/50 hover:text-white"
+            className="flex items-center gap-1.5 rounded-full border border-gray-700 bg-gray-900 px-3 py-1.5 text-xs font-medium text-gray-300 transition-all hover:border-purple-500/50 hover:text-white"
           >
             <svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true">
               <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
