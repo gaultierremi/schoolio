@@ -28,6 +28,8 @@ type TeacherQuestion = {
   level: number | null;
   period: string | null;
   is_public: boolean;
+  is_ai_generated: boolean | null;
+  course_id: string | null;
   created_at: string;
   use_count?: number;
 };
@@ -227,13 +229,16 @@ function SubjectLevelSelector({
   level,
   onSubjectChange,
   onLevelChange,
+  allowAllSubjects = false,
 }: {
-  subjectId: SubjectId;
+  subjectId: SubjectId | null;
   level: SchoolLevel | null;
-  onSubjectChange: (id: SubjectId) => void;
+  onSubjectChange: (id: SubjectId | null) => void;
   onLevelChange: (level: SchoolLevel | null) => void;
+  allowAllSubjects?: boolean;
 }) {
-  const isQuick = (QUICK_SUBJECTS as readonly string[]).includes(subjectId);
+  const isQuick =
+    subjectId !== null && (QUICK_SUBJECTS as readonly string[]).includes(subjectId);
 
   return (
     <div className="flex flex-col gap-3">
@@ -263,12 +268,17 @@ function SubjectLevelSelector({
           })}
         </div>
         <select
-          value={isQuick ? "" : subjectId}
+          value={subjectId === null ? "__all" : isQuick ? "" : subjectId}
           onChange={(e) => {
-            if (e.target.value) onSubjectChange(e.target.value as SubjectId);
+            if (e.target.value === "__all") {
+              onSubjectChange(null);
+            } else if (e.target.value) {
+              onSubjectChange(e.target.value as SubjectId);
+            }
           }}
           className="mt-2 w-full rounded-xl border border-gray-700 bg-gray-900 px-3 py-2 text-sm text-white outline-none focus:border-purple-500"
         >
+          {allowAllSubjects && <option value="__all">Toutes les matières</option>}
           <option value="">Autre matière…</option>
           {SUBJECTS.filter(
             (s) => !(QUICK_SUBJECTS as readonly string[]).includes(s.id)
@@ -401,7 +411,9 @@ function QuestionForm({
           <SubjectLevelSelector
             subjectId={form.subjectId}
             level={form.level}
-            onSubjectChange={(id) => setForm({ ...form, subjectId: id })}
+            onSubjectChange={(id) => {
+              if (id) setForm({ ...form, subjectId: id });
+            }}
             onLevelChange={(l) => setForm({ ...form, level: l })}
           />
 
@@ -973,6 +985,8 @@ export default function SchoolQuestionsPage() {
   // My questions filters + sort + selection
   const [myFilterType, setMyFilterType] = useState("");
   const [myFilterPeriod, setMyFilterPeriod] = useState("");
+  const [myFilterSubject, setMyFilterSubject] = useState<SubjectId | null>(null);
+  const [myFilterLevel, setMyFilterLevel] = useState<SchoolLevel | null>(null);
   const [sortBy, setSortBy] = useState<"date" | "type" | "period">("date");
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 
@@ -1408,9 +1422,19 @@ export default function SchoolQuestionsPage() {
 
   // ── Filtered + sorted lists ──
 
+  const aiQuestionCount = myQuestions.filter((q) => q.is_ai_generated === true).length;
+  const personalQuestionCount = myQuestions.length - aiQuestionCount;
+  const hasQuestionFilter =
+    myFilterSubject !== null ||
+    myFilterLevel !== null ||
+    myFilterType !== "" ||
+    myFilterPeriod !== "";
+
   const filteredMyQuestions = myQuestions.filter((q) => {
     if (myFilterType && q.type !== myFilterType) return false;
     if (myFilterPeriod && q.period !== myFilterPeriod) return false;
+    if (myFilterSubject !== null && q.subject_enum !== myFilterSubject) return false;
+    if (myFilterLevel !== null && q.level !== myFilterLevel) return false;
     return true;
   });
 
@@ -1547,6 +1571,53 @@ export default function SchoolQuestionsPage() {
                 </select>
               </div>
 
+              <div className="mb-5 rounded-2xl border border-gray-800 bg-gray-900 p-4">
+                <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+                  <div>
+                    <p className="text-sm font-black text-white">
+                      {myQuestions.length} question
+                      {myQuestions.length > 1 ? "s" : ""} au total
+                    </p>
+                    <p className="mt-1 text-xs text-gray-500">
+                      {aiQuestionCount} question
+                      {aiQuestionCount > 1 ? "s" : ""} IA ·{" "}
+                      {personalQuestionCount} question
+                      {personalQuestionCount > 1 ? "s" : ""} personnelle
+                      {personalQuestionCount > 1 ? "s" : ""}
+                    </p>
+                    {hasQuestionFilter && (
+                      <p className="mt-1 text-xs font-bold text-purple-300">
+                        {filteredMyQuestions.length} question
+                        {filteredMyQuestions.length > 1 ? "s" : ""} filtrée
+                        {filteredMyQuestions.length > 1 ? "s" : ""}
+                      </p>
+                    )}
+                  </div>
+                  {hasQuestionFilter && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setMyFilterType("");
+                        setMyFilterPeriod("");
+                        setMyFilterSubject(null);
+                        setMyFilterLevel(null);
+                      }}
+                      className="rounded-xl border border-gray-700 px-3 py-2 text-xs font-bold text-gray-400 transition hover:border-purple-500/50 hover:text-purple-300"
+                    >
+                      Réinitialiser
+                    </button>
+                  )}
+                </div>
+
+                <SubjectLevelSelector
+                  subjectId={myFilterSubject}
+                  level={myFilterLevel}
+                  onSubjectChange={setMyFilterSubject}
+                  onLevelChange={setMyFilterLevel}
+                  allowAllSubjects
+                />
+              </div>
+
               {/* Export bar */}
               {selectedIds.size > 0 && (
                 <div className="mb-4 flex flex-wrap items-center gap-3 rounded-2xl border border-purple-500/20 bg-purple-500/10 px-4 py-3">
@@ -1610,7 +1681,9 @@ export default function SchoolQuestionsPage() {
                   <SubjectLevelSelector
                     subjectId={pdfSubject}
                     level={pdfLevel}
-                    onSubjectChange={setPdfSubject}
+                    onSubjectChange={(id) => {
+                      if (id) setPdfSubject(id);
+                    }}
                     onLevelChange={setPdfLevel}
                   />
                   <PdfUploadZone
