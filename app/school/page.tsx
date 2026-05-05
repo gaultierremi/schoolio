@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { User } from "@supabase/supabase-js";
+import { motion, useReducedMotion } from "framer-motion";
 import { createClient } from "@/lib/supabase-browser";
 import { SUBJECTS_BY_ID } from "@/lib/subjects";
 import type { SubjectId } from "@/lib/subjects";
@@ -53,6 +54,32 @@ function formatRelativeTime(dateStr: string): string {
   return `il y a ${w} semaine${w > 1 ? "s" : ""}`;
 }
 
+// Zone D — count-up animation for KPI stats
+function useCountUp(target: number, duration = 1200) {
+  const [value, setValue] = useState(0);
+  const reduced = useReducedMotion();
+  const rafRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    if (rafRef.current) cancelAnimationFrame(rafRef.current);
+    if (reduced || target === 0) {
+      setValue(target);
+      return;
+    }
+    const start = performance.now();
+    function step(now: number) {
+      const t = Math.min(1, (now - start) / duration);
+      const eased = 1 - Math.pow(1 - t, 3);
+      setValue(Math.round(eased * target));
+      if (t < 1) rafRef.current = requestAnimationFrame(step);
+    }
+    rafRef.current = requestAnimationFrame(step);
+    return () => { if (rafRef.current) cancelAnimationFrame(rafRef.current); };
+  }, [target, duration, reduced]);
+
+  return value;
+}
+
 // ── Sub-components ────────────────────────────────────────────────────────────
 
 function SkeletonBlock({ className }: { className?: string }) {
@@ -96,12 +123,15 @@ function BarRow({
   count,
   total,
   colorClass,
+  index = 0,
 }: {
   label: string;
   count: number;
   total: number;
   colorClass: string;
+  index?: number;
 }) {
+  const reduced = useReducedMotion();
   const pct = total > 0 ? Math.round((count / total) * 100) : 0;
   return (
     <div>
@@ -110,9 +140,11 @@ function BarRow({
         <span className="font-bold tabular-nums text-white">{count}</span>
       </div>
       <div className="h-1.5 w-full rounded-full bg-gray-800">
-        <div
-          className={`h-1.5 rounded-full transition-all duration-500 ${colorClass}`}
-          style={{ width: `${pct}%` }}
+        <motion.div
+          className={`h-1.5 rounded-full ${colorClass}`}
+          initial={reduced ? undefined : { width: 0 }}
+          animate={{ width: `${pct}%` }}
+          transition={reduced ? undefined : { duration: 0.8, ease: "easeOut", delay: index * 0.1 }}
         />
       </div>
     </div>
@@ -153,11 +185,16 @@ function VisionCard({
   title: string;
   description: string;
 }) {
+  const reduced = useReducedMotion();
   return (
     <div className="relative rounded-2xl border-2 border-dashed border-gray-700 bg-gray-900/50 p-5">
-      <span className="absolute right-4 top-4 rounded-full bg-purple-500/20 px-2 py-0.5 text-xs text-purple-300">
+      <motion.span
+        className="absolute right-4 top-4 rounded-full bg-purple-500/20 px-2 py-0.5 text-xs text-purple-300"
+        animate={reduced ? undefined : { scale: [1, 1.05, 1] }}
+        transition={reduced ? undefined : { repeat: Infinity, duration: 2, ease: "easeInOut" }}
+      >
         Bientôt
-      </span>
+      </motion.span>
       <span className="text-3xl">{emoji}</span>
       <p className="mt-3 font-bold text-white">{title}</p>
       <p className="mt-1 text-sm text-gray-400">{description}</p>
@@ -210,6 +247,12 @@ export default function SchoolDashboardPage() {
     init();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Zone D — count-up hooks (must be before any early return)
+  const countTotalQ   = useCountUp(stats?.totalQuestions   ?? 0);
+  const countSessions = useCountUp(stats?.sessionsCreated  ?? 0);
+  const countPublic   = useCountUp(stats?.publicQuestions  ?? 0);
+  const countAI       = useCountUp(stats?.aiGeneratedShare ?? 0);
 
   // ── Loading (phase 1 : RPC + auth) ────────────────────────────────────────
 
@@ -293,19 +336,19 @@ export default function SchoolDashboardPage() {
               <StatCard
                 emoji="📚"
                 label="Mes questions"
-                displayValue={totalQ}
+                displayValue={countTotalQ}
                 isEmpty={totalQ === 0}
               />
               <StatCard
                 emoji="🎯"
                 label="Sessions créées"
-                displayValue={stats?.sessionsCreated ?? 0}
+                displayValue={countSessions}
                 isEmpty={(stats?.sessionsCreated ?? 0) === 0}
               />
               <StatCard
                 emoji="🌍"
                 label="Questions publiques"
-                displayValue={stats?.publicQuestions ?? 0}
+                displayValue={countPublic}
                 isEmpty={(stats?.publicQuestions ?? 0) === 0}
                 subtext="partagées avec la communauté"
               />
@@ -313,9 +356,7 @@ export default function SchoolDashboardPage() {
                 emoji="🤖"
                 label="% IA dans la base"
                 displayValue={
-                  (stats?.aiGeneratedShare ?? 0) === 0
-                    ? "—"
-                    : `${stats!.aiGeneratedShare}%`
+                  (stats?.aiGeneratedShare ?? 0) === 0 ? "—" : `${countAI}%`
                 }
                 isEmpty={false}
               />
@@ -351,7 +392,7 @@ export default function SchoolDashboardPage() {
                 </div>
               ) : (
                 <div className="mt-4 space-y-4">
-                  {stats.questionsBySubject.slice(0, 5).map((s) => {
+                  {stats.questionsBySubject.slice(0, 5).map((s, i) => {
                     const meta       = SUBJECTS_BY_ID[s.subject_enum];
                     const colorClass = SUBJECT_BAR_COLOR[meta?.color ?? ""] ?? "bg-purple-500";
                     return (
@@ -361,6 +402,7 @@ export default function SchoolDashboardPage() {
                         count={s.count}
                         total={totalQ}
                         colorClass={colorClass}
+                        index={i}
                       />
                     );
                   })}
@@ -383,7 +425,7 @@ export default function SchoolDashboardPage() {
                 </p>
               ) : (
                 <div className="mt-4 space-y-4">
-                  {stats.questionsByLevel.map((l) => (
+                  {stats.questionsByLevel.map((l, i) => (
                     <BarRow
                       key={l.level ?? "null"}
                       label={
@@ -394,6 +436,7 @@ export default function SchoolDashboardPage() {
                       count={l.count}
                       total={totalQ}
                       colorClass="bg-purple-500"
+                      index={i}
                     />
                   ))}
                 </div>
