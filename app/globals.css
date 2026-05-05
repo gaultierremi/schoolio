@@ -35,3 +35,43 @@
     transform: translateX(-100%);
   }
 }
+
+/* Zone A — animated gradient on hero word */
+.animate-gradient-shift {
+  background-size: 200% auto;
+  animation: gradient-shift 5s linear infinite;
+}
+
+@keyframes gradient-shift {
+  0% {
+    background-position: 0% center;
+  }
+  100% {
+    background-position: 200% center;
+  }
+}
+
+/* Zone C — floating blur blobs in hero */
+.animate-blob {
+  animation: blob-float 18s ease-in-out infinite;
+}
+
+@keyframes blob-float {
+  0%,
+  100% {
+    transform: translate(0, 0) scale(1);
+  }
+  33% {
+    transform: translate(30px, -40px) scale(1.08);
+  }
+  66% {
+    transform: translate(-20px, 20px) scale(0.94);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-gradient-shift,
+  .animate-blob {
+    animation: none;
+  }
+}
