@@ -89,7 +89,7 @@ export async function POST(req: NextRequest) {
 
     const { data: signedData, error: storageError } = await admin.storage
       .from("course-pdfs")
-      .createSignedUploadUrl(typedCourse.pdf_storage_path);
+      .createSignedUploadUrl(typedCourse.pdf_storage_path, { upsert: true });
 
     if (storageError || !signedData) {
       console.error("[courses/reupload]", storageError);
