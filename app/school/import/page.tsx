@@ -15,7 +15,6 @@ type FileStatus =
   | "validated"
   | "generating"
   | "generated"
-  | "cached"
   | "error";
 
 type CourseSubject =
@@ -37,16 +36,6 @@ type Inference = {
   confidence: number;
 };
 
-type ExistingCourse = {
-  id: string;
-  title: string;
-  subject_enum: CourseSubject | null;
-  level: SchoolLevel | null;
-  pages_count: number | null;
-};
-
-type CachedDecision = "use" | "replace" | null;
-
 type FileItem = {
   id: string;
   file: File;
@@ -60,8 +49,6 @@ type FileItem = {
   editLevel: SchoolLevel | null;
   editTitle: string;
   editing: boolean;
-  existingCourse: ExistingCourse | null;
-  cachedDecision: CachedDecision;
   error: string | null;
   retryFrom: "start" | "upload" | "infer" | null;
 };
@@ -282,7 +269,6 @@ type FileRowProps = {
   onLevel: (id: string, v: SchoolLevel | null) => void;
   onTitle: (id: string, v: string) => void;
   onValidate: (id: string) => void;
-  onCachedDecision: (id: string, d: "use" | "replace") => void;
 };
 
 function FileRow({
@@ -293,7 +279,6 @@ function FileRow({
   onLevel,
   onTitle,
   onValidate,
-  onCachedDecision,
 }: FileRowProps) {
   const statusIcon: Record<FileStatus, React.ReactNode> = {
     pending: <span className="text-white/40 text-xs">En attente</span>,
@@ -326,7 +311,6 @@ function FileRow({
         Questions générées
       </span>
     ),
-    cached: null,
     error: (
       <button
         onClick={() => onRetry(item.id)}
@@ -359,34 +343,6 @@ function FileRow({
 
       {item.status === "error" && item.error && (
         <p className="text-xs text-red-400/80">{item.error}</p>
-      )}
-
-      {item.status === "cached" && item.existingCourse && !item.cachedDecision && (
-        <div className="flex flex-col gap-1 mt-1">
-          <p className="text-xs text-amber-400/80">
-            Ce fichier existe déjà : <span className="font-medium">{item.existingCourse.title}</span>
-            {item.existingCourse.subject_enum && ` · ${SUBJECT_LABELS[item.existingCourse.subject_enum]}`}
-            {item.existingCourse.level && ` · ${item.existingCourse.level}e année`}
-          </p>
-          <div className="flex gap-2">
-            <button
-              onClick={() => onCachedDecision(item.id, "use")}
-              className="px-3 py-1 rounded-lg bg-white/10 hover:bg-white/20 text-white text-xs transition-colors"
-            >
-              Utiliser l'existant
-            </button>
-            <button
-              onClick={() => onCachedDecision(item.id, "replace")}
-              className="px-3 py-1 rounded-lg bg-purple-600/50 hover:bg-purple-600 text-white text-xs transition-colors"
-            >
-              Remplacer
-            </button>
-          </div>
-        </div>
-      )}
-
-      {item.status === "cached" && item.cachedDecision === "use" && (
-        <p className="text-xs text-green-400/80">Cours existant conservé.</p>
       )}
 
       {(item.status === "ready" || (item.status === "validated" && item.editing)) && item.inference && (
@@ -536,17 +492,27 @@ export default function ImportPage() {
         body: JSON.stringify({ filename: file.name, fileSize: file.size, fileHash: hash }),
       });
       const data = (await res.json()) as {
-        cached?: boolean;
-        existingCourse?: ExistingCourse;
+        reused?: boolean;
         courseId?: string;
+        inference?: Inference;
         uploadUrl?: string;
         storagePath?: string;
         error?: string;
       };
       if (!res.ok) throw new Error(data.error ?? "Erreur lors de la préparation de l'upload");
 
-      if (data.cached && data.existingCourse) {
-        patchItem(id, { status: "cached", existingCourse: data.existingCourse });
+      // PDF already known: course + questions copied server-side, skip upload/infer
+      if (data.reused && data.courseId && data.inference) {
+        patchItem(id, {
+          status: "ready",
+          courseId: data.courseId,
+          inference: data.inference,
+          editSubject: data.inference.subject as CourseSubject,
+          editLevel: data.inference.level,
+          editTitle: data.inference.title,
+          error: null,
+          retryFrom: null,
+        });
         return;
       }
 
@@ -657,8 +623,6 @@ export default function ImportPage() {
       editLevel: null,
       editTitle: file.name.replace(/\.pdf$/i, "").trim().slice(0, 60),
       editing: false,
-      existingCourse: null,
-      cachedDecision: null,
       error: null,
       retryFrom: null,
     }));
@@ -677,17 +641,6 @@ export default function ImportPage() {
         item.id === id ? { ...item, status: "validated", editing: false } : item
       )
     );
-  }
-
-  function handleCachedDecision(id: string, decision: "use" | "replace") {
-    if (decision === "use") {
-      patchItem(id, { cachedDecision: "use" });
-    } else {
-      const item = items.find((i) => i.id === id);
-      if (!item) return;
-      patchItem(id, { cachedDecision: "replace", status: "pending", existingCourse: null, hash: null });
-      processFile(id, item.file);
-    }
   }
 
   // ── Derived state ──────────────────────────────────────────────────────────
@@ -731,7 +684,6 @@ export default function ImportPage() {
                 onLevel={(id, v) => patchItem(id, { editLevel: v })}
                 onTitle={(id, v) => patchItem(id, { editTitle: v })}
                 onValidate={handleValidate}
-                onCachedDecision={handleCachedDecision}
               />
             ))}
           </div>
@@ -741,7 +693,6 @@ export default function ImportPage() {
         {(validatedCount > 0 || isGenerating || genDone) && (
           <div className="rounded-2xl border border-purple-500/30 bg-purple-500/10 px-5 py-4">
 
-            {/* Generating state */}
             {isGenerating && (
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
@@ -761,7 +712,6 @@ export default function ImportPage() {
               </div>
             )}
 
-            {/* Done state */}
             {genDone && !isGenerating && (
               <div className="flex items-center justify-between gap-4">
                 <div>
@@ -786,7 +736,6 @@ export default function ImportPage() {
               </div>
             )}
 
-            {/* Idle state */}
             {!isGenerating && !genDone && validatedCount > 0 && (
               <div className="flex items-center justify-between">
                 <p className="text-sm text-white/80">

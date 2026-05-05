@@ -11,6 +11,18 @@ function createAdminClient() {
   );
 }
 
+type CachedCourseRow = {
+  id: string;
+  teacher_id: string;
+  title: string | null;
+  subject_enum: string | null;
+  level: number | null;
+  pages_count: number | null;
+  pdf_hash: string | null;
+  pdf_storage_path: string | null;
+  pdf_size_bytes: number | null;
+};
+
 export async function POST(req: NextRequest) {
   try {
     // ── Auth ──────────────────────────────────────────────────────────────────
@@ -91,7 +103,7 @@ export async function POST(req: NextRequest) {
     // ── Anti-doublon (cache communautaire) ────────────────────────────────────
     const { data: existingCourse, error: hashError } = await admin
       .from("courses")
-      .select("id, title, subject_enum, level, pages_count")
+      .select("id, teacher_id, title, subject_enum, level, pages_count, pdf_hash, pdf_storage_path, pdf_size_bytes")
       .eq("pdf_hash", fileHash)
       .limit(1)
       .maybeSingle();
@@ -105,7 +117,69 @@ export async function POST(req: NextRequest) {
     }
 
     if (existingCourse) {
-      return NextResponse.json({ cached: true, existingCourse });
+      const found = existingCourse as CachedCourseRow;
+
+      const inference = {
+        subject: found.subject_enum ?? "autre",
+        level: found.level ?? null,
+        title: found.title ?? "Cours sans titre",
+        confidence: 100,
+      };
+
+      // ── Même enseignant : retourne les infos du cours existant directement ──
+      if (found.teacher_id === user.id) {
+        return NextResponse.json({ reused: true, courseId: found.id, inference });
+      }
+
+      // ── Autre enseignant : copie le cours + les questions pour cet enseignant ──
+      const newCourseId = crypto.randomUUID();
+
+      const { error: copyError } = await admin.from("courses").insert({
+        id: newCourseId,
+        teacher_id: user.id,
+        title: found.title,
+        pdf_hash: found.pdf_hash,
+        pdf_storage_path: found.pdf_storage_path,
+        pdf_size_bytes: found.pdf_size_bytes,
+        pages_count: found.pages_count,
+        subject_enum: found.subject_enum,
+        level: found.level,
+      });
+
+      if (copyError) {
+        console.error("[courses/upload-url] copy course", copyError);
+        return NextResponse.json({ error: "Erreur lors de la copie du cours" }, { status: 500 });
+      }
+
+      // Copie des questions — best-effort, non-bloquant
+      const { data: questions, error: qFetchError } = await admin
+        .from("teacher_questions")
+        .select("type, question, options, answer_index, explanation, period, subject_enum, level, is_ai_generated")
+        .eq("course_id", found.id);
+
+      if (!qFetchError && questions && questions.length > 0) {
+        const rows = questions.map((q) => ({
+          teacher_id: user.id,
+          course_id: newCourseId,
+          subject: null,
+          type: q.type,
+          question: q.question,
+          options: q.options,
+          answer_index: q.answer_index,
+          explanation: q.explanation,
+          period: q.period,
+          subject_enum: q.subject_enum,
+          level: q.level,
+          is_ai_generated: q.is_ai_generated,
+          is_public: false,
+        }));
+        const { error: qInsertError } = await admin.from("teacher_questions").insert(rows);
+        if (qInsertError) {
+          console.error("[courses/upload-url] copy questions (non-fatal)", qInsertError);
+        }
+      }
+
+      return NextResponse.json({ reused: true, courseId: newCourseId, inference });
     }
 
     // ── Création du record course ─────────────────────────────────────────────
