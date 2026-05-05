@@ -457,9 +457,9 @@ export default function SchoolDashboardPage() {
             />
             <ActionCard
               emoji="📄"
-              title="Importer un PDF"
-              description="Génère 5-25 questions automatiquement depuis un cours"
-              href="/school/questions"
+              title="Importer en masse"
+              description="Glisse-dépose tes PDF de cours, l'IA détecte matière et niveau"
+              href="/school/import"
             />
             <ActionCard
               emoji="🎮"

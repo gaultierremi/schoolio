@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useCallback, useRef, useState } from "react";
+import Link from "next/link";
 import type { SchoolLevel } from "@/lib/subjects";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -614,6 +615,12 @@ export default function ImportPage() {
     <main className="min-h-screen bg-gray-950 text-white px-4 py-10">
       <div className="max-w-2xl mx-auto flex flex-col gap-6">
         <div>
+          <Link
+            href="/school"
+            className="transition-colors mb-6 inline-block text-sm text-gray-400 hover:text-purple-400"
+          >
+            ← Retour au dashboard
+          </Link>
           <h1 className="text-2xl font-bold text-white">Import en masse</h1>
           <p className="text-sm text-white/50 mt-1">
             Déposez vos PDF — l'IA détecte automatiquement matière, niveau et titre.
