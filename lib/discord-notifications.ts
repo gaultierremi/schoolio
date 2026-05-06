@@ -55,13 +55,37 @@ export async function sendDiscordNotification(action: "created" | "updated", car
     timestamp: card.updated_at || card.created_at,
   };
 
+  const payload = JSON.stringify({ embeds: [embed] });
+  const headers = {
+    "Content-Type": "application/json",
+    "User-Agent": "Schoolio-Bot/1.0 (https://schoolio-two.vercel.app)",
+  };
+
+  async function attempt(webhookUrl: string): Promise<void> {
+    const res = await fetch(webhookUrl, { method: "POST", headers, body: payload });
+    if (!res.ok) throw new Error(`Discord responded ${res.status}`);
+  }
+
   try {
-    await fetch(url, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ embeds: [embed] }),
-    });
-  } catch (error) {
-    console.error("[discord] notification failed:", error);
+    await attempt(url);
+  } catch (firstErr) {
+    const retryable =
+      firstErr instanceof TypeError ||
+      (firstErr instanceof Error &&
+        (firstErr.message.includes("ECONNRESET") ||
+          firstErr.message.includes("socket disconnected") ||
+          firstErr.message.includes("network")));
+
+    if (!retryable) {
+      console.error("[discord] notification failed:", firstErr);
+      return;
+    }
+
+    await new Promise((r) => setTimeout(r, 1000));
+    try {
+      await attempt(url);
+    } catch (retryErr) {
+      console.error("[discord] notification failed after retry:", retryErr);
+    }
   }
 }
