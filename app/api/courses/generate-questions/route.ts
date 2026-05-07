@@ -73,6 +73,7 @@ type CourseRow = {
   subject_enum: string | null;
   level: number | null;
   pdf_storage_path: string | null;
+  organization_tags: string[] | null;
 };
 
 export async function POST(request: NextRequest) {
@@ -120,7 +121,7 @@ export async function POST(request: NextRequest) {
     // ── Fetch course ──────────────────────────────────────────────────────────
     const { data: course, error: courseError } = await admin
       .from("courses")
-      .select("id, teacher_id, subject_enum, level, pdf_storage_path")
+      .select("id, teacher_id, subject_enum, level, pdf_storage_path, organization_tags")
       .eq("id", courseId)
       .limit(1)
       .maybeSingle();
@@ -213,6 +214,7 @@ export async function POST(request: NextRequest) {
       answer_index: q.answer_index,
       explanation: q.explanation || null,
       period: q.period || null,
+      organization_tags: typedCourse.organization_tags ?? [],
       is_ai_generated: true,
       is_public: false,
     }));

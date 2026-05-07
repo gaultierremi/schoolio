@@ -4,6 +4,8 @@ import { createClient } from "@/lib/supabase-server";
 
 export const dynamic = "force-dynamic";
 
+const UUID_REGEX = /^[0-9a-f-]{36}$/i;
+
 function createAdminClient() {
   return createSupabaseAdminClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -21,7 +23,46 @@ type CachedCourseRow = {
   pdf_hash: string | null;
   pdf_storage_path: string | null;
   pdf_size_bytes: number | null;
+  organization_tags: string[] | null;
 };
+
+function parseOrganizationTags(value: unknown) {
+  if (value === undefined) return { tags: [] as string[] };
+
+  if (!Array.isArray(value) || !value.every((tag) => typeof tag === "string")) {
+    return { error: "organization_tags invalide" };
+  }
+
+  const tags = Array.from(new Set(value));
+  if (!tags.every((tag) => UUID_REGEX.test(tag))) {
+    return { error: "organization_tags invalide" };
+  }
+
+  return { tags };
+}
+
+async function filterOwnedOrganizationTags(
+  admin: ReturnType<typeof createAdminClient>,
+  teacherId: string,
+  tagIds: string[]
+) {
+  if (tagIds.length === 0) return [];
+
+  const { data, error } = await admin
+    .from("teacher_organization_tags")
+    .select("id")
+    .eq("teacher_id", teacherId)
+    .in("id", tagIds);
+
+  if (error) throw error;
+
+  const ownedIds = new Set((data ?? []).map((tag) => tag.id as string));
+  return tagIds.filter((tagId) => ownedIds.has(tagId));
+}
+
+function mergeOrganizationTags(currentTags: string[] | null | undefined, newTags: string[]) {
+  return Array.from(new Set([...(currentTags ?? []), ...newTags]));
+}
 
 export async function POST(req: NextRequest) {
   try {
@@ -62,10 +103,11 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Corps de requête invalide" }, { status: 400 });
     }
 
-    const { filename, fileSize, fileHash } = body as {
+    const { filename, fileSize, fileHash, organization_tags } = body as {
       filename?: unknown;
       fileSize?: unknown;
       fileHash?: unknown;
+      organization_tags?: unknown;
     };
 
     // ── Validation ────────────────────────────────────────────────────────────
@@ -99,11 +141,21 @@ export async function POST(req: NextRequest) {
     }
 
     const admin = createAdminClient();
+    const parsedOrganizationTags = parseOrganizationTags(organization_tags);
+    if ("error" in parsedOrganizationTags) {
+      return NextResponse.json({ error: parsedOrganizationTags.error }, { status: 400 });
+    }
+
+    const ownedOrganizationTags = await filterOwnedOrganizationTags(
+      admin,
+      user.id,
+      parsedOrganizationTags.tags
+    );
 
     // ── Anti-doublon (cache communautaire) ────────────────────────────────────
     const { data: existingCourse, error: hashError } = await admin
       .from("courses")
-      .select("id, teacher_id, title, subject_enum, level, pages_count, pdf_hash, pdf_storage_path, pdf_size_bytes")
+      .select("id, teacher_id, title, subject_enum, level, pages_count, pdf_hash, pdf_storage_path, pdf_size_bytes, organization_tags")
       .eq("pdf_hash", fileHash)
       .limit(1)
       .maybeSingle();
@@ -128,7 +180,26 @@ export async function POST(req: NextRequest) {
 
       // ── Même enseignant : retourne les infos du cours existant directement ──
       if (found.teacher_id === user.id) {
-        return NextResponse.json({ reused: true, courseId: found.id, inference });
+        const mergedOrganizationTags = mergeOrganizationTags(
+          found.organization_tags,
+          ownedOrganizationTags
+        );
+
+        if (mergedOrganizationTags.length !== (found.organization_tags ?? []).length) {
+          const { error: tagUpdateError } = await admin
+            .from("courses")
+            .update({ organization_tags: mergedOrganizationTags })
+            .eq("id", found.id);
+
+          if (tagUpdateError) throw tagUpdateError;
+        }
+
+        return NextResponse.json({
+          reused: true,
+          courseId: found.id,
+          inference,
+          organization_tags: mergedOrganizationTags,
+        });
       }
 
       // ── Autre enseignant : copie le cours + les questions pour cet enseignant ──
@@ -144,6 +215,7 @@ export async function POST(req: NextRequest) {
         pages_count: found.pages_count,
         subject_enum: found.subject_enum,
         level: found.level,
+        organization_tags: ownedOrganizationTags,
       });
 
       if (copyError) {
@@ -170,6 +242,7 @@ export async function POST(req: NextRequest) {
           period: q.period,
           subject_enum: q.subject_enum,
           level: q.level,
+          organization_tags: ownedOrganizationTags,
           is_ai_generated: q.is_ai_generated,
           is_public: false,
         }));
@@ -179,7 +252,12 @@ export async function POST(req: NextRequest) {
         }
       }
 
-      return NextResponse.json({ reused: true, courseId: newCourseId, inference });
+      return NextResponse.json({
+        reused: true,
+        courseId: newCourseId,
+        inference,
+        organization_tags: ownedOrganizationTags,
+      });
     }
 
     // ── Création du record course ─────────────────────────────────────────────
@@ -196,6 +274,7 @@ export async function POST(req: NextRequest) {
         pdf_hash: fileHash,
         pdf_size_bytes: fileSize,
         pdf_storage_path: storagePath,
+        organization_tags: ownedOrganizationTags,
       });
 
     if (insertError) {
@@ -221,10 +300,12 @@ export async function POST(req: NextRequest) {
     }
 
     return NextResponse.json({
+      reused: false,
       cached: false,
       courseId,
       uploadUrl: signedData.signedUrl,
       storagePath: signedData.path,
+      organization_tags: ownedOrganizationTags,
     });
   } catch (error) {
     console.error("[courses/upload-url]", error);
