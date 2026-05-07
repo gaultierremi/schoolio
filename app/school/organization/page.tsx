@@ -41,6 +41,20 @@ type DeleteState =
 
 type ToastState = { msg: string; color: TagColor | null } | null;
 
+type ProfileId = "sciences" | "math" | "langues" | "humaines" | "autre";
+
+type SuggestionItem = {
+  name: string;
+  emoji: string;
+  color: TagColor;
+  description: string;
+};
+
+type EmptyViewMode =
+  | { kind: "onboarding-step1" }
+  | { kind: "onboarding-step2"; profiles: ProfileId[] }
+  | { kind: "fallback" };
+
 // ── Constants ─────────────────────────────────────────────────────────────────
 
 const COLOR_STYLES: Record<
@@ -170,7 +184,7 @@ const PRESET_EMOJIS = [
   "🎯","🚀","💡","⚡","🔥","💎","📐","🌊",
 ];
 
-const SUGGESTED_TAGS: Array<{ name: string; emoji: string; color: TagColor; description: string }> = [
+const SUGGESTED_TAGS: SuggestionItem[] = [
   { name: "Sciences fortes",    emoji: "⚗️", color: "red",    description: "Pour les classes en filière approfondie" },
   { name: "Sciences classiques",emoji: "🧪", color: "blue",   description: "Pour les classes en filière standard" },
   { name: "Cours communs",      emoji: "📚", color: "gray",   description: "Pour les contenus partagés entre classes" },
@@ -178,6 +192,55 @@ const SUGGESTED_TAGS: Array<{ name: string; emoji: string; color: TagColor; desc
 ];
 
 const BLANK_FORM: TagForm = { name: "", emoji: "", color: "purple", description: "" };
+
+// ── Onboarding constants ──────────────────────────────────────────────────────
+
+const PROFILE_OPTIONS: Array<{ id: ProfileId; emoji: string; label: string; sublabel: string }> = [
+  { id: "sciences", emoji: "🔬", label: "Sciences",          sublabel: "chimie, physique, bio" },
+  { id: "math",     emoji: "🔢", label: "Mathématiques",     sublabel: "" },
+  { id: "langues",  emoji: "📖", label: "Langues",           sublabel: "français, anglais, néerlandais" },
+  { id: "humaines", emoji: "📜", label: "Sciences humaines", sublabel: "histoire, géo" },
+  { id: "autre",    emoji: "🎨", label: "Autre",             sublabel: "art, sport, technologie…" },
+];
+
+const PROFILE_LABELS: Record<ProfileId, string> = {
+  sciences: "Sciences",
+  math:     "Math",
+  langues:  "Langues",
+  humaines: "Sciences humaines",
+  autre:    "Autre",
+};
+
+const SUGGESTIONS_BY_PROFILE: Record<ProfileId, SuggestionItem[]> = {
+  sciences: [
+    { name: "Sciences fortes",    emoji: "⚗️", color: "red",   description: "Pour les classes en filière approfondie" },
+    { name: "Sciences classiques",emoji: "🧪", color: "blue",  description: "Pour les classes en filière standard" },
+    { name: "Travaux pratiques",  emoji: "🔬", color: "green", description: "Pour les laboratoires et expériences" },
+    { name: "Cours communs",      emoji: "📚", color: "gray",  description: "Pour les contenus partagés entre classes" },
+  ],
+  math: [
+    { name: "Math 4h",       emoji: "📐", color: "blue",   description: "Pour la filière 4h/semaine" },
+    { name: "Math 6h",       emoji: "🧮", color: "purple", description: "Pour la filière 6h/semaine" },
+    { name: "Math 8h",       emoji: "📊", color: "red",    description: "Pour la filière 8h/semaine renforcée" },
+    { name: "Cours communs", emoji: "📚", color: "gray",   description: "Pour les contenus partagés" },
+  ],
+  langues: [
+    { name: "Langue moderne",     emoji: "🌍", color: "purple", description: "Pour la filière LM" },
+    { name: "Option de base",     emoji: "📝", color: "gray",   description: "Pour la filière OB" },
+    { name: "Préparation examen", emoji: "✍️", color: "orange", description: "Pour les sessions d'entraînement" },
+    { name: "Cours communs",      emoji: "📚", color: "gray",   description: "Pour les contenus partagés" },
+  ],
+  humaines: [
+    { name: "Programme principal", emoji: "📜", color: "purple", description: "Pour le contenu du programme officiel" },
+    { name: "Approfondissement",   emoji: "🌍", color: "orange", description: "Pour les sujets complémentaires" },
+    { name: "Cours communs",       emoji: "📚", color: "gray",   description: "Pour les contenus partagés" },
+  ],
+  autre: [
+    { name: "Cours principal",   emoji: "📚", color: "purple", description: "Pour ton programme principal" },
+    { name: "Approfondissement", emoji: "🎯", color: "orange", description: "Pour les contenus avancés" },
+    { name: "Remédiation",       emoji: "💡", color: "yellow", description: "Pour le soutien" },
+  ],
+};
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -191,6 +254,28 @@ function usageLabel(u: TagUsage): string {
   if (u.questions > 0) parts.push(`${u.questions} question${u.questions > 1 ? "s" : ""}`);
   if (u.classes   > 0) parts.push(`${u.classes} classe${u.classes > 1 ? "s" : ""}`);
   return parts.length > 0 ? parts.join(" · ") : "Pas encore utilisé";
+}
+
+function mergeSuggestions(profiles: ProfileId[]): SuggestionItem[] {
+  const seen   = new Set<string>();
+  const result: SuggestionItem[] = [];
+  for (const profile of profiles) {
+    for (const s of SUGGESTIONS_BY_PROFILE[profile]) {
+      const key = s.name.toLowerCase().trim();
+      if (!seen.has(key)) {
+        seen.add(key);
+        result.push(s);
+      }
+    }
+  }
+  return result;
+}
+
+function profileSubtitle(profiles: ProfileId[]): string {
+  const labels = profiles.map((p) => PROFILE_LABELS[p]);
+  if (labels.length === 1) return `Pour un prof de ${labels[0]}, on suggère :`;
+  if (labels.length === 2) return `Pour un prof de ${labels[0]} + ${labels[1]}, on suggère :`;
+  return `Pour un prof de ${labels[0]} + ${labels[1]} + ${labels[2]}, on suggère :`;
 }
 
 // ── SkeletonBlock ─────────────────────────────────────────────────────────────
@@ -214,7 +299,7 @@ function TagCard({ tag, maxUsage = 0, onEdit, onDelete, isPreview = false }: Tag
   const usage = tag.usage ?? { courses: 0, questions: 0, classes: 0 };
   const total = totalUsage(usage);
   const pct   = maxUsage > 0 ? Math.round((total / maxUsage) * 100) : 0;
-  const displayName = tag.name.trim() || "Nom du tag";
+  const displayName  = tag.name.trim() || "Nom du tag";
   const displayEmoji = tag.emoji || "🏷️";
 
   return (
@@ -636,11 +721,238 @@ function DeleteModal({ state, deleting, onCancel, onConfirm }: DeleteModalProps)
   );
 }
 
+// ── OnboardingStep1 ───────────────────────────────────────────────────────────
+
+type OnboardingStep1Props = {
+  onContinue: (profiles: ProfileId[]) => void;
+  onSkip: () => void;
+};
+
+function OnboardingStep1({ onContinue, onSkip }: OnboardingStep1Props) {
+  const [selected, setSelected] = useState<Set<ProfileId>>(new Set());
+  const MAX = 3;
+
+  function toggle(id: ProfileId) {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) {
+        next.delete(id);
+      } else if (next.size < MAX) {
+        next.add(id);
+      }
+      return next;
+    });
+  }
+
+  const count = selected.size;
+
+  return (
+    <div className="py-8">
+      {/* Hero */}
+      <div className="mx-auto max-w-xl text-center">
+        <p className="text-xs font-bold uppercase tracking-widest text-purple-300">
+          Étape 1 sur 2
+        </p>
+        <h2 className="mt-3 text-2xl font-black text-white">
+          Tu enseignes principalement quoi ?
+        </h2>
+        <p className="mt-3 text-gray-400 leading-relaxed">
+          On va te proposer une organisation qui te correspond.{" "}
+          <span className="text-gray-600">Jusqu&apos;à {MAX} choix.</span>
+        </p>
+      </div>
+
+      {/* Profile chips */}
+      <div className="mx-auto mt-8 max-w-lg grid grid-cols-2 gap-3 sm:grid-cols-3">
+        {PROFILE_OPTIONS.map((p, i) => {
+          const isSelected = selected.has(p.id);
+          const isDisabled = !isSelected && count >= MAX;
+          const isLastOdd  = i === PROFILE_OPTIONS.length - 1 && PROFILE_OPTIONS.length % 2 !== 0;
+
+          return (
+            <button
+              key={p.id}
+              type="button"
+              onClick={() => toggle(p.id)}
+              disabled={isDisabled}
+              className={[
+                "flex flex-col items-center gap-2 rounded-2xl border p-5 text-center transition-all duration-200",
+                isLastOdd ? "col-span-2 sm:col-span-1 sm:col-start-2" : "",
+                isSelected
+                  ? "border-purple-500 bg-purple-500/10 ring-1 ring-purple-500/50 -translate-y-0.5 shadow-lg shadow-purple-500/10"
+                  : isDisabled
+                  ? "border-gray-800 bg-gray-900/50 opacity-40 cursor-not-allowed"
+                  : "border-gray-700 bg-gray-900 hover:border-purple-500/50 hover:-translate-y-0.5 hover:shadow-md",
+              ].join(" ")}
+            >
+              <span className="text-3xl leading-none">{p.emoji}</span>
+              <span className={`font-black text-sm leading-tight ${isSelected ? "text-purple-200" : "text-white"}`}>
+                {p.label}
+              </span>
+              {p.sublabel && (
+                <span className="text-xs text-gray-500 leading-tight">{p.sublabel}</span>
+              )}
+              {isSelected && (
+                <span className="mt-0.5 flex h-5 w-5 items-center justify-center rounded-full bg-purple-500 text-[10px] font-black text-white">
+                  ✓
+                </span>
+              )}
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Actions */}
+      <div className="mx-auto mt-8 max-w-lg flex flex-col items-center gap-4">
+        <button
+          onClick={() => onContinue(Array.from(selected))}
+          disabled={count === 0}
+          className="w-full rounded-2xl bg-purple-500 px-7 py-3.5 font-black text-gray-950 hover:bg-purple-400 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+        >
+          {count === 0 ? "Sélectionne au moins un profil" : `Continuer → (${count} choix)`}
+        </button>
+        <button
+          onClick={onSkip}
+          className="text-sm text-gray-500 hover:text-gray-300 transition-colors"
+        >
+          Je créerai mes tags plus tard
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// ── OnboardingStep2 ───────────────────────────────────────────────────────────
+
+type OnboardingStep2Props = {
+  profiles: ProfileId[];
+  onBack: () => void;
+  onSkip: () => void;
+  onConfirm: (selected: SuggestionItem[]) => void;
+  creating: boolean;
+};
+
+function OnboardingStep2({ profiles, onBack, onSkip, onConfirm, creating }: OnboardingStep2Props) {
+  const merged = useMemo(() => mergeSuggestions(profiles), [profiles]);
+
+  const [checkedNames, setCheckedNames] = useState<Set<string>>(
+    () => new Set(merged.map((s) => s.name.toLowerCase()))
+  );
+
+  function toggle(name: string) {
+    const key = name.toLowerCase();
+    setCheckedNames((prev) => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
+  }
+
+  const selectedItems = merged.filter((s) => checkedNames.has(s.name.toLowerCase()));
+  const count = selectedItems.length;
+
+  return (
+    <div className="py-8">
+      <div className="mx-auto max-w-2xl">
+        {/* Hero */}
+        <div className="text-center">
+          <p className="text-xs font-bold uppercase tracking-widest text-purple-300">
+            Étape 2 sur 2
+          </p>
+          <h2 className="mt-3 text-2xl font-black text-white">
+            Voici une organisation qui pourrait te servir
+          </h2>
+          <p className="mt-2 text-gray-400">{profileSubtitle(profiles)}</p>
+          <p className="mt-1 text-xs text-gray-600">
+            Coche ou décoche chaque tag selon tes besoins.
+          </p>
+        </div>
+
+        {/* Suggestions grid */}
+        <div className="mt-8 grid grid-cols-1 gap-3 sm:grid-cols-2">
+          {merged.map((s) => {
+            const isChecked = checkedNames.has(s.name.toLowerCase());
+            const cs = COLOR_STYLES[s.color];
+
+            return (
+              <button
+                key={s.name}
+                type="button"
+                onClick={() => toggle(s.name)}
+                className={[
+                  "relative rounded-2xl border p-4 text-left transition-all duration-200",
+                  isChecked
+                    ? `${cs.cardBg} ${cs.cardBorder} hover:opacity-90 -translate-y-0 hover:-translate-y-0.5`
+                    : "bg-gray-900 border-gray-800 opacity-50 grayscale hover:opacity-60",
+                ].join(" ")}
+              >
+                {/* Checkbox indicator */}
+                <div
+                  className={[
+                    "absolute top-3 right-3 flex h-5 w-5 items-center justify-center rounded-full border-2 text-[10px] font-black transition-all duration-150",
+                    isChecked
+                      ? "border-green-500 bg-green-500 text-white"
+                      : "border-gray-600 bg-transparent text-transparent",
+                  ].join(" ")}
+                >
+                  ✓
+                </div>
+
+                <div className="flex items-center gap-2 pr-7">
+                  <span className="text-xl leading-none">{s.emoji}</span>
+                  <span className={`font-black text-sm ${isChecked ? cs.text : "text-gray-400"}`}>
+                    {s.name}
+                  </span>
+                </div>
+                <p className="mt-1.5 text-xs text-gray-500 leading-relaxed">
+                  {s.description}
+                </p>
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Footer */}
+        <div className="mt-8 flex flex-col items-center gap-3">
+          <div className="flex w-full gap-3">
+            <button
+              onClick={onBack}
+              disabled={creating}
+              className="rounded-2xl border border-gray-700 px-5 py-3 font-bold text-gray-300 hover:text-white transition-colors disabled:opacity-40"
+            >
+              ← Retour
+            </button>
+            <button
+              onClick={() => onConfirm(selectedItems)}
+              disabled={creating || count === 0}
+              className="flex-1 rounded-2xl bg-purple-500 px-5 py-3 font-black text-gray-950 hover:bg-purple-400 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+            >
+              {creating
+                ? "Création en cours…"
+                : count === 0
+                ? "Sélectionne au moins un tag"
+                : `Créer ${count} tag${count > 1 ? "s" : ""} →`}
+            </button>
+          </div>
+          <button
+            onClick={onSkip}
+            disabled={creating}
+            className="text-sm text-gray-500 hover:text-gray-300 transition-colors disabled:opacity-40"
+          >
+            Je préfère créer mes propres tags
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ── EmptyState ────────────────────────────────────────────────────────────────
 
 type EmptyStateProps = {
   onCreateClick: () => void;
-  onBatchCreate: (suggestions: typeof SUGGESTED_TAGS) => void;
+  onBatchCreate: (suggestions: SuggestionItem[]) => void;
   batchCreating: boolean;
 };
 
@@ -670,7 +982,8 @@ function EmptyState({ onCreateClick, onBatchCreate, batchCreating }: EmptyStateP
           Ton organisation, tes règles.
         </h2>
         <p className="mt-3 text-gray-400 leading-relaxed">
-          ✨ Crée ta propre organisation. Schoolio s&apos;adapte à comment <span className="font-bold text-purple-300">TU</span> enseignes, pas l&apos;inverse.
+          ✨ Crée ta propre organisation. Schoolio s&apos;adapte à comment{" "}
+          <span className="font-bold text-purple-300">TU</span> enseignes, pas l&apos;inverse.
         </p>
 
         <button
@@ -750,15 +1063,16 @@ function Toast({ toast }: { toast: ToastState }) {
 export default function OrganizationPage() {
   const supabase = useMemo(() => createClient(), []);
 
-  const [isTeacher,    setIsTeacher]    = useState(false);
-  const [pageLoading,  setPageLoading]  = useState(true);
-  const [tags,         setTags]         = useState<Tag[]>([]);
-  const [tagsLoading,  setTagsLoading]  = useState(false);
-  const [modal,        setModal]        = useState<ModalMode>({ kind: "closed" });
-  const [deleteState,  setDeleteState]  = useState<DeleteState>({ kind: "closed" });
-  const [deleting,     setDeleting]     = useState(false);
-  const [batchCreating,setBatchCreating]= useState(false);
-  const [toast,        setToast]        = useState<ToastState>(null);
+  const [isTeacher,     setIsTeacher]     = useState(false);
+  const [pageLoading,   setPageLoading]   = useState(true);
+  const [tags,          setTags]          = useState<Tag[]>([]);
+  const [tagsLoading,   setTagsLoading]   = useState(false);
+  const [modal,         setModal]         = useState<ModalMode>({ kind: "closed" });
+  const [deleteState,   setDeleteState]   = useState<DeleteState>({ kind: "closed" });
+  const [deleting,      setDeleting]      = useState(false);
+  const [batchCreating, setBatchCreating] = useState(false);
+  const [toast,         setToast]         = useState<ToastState>(null);
+  const [emptyView,     setEmptyView]     = useState<EmptyViewMode>({ kind: "onboarding-step1" });
 
   useEffect(() => {
     async function init() {
@@ -840,7 +1154,7 @@ export default function OrganizationPage() {
     setDeleting(false);
   }
 
-  async function handleBatchCreate(suggestions: typeof SUGGESTED_TAGS) {
+  async function handleBatchCreate(suggestions: SuggestionItem[]) {
     setBatchCreating(true);
     const results = await Promise.allSettled(
       suggestions.map((s) =>
@@ -905,7 +1219,7 @@ export default function OrganizationPage() {
 
   return (
     <>
-      {/* Global keyframe for toast slide-up */}
+      {/* Global keyframes */}
       <style>{`
         @keyframes slide-up {
           from { opacity: 0; transform: translate(-50%, 16px); }
@@ -913,6 +1227,13 @@ export default function OrganizationPage() {
         }
         .animate-slide-up {
           animation: slide-up 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+        @keyframes fade-in {
+          from { opacity: 0; transform: translateY(8px); }
+          to   { opacity: 1; transform: translateY(0); }
+        }
+        .animate-fade-in {
+          animation: fade-in 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
         }
       `}</style>
 
@@ -952,9 +1273,7 @@ export default function OrganizationPage() {
               <div className="flex items-center gap-2">
                 {/* View toggle */}
                 <div className="flex rounded-xl border border-gray-800 overflow-hidden">
-                  <button
-                    className="px-3 py-1.5 text-xs font-bold bg-gray-900 text-purple-300 border-r border-gray-800"
-                  >
+                  <button className="px-3 py-1.5 text-xs font-bold bg-gray-900 text-purple-300 border-r border-gray-800">
                     ☰ Liste
                   </button>
                   <button
@@ -983,11 +1302,31 @@ export default function OrganizationPage() {
                 {[...Array(4)].map((_, i) => <SkeletonBlock key={i} className="h-36" />)}
               </div>
             ) : tags.length === 0 ? (
-              <EmptyState
-                onCreateClick={() => setModal({ kind: "create" })}
-                onBatchCreate={handleBatchCreate}
-                batchCreating={batchCreating}
-              />
+              // key forces remount + fade-in on each step transition
+              <div key={emptyView.kind} className="animate-fade-in">
+                {emptyView.kind === "onboarding-step1" && (
+                  <OnboardingStep1
+                    onContinue={(profiles) => setEmptyView({ kind: "onboarding-step2", profiles })}
+                    onSkip={() => setEmptyView({ kind: "fallback" })}
+                  />
+                )}
+                {emptyView.kind === "onboarding-step2" && (
+                  <OnboardingStep2
+                    profiles={emptyView.profiles}
+                    onBack={() => setEmptyView({ kind: "onboarding-step1" })}
+                    onSkip={() => setEmptyView({ kind: "fallback" })}
+                    onConfirm={handleBatchCreate}
+                    creating={batchCreating}
+                  />
+                )}
+                {emptyView.kind === "fallback" && (
+                  <EmptyState
+                    onCreateClick={() => setModal({ kind: "create" })}
+                    onBatchCreate={handleBatchCreate}
+                    batchCreating={batchCreating}
+                  />
+                )}
+              </div>
             ) : (
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 {tags.map((tag) => (
