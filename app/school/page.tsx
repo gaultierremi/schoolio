@@ -462,6 +462,12 @@ export default function SchoolDashboardPage() {
               href="/school/import"
             />
             <ActionCard
+              emoji="🗂️"
+              title="Mon organisation"
+              description="Crée des tags pour organiser tes cours comme tu le veux"
+              href="/school/organization"
+            />
+            <ActionCard
               emoji="🎮"
               title="Lancer une session"
               description="Quiz live avec ta classe"
