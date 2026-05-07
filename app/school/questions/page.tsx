@@ -32,7 +32,12 @@ type TeacherQuestion = {
   course_id: string | null;
   created_at: string;
   use_count?: number;
+  validated_at: string | null;
+  rejected_at: string | null;
+  difficulty_stars: 1 | 2 | 3 | null;
 };
+
+type ValTab = "pending" | "validated" | "rejected";
 
 type PublicQuestion = {
   id: string;
@@ -546,181 +551,6 @@ function QuestionForm({
 }
 
 // ---------------------------------------------------------------------------
-// QuestionCard
-// ---------------------------------------------------------------------------
-
-function QuestionCard({
-  q,
-  onEdit,
-  onDelete,
-  onTogglePublic,
-  onDuplicate,
-  proposeState,
-  onPropose,
-  onForcePropose,
-  selected,
-  onToggleSelect,
-}: {
-  q: TeacherQuestion;
-  onEdit: () => void;
-  onDelete: () => void;
-  onTogglePublic: () => void;
-  onDuplicate: () => void;
-  proposeState: ProposeState;
-  onPropose: () => void;
-  onForcePropose: () => void;
-  selected: boolean;
-  onToggleSelect: () => void;
-}) {
-  return (
-    <div
-      className={`rounded-2xl border bg-gray-900 p-4 transition ${
-        selected ? "border-purple-500/50" : "border-gray-800"
-      }`}
-    >
-      <div className="flex items-start gap-3">
-        {/* Checkbox */}
-        <button
-          type="button"
-          onClick={onToggleSelect}
-          className={`mt-0.5 flex shrink-0 h-5 w-5 items-center justify-center rounded border-2 transition ${
-            selected
-              ? "border-purple-500 bg-purple-500"
-              : "border-gray-600 hover:border-gray-400"
-          }`}
-          aria-label={selected ? "Désélectionner" : "Sélectionner"}
-        >
-          {selected && (
-            <svg
-              viewBox="0 0 12 12"
-              fill="none"
-              className="h-3 w-3"
-            >
-              <path
-                d="M2 6l3 3 5-5"
-                stroke="#030712"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-            </svg>
-          )}
-        </button>
-
-        {/* Content */}
-        <div className="flex-1 min-w-0">
-          <div className="flex flex-wrap items-center gap-2">
-            <TypeBadge type={q.type} />
-            {q.period && (
-              <span className="rounded-full bg-gray-800 px-2 py-0.5 text-xs text-gray-400">
-                {q.period}
-              </span>
-            )}
-            {q.subject && (
-              <span className="text-xs text-gray-500">{q.subject}</span>
-            )}
-            {typeof q.use_count === "number" && (
-              <span className="text-xs text-gray-600">
-                {q.use_count} util.
-              </span>
-            )}
-          </div>
-          <p className="mt-2 font-bold text-white">{q.question}</p>
-          <div className="mt-2 flex flex-wrap gap-1">
-            {q.options.map((opt, i) => (
-              <span
-                key={i}
-                className={`rounded-lg px-2 py-0.5 text-xs ${
-                  i === q.answer_index
-                    ? "bg-green-500/20 font-black text-green-300"
-                    : "bg-gray-800 text-gray-400"
-                }`}
-              >
-                {opt}
-              </span>
-            ))}
-          </div>
-          {q.explanation && (
-            <p className="mt-2 text-xs italic text-gray-500">{q.explanation}</p>
-          )}
-        </div>
-
-        {/* Action buttons */}
-        <div className="flex shrink-0 flex-col gap-1.5">
-          <button
-            onClick={onTogglePublic}
-            className={`rounded-xl px-3 py-1.5 text-xs font-black transition ${
-              q.is_public
-                ? "bg-green-500/20 text-green-300 hover:bg-green-500/30"
-                : "border border-gray-700 text-gray-500 hover:text-white"
-            }`}
-          >
-            {q.is_public ? "Publique" : "Privée"}
-          </button>
-          <button
-            onClick={onEdit}
-            className="rounded-xl border border-gray-700 px-3 py-1.5 text-xs font-bold text-gray-300 hover:border-purple-500/50 hover:text-purple-300"
-          >
-            Éditer
-          </button>
-          <button
-            onClick={onDuplicate}
-            className="rounded-xl border border-gray-700 px-3 py-1.5 text-xs font-bold text-gray-400 hover:border-blue-500/50 hover:text-blue-300"
-          >
-            Dupliquer
-          </button>
-          <button
-            onClick={onDelete}
-            className="rounded-xl border border-red-500/30 px-3 py-1.5 text-xs font-bold text-red-400 hover:bg-red-500/10"
-          >
-            ✕
-          </button>
-        </div>
-      </div>
-
-      {/* Propose section */}
-      <div className="mt-3 border-t border-gray-800 pt-3">
-        {proposeState.kind === "idle" && (
-          <button
-            onClick={onPropose}
-            className="rounded-xl bg-indigo-500/20 px-3 py-1.5 text-xs font-black text-indigo-300 transition hover:bg-indigo-500/30"
-          >
-            📤 Proposer au site HistoGuess
-          </button>
-        )}
-
-        {proposeState.kind === "loading" && (
-          <span className="text-xs text-gray-500">Vérification en cours...</span>
-        )}
-
-        {proposeState.kind === "proposed" && (
-          <span className="inline-flex items-center gap-1.5 rounded-xl bg-green-500/20 px-3 py-1.5 text-xs font-black text-green-300">
-            ✓ Proposée au site
-          </span>
-        )}
-
-        {proposeState.kind === "duplicate" && (
-          <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-3">
-            <p className="text-xs font-black text-amber-300">
-              ⚠️ Question similaire déjà existante :
-            </p>
-            <p className="mt-1 text-xs italic text-gray-400">
-              &ldquo;{proposeState.similarText}&rdquo;
-            </p>
-            <button
-              onClick={onForcePropose}
-              className="mt-2 rounded-lg bg-amber-500/30 px-3 py-1.5 text-xs font-black text-amber-200 hover:bg-amber-500/50"
-            >
-              Proposer quand même
-            </button>
-          </div>
-        )}
-      </div>
-    </div>
-  );
-}
-
-// ---------------------------------------------------------------------------
 // PdfUploadZone
 // ---------------------------------------------------------------------------
 
@@ -964,6 +794,344 @@ function DraftCard({
 }
 
 // ---------------------------------------------------------------------------
+// StarSelector
+// ---------------------------------------------------------------------------
+
+function StarSelector({
+  value,
+  onChange,
+}: {
+  value: 1 | 2 | 3 | null;
+  onChange: (v: 1 | 2 | 3) => void;
+}) {
+  return (
+    <div className="flex gap-0.5">
+      {([1, 2, 3] as const).map((star) => (
+        <button
+          key={star}
+          type="button"
+          onClick={() => onChange(star)}
+          className={`text-xl leading-none transition ${
+            value !== null && star <= value
+              ? "text-yellow-400 hover:text-yellow-300"
+              : "text-gray-600 hover:text-gray-400"
+          }`}
+          aria-label={`${star} étoile${star > 1 ? "s" : ""}`}
+        >
+          ★
+        </button>
+      ))}
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// PendingCard
+// ---------------------------------------------------------------------------
+
+function PendingCard({
+  q,
+  isFading,
+  isValidating,
+  isRejecting,
+  isBusy,
+  selectedStars,
+  onStarChange,
+  onValidate,
+  onReject,
+  onEdit,
+}: {
+  q: TeacherQuestion;
+  isFading: boolean;
+  isValidating: boolean;
+  isRejecting: boolean;
+  isBusy: boolean;
+  selectedStars: 1 | 2 | 3 | null;
+  onStarChange: (v: 1 | 2 | 3) => void;
+  onValidate: () => void;
+  onReject: () => void;
+  onEdit: () => void;
+}) {
+  return (
+    <div
+      className={`rounded-2xl border border-gray-700 bg-gray-900 p-4 transition-opacity duration-200 ${
+        isFading ? "opacity-0" : "opacity-100"
+      }`}
+    >
+      <div className="flex flex-wrap items-center gap-2 mb-3">
+        <TypeBadge type={q.type} />
+        <span className="rounded-full bg-indigo-500/20 px-2 py-0.5 text-xs font-black text-indigo-300">
+          IA
+        </span>
+        {q.period && (
+          <span className="rounded-full bg-gray-800 px-2 py-0.5 text-xs text-gray-400">
+            {q.period}
+          </span>
+        )}
+        {q.subject_enum && (
+          <span className="text-xs text-gray-500">{q.subject_enum}</span>
+        )}
+      </div>
+
+      <p className="font-bold text-white">{q.question}</p>
+
+      <div className="mt-2 flex flex-wrap gap-1">
+        {q.options.map((opt, i) => (
+          <span
+            key={i}
+            className={`rounded-lg px-2 py-0.5 text-xs ${
+              i === q.answer_index
+                ? "bg-green-500/20 font-black text-green-300"
+                : "bg-gray-800 text-gray-400"
+            }`}
+          >
+            {opt}
+          </span>
+        ))}
+      </div>
+
+      {q.explanation && (
+        <p className="mt-2 text-xs italic text-gray-500">{q.explanation}</p>
+      )}
+
+      <div className="mt-4 flex flex-wrap items-center gap-3 border-t border-gray-800 pt-3">
+        <div className="flex items-center gap-2">
+          <span className="text-xs text-gray-500">Difficulté :</span>
+          <StarSelector value={selectedStars} onChange={onStarChange} />
+        </div>
+        <div className="flex gap-2 ml-auto">
+          <button
+            onClick={onEdit}
+            disabled={isBusy}
+            className="rounded-xl border border-gray-700 px-3 py-1.5 text-xs font-bold text-gray-300 hover:border-purple-500/50 hover:text-purple-300 disabled:opacity-40"
+          >
+            Modifier
+          </button>
+          <button
+            onClick={onReject}
+            disabled={isBusy}
+            className="rounded-xl border border-red-500/30 px-3 py-1.5 text-xs font-bold text-red-400 hover:bg-red-500/10 disabled:opacity-40"
+          >
+            {isRejecting ? "…" : "Rejeter"}
+          </button>
+          <button
+            onClick={onValidate}
+            disabled={isBusy}
+            className="rounded-xl bg-green-500 px-4 py-1.5 text-xs font-black text-gray-950 hover:bg-green-400 disabled:opacity-40"
+          >
+            {isValidating ? "…" : "Valider"}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// ValidatedCard
+// ---------------------------------------------------------------------------
+
+function ValidatedCard({
+  q,
+  proposeState,
+  onEdit,
+  onDelete,
+  onTogglePublic,
+  onDuplicate,
+  onUnvalidate,
+  onPropose,
+  onForcePropose,
+}: {
+  q: TeacherQuestion;
+  proposeState: ProposeState;
+  onEdit: () => void;
+  onDelete: () => void;
+  onTogglePublic: () => void;
+  onDuplicate: () => void;
+  onUnvalidate: () => void;
+  onPropose: () => void;
+  onForcePropose: () => void;
+}) {
+  const isAiValidated = q.is_ai_generated === true && !!q.validated_at;
+
+  return (
+    <div className="rounded-2xl border border-gray-800 bg-gray-900 p-4">
+      <div className="flex items-start gap-3">
+        <div className="flex-1 min-w-0">
+          <div className="flex flex-wrap items-center gap-2">
+            <TypeBadge type={q.type} />
+            {isAiValidated && (
+              <span className="rounded-full bg-green-500/20 px-2 py-0.5 text-xs font-black text-green-300">
+                ✓ IA
+              </span>
+            )}
+            {q.difficulty_stars !== null && (
+              <span className="text-xs text-yellow-400">
+                {"★".repeat(q.difficulty_stars)}
+                {"☆".repeat(3 - q.difficulty_stars)}
+              </span>
+            )}
+            {q.period && (
+              <span className="rounded-full bg-gray-800 px-2 py-0.5 text-xs text-gray-400">
+                {q.period}
+              </span>
+            )}
+            {q.subject_enum && (
+              <span className="text-xs text-gray-500">{q.subject_enum}</span>
+            )}
+            {typeof q.use_count === "number" && (
+              <span className="text-xs text-gray-600">{q.use_count} util.</span>
+            )}
+          </div>
+          <p className="mt-2 font-bold text-white">{q.question}</p>
+          <div className="mt-1.5 flex flex-wrap gap-1">
+            {q.options.map((opt, i) => (
+              <span
+                key={i}
+                className={`rounded-lg px-2 py-0.5 text-xs ${
+                  i === q.answer_index
+                    ? "bg-green-500/20 font-black text-green-300"
+                    : "bg-gray-800 text-gray-400"
+                }`}
+              >
+                {opt}
+              </span>
+            ))}
+          </div>
+          {q.explanation && (
+            <p className="mt-1.5 text-xs italic text-gray-500">{q.explanation}</p>
+          )}
+        </div>
+
+        <div className="flex shrink-0 flex-col gap-1.5">
+          <button
+            onClick={onTogglePublic}
+            className={`rounded-xl px-3 py-1.5 text-xs font-black transition ${
+              q.is_public
+                ? "bg-green-500/20 text-green-300 hover:bg-green-500/30"
+                : "border border-gray-700 text-gray-500 hover:text-white"
+            }`}
+          >
+            {q.is_public ? "Publique" : "Privée"}
+          </button>
+          <button
+            onClick={onEdit}
+            className="rounded-xl border border-gray-700 px-3 py-1.5 text-xs font-bold text-gray-300 hover:border-purple-500/50 hover:text-purple-300"
+          >
+            Éditer
+          </button>
+          <button
+            onClick={onDuplicate}
+            className="rounded-xl border border-gray-700 px-3 py-1.5 text-xs font-bold text-gray-400 hover:border-blue-500/50 hover:text-blue-300"
+          >
+            Dupliquer
+          </button>
+          {isAiValidated && (
+            <button
+              onClick={onUnvalidate}
+              className="rounded-xl border border-amber-500/30 px-3 py-1.5 text-xs font-bold text-amber-400 hover:bg-amber-500/10"
+            >
+              Dépublier
+            </button>
+          )}
+          <button
+            onClick={onDelete}
+            className="rounded-xl border border-red-500/30 px-3 py-1.5 text-xs font-bold text-red-400 hover:bg-red-500/10"
+          >
+            ✕
+          </button>
+        </div>
+      </div>
+
+      <div className="mt-3 border-t border-gray-800 pt-3">
+        {proposeState.kind === "idle" && (
+          <button
+            onClick={onPropose}
+            className="rounded-xl bg-indigo-500/20 px-3 py-1.5 text-xs font-black text-indigo-300 transition hover:bg-indigo-500/30"
+          >
+            📤 Proposer au site HistoGuess
+          </button>
+        )}
+        {proposeState.kind === "loading" && (
+          <span className="text-xs text-gray-500">Vérification en cours...</span>
+        )}
+        {proposeState.kind === "proposed" && (
+          <span className="inline-flex items-center gap-1.5 rounded-xl bg-green-500/20 px-3 py-1.5 text-xs font-black text-green-300">
+            ✓ Proposée au site
+          </span>
+        )}
+        {proposeState.kind === "duplicate" && (
+          <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-3">
+            <p className="text-xs font-black text-amber-300">
+              ⚠️ Question similaire déjà existante :
+            </p>
+            <p className="mt-1 text-xs italic text-gray-400">
+              &ldquo;{proposeState.similarText}&rdquo;
+            </p>
+            <button
+              onClick={onForcePropose}
+              className="mt-2 rounded-lg bg-amber-500/30 px-3 py-1.5 text-xs font-black text-amber-200 hover:bg-amber-500/50"
+            >
+              Proposer quand même
+            </button>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// RejectedCard
+// ---------------------------------------------------------------------------
+
+function RejectedCard({
+  q,
+  onRestore,
+  onDelete,
+}: {
+  q: TeacherQuestion;
+  onRestore: () => void;
+  onDelete: () => void;
+}) {
+  return (
+    <div className="flex items-start gap-3 rounded-2xl border border-red-500/20 bg-gray-900 p-4">
+      <div className="flex-1 min-w-0">
+        <div className="flex flex-wrap items-center gap-2">
+          <TypeBadge type={q.type} />
+          <span className="rounded-full bg-red-500/20 px-2 py-0.5 text-xs font-black text-red-300">
+            Rejetée
+          </span>
+          {q.period && (
+            <span className="rounded-full bg-gray-800 px-2 py-0.5 text-xs text-gray-400">
+              {q.period}
+            </span>
+          )}
+          {q.subject_enum && (
+            <span className="text-xs text-gray-500">{q.subject_enum}</span>
+          )}
+        </div>
+        <p className="mt-2 font-bold text-gray-400">{q.question}</p>
+      </div>
+      <div className="flex shrink-0 flex-col gap-1.5">
+        <button
+          onClick={onRestore}
+          className="rounded-xl bg-amber-500/20 px-3 py-1.5 text-xs font-black text-amber-300 hover:bg-amber-500/30"
+        >
+          Restaurer
+        </button>
+        <button
+          onClick={onDelete}
+          className="rounded-xl border border-red-500/30 px-3 py-1.5 text-xs font-bold text-red-400 hover:bg-red-500/10"
+        >
+          ✕
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
 // Main page
 // ---------------------------------------------------------------------------
 
@@ -974,6 +1142,7 @@ export default function SchoolQuestionsPage() {
   const [pageLoading, setPageLoading] = useState(true);
 
   const [tab, setTab] = useState<"my" | "pdf" | "public">("my");
+  const [valTab, setValTab] = useState<ValTab>("pending");
 
   // My questions
   const [myQuestions, setMyQuestions] = useState<TeacherQuestion[]>([]);
@@ -982,18 +1151,25 @@ export default function SchoolQuestionsPage() {
   const [form, setForm] = useState({ ...BLANK_FORM });
   const [saving, setSaving] = useState(false);
 
-  // My questions filters + sort + selection
+  // My questions filters + sort
   const [myFilterType, setMyFilterType] = useState("");
   const [myFilterPeriod, setMyFilterPeriod] = useState("");
   const [myFilterSubject, setMyFilterSubject] = useState<SubjectId | null>(null);
   const [myFilterLevel, setMyFilterLevel] = useState<SchoolLevel | null>(null);
   const [sortBy, setSortBy] = useState<"date" | "type" | "period">("date");
-  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+
+  // Validation state
+  const [validatingId, setValidatingId] = useState<string | null>(null);
+  const [rejectingId, setRejectingId] = useState<string | null>(null);
+  const [fadingIds, setFadingIds] = useState<Set<string>>(new Set());
+  const [pendingStars, setPendingStars] = useState<Record<string, 1 | 2 | 3>>({});
+  const [filterStars, setFilterStars] = useState<0 | 1 | 2 | 3>(0);
+  const [valToast, setValToast] = useState<string | null>(null);
+
+  const hasAutoSetTab = useRef(false);
 
   // Propose
-  const [proposeStatuses, setProposeStatuses] = useState<
-    Record<string, ProposeState>
-  >({});
+  const [proposeStatuses, setProposeStatuses] = useState<Record<string, ProposeState>>({});
 
   // PDF
   const [pdfLoading, setPdfLoading] = useState(false);
@@ -1027,7 +1203,7 @@ export default function SchoolQuestionsPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  async function loadMyQuestions() {
+  async function loadMyQuestions(opts?: { autoTab?: boolean }) {
     const {
       data: { user },
     } = await supabase.auth.getUser();
@@ -1039,7 +1215,16 @@ export default function SchoolQuestionsPage() {
       .eq("teacher_id", user.id)
       .order("created_at", { ascending: false });
 
-    setMyQuestions((data ?? []) as TeacherQuestion[]);
+    const loaded = (data ?? []) as TeacherQuestion[];
+    setMyQuestions(loaded);
+
+    if (opts?.autoTab && !hasAutoSetTab.current) {
+      hasAutoSetTab.current = true;
+      const hasPending = loaded.some(
+        (q) => q.is_ai_generated === true && !q.validated_at && !q.rejected_at
+      );
+      if (!hasPending) setValTab("validated");
+    }
   }
 
   async function loadPublicQuestions() {
@@ -1057,7 +1242,7 @@ export default function SchoolQuestionsPage() {
 
   useEffect(() => {
     if (!isTeacher) return;
-    loadMyQuestions();
+    loadMyQuestions({ autoTab: true });
     loadPublicQuestions();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isTeacher]);
@@ -1143,11 +1328,6 @@ export default function SchoolQuestionsPage() {
     if (!confirm("Supprimer cette question définitivement ?")) return;
     await supabase.from("teacher_questions").delete().eq("id", id);
     setMyQuestions((prev) => prev.filter((q) => q.id !== id));
-    setSelectedIds((prev) => {
-      const next = new Set(prev);
-      next.delete(id);
-      return next;
-    });
   }
 
   async function togglePublic(q: TeacherQuestion) {
@@ -1183,40 +1363,6 @@ export default function SchoolQuestionsPage() {
     await loadMyQuestions();
   }
 
-  function toggleSelectId(id: string) {
-    setSelectedIds((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
-      return next;
-    });
-  }
-
-  function exportSelected() {
-    const toExport = myQuestions.filter((q) => selectedIds.has(q.id));
-    if (!toExport.length) return;
-
-    const data = toExport.map((q) => ({
-      type: q.type,
-      question: q.question,
-      options: q.options,
-      answer_index: q.answer_index,
-      explanation: q.explanation,
-      period: q.period,
-      subject: q.subject,
-    }));
-
-    const blob = new Blob([JSON.stringify(data, null, 2)], {
-      type: "application/json",
-    });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `questions_${new Date().toISOString().slice(0, 10)}.json`;
-    a.click();
-    URL.revokeObjectURL(url);
-  }
-
   async function generateExplanation() {
     if (!form.question.trim()) return;
     setGeneratingExplanation(true);
@@ -1240,26 +1386,105 @@ export default function SchoolQuestionsPage() {
     setGeneratingExplanation(false);
   }
 
+  // ── Validation ──
+
+  async function validateQuestion(id: string) {
+    setValidatingId(id);
+    try {
+      const stars = pendingStars[id];
+      const res = await fetch(`/api/teacher-questions/${id}/validation`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "validate",
+          ...(stars ? { difficulty_stars: stars } : {}),
+        }),
+      });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error ?? "Erreur");
+
+      setFadingIds((prev) => new Set([...prev, id]));
+      setTimeout(() => {
+        setMyQuestions((prev) =>
+          prev.map((q) => (q.id === id ? { ...q, ...json.question } : q))
+        );
+        setFadingIds((prev) => {
+          const next = new Set(prev);
+          next.delete(id);
+          return next;
+        });
+        setValidatingId(null);
+        setValToast("Question validée ✓");
+        setTimeout(() => setValToast(null), 3000);
+      }, 220);
+    } catch (e) {
+      setValidatingId(null);
+      alert(e instanceof Error ? e.message : "Erreur");
+    }
+  }
+
+  async function rejectQuestion(id: string) {
+    setRejectingId(id);
+    try {
+      const res = await fetch(`/api/teacher-questions/${id}/validation`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "reject" }),
+      });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error ?? "Erreur");
+
+      setFadingIds((prev) => new Set([...prev, id]));
+      setTimeout(() => {
+        setMyQuestions((prev) =>
+          prev.map((q) => (q.id === id ? { ...q, ...json.question } : q))
+        );
+        setFadingIds((prev) => {
+          const next = new Set(prev);
+          next.delete(id);
+          return next;
+        });
+        setRejectingId(null);
+      }, 220);
+    } catch (e) {
+      setRejectingId(null);
+      alert(e instanceof Error ? e.message : "Erreur");
+    }
+  }
+
+  async function callUnvalidate(id: string) {
+    try {
+      const res = await fetch(`/api/teacher-questions/${id}/validation`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "unvalidate" }),
+      });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error ?? "Erreur");
+      setMyQuestions((prev) =>
+        prev.map((q) => (q.id === id ? { ...q, ...json.question } : q))
+      );
+    } catch (e) {
+      alert(e instanceof Error ? e.message : "Erreur");
+    }
+  }
+
   // ── Propose ──
 
   async function proposeQuestion(id: string, force = false) {
     setProposeStatuses((prev) => ({ ...prev, [id]: { kind: "loading" } }));
-
     try {
       const res = await fetch("/api/propose-question", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ questionId: id, forcePropose: force }),
       });
-
       const json = await res.json();
-
       if (!res.ok) {
         setProposeStatuses((prev) => ({ ...prev, [id]: { kind: "idle" } }));
         alert(json.error ?? "Erreur lors de la proposition.");
         return;
       }
-
       if (json.duplicate) {
         setProposeStatuses((prev) => ({
           ...prev,
@@ -1267,7 +1492,6 @@ export default function SchoolQuestionsPage() {
         }));
         return;
       }
-
       setProposeStatuses((prev) => ({ ...prev, [id]: { kind: "proposed" } }));
     } catch {
       setProposeStatuses((prev) => ({ ...prev, [id]: { kind: "idle" } }));
@@ -1282,9 +1506,7 @@ export default function SchoolQuestionsPage() {
     const WARN_BYTES = 4 * 1024 * 1024;
 
     if (file.size > MAX_BYTES) {
-      setPdfError(
-        "PDF trop volumineux (max 8 Mo). Compresse-le sur ilovepdf.com"
-      );
+      setPdfError("PDF trop volumineux (max 8 Mo). Compresse-le sur ilovepdf.com");
       return;
     }
 
@@ -1309,14 +1531,12 @@ export default function SchoolQuestionsPage() {
     const reader = new FileReader();
     reader.onload = async (e) => {
       const base64 = (e.target?.result as string).split(",")[1];
-
       try {
         const res = await fetch("/api/extract-questions", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ pdf: base64, subject: pdfSubject, level: pdfLevel }),
         });
-
         const json = await res.json();
         clearInterval(intervalId);
         setPdfProgress(100);
@@ -1341,8 +1561,7 @@ export default function SchoolQuestionsPage() {
 
         setDrafts(questions);
         setPdfStats({
-          pageCount:
-            typeof json.pageCount === "number" ? json.pageCount : null,
+          pageCount: typeof json.pageCount === "number" ? json.pageCount : null,
           questionCount: questions.length,
           fromCache: json.fromCache === true,
         });
@@ -1350,17 +1569,14 @@ export default function SchoolQuestionsPage() {
         clearInterval(intervalId);
         setPdfError("Erreur réseau, réessaie.");
       }
-
       setPdfLoading(false);
     };
-
     reader.readAsDataURL(file);
   }
 
   async function saveDrafts() {
     const toSave = drafts.filter((d) => d.kept);
     if (!toSave.length) return;
-
     setSavingDrafts(true);
 
     const {
@@ -1389,6 +1605,7 @@ export default function SchoolQuestionsPage() {
     await loadMyQuestions();
     setDrafts([]);
     setTab("my");
+    setValTab("validated");
     setSavingDrafts(false);
   }
 
@@ -1396,7 +1613,6 @@ export default function SchoolQuestionsPage() {
 
   async function addPublicQuestion(q: PublicQuestion) {
     setAddingId(q.id);
-
     const {
       data: { user },
     } = await supabase.auth.getUser();
@@ -1420,29 +1636,39 @@ export default function SchoolQuestionsPage() {
     setAddingId(null);
   }
 
-  // ── Filtered + sorted lists ──
+  // ── Derived lists ──
 
-  const aiQuestionCount = myQuestions.filter((q) => q.is_ai_generated === true).length;
-  const personalQuestionCount = myQuestions.length - aiQuestionCount;
-  const hasQuestionFilter =
+  const isPending = (q: TeacherQuestion) =>
+    q.is_ai_generated === true && !q.validated_at && !q.rejected_at;
+  const isRejectedQ = (q: TeacherQuestion) =>
+    q.is_ai_generated === true && !!q.rejected_at;
+
+  const pendingQuestions = myQuestions.filter(isPending);
+  const rejectedQuestions = myQuestions.filter(isRejectedQ);
+  const validatedQuestionsBase = myQuestions.filter(
+    (q) => !isPending(q) && !isRejectedQ(q)
+  );
+
+  const hasValidatedFilter =
     myFilterSubject !== null ||
     myFilterLevel !== null ||
     myFilterType !== "" ||
-    myFilterPeriod !== "";
+    myFilterPeriod !== "" ||
+    filterStars !== 0;
 
-  const filteredMyQuestions = myQuestions.filter((q) => {
+  const filteredValidated = validatedQuestionsBase.filter((q) => {
     if (myFilterType && q.type !== myFilterType) return false;
     if (myFilterPeriod && q.period !== myFilterPeriod) return false;
     if (myFilterSubject !== null && q.subject_enum !== myFilterSubject) return false;
     if (myFilterLevel !== null && q.level !== myFilterLevel) return false;
+    if (filterStars !== 0 && q.difficulty_stars !== filterStars) return false;
     return true;
   });
 
-  const sortedMyQuestions = [...filteredMyQuestions].sort((a, b) => {
+  const sortedValidated = [...filteredValidated].sort((a, b) => {
     if (sortBy === "type") return a.type.localeCompare(b.type);
-    if (sortBy === "period")
-      return (a.period ?? "").localeCompare(b.period ?? "");
-    return 0; // "date": DB already returns desc by created_at
+    if (sortBy === "period") return (a.period ?? "").localeCompare(b.period ?? "");
+    return 0;
   });
 
   const filteredPublic = publicQuestions.filter((q) => {
@@ -1455,6 +1681,8 @@ export default function SchoolQuestionsPage() {
       return false;
     return true;
   });
+
+  const isBusy = validatingId !== null || rejectingId !== null;
 
   // ── Guards ──
 
@@ -1496,14 +1724,11 @@ export default function SchoolQuestionsPage() {
           Crée, importe depuis un PDF et gère tes questions de quiz.
         </p>
 
-        {/* Tabs */}
+        {/* Outer tabs */}
         <div className="mt-6 flex gap-1 border-b border-gray-800">
           {(
             [
-              {
-                key: "my",
-                label: `Mes questions (${myQuestions.length})`,
-              },
+              { key: "my", label: `Mes questions (${myQuestions.length})` },
               { key: "pdf", label: "Importer PDF" },
               { key: "public", label: "Bibliothèque HistoGuess" },
             ] as const
@@ -1550,123 +1775,211 @@ export default function SchoolQuestionsPage() {
                 </button>
               )}
 
-              {/* Filters + sort */}
-              <div className="mb-5 flex flex-wrap items-center gap-2">
-                <FilterBar
-                  filterType={myFilterType}
-                  setFilterType={setMyFilterType}
-                  filterPeriod={myFilterPeriod}
-                  setFilterPeriod={setMyFilterPeriod}
-                />
-                <select
-                  value={sortBy}
-                  onChange={(e) =>
-                    setSortBy(e.target.value as "date" | "type" | "period")
-                  }
-                  className="rounded-xl border border-gray-700 bg-gray-900 px-3 py-2 text-sm text-white outline-none focus:border-purple-500"
+              {/* Inner val tabs */}
+              <div className="flex gap-1 border-b border-gray-800 mb-5">
+                <button
+                  onClick={() => setValTab("pending")}
+                  className={`flex items-center gap-2 rounded-t-xl px-4 py-3 text-sm font-black transition ${
+                    valTab === "pending"
+                      ? "bg-gray-900 text-purple-400"
+                      : "text-gray-500 hover:text-white"
+                  }`}
                 >
-                  <option value="date">Trier par date</option>
-                  <option value="type">Trier par type</option>
-                  <option value="period">Trier par période</option>
-                </select>
-              </div>
-
-              <div className="mb-5 rounded-2xl border border-gray-800 bg-gray-900 p-4">
-                <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-                  <div>
-                    <p className="text-sm font-black text-white">
-                      {myQuestions.length} question
-                      {myQuestions.length > 1 ? "s" : ""} au total
-                    </p>
-                    <p className="mt-1 text-xs text-gray-500">
-                      {aiQuestionCount} question
-                      {aiQuestionCount > 1 ? "s" : ""} IA ·{" "}
-                      {personalQuestionCount} question
-                      {personalQuestionCount > 1 ? "s" : ""} personnelle
-                      {personalQuestionCount > 1 ? "s" : ""}
-                    </p>
-                    {hasQuestionFilter && (
-                      <p className="mt-1 text-xs font-bold text-purple-300">
-                        {filteredMyQuestions.length} question
-                        {filteredMyQuestions.length > 1 ? "s" : ""} filtrée
-                        {filteredMyQuestions.length > 1 ? "s" : ""}
-                      </p>
-                    )}
-                  </div>
-                  {hasQuestionFilter && (
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setMyFilterType("");
-                        setMyFilterPeriod("");
-                        setMyFilterSubject(null);
-                        setMyFilterLevel(null);
-                      }}
-                      className="rounded-xl border border-gray-700 px-3 py-2 text-xs font-bold text-gray-400 transition hover:border-purple-500/50 hover:text-purple-300"
-                    >
-                      Réinitialiser
-                    </button>
+                  À valider
+                  {pendingQuestions.length > 0 && (
+                    <span className="inline-flex h-5 min-w-[20px] items-center justify-center rounded-full bg-amber-500 px-1 text-[10px] font-black text-gray-950">
+                      {pendingQuestions.length}
+                    </span>
                   )}
-                </div>
-
-                <SubjectLevelSelector
-                  subjectId={myFilterSubject}
-                  level={myFilterLevel}
-                  onSubjectChange={setMyFilterSubject}
-                  onLevelChange={setMyFilterLevel}
-                  allowAllSubjects
-                />
+                </button>
+                <button
+                  onClick={() => setValTab("validated")}
+                  className={`rounded-t-xl px-4 py-3 text-sm font-black transition ${
+                    valTab === "validated"
+                      ? "bg-gray-900 text-purple-400"
+                      : "text-gray-500 hover:text-white"
+                  }`}
+                >
+                  Validées ({validatedQuestionsBase.length})
+                </button>
+                <button
+                  onClick={() => setValTab("rejected")}
+                  className={`rounded-t-xl px-4 py-3 text-sm font-black transition ${
+                    valTab === "rejected"
+                      ? "bg-gray-900 text-purple-400"
+                      : "text-gray-500 hover:text-white"
+                  }`}
+                >
+                  Rejetées
+                  {rejectedQuestions.length > 0 && (
+                    <span className="ml-2 text-gray-600">({rejectedQuestions.length})</span>
+                  )}
+                </button>
               </div>
 
-              {/* Export bar */}
-              {selectedIds.size > 0 && (
-                <div className="mb-4 flex flex-wrap items-center gap-3 rounded-2xl border border-purple-500/20 bg-purple-500/10 px-4 py-3">
-                  <span className="flex-1 text-sm font-bold text-purple-300">
-                    {selectedIds.size} question
-                    {selectedIds.size > 1 ? "s" : ""} sélectionnée
-                    {selectedIds.size > 1 ? "s" : ""}
-                  </span>
-                  <button
-                    onClick={exportSelected}
-                    className="rounded-xl bg-purple-500 px-4 py-2 text-sm font-black text-gray-950 transition hover:bg-purple-400"
-                  >
-                    ⬇ Exporter JSON
-                  </button>
-                  <button
-                    onClick={() => setSelectedIds(new Set())}
-                    className="text-xs text-gray-500 hover:text-white"
-                  >
-                    Désélectionner tout
-                  </button>
+              {/* ── Pending tab ── */}
+              {valTab === "pending" && (
+                <div>
+                  {pendingQuestions.length === 0 ? (
+                    <div className="rounded-2xl border border-dashed border-gray-800 p-10 text-center text-gray-500">
+                      Aucune question IA en attente de validation.
+                    </div>
+                  ) : (
+                    <div className="space-y-4">
+                      {pendingQuestions
+                        .filter((q) => !(editingId === q.id && showForm))
+                        .map((q) => (
+                          <PendingCard
+                            key={q.id}
+                            q={q}
+                            isFading={fadingIds.has(q.id)}
+                            isValidating={validatingId === q.id}
+                            isRejecting={rejectingId === q.id}
+                            isBusy={isBusy}
+                            selectedStars={pendingStars[q.id] ?? null}
+                            onStarChange={(v) =>
+                              setPendingStars((prev) => ({ ...prev, [q.id]: v }))
+                            }
+                            onValidate={() => validateQuestion(q.id)}
+                            onReject={() => rejectQuestion(q.id)}
+                            onEdit={() => startEdit(q)}
+                          />
+                        ))}
+                    </div>
+                  )}
                 </div>
               )}
 
-              {filteredMyQuestions.length === 0 && !showForm ? (
-                <div className="rounded-2xl border border-dashed border-gray-800 p-10 text-center text-gray-500">
-                  {myQuestions.length === 0
-                    ? "Aucune question. Crée-en une ou importe depuis un PDF."
-                    : "Aucun résultat pour ces filtres."}
+              {/* ── Validated tab ── */}
+              {valTab === "validated" && (
+                <div>
+                  {/* Filters */}
+                  <div className="mb-4 flex flex-wrap items-center gap-2">
+                    <FilterBar
+                      filterType={myFilterType}
+                      setFilterType={setMyFilterType}
+                      filterPeriod={myFilterPeriod}
+                      setFilterPeriod={setMyFilterPeriod}
+                    />
+                    <select
+                      value={sortBy}
+                      onChange={(e) =>
+                        setSortBy(e.target.value as "date" | "type" | "period")
+                      }
+                      className="rounded-xl border border-gray-700 bg-gray-900 px-3 py-2 text-sm text-white outline-none focus:border-purple-500"
+                    >
+                      <option value="date">Trier par date</option>
+                      <option value="type">Trier par type</option>
+                      <option value="period">Trier par période</option>
+                    </select>
+                  </div>
+
+                  {/* Star filter */}
+                  <div className="mb-4 flex flex-wrap items-center gap-2">
+                    <span className="text-xs text-gray-500">Difficulté :</span>
+                    {([0, 1, 2, 3] as const).map((s) => (
+                      <button
+                        key={s}
+                        onClick={() => setFilterStars(s)}
+                        className={`rounded-xl px-2.5 py-1 text-xs font-bold transition ${
+                          filterStars === s
+                            ? "bg-yellow-500/20 text-yellow-300 border border-yellow-500/30"
+                            : "border border-gray-700 text-gray-500 hover:text-white"
+                        }`}
+                      >
+                        {s === 0 ? "Toutes" : "★".repeat(s)}
+                      </button>
+                    ))}
+                  </div>
+
+                  {/* Subject/level filter */}
+                  <div className="mb-5 rounded-2xl border border-gray-800 bg-gray-900 p-4">
+                    <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+                      <div>
+                        <p className="text-sm font-black text-white">
+                          {validatedQuestionsBase.length} question
+                          {validatedQuestionsBase.length > 1 ? "s" : ""} validée
+                          {validatedQuestionsBase.length > 1 ? "s" : ""}
+                        </p>
+                        {hasValidatedFilter && (
+                          <p className="mt-1 text-xs font-bold text-purple-300">
+                            {filteredValidated.length} résultat
+                            {filteredValidated.length > 1 ? "s" : ""}
+                          </p>
+                        )}
+                      </div>
+                      {hasValidatedFilter && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setMyFilterType("");
+                            setMyFilterPeriod("");
+                            setMyFilterSubject(null);
+                            setMyFilterLevel(null);
+                            setFilterStars(0);
+                          }}
+                          className="rounded-xl border border-gray-700 px-3 py-2 text-xs font-bold text-gray-400 transition hover:border-purple-500/50 hover:text-purple-300"
+                        >
+                          Réinitialiser
+                        </button>
+                      )}
+                    </div>
+                    <SubjectLevelSelector
+                      subjectId={myFilterSubject}
+                      level={myFilterLevel}
+                      onSubjectChange={setMyFilterSubject}
+                      onLevelChange={setMyFilterLevel}
+                      allowAllSubjects
+                    />
+                  </div>
+
+                  {sortedValidated.length === 0 ? (
+                    <div className="rounded-2xl border border-dashed border-gray-800 p-10 text-center text-gray-500">
+                      {validatedQuestionsBase.length === 0
+                        ? "Aucune question validée. Valide des questions IA ou crée-en une."
+                        : "Aucun résultat pour ces filtres."}
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      {sortedValidated
+                        .filter((q) => !(editingId === q.id && showForm))
+                        .map((q) => (
+                          <ValidatedCard
+                            key={q.id}
+                            q={q}
+                            proposeState={proposeStatuses[q.id] ?? { kind: "idle" }}
+                            onEdit={() => startEdit(q)}
+                            onDelete={() => deleteQuestion(q.id)}
+                            onTogglePublic={() => togglePublic(q)}
+                            onDuplicate={() => duplicateQuestion(q)}
+                            onUnvalidate={() => callUnvalidate(q.id)}
+                            onPropose={() => proposeQuestion(q.id)}
+                            onForcePropose={() => proposeQuestion(q.id, true)}
+                          />
+                        ))}
+                    </div>
+                  )}
                 </div>
-              ) : (
-                <div className="space-y-3">
-                  {sortedMyQuestions.map((q) =>
-                    editingId === q.id && showForm ? null : (
-                      <QuestionCard
-                        key={q.id}
-                        q={q}
-                        onEdit={() => startEdit(q)}
-                        onDelete={() => deleteQuestion(q.id)}
-                        onTogglePublic={() => togglePublic(q)}
-                        onDuplicate={() => duplicateQuestion(q)}
-                        proposeState={
-                          proposeStatuses[q.id] ?? { kind: "idle" }
-                        }
-                        onPropose={() => proposeQuestion(q.id)}
-                        onForcePropose={() => proposeQuestion(q.id, true)}
-                        selected={selectedIds.has(q.id)}
-                        onToggleSelect={() => toggleSelectId(q.id)}
-                      />
-                    )
+              )}
+
+              {/* ── Rejected tab ── */}
+              {valTab === "rejected" && (
+                <div>
+                  {rejectedQuestions.length === 0 ? (
+                    <div className="rounded-2xl border border-dashed border-gray-800 p-10 text-center text-gray-500">
+                      Aucune question rejetée.
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      {rejectedQuestions.map((q) => (
+                        <RejectedCard
+                          key={q.id}
+                          q={q}
+                          onRestore={() => callUnvalidate(q.id)}
+                          onDelete={() => deleteQuestion(q.id)}
+                        />
+                      ))}
+                    </div>
                   )}
                 </div>
               )}
@@ -1715,8 +2028,7 @@ export default function SchoolQuestionsPage() {
                       <button
                         onClick={saveDrafts}
                         disabled={
-                          savingDrafts ||
-                          drafts.filter((d) => d.kept).length === 0
+                          savingDrafts || drafts.filter((d) => d.kept).length === 0
                         }
                         className="rounded-xl bg-green-500 px-5 py-2 text-sm font-black text-gray-950 hover:bg-green-400 disabled:opacity-40"
                       >
@@ -1815,6 +2127,13 @@ export default function SchoolQuestionsPage() {
           )}
         </div>
       </div>
+
+      {/* Toast */}
+      {valToast && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 rounded-2xl bg-green-500 px-6 py-3 font-black text-gray-950 shadow-lg">
+          {valToast}
+        </div>
+      )}
     </main>
   );
 }
