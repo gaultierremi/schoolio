@@ -474,6 +474,12 @@ export default function SchoolDashboardPage() {
               href="/school/organization"
             />
             <ActionCard
+              emoji="🏫"
+              title="Mes classes"
+              description="Crée tes classes et invite tes élèves avec un code"
+              href="/school/classes"
+            />
+            <ActionCard
               emoji="🎮"
               title="Lancer une session"
               description="Quiz live avec ta classe"
@@ -493,11 +499,6 @@ export default function SchoolDashboardPage() {
           <h2 className="text-lg font-black text-white">🚀 Bientôt sur Schoolio</h2>
           <p className="mt-1 text-sm text-gray-500">Ce qui arrive dans les prochaines semaines</p>
           <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2">
-            <VisionCard
-              emoji="📚"
-              title="Mes classes"
-              description="Crée tes classes en quelques clics. Invite tes élèves avec un simple code. Suis leur progression en temps réel."
-            />
             <VisionCard
               emoji="📖"
               title="Bibliothèque de cours"
