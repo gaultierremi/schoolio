@@ -56,6 +56,13 @@ type FileItem = {
 
 type GenProgress = { done: number; total: number; failed: number };
 
+// State for the Gemini sequential queue UI banner
+type GeminiQueueState = {
+  done: number;
+  total: number;
+  countdown: number; // >0 = waiting, 0 = actively processing
+} | null;
+
 const VALID_COLORS = ["purple", "blue", "red", "orange", "green", "yellow", "pink", "gray"] as const;
 type TagColor = (typeof VALID_COLORS)[number];
 
@@ -109,7 +116,6 @@ function xhrUpload(
   });
 }
 
-// Worker-pool: consumes a shared queue with at most `concurrency` workers in flight.
 async function runWithPool(
   tasks: (() => Promise<void>)[],
   concurrency: number
@@ -140,69 +146,28 @@ const SUBJECT_LABELS: Record<CourseSubject, string> = {
 };
 
 const SUBJECT_OPTIONS: CourseSubject[] = [
-  "chimie",
-  "physique",
-  "biologie",
-  "mathematiques",
-  "histoire",
-  "geographie",
-  "francais",
-  "anglais",
-  "neerlandais",
-  "autre",
+  "chimie", "physique", "biologie", "mathematiques", "histoire",
+  "geographie", "francais", "anglais", "neerlandais", "autre",
 ];
 
 const TAG_CHIP_STYLES: Record<TagColor, { base: string; selected: string }> = {
-  purple: {
-    base: "bg-purple-500/10 text-purple-300 border-purple-500/20",
-    selected: "bg-purple-500/25 text-purple-200 border-purple-400 ring-1 ring-purple-400",
-  },
-  blue: {
-    base: "bg-blue-500/10 text-blue-300 border-blue-500/20",
-    selected: "bg-blue-500/25 text-blue-200 border-blue-400 ring-1 ring-blue-400",
-  },
-  red: {
-    base: "bg-red-500/10 text-red-300 border-red-500/20",
-    selected: "bg-red-500/25 text-red-200 border-red-400 ring-1 ring-red-400",
-  },
-  orange: {
-    base: "bg-orange-500/10 text-orange-300 border-orange-500/20",
-    selected: "bg-orange-500/25 text-orange-200 border-orange-400 ring-1 ring-orange-400",
-  },
-  green: {
-    base: "bg-green-500/10 text-green-300 border-green-500/20",
-    selected: "bg-green-500/25 text-green-200 border-green-400 ring-1 ring-green-400",
-  },
-  yellow: {
-    base: "bg-yellow-500/10 text-yellow-300 border-yellow-500/20",
-    selected: "bg-yellow-500/25 text-yellow-200 border-yellow-400 ring-1 ring-yellow-400",
-  },
-  pink: {
-    base: "bg-pink-500/10 text-pink-300 border-pink-500/20",
-    selected: "bg-pink-500/25 text-pink-200 border-pink-400 ring-1 ring-pink-400",
-  },
-  gray: {
-    base: "bg-gray-500/10 text-gray-300 border-gray-500/20",
-    selected: "bg-gray-500/25 text-gray-200 border-gray-400 ring-1 ring-gray-400",
-  },
+  purple: { base: "bg-purple-500/10 text-purple-300 border-purple-500/20", selected: "bg-purple-500/25 text-purple-200 border-purple-400 ring-1 ring-purple-400" },
+  blue:   { base: "bg-blue-500/10 text-blue-300 border-blue-500/20",       selected: "bg-blue-500/25 text-blue-200 border-blue-400 ring-1 ring-blue-400" },
+  red:    { base: "bg-red-500/10 text-red-300 border-red-500/20",           selected: "bg-red-500/25 text-red-200 border-red-400 ring-1 ring-red-400" },
+  orange: { base: "bg-orange-500/10 text-orange-300 border-orange-500/20", selected: "bg-orange-500/25 text-orange-200 border-orange-400 ring-1 ring-orange-400" },
+  green:  { base: "bg-green-500/10 text-green-300 border-green-500/20",    selected: "bg-green-500/25 text-green-200 border-green-400 ring-1 ring-green-400" },
+  yellow: { base: "bg-yellow-500/10 text-yellow-300 border-yellow-500/20", selected: "bg-yellow-500/25 text-yellow-200 border-yellow-400 ring-1 ring-yellow-400" },
+  pink:   { base: "bg-pink-500/10 text-pink-300 border-pink-500/20",       selected: "bg-pink-500/25 text-pink-200 border-pink-400 ring-1 ring-pink-400" },
+  gray:   { base: "bg-gray-500/10 text-gray-300 border-gray-500/20",       selected: "bg-gray-500/25 text-gray-200 border-gray-400 ring-1 ring-gray-400" },
 };
 
 // ── Sub-components ────────────────────────────────────────────────────────────
 
 function Spinner() {
   return (
-    <svg
-      className="animate-spin h-4 w-4 text-purple-400"
-      xmlns="http://www.w3.org/2000/svg"
-      fill="none"
-      viewBox="0 0 24 24"
-    >
+    <svg className="animate-spin h-4 w-4 text-purple-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
       <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-      <path
-        className="opacity-75"
-        fill="currentColor"
-        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
-      />
+      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
     </svg>
   );
 }
@@ -228,10 +193,7 @@ function TagPicker({ tags, loading, selectedIds, onToggle }: TagPickerProps) {
     return (
       <p className="text-xs text-white/50">
         Pas encore de tags —{" "}
-        <Link
-          href="/school/organization"
-          className="text-purple-400 hover:text-purple-300 underline underline-offset-2 transition-colors"
-        >
+        <Link href="/school/organization" className="text-purple-400 hover:text-purple-300 underline underline-offset-2 transition-colors">
           crée tes premiers tags
         </Link>{" "}
         pour organiser tes cours.
@@ -241,9 +203,7 @@ function TagPicker({ tags, loading, selectedIds, onToggle }: TagPickerProps) {
 
   return (
     <div className="flex flex-col gap-2">
-      <p className="text-xs font-medium text-white/40 uppercase tracking-wide">
-        Tags d&apos;organisation
-      </p>
+      <p className="text-xs font-medium text-white/40 uppercase tracking-wide">Tags d&apos;organisation</p>
       <div className="flex flex-wrap gap-2">
         {tags.map((tag) => {
           const isSelected = selectedIds.has(tag.id);
@@ -253,10 +213,7 @@ function TagPicker({ tags, loading, selectedIds, onToggle }: TagPickerProps) {
               key={tag.id}
               type="button"
               onClick={() => onToggle(tag.id)}
-              className={[
-                "flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-xs font-medium transition-all",
-                isSelected ? styles.selected : styles.base,
-              ].join(" ")}
+              className={["flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-xs font-medium transition-all", isSelected ? styles.selected : styles.base].join(" ")}
             >
               {tag.emoji && <span>{tag.emoji}</span>}
               {tag.name}
@@ -284,9 +241,7 @@ function DropZone({ onFiles, disabled }: DropZoneProps) {
       e.preventDefault();
       setDragging(false);
       if (disabled) return;
-      const files = Array.from(e.dataTransfer.files).filter((f) =>
-        f.name.toLowerCase().endsWith(".pdf")
-      );
+      const files = Array.from(e.dataTransfer.files).filter((f) => f.name.toLowerCase().endsWith(".pdf"));
       if (files.length) onFiles(files);
     },
     [disabled, onFiles]
@@ -294,9 +249,7 @@ function DropZone({ onFiles, disabled }: DropZoneProps) {
 
   const handleChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
-      const files = Array.from(e.target.files ?? []).filter((f) =>
-        f.name.toLowerCase().endsWith(".pdf")
-      );
+      const files = Array.from(e.target.files ?? []).filter((f) => f.name.toLowerCase().endsWith(".pdf"));
       if (files.length) onFiles(files);
       e.target.value = "";
     },
@@ -311,9 +264,7 @@ function DropZone({ onFiles, disabled }: DropZoneProps) {
       onClick={() => !disabled && inputRef.current?.click()}
       className={[
         "flex flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed p-10 cursor-pointer transition-colors",
-        dragging
-          ? "border-purple-400 bg-purple-500/10"
-          : "border-white/20 hover:border-purple-400/60 bg-white/5",
+        dragging ? "border-purple-400 bg-purple-500/10" : "border-white/20 hover:border-purple-400/60 bg-white/5",
         disabled ? "opacity-50 cursor-not-allowed" : "",
       ].join(" ")}
     >
@@ -325,14 +276,7 @@ function DropZone({ onFiles, disabled }: DropZoneProps) {
         Glissez vos PDF ici ou <span className="text-purple-400 font-medium">cliquez pour parcourir</span>
       </p>
       <p className="text-xs text-white/40">Formats acceptés : PDF · Max 50 MB par fichier</p>
-      <input
-        ref={inputRef}
-        type="file"
-        accept=".pdf,application/pdf"
-        multiple
-        className="hidden"
-        onChange={handleChange}
-      />
+      <input ref={inputRef} type="file" accept=".pdf,application/pdf" multiple className="hidden" onChange={handleChange} />
     </div>
   );
 }
@@ -395,25 +339,13 @@ type FileRowProps = {
   onValidate: (id: string) => void;
 };
 
-function FileRow({
-  item,
-  onRetry,
-  onToggleEdit,
-  onSubject,
-  onLevel,
-  onTitle,
-  onValidate,
-}: FileRowProps) {
+function FileRow({ item, onRetry, onToggleEdit, onSubject, onLevel, onTitle, onValidate }: FileRowProps) {
   const statusIcon: Record<FileStatus, React.ReactNode> = {
-    pending: <span className="text-white/40 text-xs">En attente</span>,
-    hashing: <span className="flex items-center gap-1 text-white/60 text-xs"><Spinner />Calcul hash…</span>,
-    uploading: (
-      <span className="flex items-center gap-1 text-white/60 text-xs">
-        <Spinner />Upload {item.progress}%
-      </span>
-    ),
+    pending:   <span className="text-white/40 text-xs">En attente</span>,
+    hashing:   <span className="flex items-center gap-1 text-white/60 text-xs"><Spinner />Calcul hash…</span>,
+    uploading: <span className="flex items-center gap-1 text-white/60 text-xs"><Spinner />Upload {item.progress}%</span>,
     inferring: <span className="flex items-center gap-1 text-white/60 text-xs"><Spinner />Analyse IA…</span>,
-    ready: null,
+    ready:     null,
     validated: (
       <span className="flex items-center gap-1 text-green-400 text-xs">
         <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -422,11 +354,7 @@ function FileRow({
         Validé
       </span>
     ),
-    generating: (
-      <span className="flex items-center gap-1 text-purple-300 text-xs">
-        <Spinner />Génération…
-      </span>
-    ),
+    generating: <span className="flex items-center gap-1 text-purple-300 text-xs"><Spinner />Génération…</span>,
     generated: (
       <span className="flex items-center gap-1 text-green-400 text-xs">
         <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -436,10 +364,7 @@ function FileRow({
       </span>
     ),
     error: (
-      <button
-        onClick={() => onRetry(item.id)}
-        className="flex items-center gap-1 text-red-400 text-xs hover:text-red-300 transition-colors"
-      >
+      <button onClick={() => onRetry(item.id)} className="flex items-center gap-1 text-red-400 text-xs hover:text-red-300 transition-colors">
         <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
             d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
@@ -458,10 +383,7 @@ function FileRow({
 
       {item.status === "uploading" && (
         <div className="w-full h-1 rounded-full bg-white/10 overflow-hidden">
-          <div
-            className="h-full bg-purple-500 transition-all duration-200"
-            style={{ width: `${item.progress}%` }}
-          />
+          <div className="h-full bg-purple-500 transition-all duration-200" style={{ width: `${item.progress}%` }} />
         </div>
       )}
 
@@ -494,9 +416,7 @@ function FileRow({
                 {SUBJECT_LABELS[item.editSubject]}
               </span>
               {item.editLevel && (
-                <span className="px-2 py-0.5 rounded-full bg-white/10 text-white/60 text-xs">
-                  {item.editLevel}e année
-                </span>
+                <span className="px-2 py-0.5 rounded-full bg-white/10 text-white/60 text-xs">{item.editLevel}e année</span>
               )}
               <span className="text-xs text-white/80 font-medium">{item.editTitle}</span>
               {item.status === "ready" && (
@@ -524,6 +444,44 @@ function FileRow({
   );
 }
 
+// ── GeminiQueueBanner ─────────────────────────────────────────────────────────
+
+function GeminiQueueBanner({ state }: { state: NonNullable<GeminiQueueState> }) {
+  const { done, total, countdown } = state;
+  const current = Math.min(done + 1, total);
+  const remaining = total - done - (countdown === 0 ? 1 : 0);
+
+  return (
+    <div className="flex items-center gap-3 rounded-xl border border-purple-500/20 bg-purple-500/5 px-4 py-2.5">
+      <div className="shrink-0 w-6 flex justify-center">
+        {countdown > 0 ? (
+          <span className="text-purple-400 text-xs font-mono tabular-nums">{countdown}s</span>
+        ) : (
+          <Spinner />
+        )}
+      </div>
+      <p className="text-xs text-white/60">
+        {countdown > 0 ? (
+          <>
+            En attente — prochain dans{" "}
+            <span className="text-white font-medium">{countdown}s</span>
+          </>
+        ) : (
+          <>
+            Analyse IA{" "}
+            <span className="text-white font-medium">{current}/{total}</span>
+          </>
+        )}
+        {remaining > 0 && (
+          <span className="text-white/30 ml-2">
+            · {remaining} restant{remaining > 1 ? "s" : ""}
+          </span>
+        )}
+      </p>
+    </div>
+  );
+}
+
 // ── Main page ─────────────────────────────────────────────────────────────────
 
 export default function ImportPage() {
@@ -541,6 +499,14 @@ export default function ImportPage() {
   const [genDone, setGenDone] = useState(false);
   const [totalQGenerated, setTotalQGenerated] = useState(0);
 
+  // Gemini sequential queue state
+  const [geminiQueueState, setGeminiQueueState] = useState<GeminiQueueState>(null);
+  const geminiQueueRef = useRef<Array<{ id: string; courseId: string }>>([]);
+  const geminiRunningRef = useRef(false);
+  const lastGeminiEndRef = useRef(0);  // timestamp of last Gemini call completion
+  const geminiDoneRef = useRef(0);     // how many Gemini calls completed (success or error)
+  const geminiTotalRef = useRef(0);    // how many Gemini calls scheduled total
+
   useEffect(() => {
     fetch("/api/teacher-tags")
       .then((r) => r.json())
@@ -552,9 +518,7 @@ export default function ImportPage() {
   }, []);
 
   function patchItem(id: string, patch: Partial<FileItem>) {
-    setItems((prev) =>
-      prev.map((item) => (item.id === id ? { ...item, ...patch } : item))
-    );
+    setItems((prev) => prev.map((item) => (item.id === id ? { ...item, ...patch } : item)));
   }
 
   function showToast(msg: string) {
@@ -562,9 +526,31 @@ export default function ImportPage() {
     setTimeout(() => setToast(null), 4000);
   }
 
-  // ── Upload + infer pipeline ────────────────────────────────────────────────
+  // ── Gemini rate-limited queue ──────────────────────────────────────────────
 
-  async function doInfer(id: string, courseId: string) {
+  // Waits `ms` ms while updating the countdown in UI every second.
+  function waitWithCountdown(ms: number): Promise<void> {
+    return new Promise((resolve) => {
+      let remaining = Math.ceil(ms / 1000);
+      setGeminiQueueState((prev) => (prev ? { ...prev, countdown: remaining } : null));
+
+      const interval = setInterval(() => {
+        remaining -= 1;
+        setGeminiQueueState((prev) => (prev ? { ...prev, countdown: Math.max(0, remaining) } : null));
+        if (remaining <= 0) {
+          clearInterval(interval);
+          resolve();
+        }
+      }, 1000);
+
+      // Hard timeout in case interval fires late
+      setTimeout(() => { clearInterval(interval); resolve(); }, ms + 100);
+    });
+  }
+
+  // Performs ONE Gemini infer call. Returns "success", "rate-limit", or "error".
+  // Sets item state appropriately on all outcomes except rate-limit (caller handles that).
+  async function doInferAttempt(id: string, courseId: string): Promise<"success" | "rate-limit" | "error"> {
     patchItem(id, { status: "inferring" });
     try {
       const res = await fetch("/api/courses/infer-metadata", {
@@ -573,37 +559,130 @@ export default function ImportPage() {
         body: JSON.stringify({ courseId }),
       });
       const data = (await res.json()) as { success?: boolean; inference?: Inference; error?: string };
-      if (!res.ok || !data.inference) {
-        throw new Error(data.error ?? "Erreur lors de l'analyse IA");
+
+      if (res.status === 503 || (typeof data.error === "string" && /satur|rate.?limit/i.test(data.error))) {
+        return "rate-limit";
       }
+
+      if (!res.ok || !data.inference) {
+        patchItem(id, {
+          status: "error",
+          error: data.error ?? "Erreur lors de l'analyse IA",
+          retryFrom: "infer",
+        });
+        return "error";
+      }
+
+      const inf = data.inference;
       patchItem(id, {
         status: "ready",
-        inference: data.inference,
-        editSubject: data.inference.subject,
-        editLevel: data.inference.level,
-        editTitle: data.inference.title,
+        inference: inf,
+        editSubject: inf.subject,
+        editLevel: inf.level,
+        editTitle: inf.title,
         error: null,
         retryFrom: "infer",
       });
+      return "success";
     } catch (err) {
       patchItem(id, {
         status: "error",
         error: err instanceof Error ? err.message : "Erreur inconnue",
         retryFrom: "infer",
       });
+      return "error";
     }
   }
 
-  async function doUploadAndInfer(
-    id: string,
-    file: File,
-    uploadUrl: string,
-    courseId: string
-  ) {
+  // Sequential queue worker: enforces 15s gap between Gemini calls, retries 503 once after 30s.
+  async function runGeminiQueue() {
+    if (geminiRunningRef.current) return;
+    geminiRunningRef.current = true;
+
+    while (geminiQueueRef.current.length > 0) {
+      const task = geminiQueueRef.current.shift()!;
+      const { id, courseId } = task;
+
+      // Enforce 15s minimum gap since last Gemini call
+      if (lastGeminiEndRef.current > 0) {
+        const elapsed = Date.now() - lastGeminiEndRef.current;
+        const waitMs = Math.max(0, 15000 - elapsed);
+        if (waitMs > 0) {
+          await waitWithCountdown(waitMs);
+        }
+      }
+
+      // Show "processing" state
+      setGeminiQueueState({
+        done: geminiDoneRef.current,
+        total: geminiTotalRef.current,
+        countdown: 0,
+      });
+
+      // First attempt
+      const result1 = await doInferAttempt(id, courseId);
+      lastGeminiEndRef.current = Date.now();
+
+      if (result1 === "rate-limit") {
+        // Keep item in "inferring" state, wait 30s then retry
+        patchItem(id, { status: "inferring" });
+        await waitWithCountdown(30000);
+
+        setGeminiQueueState((prev) => (prev ? { ...prev, countdown: 0 } : null));
+
+        const result2 = await doInferAttempt(id, courseId);
+        lastGeminiEndRef.current = Date.now();
+
+        if (result2 === "rate-limit") {
+          // Both attempts rate-limited → set error so prof can retry manually
+          patchItem(id, {
+            status: "error",
+            error: "Limite Gemini dépassée — réessaie dans 1 minute",
+            retryFrom: "infer",
+          });
+        }
+      }
+
+      geminiDoneRef.current += 1;
+
+      // Update done count; remaining items are still in geminiQueueRef
+      setGeminiQueueState({
+        done: geminiDoneRef.current,
+        total: geminiTotalRef.current,
+        countdown: 0,
+      });
+    }
+
+    geminiRunningRef.current = false;
+
+    // Keep banner visible briefly so the user sees "X/X done", then hide
+    setTimeout(() => {
+      setGeminiQueueState(null);
+      geminiDoneRef.current = 0;
+      geminiTotalRef.current = 0;
+    }, 2000);
+  }
+
+  // Enqueues a Gemini infer call and kicks the queue runner if not already running.
+  function scheduleInfer(id: string, courseId: string) {
+    geminiTotalRef.current += 1;
+    geminiQueueRef.current.push({ id, courseId });
+    setGeminiQueueState((prev) => ({
+      done: geminiDoneRef.current,
+      total: geminiTotalRef.current,
+      countdown: prev?.countdown ?? 0,
+    }));
+    runGeminiQueue();
+  }
+
+  // ── Upload + infer pipeline ────────────────────────────────────────────────
+
+  async function doUploadAndInfer(id: string, file: File, uploadUrl: string, courseId: string) {
     patchItem(id, { status: "uploading", progress: 0 });
     try {
       await xhrUpload(uploadUrl, file, (pct) => patchItem(id, { progress: pct }));
-      await doInfer(id, courseId);
+      // Enqueue Gemini call — does NOT block here, processed sequentially by the queue
+      scheduleInfer(id, courseId);
     } catch (err) {
       patchItem(id, {
         status: "error",
@@ -645,7 +724,7 @@ export default function ImportPage() {
       };
       if (!res.ok) throw new Error(data.error ?? "Erreur lors de la préparation de l'upload");
 
-      // PDF already known: course + questions copied server-side, skip upload/infer
+      // Cache hit: course + inference already known server-side, no Gemini needed
       if (data.reused && data.courseId && data.inference) {
         patchItem(id, {
           status: "ready",
@@ -680,7 +759,8 @@ export default function ImportPage() {
     if (!item) return;
 
     if (item.retryFrom === "infer" && item.courseId) {
-      await doInfer(id, item.courseId);
+      // Goes through the sequential queue — respects rate limiting
+      scheduleInfer(id, item.courseId);
     } else if (item.retryFrom === "upload" && item.courseId) {
       try {
         const res = await fetch("/api/courses/reupload", {
@@ -705,9 +785,7 @@ export default function ImportPage() {
   // ── Generation pipeline ────────────────────────────────────────────────────
 
   async function runGeneration() {
-    const toGenerate = items.filter(
-      (i) => i.status === "validated" && i.courseId !== null
-    );
+    const toGenerate = items.filter((i) => i.status === "validated" && i.courseId !== null);
     if (!toGenerate.length) return;
 
     setIsGenerating(true);
@@ -724,14 +802,8 @@ export default function ImportPage() {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ courseId: item.courseId }),
         });
-        const data = (await res.json()) as {
-          success?: boolean;
-          questionsGenerated?: number;
-          error?: string;
-        };
-        if (!res.ok || !data.success) {
-          throw new Error(data.error ?? "Erreur de génération");
-        }
+        const data = (await res.json()) as { success?: boolean; questionsGenerated?: number; error?: string };
+        if (!res.ok || !data.success) throw new Error(data.error ?? "Erreur de génération");
         patchItem(item.id, { status: "generated" });
         totalQ += data.questionsGenerated ?? 0;
         setGenProgress((p) => ({ ...p, done: p.done + 1 }));
@@ -754,6 +826,7 @@ export default function ImportPage() {
   // ── File addition ──────────────────────────────────────────────────────────
 
   function addFiles(files: File[]) {
+    // Snapshot tag selection at call time — avoids stale closure in processFile
     const orgTagIds = Array.from(selectedTagIds);
 
     const newItems: FileItem[] = files.map((file) => ({
@@ -775,6 +848,7 @@ export default function ImportPage() {
     }));
 
     setItems((prev) => [...prev, ...newItems]);
+    // Hash + upload can run in parallel; Gemini calls are queued sequentially inside processFile
     for (const item of newItems) {
       processFile(item.id, item.file, orgTagIds);
     }
@@ -784,9 +858,7 @@ export default function ImportPage() {
 
   function handleValidate(id: string) {
     setItems((prev) =>
-      prev.map((item) =>
-        item.id === id ? { ...item, status: "validated", editing: false } : item
-      )
+      prev.map((item) => (item.id === id ? { ...item, status: "validated", editing: false } : item))
     );
   }
 
@@ -806,7 +878,6 @@ export default function ImportPage() {
     (["hashing", "uploading", "inferring", "generating"] as FileStatus[]).includes(i.status)
   );
 
-  // suppress unused warning — showToast used for future extensibility
   void showToast;
 
   // ── Render ─────────────────────────────────────────────────────────────────
@@ -815,10 +886,7 @@ export default function ImportPage() {
     <main className="min-h-screen bg-gray-950 text-white px-4 py-10">
       <div className="max-w-2xl mx-auto flex flex-col gap-6">
         <div>
-          <Link
-            href="/school"
-            className="transition-colors mb-6 inline-block text-sm text-gray-400 hover:text-purple-400"
-          >
+          <Link href="/school" className="transition-colors mb-6 inline-block text-sm text-gray-400 hover:text-purple-400">
             ← Retour au dashboard
           </Link>
           <h1 className="text-2xl font-bold text-white">Import en masse</h1>
@@ -836,6 +904,11 @@ export default function ImportPage() {
 
         <DropZone onFiles={addFiles} disabled={isGenerating} />
 
+        {/* Gemini queue progress banner */}
+        {geminiQueueState !== null && (
+          <GeminiQueueBanner state={geminiQueueState} />
+        )}
+
         {items.length > 0 && (
           <div className="flex flex-col gap-2">
             {items.map((item) => (
@@ -843,9 +916,7 @@ export default function ImportPage() {
                 key={item.id}
                 item={item}
                 onRetry={retryItem}
-                onToggleEdit={(id) =>
-                  patchItem(id, { editing: !items.find((i) => i.id === id)?.editing })
-                }
+                onToggleEdit={(id) => patchItem(id, { editing: !items.find((i) => i.id === id)?.editing })}
                 onSubject={(id, v) => patchItem(id, { editSubject: v })}
                 onLevel={(id, v) => patchItem(id, { editLevel: v })}
                 onTitle={(id, v) => patchItem(id, { editTitle: v })}
@@ -855,7 +926,7 @@ export default function ImportPage() {
           </div>
         )}
 
-        {/* ── Bottom banner ── */}
+        {/* Bottom generation banner */}
         {(validatedCount > 0 || isGenerating || genDone) && (
           <div className="rounded-2xl border border-purple-500/30 bg-purple-500/10 px-5 py-4">
 
@@ -869,10 +940,7 @@ export default function ImportPage() {
                     {" "}cours traité{genProgress.done > 1 ? "s" : ""}…
                   </p>
                 </div>
-                <button
-                  disabled
-                  className="px-5 py-2 rounded-xl bg-purple-600 opacity-40 cursor-not-allowed text-white text-sm font-semibold"
-                >
+                <button disabled className="px-5 py-2 rounded-xl bg-purple-600 opacity-40 cursor-not-allowed text-white text-sm font-semibold">
                   En cours…
                 </button>
               </div>
