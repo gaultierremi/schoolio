@@ -68,6 +68,18 @@ type TeacherTag = {
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
+function sanitizeFilenameForStorage(filename: string): string {
+  const dotIndex = filename.lastIndexOf(".");
+  const name = dotIndex !== -1 ? filename.slice(0, dotIndex) : filename;
+  const ext = dotIndex !== -1 ? filename.slice(dotIndex) : "";
+  // NFD decomposes accented chars into base + combining diacritic; strip the diacritics
+  const sanitized = name
+    .normalize("NFD")
+    .replace(/[̀-ͯ]/g, "")
+    .replace(/[^a-zA-Z0-9 \-_.]/g, "_");
+  return sanitized + ext;
+}
+
 async function sha256hex(file: File): Promise<string> {
   const buffer = await file.arrayBuffer();
   const hashBuffer = await crypto.subtle.digest("SHA-256", buffer);
@@ -617,7 +629,7 @@ export default function ImportPage() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          filename: file.name,
+          filename: sanitizeFilenameForStorage(file.name),
           fileSize: file.size,
           fileHash: hash,
           organization_tags: orgTagIds,
