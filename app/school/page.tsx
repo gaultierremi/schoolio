@@ -456,6 +456,12 @@ export default function SchoolDashboardPage() {
               href="/school/questions"
             />
             <ActionCard
+              emoji="📚"
+              title="Mes cours"
+              description="Consulte et gère tes documents uploadés"
+              href="/school/courses"
+            />
+            <ActionCard
               emoji="📄"
               title="Importer en masse"
               description="Glisse-dépose tes PDF de cours, l'IA détecte matière et niveau"
