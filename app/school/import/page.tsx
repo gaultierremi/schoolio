@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useCallback, useRef, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import type { SchoolLevel } from "@/lib/subjects";
 
@@ -51,9 +51,20 @@ type FileItem = {
   editing: boolean;
   error: string | null;
   retryFrom: "start" | "upload" | "infer" | null;
+  organizationTagIds: string[];
 };
 
 type GenProgress = { done: number; total: number; failed: number };
+
+const VALID_COLORS = ["purple", "blue", "red", "orange", "green", "yellow", "pink", "gray"] as const;
+type TagColor = (typeof VALID_COLORS)[number];
+
+type TeacherTag = {
+  id: string;
+  name: string;
+  emoji: string | null;
+  color: TagColor;
+};
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -129,6 +140,41 @@ const SUBJECT_OPTIONS: CourseSubject[] = [
   "autre",
 ];
 
+const TAG_CHIP_STYLES: Record<TagColor, { base: string; selected: string }> = {
+  purple: {
+    base: "bg-purple-500/10 text-purple-300 border-purple-500/20",
+    selected: "bg-purple-500/25 text-purple-200 border-purple-400 ring-1 ring-purple-400",
+  },
+  blue: {
+    base: "bg-blue-500/10 text-blue-300 border-blue-500/20",
+    selected: "bg-blue-500/25 text-blue-200 border-blue-400 ring-1 ring-blue-400",
+  },
+  red: {
+    base: "bg-red-500/10 text-red-300 border-red-500/20",
+    selected: "bg-red-500/25 text-red-200 border-red-400 ring-1 ring-red-400",
+  },
+  orange: {
+    base: "bg-orange-500/10 text-orange-300 border-orange-500/20",
+    selected: "bg-orange-500/25 text-orange-200 border-orange-400 ring-1 ring-orange-400",
+  },
+  green: {
+    base: "bg-green-500/10 text-green-300 border-green-500/20",
+    selected: "bg-green-500/25 text-green-200 border-green-400 ring-1 ring-green-400",
+  },
+  yellow: {
+    base: "bg-yellow-500/10 text-yellow-300 border-yellow-500/20",
+    selected: "bg-yellow-500/25 text-yellow-200 border-yellow-400 ring-1 ring-yellow-400",
+  },
+  pink: {
+    base: "bg-pink-500/10 text-pink-300 border-pink-500/20",
+    selected: "bg-pink-500/25 text-pink-200 border-pink-400 ring-1 ring-pink-400",
+  },
+  gray: {
+    base: "bg-gray-500/10 text-gray-300 border-gray-500/20",
+    selected: "bg-gray-500/25 text-gray-200 border-gray-400 ring-1 ring-gray-400",
+  },
+};
+
 // ── Sub-components ────────────────────────────────────────────────────────────
 
 function Spinner() {
@@ -146,6 +192,72 @@ function Spinner() {
         d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
       />
     </svg>
+  );
+}
+
+type TagPickerProps = {
+  tags: TeacherTag[];
+  loading: boolean;
+  selectedIds: Set<string>;
+  onToggle: (id: string) => void;
+};
+
+function TagPicker({ tags, loading, selectedIds, onToggle }: TagPickerProps) {
+  if (loading) {
+    return (
+      <div className="flex items-center gap-2 text-xs text-white/40">
+        <Spinner />
+        Chargement des tags…
+      </div>
+    );
+  }
+
+  if (tags.length === 0) {
+    return (
+      <p className="text-xs text-white/50">
+        Pas encore de tags —{" "}
+        <Link
+          href="/school/organization"
+          className="text-purple-400 hover:text-purple-300 underline underline-offset-2 transition-colors"
+        >
+          crée tes premiers tags
+        </Link>{" "}
+        pour organiser tes cours.
+      </p>
+    );
+  }
+
+  return (
+    <div className="flex flex-col gap-2">
+      <p className="text-xs font-medium text-white/40 uppercase tracking-wide">
+        Tags d&apos;organisation
+      </p>
+      <div className="flex flex-wrap gap-2">
+        {tags.map((tag) => {
+          const isSelected = selectedIds.has(tag.id);
+          const styles = TAG_CHIP_STYLES[tag.color];
+          return (
+            <button
+              key={tag.id}
+              type="button"
+              onClick={() => onToggle(tag.id)}
+              className={[
+                "flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-xs font-medium transition-all",
+                isSelected ? styles.selected : styles.base,
+              ].join(" ")}
+            >
+              {tag.emoji && <span>{tag.emoji}</span>}
+              {tag.name}
+              {isSelected && (
+                <svg className="h-3 w-3 ml-0.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
+                </svg>
+              )}
+            </button>
+          );
+        })}
+      </div>
+    </div>
   );
 }
 
@@ -406,11 +518,26 @@ export default function ImportPage() {
   const [items, setItems] = useState<FileItem[]>([]);
   const [toast, setToast] = useState<string | null>(null);
 
+  // Tag picker state
+  const [teacherTags, setTeacherTags] = useState<TeacherTag[]>([]);
+  const [selectedTagIds, setSelectedTagIds] = useState<Set<string>>(new Set());
+  const [tagsLoading, setTagsLoading] = useState(true);
+
   // Generation state
   const [isGenerating, setIsGenerating] = useState(false);
   const [genProgress, setGenProgress] = useState<GenProgress>({ done: 0, total: 0, failed: 0 });
   const [genDone, setGenDone] = useState(false);
   const [totalQGenerated, setTotalQGenerated] = useState(0);
+
+  useEffect(() => {
+    fetch("/api/teacher-tags")
+      .then((r) => r.json())
+      .then((data: { tags?: TeacherTag[] }) => {
+        if (Array.isArray(data.tags)) setTeacherTags(data.tags);
+      })
+      .catch(() => {})
+      .finally(() => setTagsLoading(false));
+  }, []);
 
   function patchItem(id: string, patch: Partial<FileItem>) {
     setItems((prev) =>
@@ -474,7 +601,7 @@ export default function ImportPage() {
     }
   }
 
-  async function processFile(id: string, file: File) {
+  async function processFile(id: string, file: File, orgTagIds: string[] = []) {
     patchItem(id, { status: "hashing" });
     let hash: string;
     try {
@@ -489,7 +616,12 @@ export default function ImportPage() {
       const res = await fetch("/api/courses/upload-url", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ filename: file.name, fileSize: file.size, fileHash: hash }),
+        body: JSON.stringify({
+          filename: file.name,
+          fileSize: file.size,
+          fileHash: hash,
+          organization_tags: orgTagIds,
+        }),
       });
       const data = (await res.json()) as {
         reused?: boolean;
@@ -554,7 +686,7 @@ export default function ImportPage() {
         });
       }
     } else {
-      await processFile(id, item.file);
+      await processFile(id, item.file, item.organizationTagIds);
     }
   }
 
@@ -610,6 +742,8 @@ export default function ImportPage() {
   // ── File addition ──────────────────────────────────────────────────────────
 
   function addFiles(files: File[]) {
+    const orgTagIds = Array.from(selectedTagIds);
+
     const newItems: FileItem[] = files.map((file) => ({
       id: crypto.randomUUID(),
       file,
@@ -625,11 +759,12 @@ export default function ImportPage() {
       editing: false,
       error: null,
       retryFrom: null,
+      organizationTagIds: orgTagIds,
     }));
 
     setItems((prev) => [...prev, ...newItems]);
     for (const item of newItems) {
-      processFile(item.id, item.file);
+      processFile(item.id, item.file, orgTagIds);
     }
   }
 
@@ -643,12 +778,24 @@ export default function ImportPage() {
     );
   }
 
+  function toggleTag(tagId: string) {
+    setSelectedTagIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(tagId)) next.delete(tagId);
+      else next.add(tagId);
+      return next;
+    });
+  }
+
   // ── Derived state ──────────────────────────────────────────────────────────
 
   const validatedCount = items.filter((i) => i.status === "validated").length;
   const hasActive = items.some((i) =>
     (["hashing", "uploading", "inferring", "generating"] as FileStatus[]).includes(i.status)
   );
+
+  // suppress unused warning — showToast used for future extensibility
+  void showToast;
 
   // ── Render ─────────────────────────────────────────────────────────────────
 
@@ -664,9 +811,16 @@ export default function ImportPage() {
           </Link>
           <h1 className="text-2xl font-bold text-white">Import en masse</h1>
           <p className="text-sm text-white/50 mt-1">
-            Déposez vos PDF — l'IA détecte automatiquement matière, niveau et titre.
+            Déposez vos PDF — l&apos;IA détecte automatiquement matière, niveau et titre.
           </p>
         </div>
+
+        <TagPicker
+          tags={teacherTags}
+          loading={tagsLoading}
+          selectedIds={selectedTagIds}
+          onToggle={toggleTag}
+        />
 
         <DropZone onFiles={addFiles} disabled={isGenerating} />
 

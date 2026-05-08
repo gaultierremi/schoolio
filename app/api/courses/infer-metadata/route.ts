@@ -1,5 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
-import Anthropic from "@anthropic-ai/sdk";
+import {
+  GoogleGenerativeAI,
+  GoogleGenerativeAIFetchError,
+  SchemaType,
+  type ResponseSchema,
+} from "@google/generative-ai";
 import { createClient as createSupabaseAdminClient } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase-server";
 import type { SchoolLevel } from "@/lib/subjects";
@@ -7,8 +12,20 @@ import type { SchoolLevel } from "@/lib/subjects";
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
 
+// LEGACY ANTHROPIC IMPLEMENTATION (kept for reference)
+/*
+import Anthropic from "@anthropic-ai/sdk";
 const client = new Anthropic();
+const message = await client.messages.create({
+  model: "claude-sonnet-4-6",
+  max_tokens: 200,
+  messages: [{ role: "user", content: [{ type: "document", source: { type: "base64", media_type: "application/pdf", data: pdfBase64 } }, { type: "text", text: INFERENCE_PROMPT }] }],
+});
+*/
+
+const gemini = new GoogleGenerativeAI(process.env.GOOGLE_AI_API_KEY!);
 const UUID_REGEX = /^[0-9a-f-]{36}$/i;
+const MAX_PDF_BYTES = 52428800;
 
 const VALID_SUBJECTS = [
   "chimie",
@@ -31,7 +48,7 @@ type CourseRow = {
   pdf_storage_path: string | null;
 };
 
-type ClaudeInference = {
+type GeminiInference = {
   subject?: unknown;
   level?: unknown;
   title?: unknown;
@@ -62,19 +79,31 @@ function getFilenameFromPath(path: string | null) {
   return filename || "Cours sans titre";
 }
 
-function stripMarkdownFences(value: string) {
-  return value
-    .trim()
-    .replace(/^```(?:json)?\s*/i, "")
-    .replace(/\s*```$/i, "")
-    .trim();
+function parseJsonObject<T>(rawText: string): T {
+  const trimmed = rawText.trim();
+
+  try {
+    return JSON.parse(trimmed) as T;
+  } catch {}
+
+  const fenced = trimmed.match(/```(?:json)?\s*([\s\S]*?)```/i);
+  if (fenced?.[1]) {
+    try {
+      return JSON.parse(fenced[1].trim()) as T;
+    } catch {}
+  }
+
+  const jsonMatch = trimmed.match(/\{[\s\S]*\}/);
+  if (jsonMatch?.[0]) {
+    return JSON.parse(jsonMatch[0]) as T;
+  }
+
+  throw new Error("Reponse JSON invalide");
 }
 
-function parseClaudeJson(rawText: string, fallbackTitle: string): ClaudeInference {
+function parseGeminiJson(rawText: string, fallbackTitle: string): GeminiInference {
   try {
-    const cleaned = stripMarkdownFences(rawText);
-    const jsonMatch = cleaned.match(/\{[\s\S]*\}/);
-    return JSON.parse(jsonMatch?.[0] ?? cleaned) as ClaudeInference;
+    return parseJsonObject<GeminiInference>(rawText);
   } catch {
     return {
       subject: "autre",
@@ -113,7 +142,7 @@ function normalizeConfidence(value: unknown) {
   return Math.min(100, Math.max(0, Math.round(value)));
 }
 
-function normalizeInference(raw: ClaudeInference): Inference {
+function normalizeInference(raw: GeminiInference): Inference {
   return {
     subject: isCourseSubject(raw.subject) ? raw.subject : "autre",
     level: normalizeLevel(raw.level),
@@ -122,17 +151,103 @@ function normalizeInference(raw: ClaudeInference): Inference {
   };
 }
 
-const INFERENCE_PROMPT = `Tu analyses un PDF de cours scolaire (systeme belge secondaire, niveaux 1-6). Identifie:
+const INFERENCE_PROMPT = `Tu es un assistant pédagogique spécialisé dans la classification de documents scolaires belges (système secondaire, niveaux 1 à 6).
 
-1. La matiere parmi cette liste exacte: chimie, physique, biologie, mathematiques, histoire, geographie, francais, anglais, neerlandais, autre
-2. Le niveau scolaire (1, 2, 3, 4, 5, ou 6) ou null si pas detectable
-3. Un titre court et explicite (max 60 caracteres) qui resume le contenu, par exemple 'Les acides et les bases - chap 4'
-4. Un score de confiance global de 0 a 100 (ta confiance dans la matiere+niveau combines)
+Ta tâche : analyser le PDF fourni et identifier sa matière, son niveau scolaire et un titre court.
 
-Reponds UNIQUEMENT avec un JSON valide au format suivant, sans markdown, sans texte autour:
-{"subject": "chimie", "level": 4, "title": "Stoechiometrie et reactions", "confidence": 85}
+INDICATEURS PAR MATIÈRE :
+- chimie : atomes, molécules, réactions, stœchiométrie, acides, bases, oxydation, équations chimiques, périodique
+- physique : forces, mouvement, énergie, mécanique, optique, électricité, magnétisme, thermodynamique
+- biologie : cellule, ADN, génétique, écosystème, anatomie, évolution, organismes, photosynthèse
+- mathematiques : équations, fonctions, géométrie, algèbre, calcul, statistiques, probabilités, dérivées, intégrales
+- histoire : époques, civilisations, guerres, dates, personnages historiques, événements, traités
+- geographie : cartes, climats, populations, pays, continents, démographie, urbanisme, environnement
+- francais : grammaire, conjugaison, orthographe, littérature, analyse de texte, dissertation
+- anglais : English, vocabulary, grammar, tenses, reading comprehension
+- neerlandais : Nederlands, woordenschat, grammatica, leesbegrip
+- autre : UNIQUEMENT si le contenu est clairement hors des matières ci-dessus (philosophie, religion, art, sport, technologie, etc.)
 
-Si tu ne peux pas determiner la matiere, mets 'autre'. Si tu ne peux pas determiner le niveau, mets null.`;
+INSTRUCTIONS CRITIQUES :
+1. Examine le titre du document, le contenu textuel ET les images/schémas
+2. Pour la matière : choisis "autre" UNIQUEMENT en dernier recours après avoir vraiment cherché. Le mot dans le titre du fichier (ex: "chimie") est un indice fort à privilégier.
+3. Pour le niveau : déduis-le de la complexité du contenu et des programmes belges typiques. Si vraiment indéterminable, mets null.
+4. Pour le titre : sois explicite et descriptif (max 60 caractères). Exemple : "Stœchiométrie et réactions - Chapitre 4" plutôt que "Cours".
+5. Pour la confiance : 90-100 si certain, 70-90 si probable, 50-70 si hésitation, en dessous si vraiment dans le brouillard.
+
+EXEMPLES DE CLASSIFICATION CORRECTE :
+- PDF "Dossier de révision - 4e chimie.pdf" parlant d'atomes → subject: "chimie", level: 4, title: "Révision atomes - 4e chimie", confidence: 95
+- PDF "peel_courshistoire3eannee.pdf" parlant de l'Antiquité → subject: "histoire", level: 3, title: "Antiquité : Moyen-Orient, Grèce, Rome", confidence: 90
+- PDF "fiche_5_2.pdf" parlant de calorimétrie → subject: "physique", level: null, title: "Calorimétrie - Fiche 5.2", confidence: 75
+
+FORMAT DE RÉPONSE (JSON STRICT, AUCUN TEXTE AUTOUR) :
+{"subject": "chimie", "level": 4, "title": "Stœchiométrie et réactions - Chapitre 4", "confidence": 85}`;
+
+const INFERENCE_SCHEMA: ResponseSchema = {
+  type: SchemaType.OBJECT,
+  properties: {
+    subject: {
+      type: SchemaType.STRING,
+      format: "enum",
+      enum: [...VALID_SUBJECTS],
+    },
+    level: {
+      type: SchemaType.INTEGER,
+      nullable: true,
+    },
+    title: {
+      type: SchemaType.STRING,
+    },
+    confidence: {
+      type: SchemaType.INTEGER,
+    },
+  },
+  required: ["subject", "level", "title", "confidence"],
+};
+
+function isRateLimitError(error: unknown) {
+  if (error instanceof GoogleGenerativeAIFetchError && error.status === 429) {
+    return true;
+  }
+
+  const message = error instanceof Error ? error.message : String(error);
+  return message.includes("429") || /rate.?limit|quota|resource.?exhausted/i.test(message);
+}
+
+async function generateGeminiJson(modelName: string, pdfBase64: string, prompt: string) {
+  const model = gemini.getGenerativeModel({
+    model: modelName,
+    generationConfig: {
+      maxOutputTokens: 4096,
+      responseMimeType: "application/json",
+      responseSchema: INFERENCE_SCHEMA,
+    },
+  });
+
+  const result = await model.generateContent([
+    { inlineData: { data: pdfBase64, mimeType: "application/pdf" } },
+    { text: prompt },
+  ]);
+
+  const text = result.response.text();
+  return text;
+}
+
+async function generateInferenceJson(pdfBase64: string, prompt: string) {
+  try {
+    return await generateGeminiJson("gemini-2.5-pro", pdfBase64, prompt);
+  } catch (error) {
+    if (!isRateLimitError(error)) throw error;
+  }
+
+  try {
+    return await generateGeminiJson("gemini-2.5-flash", pdfBase64, prompt);
+  } catch (error) {
+    if (isRateLimitError(error)) {
+      throw new Error("GEMINI_RATE_LIMIT");
+    }
+    throw error;
+  }
+}
 
 export async function POST(request: NextRequest) {
   try {
@@ -209,38 +324,13 @@ export async function POST(request: NextRequest) {
     }
 
     const pdfBase64 = Buffer.from(await pdfBlob.arrayBuffer()).toString("base64");
-
-    const message = await client.messages.create({
-      model: "claude-sonnet-4-6",
-      max_tokens: 200,
-      messages: [
-        {
-          role: "user",
-          content: [
-            {
-              type: "document",
-              source: {
-                type: "base64",
-                media_type: "application/pdf",
-                data: pdfBase64,
-              },
-            },
-            {
-              type: "text",
-              text: INFERENCE_PROMPT,
-            },
-          ],
-        },
-      ],
-    });
-
-    const rawText = message.content
-      .filter((block): block is Anthropic.TextBlock => block.type === "text")
-      .map((block) => block.text)
-      .join("");
+    if (Buffer.byteLength(pdfBase64, "base64") > MAX_PDF_BYTES) {
+      return NextResponse.json({ error: "PDF trop volumineux" }, { status: 400 });
+    }
 
     const fallbackTitle = getFilenameFromPath(typedCourse.pdf_storage_path);
-    const inference = normalizeInference(parseClaudeJson(rawText, fallbackTitle));
+    const rawText = await generateInferenceJson(pdfBase64, INFERENCE_PROMPT);
+    const inference = normalizeInference(parseGeminiJson(rawText, fallbackTitle));
 
     const { error: updateError } = await admin
       .from("courses")
@@ -260,6 +350,12 @@ export async function POST(request: NextRequest) {
     });
   } catch (error) {
     console.error("[courses/infer-metadata]", error);
+    if (error instanceof Error && error.message === "GEMINI_RATE_LIMIT") {
+      return NextResponse.json(
+        { error: "Service temporairement sature" },
+        { status: 503 }
+      );
+    }
     return NextResponse.json({ error: getErrorMessage(error) }, { status: 500 });
   }
 }

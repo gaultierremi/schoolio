@@ -1,5 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
-import Anthropic from "@anthropic-ai/sdk";
+import {
+  GoogleGenerativeAI,
+  GoogleGenerativeAIFetchError,
+  SchemaType,
+  type ResponseSchema,
+} from "@google/generative-ai";
 import { createHash } from "crypto";
 import { createClient } from "@supabase/supabase-js";
 import { isValidSubject, isValidLevel, SUBJECTS_BY_ID } from "@/lib/subjects";
@@ -7,7 +12,26 @@ import type { SubjectId, SchoolLevel } from "@/lib/subjects";
 
 export const maxDuration = 60;
 
+// LEGACY ANTHROPIC IMPLEMENTATION (kept for reference)
+/*
+import Anthropic from "@anthropic-ai/sdk";
 const client = new Anthropic();
+const message = await client.messages.create({
+  model: "claude-sonnet-4-6",
+  max_tokens: 4096,
+  system: buildSystemPrompt(subject, level),
+  messages: [{
+    role: "user",
+    content: [
+      { type: "document", source: { type: "base64", media_type: "application/pdf", data: pdf } },
+      { type: "text", text: "Genere les questions de quiz basees sur ce document." },
+    ],
+  }],
+});
+*/
+
+const MAX_PDF_BYTES = 52428800;
+const gemini = new GoogleGenerativeAI(process.env.GOOGLE_AI_API_KEY!);
 
 function getDb() {
   return createClient(
@@ -16,27 +40,26 @@ function getDb() {
   );
 }
 
-// Themes per subject used for the "period" field in generated questions.
-// Histoire keeps historical periods. Sciences get subject-specific themes.
-// Other subjects: Claude infers themes from the document.
 const THEME_INSTRUCTIONS: Partial<Record<SubjectId, string>> = {
   histoire:
-    "Pour le champ period, utilise l'une de ces périodes : Préhistoire, Antiquité, Moyen Âge, Renaissance, XVIe siècle, XVIIe siècle, XVIIIe siècle, XIXe siècle, XXe siècle, XXIe siècle, Autre.",
+    "Pour le champ period, utilise l'une de ces periodes : Prehistoire, Antiquite, Moyen Age, Renaissance, XVIe siecle, XVIIe siecle, XVIIIe siecle, XIXe siecle, XXe siecle, XXIe siecle, Autre.",
   chimie:
-    "Pour le champ period, utilise l'un de ces thèmes : Atomes et molécules, Réactions chimiques, Stœchiométrie, Acides et bases, Chimie organique, Liaisons chimiques, Tableau périodique, Autre.",
+    "Pour le champ period, utilise l'un de ces themes : Atomes et molecules, Reactions chimiques, Stoechiometrie, Acides et bases, Chimie organique, Liaisons chimiques, Tableau periodique, Autre.",
   physique:
-    "Pour le champ period, utilise l'un de ces thèmes : Mécanique, Énergie, Électricité, Optique, Thermodynamique, Ondes, Autre.",
+    "Pour le champ period, utilise l'un de ces themes : Mecanique, Energie, Electricite, Optique, Thermodynamique, Ondes, Autre.",
   biologie:
-    "Pour le champ period, utilise l'un de ces thèmes : Cellule, Génétique, Évolution, Écosystèmes, Anatomie humaine, Physiologie, Autre.",
+    "Pour le champ period, utilise l'un de ces themes : Cellule, Genetique, Evolution, Ecosystemes, Anatomie humaine, Physiologie, Autre.",
 };
 
 function getLevelInstruction(level: SchoolLevel | null): string {
   if (!level) return "";
-  if (level <= 2)
-    return "Cours de début de secondaire (élèves 12-14 ans). Vocabulaire et notions fondamentales, questions directes et concrètes.";
-  if (level <= 4)
-    return "Cours de milieu de secondaire (élèves 14-16 ans). Compréhension, applications de concepts, mises en contexte.";
-  return "Cours de fin de secondaire (élèves 16-18 ans). Analyse, synthèse, raisonnement, questions à plusieurs étapes.";
+  if (level <= 2) {
+    return "Cours de debut de secondaire (eleves 12-14 ans). Vocabulaire et notions fondamentales, questions directes et concretes.";
+  }
+  if (level <= 4) {
+    return "Cours de milieu de secondaire (eleves 14-16 ans). Comprehension, applications de concepts, mises en contexte.";
+  }
+  return "Cours de fin de secondaire (eleves 16-18 ans). Analyse, synthese, raisonnement, questions a plusieurs etapes.";
 }
 
 function buildSystemPrompt(subject: SubjectId, level: SchoolLevel | null): string {
@@ -44,16 +67,14 @@ function buildSystemPrompt(subject: SubjectId, level: SchoolLevel | null): strin
   const levelInstruction = getLevelInstruction(level);
   const themeInstruction =
     THEME_INSTRUCTIONS[subject] ??
-    "Pour le champ period, identifie le thème principal de chaque question dans le document.";
-
+    "Pour le champ period, identifie le theme principal de chaque question dans le document.";
   const levelClause = levelInstruction ? ` ${levelInstruction}` : "";
 
   return (
-    `Tu es un assistant pédagogique. Analyse ce document et génère des questions de quiz pertinentes pour un cours de ${subjectLabel}.${levelClause}` +
-    ` Réponds UNIQUEMENT en JSON valide avec ce format exact :` +
-    ` {"page_count": 12, "questions": [{"type": "mcq", "question": "...", "options": ["A", "B", "C", "D"], "answer_index": 0, "explanation": "...", "period": "..."},` +
-    ` {"type": "truefalse", "question": "...", "options": ["Vrai", "Faux"], "answer_index": 0, "explanation": "...", "period": "..."}]}.` +
-    ` Génère entre 5 et 15 questions variées (mix QCM et Vrai/Faux). Les questions doivent être claires, pédagogiques et directement liées au contenu du document.` +
+    `Tu es un assistant pedagogique. Analyse ce document et genere des questions de quiz pertinentes pour un cours de ${subjectLabel}.${levelClause}` +
+    ` Reponds UNIQUEMENT en JSON valide avec ce format exact :` +
+    ` {"page_count": 12, "questions": [{"type": "mcq", "question": "...", "options": ["A", "B", "C", "D"], "answer_index": 0, "explanation": "...", "period": "..."}]}.` +
+    ` Genere entre 5 et 15 questions variees. Les questions doivent etre claires, pedagogiques et directement liees au contenu du document.` +
     ` ${themeInstruction}` +
     ` Dans le champ page_count, indique le nombre total de pages du document.`
   );
@@ -68,8 +89,95 @@ type ExtractedQuestion = {
   period: string;
 };
 
-// NOTE: Les colonnes subject_enum et level de teacher_questions seront alimentées
-// dans une PR suivante lors du refactor de saveDrafts() côté frontend.
+const QUESTIONS_SCHEMA: ResponseSchema = {
+  type: SchemaType.OBJECT,
+  properties: {
+    page_count: { type: SchemaType.INTEGER },
+    questions: {
+      type: SchemaType.ARRAY,
+      items: {
+        type: SchemaType.OBJECT,
+        properties: {
+          type: { type: SchemaType.STRING, format: "enum", enum: ["mcq", "truefalse"] },
+          question: { type: SchemaType.STRING },
+          options: {
+            type: SchemaType.ARRAY,
+            items: { type: SchemaType.STRING },
+          },
+          answer_index: { type: SchemaType.INTEGER },
+          explanation: { type: SchemaType.STRING },
+          period: { type: SchemaType.STRING },
+        },
+        required: ["type", "question", "options", "answer_index", "explanation", "period"],
+      },
+    },
+  },
+  required: ["page_count", "questions"],
+};
+
+function isRateLimitError(error: unknown) {
+  if (error instanceof GoogleGenerativeAIFetchError && error.status === 429) {
+    return true;
+  }
+
+  const message = error instanceof Error ? error.message : String(error);
+  return message.includes("429") || /rate.?limit|quota|resource.?exhausted/i.test(message);
+}
+
+function parseJsonObject<T>(rawText: string): T {
+  const trimmed = rawText.trim();
+
+  try {
+    return JSON.parse(trimmed) as T;
+  } catch {}
+
+  const fenced = trimmed.match(/```(?:json)?\s*([\s\S]*?)```/i);
+  if (fenced?.[1]) {
+    try {
+      return JSON.parse(fenced[1].trim()) as T;
+    } catch {}
+  }
+
+  const jsonMatch = trimmed.match(/\{[\s\S]*\}/);
+  if (jsonMatch?.[0]) {
+    return JSON.parse(jsonMatch[0]) as T;
+  }
+
+  throw new Error("Reponse JSON invalide");
+}
+
+async function generateGeminiJson(modelName: string, pdfBase64: string, prompt: string) {
+  const model = gemini.getGenerativeModel({
+    model: modelName,
+    generationConfig: {
+      maxOutputTokens: 4096,
+      responseMimeType: "application/json",
+      responseSchema: QUESTIONS_SCHEMA,
+    },
+  });
+
+  const result = await model.generateContent([
+    { inlineData: { data: pdfBase64, mimeType: "application/pdf" } },
+    { text: `${prompt}\n\nGenere les questions de quiz basees sur ce document.` },
+  ]);
+
+  return result.response.text();
+}
+
+async function generateQuestionsWithFallback(pdfBase64: string, prompt: string) {
+  try {
+    return await generateGeminiJson("gemini-2.5-pro", pdfBase64, prompt);
+  } catch (error) {
+    if (!isRateLimitError(error)) throw error;
+  }
+
+  try {
+    return await generateGeminiJson("gemini-2.5-flash", pdfBase64, prompt);
+  } catch (error) {
+    if (isRateLimitError(error)) throw new Error("GEMINI_RATE_LIMIT");
+    throw error;
+  }
+}
 
 export async function POST(req: NextRequest) {
   try {
@@ -85,14 +193,16 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Champ pdf manquant" }, { status: 400 });
     }
 
-    // Fallback to 'histoire' for backward compatibility with existing callers
+    if (Buffer.byteLength(pdf, "base64") > MAX_PDF_BYTES) {
+      return NextResponse.json({ error: "PDF trop volumineux" }, { status: 400 });
+    }
+
     const subject: SubjectId = isValidSubject(body.subject) ? body.subject : "histoire";
     const level: SchoolLevel | null = isValidLevel(body.level) ? body.level : null;
 
-    // Two-step hash: PDF hash first (expensive), then combine with subject+level
     const pdfHash = createHash("sha256").update(pdf).digest("hex");
     const cacheKey = createHash("sha256")
-      .update(`${pdfHash}:${subject}:${level ?? "any"}`)
+      .update(`${pdfHash}:${subject}:${level ?? "any"}:gemini-2.5`)
       .digest("hex");
 
     const db = getDb();
@@ -115,58 +225,17 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    const message = await client.messages.create({
-      model: "claude-sonnet-4-6",
-      max_tokens: 4096,
-      system: buildSystemPrompt(subject, level),
-      messages: [
-        {
-          role: "user",
-          content: [
-            {
-              type: "document",
-              source: {
-                type: "base64",
-                media_type: "application/pdf",
-                data: pdf,
-              },
-            },
-            {
-              type: "text",
-              text: "Génère les questions de quiz basées sur ce document.",
-            },
-          ],
-        },
-      ],
-    });
-
-    const rawText = message.content
-      .filter((b): b is Anthropic.TextBlock => b.type === "text")
-      .map((b) => b.text)
-      .join("");
-
-    const jsonMatch = rawText.match(/\{[\s\S]*\}/);
-    if (!jsonMatch) {
-      return NextResponse.json(
-        { error: "Réponse invalide du modèle" },
-        { status: 500 }
-      );
-    }
-
-    const parsed = JSON.parse(jsonMatch[0]) as {
+    const rawText = await generateQuestionsWithFallback(pdf, buildSystemPrompt(subject, level));
+    const parsed = parseJsonObject<{
       questions: ExtractedQuestion[];
       page_count?: number;
-    };
+    }>(rawText);
 
     if (!Array.isArray(parsed.questions)) {
-      return NextResponse.json(
-        { error: "Format de réponse inattendu" },
-        { status: 500 }
-      );
+      return NextResponse.json({ error: "Format de reponse inattendu" }, { status: 500 });
     }
 
-    const pageCount =
-      typeof parsed.page_count === "number" ? parsed.page_count : null;
+    const pageCount = typeof parsed.page_count === "number" ? parsed.page_count : null;
 
     try {
       await db.from("generated_questions_cache").insert({
@@ -181,6 +250,10 @@ export async function POST(req: NextRequest) {
       pageCount,
     });
   } catch (err) {
+    if (err instanceof Error && err.message === "GEMINI_RATE_LIMIT") {
+      return NextResponse.json({ error: "Service temporairement sature" }, { status: 503 });
+    }
+
     const msg = err instanceof Error ? err.message : "Erreur inconnue";
     return NextResponse.json({ error: msg }, { status: 500 });
   }
