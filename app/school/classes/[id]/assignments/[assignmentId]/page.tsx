@@ -33,6 +33,8 @@ type Overview = {
   grade_dist: Record<string, number>;
   nb_requested_solution: number;
   nb_requested_explanation: number;
+  nb_new: number | null;
+  nb_recall: number | null;
 };
 
 type AssignmentDetail = {
@@ -357,6 +359,19 @@ export default function AssignmentDetailPage() {
                 </>
               )}
             </div>
+
+            {isQuiz && overview.nb_new !== null && (
+              <div className="flex flex-wrap gap-2">
+                <span className="rounded-full border border-purple-500/30 bg-purple-500/10 px-3 py-1 text-xs font-bold text-purple-300">
+                  📚 Chapitre : {overview.nb_new} question{overview.nb_new !== 1 ? "s" : ""}
+                </span>
+                {(overview.nb_recall ?? 0) > 0 && (
+                  <span className="rounded-full border border-cyan-500/30 bg-cyan-500/10 px-3 py-1 text-xs font-bold text-cyan-300">
+                    🔄 Rappel : {overview.nb_recall} question{(overview.nb_recall ?? 0) !== 1 ? "s" : ""}
+                  </span>
+                )}
+              </div>
+            )}
 
             {isQuiz && (
               <div className="grid grid-cols-2 gap-3">

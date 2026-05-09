@@ -60,7 +60,7 @@ export async function GET(
     if (aErr) throw aErr;
     if (!assignment) return NextResponse.json({ error: "Devoir introuvable" }, { status: 404 });
 
-    const [membersRes, completionsRes, courseRes, answersRes] = await Promise.all([
+    const [membersRes, completionsRes, courseRes, answersRes, assignmentQsRes] = await Promise.all([
       admin
         .from("class_memberships")
         .select("student_user_id, joined_at")
@@ -79,10 +79,17 @@ export async function GET(
         .from("assignment_question_answers")
         .select("question_id, is_correct")
         .eq("assignment_id", params.assignmentId),
+      admin
+        .from("assignment_questions")
+        .select("is_recall")
+        .eq("assignment_id", params.assignmentId),
     ]);
 
     const members = membersRes.data ?? [];
     const completions = (completionsRes.data ?? []) as CompletionRow[];
+    const assignmentQsRows = (assignmentQsRes.data ?? []) as { is_recall: boolean }[];
+    const nb_new = assignmentQsRows.filter((r) => !r.is_recall).length;
+    const nb_recall = assignmentQsRows.filter((r) => r.is_recall).length;
     const completionByStudent: Record<string, CompletionRow> = {};
     for (const c of completions) completionByStudent[c.student_user_id] = c;
 
@@ -186,6 +193,8 @@ export async function GET(
       grade_dist: gradeDist,
       nb_requested_solution: students.filter((s) => s.requested_solution).length,
       nb_requested_explanation: students.filter((s) => s.requested_explanation).length,
+      nb_new: assignmentQsRows.length > 0 ? nb_new : null,
+      nb_recall: assignmentQsRows.length > 0 ? nb_recall : null,
     };
 
     return NextResponse.json({

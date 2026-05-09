@@ -65,16 +65,34 @@ export async function POST(
       score: existing?.score ?? null,
     }, { onConflict: "assignment_id,student_user_id" });
 
-    // Fetch questions for this course
-    const { data: questions, error: qErr } = await admin
-      .from("teacher_questions")
-      .select("id, question, options, answer_index, type, difficulty_stars, explanation, concept_page_hint, page_range_start")
-      .eq("course_id", assignment.resource_id)
-      .not("validated_at", "is", null)
-      .is("rejected_at", null)
-      .order("created_at", { ascending: true });
+    // Check for pre-sampled question list (85/15 mix)
+    const { data: sampledRows } = await admin
+      .from("assignment_questions")
+      .select("question_id")
+      .eq("assignment_id", params.id);
 
-    if (qErr) throw qErr;
+    let questions;
+    if (sampledRows && sampledRows.length > 0) {
+      const ids = (sampledRows as { question_id: string }[]).map((r) => r.question_id);
+      const { data: qs, error: qErr } = await admin
+        .from("teacher_questions")
+        .select("id, question, options, answer_index, type, difficulty_stars, explanation, concept_page_hint, page_range_start")
+        .in("id", ids)
+        .not("validated_at", "is", null)
+        .is("rejected_at", null);
+      if (qErr) throw qErr;
+      questions = qs;
+    } else {
+      const { data: qs, error: qErr } = await admin
+        .from("teacher_questions")
+        .select("id, question, options, answer_index, type, difficulty_stars, explanation, concept_page_hint, page_range_start")
+        .eq("course_id", assignment.resource_id)
+        .not("validated_at", "is", null)
+        .is("rejected_at", null)
+        .order("created_at", { ascending: true });
+      if (qErr) throw qErr;
+      questions = qs;
+    }
 
     if (!questions || questions.length === 0) {
       return NextResponse.json({ error: "Aucune question disponible pour ce quiz" }, { status: 400 });
