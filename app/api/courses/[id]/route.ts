@@ -57,7 +57,7 @@ export async function GET(
     const admin = createAdminClient();
     const { data: course, error } = await admin
       .from("courses")
-      .select("id, title, subject_enum, level, pdf_storage_path, teacher_id")
+      .select("id, title, subject_enum, level, pdf_storage_path, teacher_id, pages_count")
       .eq("id", params.id)
       .eq("teacher_id", user.id)
       .maybeSingle();
