@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient as createSupabaseAdminClient } from "@supabase/supabase-js";
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
+import { logActivity } from "@/lib/activity/log";
 
 export const dynamic = "force-dynamic";
 
@@ -72,7 +73,7 @@ export async function POST(
 
     const { data: cls, error: clsError } = await admin
       .from("classes")
-      .select("auth_mode, archived_at")
+      .select("auth_mode, archived_at, teacher_id")
       .eq("id", params.id)
       .maybeSingle();
 
@@ -150,6 +151,18 @@ export async function POST(
       password,
     });
     if (signInError) throw signInError;
+
+    if (cls && typeof cls.teacher_id === "string") {
+      await logActivity({
+        event_type: "student_joined_class",
+        actor_id: userId,
+        actor_type: "student",
+        target_type: "class",
+        target_id: params.id,
+        teacher_id: cls.teacher_id,
+        context: { auth_mode: "full" },
+      });
+    }
 
     return NextResponse.json({ redirectUrl: "/student" });
   } catch (err) {

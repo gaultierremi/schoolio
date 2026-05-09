@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient as createSupabaseAdminClient } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase-server";
+import { logActivity } from "@/lib/activity/log";
 
 export const dynamic = "force-dynamic";
 
@@ -126,6 +127,22 @@ export async function PATCH(request: NextRequest, { params }: RouteContext) {
       .single();
 
     if (updateError) throw updateError;
+
+    const eventType =
+      body.action === "validate"
+        ? "teacher_validated_question"
+        : body.action === "reject"
+        ? "teacher_rejected_question"
+        : "teacher_unvalidated_question";
+    await logActivity({
+      event_type: eventType,
+      actor_id: user.id,
+      actor_type: "teacher",
+      target_type: "question",
+      target_id: params.id,
+      teacher_id: user.id,
+      context: { action: body.action },
+    });
 
     return NextResponse.json({ question: updatedQuestion });
   } catch (error) {

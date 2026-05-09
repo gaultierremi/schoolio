@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient as createSupabaseAdminClient } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase-server";
+import { logActivity } from "@/lib/activity/log";
 
 export const dynamic = "force-dynamic";
 
@@ -49,6 +50,15 @@ export async function PATCH(
       .single();
 
     if (updateErr) throw updateErr;
+
+    await logActivity({
+      event_type: "teacher_rejected_exercise",
+      actor_id: user.id,
+      actor_type: "teacher",
+      target_type: "exercise",
+      target_id: params.exerciseId,
+      teacher_id: user.id,
+    });
 
     return NextResponse.json({ exercise: updated });
   } catch (err) {

@@ -8,6 +8,7 @@ import {
 import { createClient as createSupabaseAdminClient } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase-server";
 import type { SchoolLevel } from "@/lib/subjects";
+import { logActivity } from "@/lib/activity/log";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
@@ -343,6 +344,17 @@ export async function POST(request: NextRequest) {
       .eq("id", courseId);
 
     if (updateError) throw updateError;
+
+    await logActivity({
+      event_type: "teacher_imported_pdf",
+      actor_id: user.id,
+      actor_type: "teacher",
+      target_type: "course",
+      target_id: courseId,
+      teacher_id: user.id,
+      context: { subject: inference.subject, title: inference.title },
+    });
+    // TODO: track system_cache_hit events when Gemini returns a cached response
 
     return NextResponse.json({
       success: true,

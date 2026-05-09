@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient as createSupabaseAdminClient } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase-server";
+import { logActivity } from "@/lib/activity/log";
 
 export const dynamic = "force-dynamic";
 
@@ -116,6 +117,16 @@ export async function POST(req: NextRequest) {
       .single();
 
     if (error) throw error;
+
+    await logActivity({
+      event_type: "teacher_created_class",
+      actor_id: user.id,
+      actor_type: "teacher",
+      target_type: "class",
+      target_id: (newClass as { id: string }).id,
+      teacher_id: user.id,
+      context: { name },
+    });
 
     return NextResponse.json({ class: newClass }, { status: 201 });
   } catch (err) {

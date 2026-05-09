@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient as createSupabaseAdminClient } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase-server";
+import { logActivity } from "@/lib/activity/log";
 
 export const dynamic = "force-dynamic";
 
@@ -35,6 +36,22 @@ export async function POST(
       .eq("status", "active");
 
     if (error) throw error;
+
+    const { data: clsData } = await admin
+      .from("classes")
+      .select("teacher_id")
+      .eq("id", params.id)
+      .maybeSingle();
+    if (clsData && typeof clsData.teacher_id === "string") {
+      await logActivity({
+        event_type: "student_left_class",
+        actor_id: user.id,
+        actor_type: "student",
+        target_type: "class",
+        target_id: params.id,
+        teacher_id: clsData.teacher_id,
+      });
+    }
 
     return NextResponse.json({ ok: true });
   } catch (err) {

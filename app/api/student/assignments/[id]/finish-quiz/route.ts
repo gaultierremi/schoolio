@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient as createSupabaseAdminClient } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase-server";
+import { logActivity } from "@/lib/activity/log";
 
 export const dynamic = "force-dynamic";
 
@@ -82,6 +83,23 @@ export async function POST(
       completed_at: now,
       last_attempt_at: now,
     }, { onConflict: "assignment_id,student_user_id" });
+
+    const { data: clsData } = await admin
+      .from("classes")
+      .select("teacher_id")
+      .eq("id", assignment.class_id)
+      .maybeSingle();
+    if (clsData && typeof clsData.teacher_id === "string") {
+      await logActivity({
+        event_type: "student_completed_quiz",
+        actor_id: user.id,
+        actor_type: "student",
+        target_type: "assignment",
+        target_id: params.id,
+        teacher_id: clsData.teacher_id,
+        context: { score: bestScore },
+      });
+    }
 
     return NextResponse.json({ ok: true, score: bestScore });
   } catch (err) {

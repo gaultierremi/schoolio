@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient as createSupabaseAdminClient } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase-server";
+import { logActivity } from "@/lib/activity/log";
 
 export const dynamic = "force-dynamic";
 
@@ -207,6 +208,16 @@ export async function POST(
       .single();
 
     if (insertError) throw insertError;
+
+    await logActivity({
+      event_type: "teacher_created_assignment",
+      actor_id: user.id,
+      actor_type: "teacher",
+      target_type: "assignment",
+      target_id: (assignment as { id: string }).id,
+      teacher_id: user.id,
+      context: { title, resource_type },
+    });
 
     return NextResponse.json({ assignment }, { status: 201 });
   } catch (err) {
