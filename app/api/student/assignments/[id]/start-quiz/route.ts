@@ -68,7 +68,7 @@ export async function POST(
     // Fetch questions for this course
     const { data: questions, error: qErr } = await admin
       .from("teacher_questions")
-      .select("id, question, options, answer_index, type, difficulty_stars, explanation")
+      .select("id, question, options, answer_index, type, difficulty_stars, explanation, concept_page_hint, page_range_start")
       .eq("course_id", assignment.resource_id)
       .not("validated_at", "is", null)
       .is("rejected_at", null)

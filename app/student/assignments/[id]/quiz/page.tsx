@@ -11,6 +11,8 @@ type Question = {
   answer_index: number;
   difficulty_stars: number | null;
   explanation: string | null;
+  concept_page_hint: number | null;
+  page_range_start: number | null;
 };
 
 type QuestionResult = {
@@ -43,6 +45,7 @@ export default function AssignmentQuizPage() {
   const [submitting, setSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
   const [wrongPhase, setWrongPhase] = useState<WrongPhase>(null);
+  const [pdfLoading, setPdfLoading] = useState(false);
 
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const startTimeRef = useRef<number>(Date.now());
@@ -104,6 +107,20 @@ export default function AssignmentQuizPage() {
   function handleHelpMe() {
     updateResult(questions[current].id, { requested_explanation: true });
     setWrongPhase("help");
+  }
+
+  async function handleOpenTheory() {
+    const q = questions[current];
+    const page = q.concept_page_hint ?? q.page_range_start;
+    if (!page) return;
+    setPdfLoading(true);
+    try {
+      const res = await fetch(`/api/student/assignments/${id}/course-pdf-url`);
+      const json = await res.json() as { url?: string };
+      if (json.url) window.open(`${json.url}#page=${page}`, "_blank");
+    } finally {
+      setPdfLoading(false);
+    }
   }
 
   function handleRetry() {
@@ -208,6 +225,7 @@ export default function AssignmentQuizPage() {
   const q = questions[current];
   const progress = (current / questions.length) * 100;
   const isCorrectAnswer = answered && selected === q.answer_index;
+  const theoryPage = q.concept_page_hint ?? q.page_range_start;
 
   const optionStyle = (idx: number): string => {
     if (!answered) {
@@ -319,9 +337,19 @@ export default function AssignmentQuizPage() {
                 <>
                   <div className="rounded-xl border border-blue-800/40 bg-blue-950/30 p-3">
                     <p className="text-xs font-bold text-blue-400 mb-1">Revois la théorie</p>
-                    <p className="text-sm text-blue-200">
-                      Consulte la section correspondante dans ton cours, puis réessaie.
-                    </p>
+                    {theoryPage ? (
+                      <button
+                        onClick={handleOpenTheory}
+                        disabled={pdfLoading}
+                        className="mt-1 text-sm font-bold text-blue-300 underline underline-offset-2 hover:text-blue-200 disabled:opacity-50"
+                      >
+                        {pdfLoading ? "Chargement…" : `📄 Ouvrir le cours (p. ${theoryPage}) →`}
+                      </button>
+                    ) : (
+                      <p className="text-sm text-blue-200">
+                        Consulte la section correspondante dans ton cours, puis réessaie.
+                      </p>
+                    )}
                   </div>
                   <div className="grid grid-cols-2 gap-3">
                     <button

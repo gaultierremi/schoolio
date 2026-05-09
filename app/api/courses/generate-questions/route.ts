@@ -79,11 +79,12 @@ function buildSystemPrompt(subject: SubjectId, level: SchoolLevel | null): strin
   return (
     `Tu es un assistant pedagogique. Analyse ce document et genere des questions de quiz pertinentes pour un cours de ${subjectLabel}.${levelClause}` +
     ` Reponds UNIQUEMENT en JSON valide avec ce format exact :` +
-    ` {"page_count": 12, "questions": [{"type": "mcq", "question": "...", "options": ["A", "B", "C", "D"], "answer_index": 0, "explanation": "...", "period": "...", "difficulty": 2}]}.` +
+    ` {"page_count": 12, "questions": [{"type": "mcq", "question": "...", "options": ["A", "B", "C", "D"], "answer_index": 0, "explanation": "...", "period": "...", "difficulty": 2, "concept_page_hint": 3}]}.` +
     ` Genere uniquement des QCM avec exactement 4 choix. answer_index doit etre entre 0 et 3. difficulty doit etre 1, 2 ou 3.` +
     ` Les questions doivent etre claires, pedagogiques, variees et directement liees au contenu du document.` +
     ` ${themeInstruction}` +
-    ` Dans le champ page_count, indique le nombre total de pages du document.`
+    ` Dans le champ page_count, indique le nombre total de pages du document.` +
+    ` Dans le champ concept_page_hint, indique le numero de la page du document qui contient la THEORIE expliquant le concept teste par la question (pas la page de l'exercice, mais la page du cours/fiches qui explique la notion). Si tu ne peux pas identifier clairement une page theorique distincte, utilise la premiere page de la plage de pages concernee.`
   );
 }
 
@@ -95,6 +96,7 @@ type ExtractedQuestion = {
   explanation: string;
   period: string;
   difficulty?: number;
+  concept_page_hint?: number | null;
 };
 
 type CourseRow = {
@@ -128,6 +130,7 @@ const QUESTIONS_SCHEMA: ResponseSchema = {
           explanation: { type: SchemaType.STRING },
           period: { type: SchemaType.STRING },
           difficulty: { type: SchemaType.INTEGER },
+          concept_page_hint: { type: SchemaType.INTEGER },
         },
         required: ["type", "question", "options", "answer_index", "explanation", "period", "difficulty"],
       },
@@ -401,6 +404,9 @@ export async function POST(request: NextRequest) {
       is_public: false,
       page_range_start: pageRange?.start ?? null,
       page_range_end: pageRange?.end ?? null,
+      concept_page_hint: typeof q.concept_page_hint === "number" && q.concept_page_hint >= 1
+        ? q.concept_page_hint
+        : null,
     }));
 
     const { error: insertError } = await admin.from("teacher_questions").insert(rows);
