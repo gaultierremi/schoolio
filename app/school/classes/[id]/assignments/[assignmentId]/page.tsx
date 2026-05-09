@@ -18,6 +18,23 @@ type StudentRow = {
   requested_explanation: boolean;
 };
 
+type TopError = {
+  question_id: string;
+  question: string;
+  wrong_count: number;
+  total_answers: number;
+  error_rate: number;
+};
+
+type Overview = {
+  nb_total: number;
+  nb_completed: number;
+  avg_score: number | null;
+  grade_dist: Record<string, number>;
+  nb_requested_solution: number;
+  nb_requested_explanation: number;
+};
+
 type AssignmentDetail = {
   id: string;
   title: string;
@@ -31,6 +48,7 @@ type AssignmentDetail = {
 
 type SortKey = "display_name" | "status" | "score" | "duration_seconds" | "attempts_count" | "last_attempt_at" | "letter_grade";
 type StatusFilter = "all" | "pending" | "in_progress" | "completed";
+type Tab = "overview" | "students" | "top_errors";
 
 const STATUS_LABEL: Record<string, string> = {
   pending: "À faire",
@@ -64,6 +82,8 @@ export default function AssignmentDetailPage() {
 
   const [assignment, setAssignment] = useState<AssignmentDetail | null>(null);
   const [students, setStudents] = useState<StudentRow[]>([]);
+  const [overview, setOverview] = useState<Overview | null>(null);
+  const [topErrors, setTopErrors] = useState<TopError[]>([]);
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState(false);
   const [editTitle, setEditTitle] = useState("");
@@ -74,11 +94,12 @@ export default function AssignmentDetailPage() {
   const [sortKey, setSortKey] = useState<SortKey>("status");
   const [sortAsc, setSortAsc] = useState(true);
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
+  const [activeTab, setActiveTab] = useState<Tab>("overview");
 
   useEffect(() => {
-    fetch(`/api/classes/${classId}/assignments/${assignmentId}/details`)
+    fetch(`/api/classes/${classId}/assignments/${assignmentId}/dashboard`)
       .then((r) => r.json())
-      .then((j: { assignment?: AssignmentDetail; students?: StudentRow[] }) => {
+      .then((j: { assignment?: AssignmentDetail; students?: StudentRow[]; overview?: Overview; top_errors?: TopError[] }) => {
         if (j.assignment) {
           setAssignment(j.assignment);
           setEditTitle(j.assignment.title);
@@ -86,6 +107,8 @@ export default function AssignmentDetailPage() {
           setEditDue(j.assignment.due_date ? j.assignment.due_date.slice(0, 16) : "");
         }
         setStudents(j.students ?? []);
+        setOverview(j.overview ?? null);
+        setTopErrors(j.top_errors ?? []);
         setLoading(false);
       })
       .catch(() => { setLoading(false); router.replace(`/school/classes/${classId}`); });
@@ -179,22 +202,7 @@ export default function AssignmentDetailPage() {
 
   if (!assignment) return null;
 
-  const nbCompleted = students.filter((s) => s.status === "completed").length;
-  const nbTotal = students.length;
-  const avgScore =
-    assignment.resource_type === "quiz"
-      ? (() => {
-          const scores = students.filter((s) => s.score !== null).map((s) => Number(s.score));
-          return scores.length > 0 ? Math.round(scores.reduce((a, b) => a + b, 0) / scores.length) : null;
-        })()
-      : null;
-  const gradeDist =
-    assignment.resource_type === "quiz"
-      ? (["A", "B", "C", "D"] as const).map((g) => ({
-          grade: g,
-          count: students.filter((s) => s.letter_grade === g).length,
-        }))
-      : null;
+  const isQuiz = assignment.resource_type === "quiz";
 
   return (
     <main className="min-h-screen bg-gray-950 px-4 py-8 text-white">
@@ -209,7 +217,7 @@ export default function AssignmentDetailPage() {
           <div>
             <div className="flex items-center gap-2">
               <span className="rounded-full border border-gray-700 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-gray-400">
-                {assignment.resource_type === "pdf" ? "📄 PDF" : "🧠 Quiz"}
+                {isQuiz ? "🧠 Quiz" : "📄 PDF"}
               </span>
               <h1 className="text-2xl font-black text-white">{assignment.title}</h1>
             </div>
@@ -290,120 +298,191 @@ export default function AssignmentDetailPage() {
           </div>
         )}
 
-        {/* Stats bar */}
-        <div className={`grid gap-3 ${gradeDist ? "grid-cols-2 sm:grid-cols-4" : "grid-cols-3"}`}>
-          <div className="rounded-2xl border border-gray-800 bg-gray-900 p-4 text-center">
-            <p className="text-2xl font-black text-white">{nbCompleted}/{nbTotal}</p>
-            <p className="mt-0.5 text-xs text-gray-500">Élèves ont terminé</p>
-          </div>
-          <div className="rounded-2xl border border-gray-800 bg-gray-900 p-4 text-center">
-            <p className="text-2xl font-black text-white">
-              {nbTotal > 0 ? Math.round((nbCompleted / nbTotal) * 100) : 0}%
-            </p>
-            <p className="mt-0.5 text-xs text-gray-500">Complétion</p>
-          </div>
-          <div className="rounded-2xl border border-gray-800 bg-gray-900 p-4 text-center">
-            <p className="text-2xl font-black text-white">
-              {avgScore !== null ? `${avgScore}%` : "—"}
-            </p>
-            <p className="mt-0.5 text-xs text-gray-500">Score moyen</p>
-          </div>
-          {gradeDist && (
-            <div className="rounded-2xl border border-gray-800 bg-gray-900 p-4">
-              <p className="mb-2 text-center text-xs text-gray-500">Répartition</p>
-              <div className="flex justify-center gap-2">
-                {gradeDist.map(({ grade, count }) => (
-                  <div key={grade} className="flex flex-col items-center gap-0.5">
-                    <span className={`rounded-full border px-1.5 py-0.5 text-[10px] font-black ${GRADE_STYLE[grade as keyof typeof GRADE_STYLE]}`}>
-                      {grade}
-                    </span>
-                    <span className="text-[11px] font-bold text-gray-400">{count}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* Filters */}
-        <div className="flex gap-2">
-          {(["all", "pending", "in_progress", "completed"] as const).map((f) => (
+        {/* Tabs */}
+        <div className="flex gap-1 rounded-xl border border-gray-800 bg-gray-900 p-1">
+          {([
+            { key: "overview", label: "Vue d'ensemble" },
+            { key: "students", label: "Élèves" },
+            ...(isQuiz ? [{ key: "top_errors", label: "Top erreurs" }] : []),
+          ] as { key: Tab; label: string }[]).map(({ key, label }) => (
             <button
-              key={f}
-              onClick={() => setStatusFilter(f)}
-              className={`rounded-full px-3 py-1 text-xs font-bold transition ${
-                statusFilter === f
+              key={key}
+              onClick={() => setActiveTab(key)}
+              className={`flex-1 rounded-lg py-2 text-sm font-bold transition ${
+                activeTab === key
                   ? "bg-purple-500 text-gray-950"
-                  : "border border-gray-700 text-gray-500 hover:border-gray-600 hover:text-gray-300"
+                  : "text-gray-500 hover:text-gray-300"
               }`}
             >
-              {f === "all" ? "Tous" : STATUS_LABEL[f]}
+              {label}
             </button>
           ))}
         </div>
 
-        {/* Table */}
-        <div className="overflow-hidden rounded-2xl border border-gray-800 bg-gray-900">
-          {visible.length === 0 ? (
-            <p className="py-10 text-center text-sm italic text-gray-600">Aucun élève dans cette catégorie.</p>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead className="border-b border-gray-800">
-                  <tr>
-                    <SortTh label="Élève" k="display_name" />
-                    <SortTh label="Statut" k="status" />
-                    {assignment.resource_type === "quiz" && (
-                      <>
-                        <SortTh label="Score" k="score" />
-                        <SortTh label="Lettre" k="letter_grade" />
-                        <SortTh label="Temps" k="duration_seconds" />
-                        <SortTh label="Tentatives" k="attempts_count" />
-                      </>
-                    )}
-                    <SortTh label="Dernière activité" k="last_attempt_at" />
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-800/60">
-                  {visible.map((s) => (
-                    <tr key={s.student_user_id} className="hover:bg-gray-800/30">
-                      <td className="px-3 py-3 font-medium text-white">{s.display_name}</td>
-                      <td className="px-3 py-3">
-                        <span className={`rounded-full border px-2 py-0.5 text-[11px] font-bold ${STATUS_STYLE[s.status]}`}>
-                          {STATUS_LABEL[s.status]}
-                        </span>
-                      </td>
-                      {assignment.resource_type === "quiz" && (
-                        <>
-                          <td className="px-3 py-3 text-gray-300">
-                            {s.score !== null ? (
-                              <span className={Number(s.score) >= 80 ? "text-green-400 font-bold" : Number(s.score) >= 50 ? "text-amber-400 font-bold" : "text-red-400 font-bold"}>
-                                {Math.round(Number(s.score))}%
-                              </span>
-                            ) : "—"}
-                          </td>
+        {/* ── Tab: Vue d'ensemble ────────────────────────────────────────── */}
+        {activeTab === "overview" && overview && (
+          <div className="space-y-4">
+            <div className={`grid gap-3 ${isQuiz ? "grid-cols-2 sm:grid-cols-4" : "grid-cols-3"}`}>
+              <div className="rounded-2xl border border-gray-800 bg-gray-900 p-4 text-center">
+                <p className="text-2xl font-black text-white">{overview.nb_completed}/{overview.nb_total}</p>
+                <p className="mt-0.5 text-xs text-gray-500">Ont terminé</p>
+              </div>
+              <div className="rounded-2xl border border-gray-800 bg-gray-900 p-4 text-center">
+                <p className="text-2xl font-black text-white">
+                  {overview.nb_total > 0 ? Math.round((overview.nb_completed / overview.nb_total) * 100) : 0}%
+                </p>
+                <p className="mt-0.5 text-xs text-gray-500">Complétion</p>
+              </div>
+              {isQuiz && (
+                <>
+                  <div className="rounded-2xl border border-gray-800 bg-gray-900 p-4 text-center">
+                    <p className="text-2xl font-black text-white">
+                      {overview.avg_score !== null ? `${overview.avg_score}%` : "—"}
+                    </p>
+                    <p className="mt-0.5 text-xs text-gray-500">Score moyen</p>
+                  </div>
+                  <div className="rounded-2xl border border-gray-800 bg-gray-900 p-4">
+                    <p className="mb-2 text-center text-xs text-gray-500">Répartition</p>
+                    <div className="flex justify-center gap-2">
+                      {(["A", "B", "C", "D"] as const).map((g) => (
+                        <div key={g} className="flex flex-col items-center gap-0.5">
+                          <span className={`rounded-full border px-1.5 py-0.5 text-[10px] font-black ${GRADE_STYLE[g]}`}>
+                            {g}
+                          </span>
+                          <span className="text-[11px] font-bold text-gray-400">{overview.grade_dist[g] ?? 0}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </>
+              )}
+            </div>
+
+            {isQuiz && (
+              <div className="grid grid-cols-2 gap-3">
+                <div className="rounded-2xl border border-amber-800/30 bg-amber-950/20 p-4">
+                  <p className="text-xs font-bold text-amber-400">Ont demandé la solution</p>
+                  <p className="mt-1 text-2xl font-black text-white">{overview.nb_requested_solution}</p>
+                  <p className="text-xs text-gray-500">élève{overview.nb_requested_solution !== 1 ? "s" : ""}</p>
+                </div>
+                <div className="rounded-2xl border border-blue-800/30 bg-blue-950/20 p-4">
+                  <p className="text-xs font-bold text-blue-400">Ont demandé de l&apos;aide</p>
+                  <p className="mt-1 text-2xl font-black text-white">{overview.nb_requested_explanation}</p>
+                  <p className="text-xs text-gray-500">élève{overview.nb_requested_explanation !== 1 ? "s" : ""}</p>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* ── Tab: Élèves ─────────────────────────────────────────────────── */}
+        {activeTab === "students" && (
+          <div className="space-y-4">
+            <div className="flex gap-2">
+              {(["all", "pending", "in_progress", "completed"] as const).map((f) => (
+                <button
+                  key={f}
+                  onClick={() => setStatusFilter(f)}
+                  className={`rounded-full px-3 py-1 text-xs font-bold transition ${
+                    statusFilter === f
+                      ? "bg-purple-500 text-gray-950"
+                      : "border border-gray-700 text-gray-500 hover:border-gray-600 hover:text-gray-300"
+                  }`}
+                >
+                  {f === "all" ? "Tous" : STATUS_LABEL[f]}
+                </button>
+              ))}
+            </div>
+
+            <div className="overflow-hidden rounded-2xl border border-gray-800 bg-gray-900">
+              {visible.length === 0 ? (
+                <p className="py-10 text-center text-sm italic text-gray-600">Aucun élève dans cette catégorie.</p>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead className="border-b border-gray-800">
+                      <tr>
+                        <SortTh label="Élève" k="display_name" />
+                        <SortTh label="Statut" k="status" />
+                        {isQuiz && (
+                          <>
+                            <SortTh label="Score" k="score" />
+                            <SortTh label="Lettre" k="letter_grade" />
+                            <SortTh label="Temps" k="duration_seconds" />
+                            <SortTh label="Tentatives" k="attempts_count" />
+                          </>
+                        )}
+                        <SortTh label="Dernière activité" k="last_attempt_at" />
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-800/60">
+                      {visible.map((s) => (
+                        <tr key={s.student_user_id} className="hover:bg-gray-800/30">
+                          <td className="px-3 py-3 font-medium text-white">{s.display_name}</td>
                           <td className="px-3 py-3">
-                            <span
-                              className={`rounded-full border px-2 py-0.5 text-[11px] font-black ${GRADE_STYLE[s.letter_grade as keyof typeof GRADE_STYLE]}`}
-                              title={GRADE_LABEL[s.letter_grade as keyof typeof GRADE_LABEL]}
-                            >
-                              {s.letter_grade}
+                            <span className={`rounded-full border px-2 py-0.5 text-[11px] font-bold ${STATUS_STYLE[s.status]}`}>
+                              {STATUS_LABEL[s.status]}
                             </span>
                           </td>
-                          <td className="px-3 py-3 text-gray-400">{fmtDuration(s.duration_seconds)}</td>
-                          <td className="px-3 py-3 text-gray-400">{s.attempts_count || "—"}</td>
-                        </>
-                      )}
-                      <td className="px-3 py-3 text-gray-500 text-xs">
-                        {fmtDate(s.last_attempt_at ?? s.completed_at)}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+                          {isQuiz && (
+                            <>
+                              <td className="px-3 py-3 text-gray-300">
+                                {s.score !== null ? (
+                                  <span className={Number(s.score) >= 80 ? "text-green-400 font-bold" : Number(s.score) >= 50 ? "text-amber-400 font-bold" : "text-red-400 font-bold"}>
+                                    {Math.round(Number(s.score))}%
+                                  </span>
+                                ) : "—"}
+                              </td>
+                              <td className="px-3 py-3">
+                                <span
+                                  className={`rounded-full border px-2 py-0.5 text-[11px] font-black ${GRADE_STYLE[s.letter_grade as keyof typeof GRADE_STYLE]}`}
+                                  title={GRADE_LABEL[s.letter_grade as keyof typeof GRADE_LABEL]}
+                                >
+                                  {s.letter_grade}
+                                </span>
+                              </td>
+                              <td className="px-3 py-3 text-gray-400">{fmtDuration(s.duration_seconds)}</td>
+                              <td className="px-3 py-3 text-gray-400">{s.attempts_count || "—"}</td>
+                            </>
+                          )}
+                          <td className="px-3 py-3 text-gray-500 text-xs">
+                            {fmtDate(s.last_attempt_at ?? s.completed_at)}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
             </div>
-          )}
-        </div>
+          </div>
+        )}
+
+        {/* ── Tab: Top erreurs ────────────────────────────────────────────── */}
+        {activeTab === "top_errors" && (
+          <div className="rounded-2xl border border-gray-800 bg-gray-900">
+            {topErrors.length === 0 ? (
+              <p className="py-10 text-center text-sm italic text-gray-600">
+                Aucune donnée de réponse disponible.
+              </p>
+            ) : (
+              <div className="divide-y divide-gray-800/60">
+                {topErrors.map((e, i) => (
+                  <div key={e.question_id} className="flex items-start gap-4 px-4 py-3">
+                    <span className="mt-0.5 shrink-0 text-xs font-black text-gray-600">#{i + 1}</span>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm text-gray-200 leading-snug">{e.question}</p>
+                    </div>
+                    <div className="shrink-0 text-right">
+                      <p className="text-sm font-black text-red-400">{e.error_rate}%</p>
+                      <p className="text-[11px] text-gray-600">{e.wrong_count}/{e.total_answers} erreurs</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
 
       </div>
     </main>

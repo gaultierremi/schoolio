@@ -77,16 +77,12 @@ export default function AssignmentQuizPage() {
 
   function updateResult(qId: string, update: Partial<QuestionResult>) {
     const prev = questionResultsRef.current;
-    questionResultsRef.current = {
-      ...prev,
-      [qId]: {
-        is_correct: false,
-        requested_solution: false,
-        requested_explanation: false,
-        ...(prev[qId] ?? {}),
-        ...update,
-      },
+    const base: QuestionResult = prev[qId] ?? {
+      is_correct: false,
+      requested_solution: false,
+      requested_explanation: false,
     };
+    questionResultsRef.current = { ...prev, [qId]: { ...base, ...update } };
   }
 
   function handleSelect(optionIdx: number) {
