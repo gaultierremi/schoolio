@@ -25,6 +25,7 @@ export default function SchoolQuestionsPage() {
     myFilterPeriod, setMyFilterPeriod,
     myFilterSubject, setMyFilterSubject,
     myFilterLevel, setMyFilterLevel,
+    myFilterOrigin, setMyFilterOrigin,
     sortBy, setSortBy,
     filterStars, setFilterStars,
     fadingIds, validatingId, rejectingId,
@@ -224,6 +225,8 @@ export default function SchoolQuestionsPage() {
                       setFilterType={setMyFilterType}
                       filterPeriod={myFilterPeriod}
                       setFilterPeriod={setMyFilterPeriod}
+                      filterOrigin={myFilterOrigin}
+                      setFilterOrigin={setMyFilterOrigin}
                     />
                     <select
                       value={sortBy}
@@ -280,6 +283,7 @@ export default function SchoolQuestionsPage() {
                             setMyFilterPeriod("");
                             setMyFilterSubject(null);
                             setMyFilterLevel(null);
+                            setMyFilterOrigin("");
                             setFilterStars(0);
                           }}
                           className="rounded-xl border border-gray-700 px-3 py-2 text-xs font-bold text-gray-400 transition hover:border-purple-500/50 hover:text-purple-300"

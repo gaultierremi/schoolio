@@ -8,6 +8,8 @@ export function FilterBar({
   filterText,
   setFilterText,
   showText = false,
+  filterOrigin,
+  setFilterOrigin,
 }: {
   filterType: string;
   setFilterType: (v: string) => void;
@@ -16,6 +18,8 @@ export function FilterBar({
   filterText?: string;
   setFilterText?: (v: string) => void;
   showText?: boolean;
+  filterOrigin?: string;
+  setFilterOrigin?: (v: "" | "ai_generated" | "extracted_from_pdf") => void;
 }) {
   return (
     <div className="flex flex-wrap gap-2">
@@ -49,6 +53,17 @@ export function FilterBar({
           </option>
         ))}
       </select>
+      {setFilterOrigin !== undefined && (
+        <select
+          value={filterOrigin ?? ""}
+          onChange={(e) => setFilterOrigin(e.target.value as "" | "ai_generated" | "extracted_from_pdf")}
+          className="rounded-xl border border-gray-700 bg-gray-900 px-3 py-2 text-sm text-white outline-none focus:border-purple-500"
+        >
+          <option value="">Toutes les origines</option>
+          <option value="ai_generated">🤖 IA</option>
+          <option value="extracted_from_pdf">📄 PDF</option>
+        </select>
+      )}
     </div>
   );
 }

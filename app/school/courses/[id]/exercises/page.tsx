@@ -226,11 +226,30 @@ export default function ExercisesListPage() {
   const [filterStars, setFilterStars] = useState<0 | 1 | 2 | 3>(0);
   const [showGenerate, setShowGenerate] = useState(false);
   const [showRangeGenerator, setShowRangeGenerator] = useState(false);
+  const [extracting, setExtracting] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
 
   function showToast(msg: string) {
     setToast(msg);
     setTimeout(() => setToast(null), 3500);
+  }
+
+  async function handleExtractQuestions() {
+    setExtracting(true);
+    try {
+      const res = await fetch(`/api/courses/${courseId}/extract-questions`, { method: "POST" });
+      const json = await res.json() as { extracted?: number; message?: string; error?: string };
+      if (!res.ok) {
+        showToast(json.error ?? "Erreur lors de l'extraction");
+      } else if ((json.extracted ?? 0) === 0) {
+        showToast(json.message ?? "Aucune question trouvée dans le PDF");
+      } else {
+        showToast(`${json.extracted} question${json.extracted! > 1 ? "s" : ""} extraite${json.extracted! > 1 ? "s" : ""} — disponible${json.extracted! > 1 ? "s" : ""} dans Mes questions`);
+      }
+    } catch {
+      showToast("Erreur réseau, réessaie.");
+    }
+    setExtracting(false);
   }
 
   const loadData = useCallback(async () => {
@@ -309,6 +328,13 @@ export default function ExercisesListPage() {
             )}
           </div>
           <div className="flex flex-wrap gap-2">
+            <button
+              onClick={handleExtractQuestions}
+              disabled={extracting}
+              className="rounded-2xl border border-cyan-500/40 bg-cyan-500/10 px-4 py-3 font-black text-cyan-300 hover:bg-cyan-500/20 transition text-sm disabled:opacity-50"
+            >
+              {extracting ? "Extraction…" : "📄 Extraire les questions"}
+            </button>
             <button
               onClick={() => setShowRangeGenerator(true)}
               className="rounded-2xl border border-purple-500/40 bg-purple-500/10 px-4 py-3 font-black text-purple-300 hover:bg-purple-500/20 transition text-sm"
