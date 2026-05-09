@@ -20,6 +20,7 @@ export type TeacherQuestion = {
   validated_at: string | null;
   rejected_at: string | null;
   difficulty_stars: 1 | 2 | 3 | null;
+  origin: "ai_generated" | "extracted_from_pdf" | null;
 };
 
 export type ValTab = "pending" | "validated" | "rejected";

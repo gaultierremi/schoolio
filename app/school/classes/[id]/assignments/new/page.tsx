@@ -14,18 +14,30 @@ type CourseOption = {
   questions_count: number;
 };
 
+type Assignment = { resource_id: string };
+
 export default function NewAssignmentPage() {
   const { id: classId } = useParams<{ id: string }>();
   const router = useRouter();
 
   const [courses, setCourses] = useState<CourseOption[]>([]);
   const [coursesLoading, setCoursesLoading] = useState(true);
+  const [priorAssignmentCount, setPriorAssignmentCount] = useState(0);
+  const [priorCountLoading, setPriorCountLoading] = useState(false);
 
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [resourceType, setResourceType] = useState<"pdf" | "quiz">("pdf");
   const [resourceId, setResourceId] = useState("");
   const [dueDate, setDueDate] = useState("");
+
+  // Quiz-specific config
+  const [questionsCount, setQuestionsCount] = useState(10);
+  const [chapterPageStart, setChapterPageStart] = useState("");
+  const [chapterPageEnd, setChapterPageEnd] = useState("");
+  const [enableRecall, setEnableRecall] = useState(false);
+  const [recallPct, setRecallPct] = useState(15);
+
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -38,6 +50,27 @@ export default function NewAssignmentPage() {
       })
       .catch(() => setCoursesLoading(false));
   }, []);
+
+  // Fetch prior assignment count when a quiz course is selected
+  useEffect(() => {
+    if (resourceType !== "quiz" || !resourceId) {
+      setPriorAssignmentCount(0);
+      setEnableRecall(false);
+      return;
+    }
+    setPriorCountLoading(true);
+    fetch(`/api/classes/${classId}/assignments`)
+      .then((r) => r.json())
+      .then((j: { assignments?: Assignment[] }) => {
+        const count = (j.assignments ?? []).filter(
+          (a) => a.resource_id === resourceId
+        ).length;
+        setPriorAssignmentCount(count);
+        if (count === 0) setEnableRecall(false);
+      })
+      .catch(() => setPriorAssignmentCount(0))
+      .finally(() => setPriorCountLoading(false));
+  }, [classId, resourceId, resourceType]);
 
   const filteredCourses = courses.filter((c) =>
     resourceType === "pdf" ? !!c.pdf_storage_path : c.questions_count > 0
@@ -52,16 +85,28 @@ export default function NewAssignmentPage() {
     setSubmitting(true);
     setError(null);
 
+    const body: Record<string, unknown> = {
+      title: title.trim(),
+      description: description.trim() || undefined,
+      resource_type: resourceType,
+      resource_id: resourceId,
+      due_date: dueDate || undefined,
+    };
+
+    if (resourceType === "quiz") {
+      body.questions_count = questionsCount;
+      if (chapterPageStart && chapterPageEnd) {
+        body.chapter_page_start = Number(chapterPageStart);
+        body.chapter_page_end = Number(chapterPageEnd);
+      }
+      body.enable_recall = enableRecall;
+      if (enableRecall) body.recall_pct = recallPct;
+    }
+
     const res = await fetch(`/api/classes/${classId}/assignments`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        title: title.trim(),
-        description: description.trim() || undefined,
-        resource_type: resourceType,
-        resource_id: resourceId,
-        due_date: dueDate || undefined,
-      }),
+      body: JSON.stringify(body),
     });
 
     const json = (await res.json()) as { assignment?: { id: string }; error?: string };
@@ -82,6 +127,9 @@ export default function NewAssignmentPage() {
     if (c.level) parts.push(`Niv. ${c.level}`);
     return parts.join(" · ");
   }
+
+  const recallDisabled = priorAssignmentCount === 0;
+  const chapterRangeComplete = chapterPageStart !== "" && chapterPageEnd !== "";
 
   return (
     <main className="min-h-screen bg-gray-950 px-4 py-8 text-white">
@@ -179,6 +227,115 @@ export default function NewAssignmentPage() {
               </select>
             )}
           </div>
+
+          {/* Quiz-specific config */}
+          {resourceType === "quiz" && resourceId && (
+            <div className="space-y-4 rounded-xl border border-gray-700 bg-gray-950/50 p-4">
+              <p className="text-xs font-black uppercase tracking-widest text-gray-500">Configuration du quiz</p>
+
+              {/* Questions count */}
+              <div>
+                <label className="block text-sm font-bold text-gray-200">
+                  Nombre de questions
+                </label>
+                <div className="mt-2 flex items-center gap-3">
+                  <input
+                    type="range"
+                    min={5}
+                    max={30}
+                    value={questionsCount}
+                    onChange={(e) => setQuestionsCount(Number(e.target.value))}
+                    className="flex-1 accent-purple-500"
+                  />
+                  <span className="w-8 text-center font-black text-white text-lg">{questionsCount}</span>
+                </div>
+                <p className="mt-1 text-xs text-gray-600">entre 5 et 30 questions</p>
+              </div>
+
+              {/* Chapter page range */}
+              <div>
+                <label className="block text-sm font-bold text-gray-200">
+                  Pages du chapitre <span className="text-gray-600 font-normal">(optionnel)</span>
+                </label>
+                <div className="mt-2 flex items-center gap-2">
+                  <input
+                    type="number"
+                    min={1}
+                    value={chapterPageStart}
+                    onChange={(e) => setChapterPageStart(e.target.value)}
+                    placeholder="De"
+                    className="w-24 rounded-xl border border-gray-700 bg-gray-950 px-3 py-2 text-sm text-white outline-none focus:border-purple-500"
+                  />
+                  <span className="text-gray-600">à</span>
+                  <input
+                    type="number"
+                    min={1}
+                    value={chapterPageEnd}
+                    onChange={(e) => setChapterPageEnd(e.target.value)}
+                    placeholder="À"
+                    className="w-24 rounded-xl border border-gray-700 bg-gray-950 px-3 py-2 text-sm text-white outline-none focus:border-purple-500"
+                  />
+                </div>
+                <p className="mt-1 text-xs text-gray-600">
+                  Limite les questions aux pages de ce chapitre
+                </p>
+              </div>
+
+              {/* Recall toggle */}
+              <div>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <label className="text-sm font-bold text-gray-200">
+                      Rappel des chapitres précédents
+                    </label>
+                    {recallDisabled ? (
+                      <p className="mt-0.5 text-xs text-gray-600">
+                        {priorCountLoading ? "Vérification…" : "Disponible dès le 2ème devoir sur ce cours"}
+                      </p>
+                    ) : (
+                      !chapterRangeComplete && (
+                        <p className="mt-0.5 text-xs text-gray-600">Spécifie une plage de pages pour activer</p>
+                      )
+                    )}
+                  </div>
+                  <button
+                    type="button"
+                    disabled={recallDisabled || !chapterRangeComplete}
+                    onClick={() => setEnableRecall((v) => !v)}
+                    className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full border-2 transition-colors focus:outline-none disabled:opacity-40 ${
+                      enableRecall
+                        ? "border-purple-500 bg-purple-500"
+                        : "border-gray-600 bg-gray-800"
+                    }`}
+                  >
+                    <span
+                      className={`inline-block h-4 w-4 rounded-full bg-white shadow transition-transform ${
+                        enableRecall ? "translate-x-5" : "translate-x-0.5"
+                      }`}
+                    />
+                  </button>
+                </div>
+
+                {enableRecall && (
+                  <div className="mt-3">
+                    <label className="text-xs text-gray-400">
+                      Part de rappel : <span className="font-black text-purple-300">{recallPct}%</span>
+                      <span className="ml-2 text-gray-600">({100 - recallPct}% chapitre)</span>
+                    </label>
+                    <input
+                      type="range"
+                      min={5}
+                      max={30}
+                      step={5}
+                      value={recallPct}
+                      onChange={(e) => setRecallPct(Number(e.target.value))}
+                      className="mt-1 w-full accent-purple-500"
+                    />
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
 
           {/* Due date */}
           <div>

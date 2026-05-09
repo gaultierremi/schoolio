@@ -23,6 +23,7 @@ export function ValidatedCard({
   onForcePropose: () => void;
 }) {
   const isAiValidated = q.is_ai_generated === true && !!q.validated_at;
+  const isPdfExtracted = q.origin === "extracted_from_pdf" && !!q.validated_at;
 
   return (
     <div className="rounded-2xl border border-gray-800 bg-gray-900 p-4">
@@ -32,7 +33,12 @@ export function ValidatedCard({
             <TypeBadge type={q.type} />
             {isAiValidated && (
               <span className="rounded-full bg-green-500/20 px-2 py-0.5 text-xs font-black text-green-300">
-                ✓ IA
+                ✓ 🤖 IA
+              </span>
+            )}
+            {isPdfExtracted && (
+              <span className="rounded-full bg-cyan-500/20 px-2 py-0.5 text-xs font-black text-cyan-300">
+                ✓ 📄 PDF
               </span>
             )}
             {q.difficulty_stars !== null && (

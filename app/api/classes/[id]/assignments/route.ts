@@ -126,7 +126,26 @@ type CreateBody = {
   resource_type?: unknown;
   resource_id?: unknown;
   due_date?: unknown;
+  questions_count?: unknown;
+  chapter_page_start?: unknown;
+  chapter_page_end?: unknown;
+  enable_recall?: unknown;
+  recall_pct?: unknown;
 };
+
+type ValidatedQuestion = {
+  id: string;
+  page_range_start: number | null;
+};
+
+function shuffle<T>(arr: T[]): T[] {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
 
 export async function POST(
   req: NextRequest,
@@ -156,6 +175,25 @@ export async function POST(
     if (!resource_id) {
       return NextResponse.json({ error: "resource_id requis" }, { status: 400 });
     }
+
+    // Quiz config
+    const questions_count =
+      resource_type === "quiz" && typeof body.questions_count === "number"
+        ? Math.min(30, Math.max(5, Math.round(body.questions_count)))
+        : null;
+    const chapter_page_start =
+      resource_type === "quiz" && typeof body.chapter_page_start === "number" && body.chapter_page_start >= 1
+        ? Math.round(body.chapter_page_start)
+        : null;
+    const chapter_page_end =
+      resource_type === "quiz" && typeof body.chapter_page_end === "number" && body.chapter_page_end >= 1
+        ? Math.round(body.chapter_page_end)
+        : null;
+    const enable_recall = resource_type === "quiz" && body.enable_recall === true;
+    const recall_pct =
+      enable_recall && typeof body.recall_pct === "number"
+        ? Math.min(30, Math.max(5, Math.round(body.recall_pct)))
+        : 15;
 
     const admin = createAdminClient();
     const owns = await assertTeacherOwnsClass(admin, params.id, user.id);
@@ -203,18 +241,76 @@ export async function POST(
         resource_type,
         resource_id,
         due_date: typeof body.due_date === "string" && body.due_date ? body.due_date : null,
+        questions_count,
+        chapter_page_start,
+        chapter_page_end,
+        enable_recall,
+        recall_pct: enable_recall ? recall_pct : null,
       })
       .select("*")
       .single();
 
     if (insertError) throw insertError;
 
+    const assignmentId = (assignment as { id: string }).id;
+
+    // Sample questions for 85/15 quiz if count specified
+    if (resource_type === "quiz" && questions_count !== null) {
+      const { data: allQs } = await admin
+        .from("teacher_questions")
+        .select("id, page_range_start")
+        .eq("course_id", resource_id)
+        .not("validated_at", "is", null)
+        .is("rejected_at", null);
+
+      const allQuestions = (allQs ?? []) as ValidatedQuestion[];
+
+      let chapterQs: ValidatedQuestion[];
+      let recallQs: ValidatedQuestion[];
+
+      if (chapter_page_start !== null && chapter_page_end !== null) {
+        chapterQs = allQuestions.filter(
+          (q) => q.page_range_start !== null &&
+            q.page_range_start >= chapter_page_start &&
+            q.page_range_start <= chapter_page_end
+        );
+        // Fall back to all questions if none match the chapter range
+        if (chapterQs.length === 0) chapterQs = allQuestions;
+        recallQs = allQuestions.filter((q) => !chapterQs.includes(q));
+      } else {
+        chapterQs = allQuestions;
+        recallQs = [];
+      }
+
+      let sampledChapter: ValidatedQuestion[];
+      let sampledRecall: ValidatedQuestion[];
+
+      if (enable_recall && recallQs.length > 0) {
+        const chapterCount = Math.max(1, Math.round(questions_count * (1 - recall_pct / 100)));
+        const recallCount = questions_count - chapterCount;
+        sampledChapter = shuffle(chapterQs).slice(0, chapterCount);
+        sampledRecall = shuffle(recallQs).slice(0, recallCount);
+      } else {
+        sampledChapter = shuffle(chapterQs).slice(0, questions_count);
+        sampledRecall = [];
+      }
+
+      const rows = [
+        ...sampledChapter.map((q) => ({ assignment_id: assignmentId, question_id: q.id, is_recall: false })),
+        ...sampledRecall.map((q) => ({ assignment_id: assignmentId, question_id: q.id, is_recall: true })),
+      ];
+
+      if (rows.length > 0) {
+        await admin.from("assignment_questions").insert(rows);
+      }
+    }
+
     await logActivity({
       event_type: "teacher_created_assignment",
       actor_id: user.id,
       actor_type: "teacher",
       target_type: "assignment",
-      target_id: (assignment as { id: string }).id,
+      target_id: assignmentId,
       teacher_id: user.id,
       context: { title, resource_type },
     });

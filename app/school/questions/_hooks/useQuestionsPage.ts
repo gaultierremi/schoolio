@@ -32,6 +32,7 @@ export function useQuestionsPage() {
   const [myFilterPeriod, setMyFilterPeriod] = useState("");
   const [myFilterSubject, setMyFilterSubject] = useState<SubjectId | null>(null);
   const [myFilterLevel, setMyFilterLevel] = useState<SchoolLevel | null>(null);
+  const [myFilterOrigin, setMyFilterOrigin] = useState<"" | "ai_generated" | "extracted_from_pdf">("");
   const [sortBy, setSortBy] = useState<"date" | "type" | "period">("date");
 
   // Validation state
@@ -98,7 +99,7 @@ export function useQuestionsPage() {
     if (opts?.autoTab && !hasAutoSetTab.current) {
       hasAutoSetTab.current = true;
       const hasPending = loaded.some(
-        (q) => q.is_ai_generated === true && !q.validated_at && !q.rejected_at
+        (q) => (q.is_ai_generated === true || q.origin === "extracted_from_pdf") && !q.validated_at && !q.rejected_at
       );
       if (!hasPending) setValTab("validated");
     }
@@ -516,9 +517,10 @@ export function useQuestionsPage() {
   // ── Derived lists ──
 
   const isPending = (q: TeacherQuestion) =>
-    q.is_ai_generated === true && !q.validated_at && !q.rejected_at;
+    !q.validated_at && !q.rejected_at &&
+    (q.is_ai_generated === true || q.origin === "extracted_from_pdf");
   const isRejectedQ = (q: TeacherQuestion) =>
-    q.is_ai_generated === true && !!q.rejected_at;
+    !!q.rejected_at && (q.is_ai_generated === true || q.origin === "extracted_from_pdf");
 
   const pendingQuestions = myQuestions.filter(isPending);
   const rejectedQuestions = myQuestions.filter(isRejectedQ);
@@ -531,6 +533,7 @@ export function useQuestionsPage() {
     myFilterLevel !== null ||
     myFilterType !== "" ||
     myFilterPeriod !== "" ||
+    myFilterOrigin !== "" ||
     filterStars !== 0;
 
   const filteredValidated = validatedQuestionsBase.filter((q) => {
@@ -539,6 +542,7 @@ export function useQuestionsPage() {
     if (myFilterSubject !== null && q.subject_enum !== myFilterSubject) return false;
     if (myFilterLevel !== null && q.level !== myFilterLevel) return false;
     if (filterStars !== 0 && q.difficulty_stars !== filterStars) return false;
+    if (myFilterOrigin !== "" && q.origin !== myFilterOrigin) return false;
     return true;
   });
 
@@ -580,6 +584,7 @@ export function useQuestionsPage() {
     myFilterPeriod, setMyFilterPeriod,
     myFilterSubject, setMyFilterSubject,
     myFilterLevel, setMyFilterLevel,
+    myFilterOrigin, setMyFilterOrigin,
     sortBy, setSortBy,
     filterStars, setFilterStars,
     // validation

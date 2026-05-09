@@ -4,6 +4,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 import { getAdaptiveQuestions } from "@/lib/adaptive";
+import { getStudentAuthorizedSubjects } from "@/lib/student-subjects";
 import type { QuizDifficulty } from "@/lib/types";
 
 export async function GET(request: NextRequest) {
@@ -39,6 +40,12 @@ export async function GET(request: NextRequest) {
       1,
       Math.min(20, Number(searchParams.get("count") ?? "10"))
     );
+
+    const subjects = await getStudentAuthorizedSubjects(user.id);
+    const hasSubjects = subjects.length > 0;
+    if (hasSubjects && !subjects.includes("histoire")) {
+      return NextResponse.json({ questions: [] });
+    }
 
     const questions = await getAdaptiveQuestions(user.id, difficulty, count);
     return NextResponse.json({ questions });

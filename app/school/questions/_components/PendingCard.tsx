@@ -33,9 +33,15 @@ export function PendingCard({
     >
       <div className="flex flex-wrap items-center gap-2 mb-3">
         <TypeBadge type={q.type} />
-        <span className="rounded-full bg-indigo-500/20 px-2 py-0.5 text-xs font-black text-indigo-300">
-          IA
-        </span>
+        {q.origin === "extracted_from_pdf" ? (
+          <span className="rounded-full bg-cyan-500/20 px-2 py-0.5 text-xs font-black text-cyan-300">
+            📄 PDF
+          </span>
+        ) : (
+          <span className="rounded-full bg-indigo-500/20 px-2 py-0.5 text-xs font-black text-indigo-300">
+            🤖 IA
+          </span>
+        )}
         {q.period && (
           <span className="rounded-full bg-gray-800 px-2 py-0.5 text-xs text-gray-400">
             {q.period}

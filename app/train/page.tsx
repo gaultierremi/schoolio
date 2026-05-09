@@ -4,6 +4,7 @@ import { createClient as createAdminClient } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase-server";
 import { getWeakConcepts, getUserMastery } from "@/lib/concepts";
 import { getAdaptiveQuestions } from "@/lib/adaptive";
+import { getStudentAuthorizedSubjects } from "@/lib/student-subjects";
 import TrainingCard from "@/components/TrainingCard";
 import type { QuizQuestion } from "@/lib/types";
 import type { ConceptMastery } from "@/lib/concepts";
@@ -17,6 +18,60 @@ export default async function TrainPage() {
   } = await supabase.auth.getUser();
 
   if (!user) redirect("/");
+
+  const subjects = await getStudentAuthorizedSubjects(user.id);
+  const hasNoSubjects = subjects.length === 0;
+  const hasOnlyNonHistoire = subjects.length > 0 && !subjects.includes("histoire");
+
+  if (hasNoSubjects) {
+    return (
+      <div className="flex min-h-screen flex-col items-center justify-center gap-8 bg-gray-950 px-4 text-center">
+        <div className="flex flex-col items-center gap-4">
+          <span className="text-7xl leading-none">📚</span>
+          <h1 className="text-3xl font-black text-white">Entraînement adaptatif</h1>
+          <p className="max-w-md text-base leading-relaxed text-gray-400">
+            Rejoins une classe pour accéder à l&apos;entraînement adaptatif. Ton professeur
+            t&apos;enverra un lien d&apos;invitation.
+          </p>
+        </div>
+        <Link
+          href="/student"
+          className="rounded-2xl border border-gray-700 px-6 py-3 text-center text-sm font-bold text-gray-400 transition hover:border-gray-500 hover:text-white"
+        >
+          ← Mon espace
+        </Link>
+      </div>
+    );
+  }
+
+  if (hasOnlyNonHistoire) {
+    return (
+      <div className="flex min-h-screen flex-col items-center justify-center gap-8 bg-gray-950 px-4 text-center">
+        <div className="flex flex-col items-center gap-4">
+          <span className="text-7xl leading-none">🧪</span>
+          <h1 className="text-3xl font-black text-white">Entraînement adaptatif</h1>
+          <p className="max-w-md text-base leading-relaxed text-gray-400">
+            L&apos;entraînement adaptatif arrive bientôt pour tes matières.
+            En attendant, fais tes devoirs pour progresser.
+          </p>
+        </div>
+        <div className="flex w-full max-w-xs flex-col gap-3">
+          <Link
+            href="/student"
+            className="rounded-2xl bg-purple-500 px-6 py-4 text-center font-black text-gray-950 transition hover:bg-purple-400 active:scale-[0.98]"
+          >
+            Mes devoirs →
+          </Link>
+          <Link
+            href="/"
+            className="rounded-2xl border border-gray-700 px-6 py-3 text-center text-sm font-bold text-gray-400 transition hover:border-gray-500 hover:text-white"
+          >
+            ← Retour à l&apos;accueil
+          </Link>
+        </div>
+      </div>
+    );
+  }
 
   let hasData = false;
   let weakConcepts: ConceptMastery[] = [];
