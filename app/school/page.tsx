@@ -10,6 +10,8 @@ import KpiGrid from "./_components/KpiGrid";
 import ClassesPreview from "./_components/ClassesPreview";
 import QuickActions from "./_components/QuickActions";
 import ActivityTimeline from "./_components/ActivityTimeline";
+import { CurrentClassBanner } from "./_components/CurrentClassBanner";
+import { WelcomeScheduleOnboarding } from "./_components/WelcomeScheduleOnboarding";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -44,10 +46,29 @@ type ActivityEvent = {
   created_at: string;
 };
 
+type ScheduleSlot = {
+  id: string;
+  day_of_week: number;
+  start_time: string;
+  end_time: string;
+  week_pattern: string;
+  class_id: string | null;
+  subject_label: string | null;
+  custom_color: string | null;
+  notes: string | null;
+  classes?: { id: string; name: string; subject: string | null } | null;
+};
+
+type ScheduleSetup = {
+  onboarding_dismissed: boolean;
+  has_slots: boolean;
+};
+
 type DashboardData = {
   stats: Stats;
   to_handle: ToHandle;
   classes_preview: ClassPreview[];
+  schedule_setup?: ScheduleSetup;
 };
 
 // ── Skeleton ──────────────────────────────────────────────────────────────────
@@ -79,6 +100,10 @@ export default function SchoolDashboardPage() {
   const [authLoading, setAuthLoading] = useState(true);
   const [dashboard, setDashboard] = useState<DashboardData | null>(null);
   const [dashLoading, setDashLoading] = useState(false);
+  const [scheduleSlots, setScheduleSlots] = useState<ScheduleSlot[]>([]);
+  const [weekPatternOverride, setWeekPatternOverride] = useState<"auto" | "force_A" | "force_B">("auto");
+  const [showOnboarding, setShowOnboarding] = useState(false);
+  const [suggestions, setSuggestions] = useState<string[]>([]);
 
   useEffect(() => {
     async function init() {
@@ -96,8 +121,31 @@ export default function SchoolDashboardPage() {
       if (!teacher) return;
 
       setDashLoading(true);
-      const res = await fetch("/api/school/dashboard-summary");
-      if (res.ok) setDashboard((await res.json()) as DashboardData);
+      const [dashRes, scheduleRes, contextRes] = await Promise.all([
+        fetch("/api/school/dashboard-summary"),
+        fetch("/api/school/schedule"),
+        fetch(`/api/school/schedule/current-context?tz_offset=${-new Date().getTimezoneOffset()}`),
+      ]);
+
+      if (dashRes.ok) {
+        const data = (await dashRes.json()) as DashboardData;
+        setDashboard(data);
+        if (data.schedule_setup && !data.schedule_setup.onboarding_dismissed && !data.schedule_setup.has_slots) {
+          setShowOnboarding(true);
+        }
+      }
+
+      if (scheduleRes.ok) {
+        const data = (await scheduleRes.json()) as { slots: ScheduleSlot[]; week_pattern_override: string };
+        setScheduleSlots(data.slots ?? []);
+        setWeekPatternOverride((data.week_pattern_override as "auto" | "force_A" | "force_B") ?? "auto");
+      }
+
+      if (contextRes.ok) {
+        const data = (await contextRes.json()) as { suggestions?: string[] };
+        setSuggestions(data.suggestions ?? []);
+      }
+
       setDashLoading(false);
     }
 
@@ -137,6 +185,8 @@ export default function SchoolDashboardPage() {
     (user?.user_metadata?.name as string | undefined) ??
     user?.email;
 
+  const firstName = (user?.user_metadata?.full_name as string | undefined)?.split(" ")[0] ?? "";
+
   return (
     <main className="min-h-screen bg-gray-950 px-4 py-8 text-white">
       <div className="mx-auto w-full max-w-4xl">
@@ -149,13 +199,23 @@ export default function SchoolDashboardPage() {
 
         <div className="space-y-10">
           <DashboardHeader displayName={displayName} />
-          <ToHandleSection toHandle={dashboard?.to_handle} loading={dashLoading} />
+          {scheduleSlots.length > 0 && (
+            <CurrentClassBanner slots={scheduleSlots} weekPatternOverride={weekPatternOverride} />
+          )}
+          <ToHandleSection toHandle={dashboard?.to_handle} loading={dashLoading} suggestions={suggestions} />
           <KpiGrid stats={dashboard?.stats} loading={dashLoading} />
           <QuickActions />
           <ClassesPreview classes={dashboard?.classes_preview} loading={dashLoading} />
           <ActivityTimeline loadActivity={loadActivity} />
         </div>
       </div>
+
+      {showOnboarding && (
+        <WelcomeScheduleOnboarding
+          firstName={firstName}
+          onDismiss={() => setShowOnboarding(false)}
+        />
+      )}
     </main>
   );
 }
