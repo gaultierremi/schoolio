@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { SUBJECTS_BY_ID } from "@/lib/subjects";
 import type { SubjectId } from "@/lib/subjects";
 import type { AssignmentEntry } from "./page";
+import StudentWelcomeOnboarding from "@/components/StudentWelcomeOnboarding";
 
 type ClassEntry = {
   classId: string;
@@ -18,6 +19,8 @@ type ClassEntry = {
 type Props = {
   classes: ClassEntry[];
   assignments: AssignmentEntry[];
+  displayName: string;
+  showOnboarding: boolean;
 };
 
 function formatDate(iso: string): string {
@@ -143,7 +146,7 @@ function ClassCard({
   );
 }
 
-export default function StudentDashboardClient({ classes: initialClasses, assignments }: Props) {
+export default function StudentDashboardClient({ classes: initialClasses, assignments, displayName, showOnboarding }: Props) {
   const [classes, setClasses] = useState(initialClasses);
   const [leavingId, setLeavingId] = useState<string | null>(null);
   const [assignTab, setAssignTab] = useState<"todo" | "done">("todo");
@@ -161,6 +164,8 @@ export default function StudentDashboardClient({ classes: initialClasses, assign
 
   return (
     <div className="flex flex-col gap-8">
+
+      {showOnboarding && <StudentWelcomeOnboarding displayName={displayName} />}
 
       {/* Assignments */}
       {assignments.length > 0 && (

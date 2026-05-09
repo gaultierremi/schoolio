@@ -72,7 +72,11 @@ function aggregateMasteryBySubject(mastery: ConceptMastery[]) {
     .slice(0, 6);
 }
 
-export default async function StudentPage() {
+export default async function StudentPage({
+  searchParams,
+}: {
+  searchParams: { welcome?: string };
+}) {
   const supabase = createClient();
   const { data: { user } } = await supabase.auth.getUser();
 
@@ -145,7 +149,7 @@ export default async function StudentPage() {
 
   const { data: ownProfile } = await admin
     .from("user_profiles")
-    .select("first_name, last_name, pseudo, auth_mode")
+    .select("first_name, last_name, pseudo, auth_mode, student_onboarding_dismissed_at")
     .eq("id", user.id)
     .maybeSingle();
 
@@ -164,6 +168,10 @@ export default async function StudentPage() {
         authMode: (ownProfile.auth_mode as "full" | "light") ?? "light",
       }
     : null;
+
+  const showOnboarding =
+    searchParams.welcome === "1" ||
+    !ownProfile?.student_onboarding_dismissed_at;
 
   const classes = rows.map((r) => ({
     classId: r.class_id,
@@ -213,7 +221,12 @@ export default async function StudentPage() {
           <MasterySubjectGrid subjects={subjectMastery} />
         )}
 
-        <StudentDashboardClient classes={classes} assignments={assignments} />
+        <StudentDashboardClient
+          classes={classes}
+          assignments={assignments}
+          displayName={displayName}
+          showOnboarding={showOnboarding}
+        />
 
         <ExplorerFooter />
 
