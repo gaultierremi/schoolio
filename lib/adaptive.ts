@@ -5,7 +5,7 @@ import {
   tagQuestionWithConcepts,
   updateConceptMastery,
 } from "@/lib/concepts";
-import type { QuizQuestion, QuizDifficulty, TimelineEvent } from "@/lib/types";
+import type { QuizQuestion, QuizDifficulty } from "@/lib/types";
 
 function getDb() {
   return createClient(
@@ -143,113 +143,6 @@ export async function getAdaptiveQuestions(
         [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
       }
       combined.push(...(shuffled.slice(0, needed) as QuizQuestion[]));
-    }
-  }
-
-  for (let i = combined.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [combined[i], combined[j]] = [combined[j], combined[i]];
-  }
-
-  return combined.slice(0, count);
-}
-
-export async function getAdaptiveTimelineEvents(
-  userId: string,
-  count = 8
-): Promise<TimelineEvent[]> {
-  const db = getDb();
-
-  const { data: masteryData } = await db
-    .from("user_concept_mastery")
-    .select("concept_id, mastery_score")
-    .eq("user_id", userId);
-
-  const masteryMap = new Map<string, number>(
-    ((masteryData ?? []) as { concept_id: string; mastery_score: number }[]).map(
-      (m) => [m.concept_id, m.mastery_score]
-    )
-  );
-
-  const weakIds: string[] = [];
-  const mediumIds: string[] = [];
-  const strongIds: string[] = [];
-
-  for (const [id, score] of masteryMap) {
-    if (score < 50) weakIds.push(id);
-    else if (score <= 80) mediumIds.push(id);
-    else strongIds.push(id);
-  }
-
-  const weakTarget = Math.round(count * 0.6);
-  const mediumTarget = Math.round(count * 0.3);
-  const strongTarget = count - weakTarget - mediumTarget;
-
-  async function eventsForConcepts(
-    conceptIds: string[],
-    target: number
-  ): Promise<TimelineEvent[]> {
-    if (conceptIds.length === 0 || target === 0) return [];
-
-    const { data: links } = await db
-      .from("question_concepts")
-      .select("question_id")
-      .eq("question_type", "timeline")
-      .in("concept_id", conceptIds)
-      .limit(target * 5);
-
-    if (!links || links.length === 0) return [];
-
-    const eIds = [
-      ...new Set((links as { question_id: string }[]).map((r) => r.question_id)),
-    ];
-
-    const { data: events } = await db
-      .from("timeline_events")
-      .select("*")
-      .in("id", eIds)
-      .eq("status", "approved")
-      .limit(target * 2);
-
-    if (!events) return [];
-
-    const shuffled = [...events];
-    for (let i = shuffled.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
-    }
-    return shuffled.slice(0, target) as TimelineEvent[];
-  }
-
-  const [weakEvts, mediumEvts, strongEvts] = await Promise.all([
-    eventsForConcepts(weakIds, weakTarget),
-    eventsForConcepts(mediumIds, mediumTarget),
-    eventsForConcepts(strongIds, strongTarget),
-  ]);
-
-  const combined = [...weakEvts, ...mediumEvts, ...strongEvts];
-  const needed = count - combined.length;
-
-  if (needed > 0) {
-    const usedIds = new Set(combined.map((e) => e.id));
-    const baseQuery = db
-      .from("timeline_events")
-      .select("*")
-      .eq("status", "approved")
-      .limit(needed * 3);
-
-    const { data: filler } =
-      usedIds.size > 0
-        ? await baseQuery.not("id", "in", `(${[...usedIds].join(",")})`)
-        : await baseQuery;
-
-    if (filler) {
-      const shuffled = [...filler];
-      for (let i = shuffled.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
-      }
-      combined.push(...(shuffled.slice(0, needed) as TimelineEvent[]));
     }
   }
 
