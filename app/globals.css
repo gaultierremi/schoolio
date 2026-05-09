@@ -75,3 +75,37 @@
     animation: none;
   }
 }
+
+/* prose-exercise — dark-theme markdown + KaTeX rendering */
+.prose-exercise {
+  color: #e5e7eb;
+  font-size: 0.9375rem;
+  line-height: 1.7;
+}
+.prose-exercise p { margin: 0.5em 0; }
+.prose-exercise p:first-child { margin-top: 0; }
+.prose-exercise p:last-child { margin-bottom: 0; }
+.prose-exercise strong { color: #fff; font-weight: 700; }
+.prose-exercise em { color: #d1d5db; }
+.prose-exercise code {
+  background: rgba(255,255,255,0.08);
+  border-radius: 4px;
+  padding: 0.1em 0.35em;
+  font-size: 0.875em;
+  color: #c4b5fd;
+}
+.prose-exercise ul, .prose-exercise ol {
+  padding-left: 1.5em;
+  margin: 0.5em 0;
+}
+.prose-exercise li { margin: 0.2em 0; }
+.prose-exercise h1,.prose-exercise h2,.prose-exercise h3 {
+  color: #fff;
+  font-weight: 700;
+  margin: 0.75em 0 0.4em;
+}
+.prose-exercise .math-display {
+  overflow-x: auto;
+  padding: 0.5em 0;
+}
+.katex { font-size: 1em; }
