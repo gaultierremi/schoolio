@@ -66,6 +66,7 @@ export default function AssignmentDetailPage() {
   const [editDesc, setEditDesc] = useState("");
   const [editDue, setEditDue] = useState("");
   const [saving, setSaving] = useState(false);
+  const [exporting, setExporting] = useState(false);
   const [sortKey, setSortKey] = useState<SortKey>("status");
   const [sortAsc, setSortAsc] = useState(true);
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
@@ -109,6 +110,25 @@ export default function AssignmentDetailPage() {
   async function handleArchive() {
     await fetch(`/api/classes/${classId}/assignments/${assignmentId}`, { method: "DELETE" });
     router.push(`/school/classes/${classId}`);
+  }
+
+  async function handleExport() {
+    setExporting(true);
+    const res = await fetch(`/api/classes/${classId}/assignments/${assignmentId}/export`);
+    if (res.ok) {
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      const cd = res.headers.get("Content-Disposition") ?? "";
+      const match = /filename="([^"]+)"/.exec(cd);
+      a.download = match?.[1] ?? "export-devoir.csv";
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }
+    setExporting(false);
   }
 
   function toggleSort(key: SortKey) {
@@ -188,6 +208,13 @@ export default function AssignmentDetailPage() {
             )}
           </div>
           <div className="flex shrink-0 gap-2">
+            <button
+              onClick={handleExport}
+              disabled={exporting}
+              className="rounded-xl border border-gray-700 px-3 py-1.5 text-xs font-bold text-gray-400 transition hover:border-gray-500 hover:text-white disabled:opacity-50"
+            >
+              {exporting ? "Export..." : "📥 Exporter CSV"}
+            </button>
             <button
               onClick={() => setEditing(true)}
               className="rounded-xl border border-gray-700 px-3 py-1.5 text-xs font-bold text-gray-400 transition hover:border-gray-500 hover:text-white"

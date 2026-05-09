@@ -49,8 +49,7 @@ export async function GET(
       admin
         .from("class_memberships")
         .select("id, student_user_id, joined_at, status")
-        .eq("class_id", params.id)
-        .order("joined_at", { ascending: false }),
+        .eq("class_id", params.id),
     ]);
 
     if (classRes.error) {
@@ -60,7 +59,44 @@ export async function GET(
       throw classRes.error;
     }
 
-    return NextResponse.json({ class: classRes.data, members: membersRes.data ?? [] });
+    const rawMembers = membersRes.data ?? [];
+    const studentIds = rawMembers.map((m) => m.student_user_id);
+
+    type ProfileRow = { id: string; first_name: string | null; last_name: string | null; pseudo: string | null; auth_mode: string | null; user_name: string | null };
+    const profileMap = new Map<string, ProfileRow>();
+    if (studentIds.length > 0) {
+      const { data: profiles } = await admin
+        .from("user_profiles")
+        .select("id, first_name, last_name, pseudo, auth_mode, user_name")
+        .in("id", studentIds);
+      for (const p of (profiles ?? []) as ProfileRow[]) profileMap.set(p.id, p);
+    }
+
+    function buildDisplayName(p: ProfileRow | undefined): string {
+      if (!p) return "—";
+      if (p.auth_mode === "light") {
+        const parts = [p.first_name, p.last_name].filter(Boolean).join(" ");
+        return parts ? `${parts} (pseudo: ${p.pseudo ?? ""})` : (p.pseudo ?? "—");
+      }
+      if (p.first_name) return [p.first_name, p.last_name].filter(Boolean).join(" ");
+      return p.user_name ?? "—";
+    }
+
+    const members = rawMembers
+      .map((m) => ({
+        ...m,
+        display_name: buildDisplayName(profileMap.get(m.student_user_id)),
+        _sortLast: (profileMap.get(m.student_user_id)?.last_name ?? "").toLowerCase(),
+        _sortFirst: (profileMap.get(m.student_user_id)?.first_name ?? profileMap.get(m.student_user_id)?.user_name ?? "").toLowerCase(),
+      }))
+      .sort((a, b) => {
+        const lc = a._sortLast.localeCompare(b._sortLast, "fr", { sensitivity: "base" });
+        if (lc !== 0) return lc;
+        return a._sortFirst.localeCompare(b._sortFirst, "fr", { sensitivity: "base" });
+      })
+      .map(({ _sortLast: _l, _sortFirst: _f, ...rest }) => rest);
+
+    return NextResponse.json({ class: classRes.data, members });
   } catch (err) {
     console.error("[class:GET]", err);
     return NextResponse.json({ error: "Erreur serveur" }, { status: 500 });

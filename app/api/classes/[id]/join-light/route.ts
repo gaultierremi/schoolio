@@ -7,6 +7,7 @@ import crypto from "crypto";
 export const dynamic = "force-dynamic";
 
 const PSEUDO_PATTERN = /^[\p{L}\p{N} _-]+$/u;
+const NAME_PATTERN = /^[\p{L} -]+$/u;
 
 function createAdminClient() {
   return createSupabaseAdminClient(
@@ -47,9 +48,13 @@ export async function POST(
   { params }: { params: { id: string } }
 ) {
   try {
-    const body = (await req.json()) as { pseudo?: unknown };
+    const body = (await req.json()) as { pseudo?: unknown; firstName?: unknown; lastName?: unknown };
     const pseudo =
       typeof body.pseudo === "string" ? body.pseudo.trim() : "";
+    const firstName =
+      typeof body.firstName === "string" ? body.firstName.trim() : "";
+    const lastName =
+      typeof body.lastName === "string" ? body.lastName.trim() : "";
 
     if (pseudo.length < 2 || pseudo.length > 20) {
       return NextResponse.json(
@@ -63,6 +68,12 @@ export async function POST(
           error:
             "Utilise seulement des lettres, chiffres, espaces, tirets ou underscores",
         },
+        { status: 400 }
+      );
+    }
+    if (firstName.length < 2 || !NAME_PATTERN.test(firstName)) {
+      return NextResponse.json(
+        { error: "Prénom invalide (min 2 caractères, lettres uniquement)" },
         { status: 400 }
       );
     }
@@ -105,7 +116,7 @@ export async function POST(
       .maybeSingle();
 
     if (existing) {
-      // Reconnection: generate magic link and verify on server side to set session
+      // Reconnection: don't overwrite firstName/lastName, just restore session
       const { data: authUser, error: fetchError } =
         await admin.auth.admin.getUserById(existing.student_user_id);
       if (fetchError || !authUser.user) throw fetchError ?? new Error("User not found");
@@ -153,6 +164,8 @@ export async function POST(
       admin.from("user_profiles").upsert({
         id: userId,
         user_name: pseudo,
+        first_name: firstName,
+        last_name: lastName || null,
         avatar_color: "#a855f7",
         unlocked_skins: ["default"],
         active_skin: "default",

@@ -116,11 +116,28 @@ export default async function StudentPage() {
   }
 
   const meta = user.user_metadata as Record<string, unknown>;
+
+  const { data: ownProfile } = await admin
+    .from("user_profiles")
+    .select("first_name, last_name, pseudo, auth_mode")
+    .eq("id", user.id)
+    .maybeSingle();
+
   const displayName =
-    (meta?.pseudo as string | undefined) ||
+    (ownProfile?.first_name as string | undefined) ||
     (meta?.firstName as string | undefined) ||
+    (meta?.pseudo as string | undefined) ||
     user.email?.split("@")[0] ||
     "Élève";
+
+  const identity = ownProfile?.pseudo
+    ? {
+        firstName: (ownProfile.first_name as string | null) ?? displayName,
+        lastName: (ownProfile.last_name as string | null) ?? null,
+        pseudo: ownProfile.pseudo as string,
+        authMode: (ownProfile.auth_mode as "full" | "light") ?? "light",
+      }
+    : null;
 
   const classes = rows.map((r) => ({
     classId: r.class_id,
@@ -132,6 +149,6 @@ export default async function StudentPage() {
   }));
 
   return (
-    <StudentDashboardClient displayName={displayName} classes={classes} assignments={assignments} />
+    <StudentDashboardClient displayName={displayName} classes={classes} assignments={assignments} identity={identity} />
   );
 }
