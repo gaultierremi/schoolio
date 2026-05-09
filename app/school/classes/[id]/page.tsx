@@ -234,6 +234,127 @@ function EditForm({
   );
 }
 
+// ── Assignment types ──────────────────────────────────────────────────────────
+
+type AssignmentItem = {
+  id: string;
+  title: string;
+  resource_type: "pdf" | "quiz";
+  course_title: string;
+  due_date: string | null;
+  nb_completed: number;
+  nb_total: number;
+  avg_score: number | null;
+  created_at: string;
+};
+
+function AssignmentsTab({ classId }: { classId: string }) {
+  const router = useRouter();
+  const [assignments, setAssignments] = useState<AssignmentItem[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [archiving, setArchiving] = useState<string | null>(null);
+
+  useEffect(() => {
+    fetch(`/api/classes/${classId}/assignments`)
+      .then((r) => r.json())
+      .then((j: { assignments?: AssignmentItem[] }) => {
+        setAssignments(j.assignments ?? []);
+        setLoading(false);
+      })
+      .catch(() => setLoading(false));
+  }, [classId]);
+
+  async function handleArchive(id: string) {
+    setArchiving(id);
+    await fetch(`/api/classes/${classId}/assignments/${id}`, { method: "DELETE" });
+    setAssignments((prev) => prev.filter((a) => a.id !== id));
+    setArchiving(null);
+  }
+
+  if (loading) {
+    return (
+      <div className="space-y-3 mt-4">
+        {[1, 2].map((i) => (
+          <div key={i} className="h-20 animate-pulse rounded-2xl bg-gray-800" />
+        ))}
+      </div>
+    );
+  }
+
+  return (
+    <div>
+      <div className="flex items-center justify-between mb-4">
+        <p className="text-sm text-gray-500">{assignments.length} devoir{assignments.length !== 1 ? "s" : ""}</p>
+        <a
+          href={`/school/classes/${classId}/assignments/new`}
+          className="rounded-2xl bg-purple-500 px-4 py-2 text-sm font-black text-gray-950 transition hover:bg-purple-400"
+        >
+          + Créer un devoir
+        </a>
+      </div>
+
+      {assignments.length === 0 ? (
+        <div className="mt-8 text-center">
+          <p className="text-4xl">📋</p>
+          <p className="mt-3 font-black text-white">Aucun devoir</p>
+          <p className="mt-1 text-sm text-gray-500">Crée le premier devoir pour cette classe.</p>
+        </div>
+      ) : (
+        <div className="space-y-3">
+          {assignments.map((a) => {
+            const pct = a.nb_total > 0 ? Math.round((a.nb_completed / a.nb_total) * 100) : 0;
+            return (
+              <div
+                key={a.id}
+                className="group flex flex-col gap-3 rounded-2xl border border-gray-800 bg-gray-900 p-4 transition hover:border-purple-500/40 cursor-pointer"
+                onClick={() => router.push(`/school/classes/${classId}/assignments/${a.id}`)}
+              >
+                <div className="flex items-start justify-between gap-2">
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-2">
+                      <span className="shrink-0 rounded-full border border-gray-700 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-gray-400">
+                        {a.resource_type === "pdf" ? "📄 PDF" : "🧠 Quiz"}
+                      </span>
+                      <p className="truncate font-black text-white">{a.title}</p>
+                    </div>
+                    <p className="mt-0.5 text-xs text-gray-500 truncate">{a.course_title}</p>
+                  </div>
+                  <button
+                    onClick={(e) => { e.stopPropagation(); handleArchive(a.id); }}
+                    disabled={archiving === a.id}
+                    className="shrink-0 rounded-lg border border-gray-700 px-2 py-1 text-xs text-gray-600 opacity-0 transition group-hover:opacity-100 hover:border-red-700/50 hover:text-red-400 disabled:opacity-50"
+                  >
+                    Archiver
+                  </button>
+                </div>
+
+                <div className="flex items-center gap-4 text-xs text-gray-500">
+                  <span>
+                    {a.nb_completed}/{a.nb_total} élèves
+                    {a.resource_type === "quiz" && a.avg_score !== null && (
+                      <> · moy. <span className="text-purple-400 font-bold">{a.avg_score}%</span></>
+                    )}
+                  </span>
+                  {a.due_date && (
+                    <span>📅 {new Date(a.due_date).toLocaleDateString("fr-BE", { day: "numeric", month: "short" })}</span>
+                  )}
+                </div>
+
+                <div className="h-1.5 rounded-full bg-gray-800">
+                  <div
+                    className="h-1.5 rounded-full bg-purple-500 transition-all"
+                    style={{ width: `${pct}%` }}
+                  />
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ── Page ──────────────────────────────────────────────────────────────────────
 
 export default function ClassDetailPage() {
@@ -250,6 +371,7 @@ export default function ClassDetailPage() {
   const [copied, setCopied] = useState<"code" | "link" | null>(null);
   const [regenerating, setRegenerating] = useState<"code" | "link" | null>(null);
   const [memberTab, setMemberTab] = useState<"active" | "removed">("active");
+  const [pageTab, setPageTab] = useState<"members" | "devoirs">("members");
 
   const baseUrl = typeof window !== "undefined" ? window.location.origin : "";
 
@@ -478,66 +600,93 @@ export default function ClassDetailPage() {
           </div>
         </div>
 
-        {/* Members section */}
-        <div className="rounded-2xl border border-gray-800 bg-gray-900 p-5">
-          <div className="flex items-center justify-between gap-4">
-            <h2 className="font-black text-white">
-              👥 Élèves ({activeMembers.length})
-            </h2>
-            <div className="flex gap-2">
-              {(["active", "removed"] as const).map((t) => (
-                <button
-                  key={t}
-                  onClick={() => setMemberTab(t)}
-                  className={`rounded-full px-3 py-1 text-xs font-bold transition ${
-                    memberTab === t
-                      ? "bg-purple-500 text-gray-950"
-                      : "border border-gray-700 text-gray-500 hover:border-gray-600 hover:text-gray-300"
-                  }`}
-                >
-                  {t === "active"
-                    ? `Actifs (${activeMembers.length})`
-                    : `Retirés (${removedMembers.length})`}
-                </button>
-              ))}
-            </div>
-          </div>
+        {/* Main tabs */}
+        <div className="flex gap-2">
+          {(["members", "devoirs"] as const).map((t) => (
+            <button
+              key={t}
+              onClick={() => setPageTab(t)}
+              className={`rounded-full px-4 py-1.5 text-sm font-bold transition ${
+                pageTab === t
+                  ? "bg-purple-500 text-gray-950"
+                  : "border border-gray-700 text-gray-500 hover:border-gray-600 hover:text-gray-300"
+              }`}
+            >
+              {t === "members" ? `👥 Élèves (${activeMembers.length})` : "📋 Devoirs"}
+            </button>
+          ))}
+        </div>
 
-          {visibleMembers.length === 0 ? (
-            <p className="mt-8 text-center text-sm italic text-gray-600">
-              {memberTab === "active"
-                ? "Aucun élève actif. Partage le code ou le lien d'invitation."
-                : "Aucun élève retiré."}
-            </p>
-          ) : (
-            <div className="mt-4 divide-y divide-gray-800">
-              {visibleMembers.map((m) => (
-                <div key={m.id} className="flex items-center justify-between gap-4 py-3">
-                  <div>
-                    <p className="font-mono text-xs text-gray-500">{m.student_user_id.slice(0, 8)}…</p>
-                    <p className="text-xs text-gray-600">Rejoint le {formatDate(m.joined_at)}</p>
-                  </div>
+        {/* Members section */}
+        {pageTab === "members" && (
+          <div className="rounded-2xl border border-gray-800 bg-gray-900 p-5">
+            <div className="flex items-center justify-between gap-4">
+              <h2 className="font-black text-white">
+                👥 Élèves ({activeMembers.length})
+              </h2>
+              <div className="flex gap-2">
+                {(["active", "removed"] as const).map((t) => (
                   <button
-                    onClick={() =>
-                      handleMemberStatusChange(
-                        m.id,
-                        m.student_user_id,
-                        m.status === "active" ? "removed" : "active"
-                      )
-                    }
-                    className={`rounded-lg border px-2 py-1 text-xs font-bold transition ${
-                      m.status === "active"
-                        ? "border-red-800/50 text-red-500 hover:border-red-600 hover:text-red-400"
-                        : "border-gray-700 text-gray-400 hover:border-gray-500 hover:text-white"
+                    key={t}
+                    onClick={() => setMemberTab(t)}
+                    className={`rounded-full px-3 py-1 text-xs font-bold transition ${
+                      memberTab === t
+                        ? "bg-purple-500 text-gray-950"
+                        : "border border-gray-700 text-gray-500 hover:border-gray-600 hover:text-gray-300"
                     }`}
                   >
-                    {m.status === "active" ? "Retirer" : "Réintégrer"}
+                    {t === "active"
+                      ? `Actifs (${activeMembers.length})`
+                      : `Retirés (${removedMembers.length})`}
                   </button>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
-          )}
-        </div>
+
+            {visibleMembers.length === 0 ? (
+              <p className="mt-8 text-center text-sm italic text-gray-600">
+                {memberTab === "active"
+                  ? "Aucun élève actif. Partage le code ou le lien d'invitation."
+                  : "Aucun élève retiré."}
+              </p>
+            ) : (
+              <div className="mt-4 divide-y divide-gray-800">
+                {visibleMembers.map((m) => (
+                  <div key={m.id} className="flex items-center justify-between gap-4 py-3">
+                    <div>
+                      <p className="font-mono text-xs text-gray-500">{m.student_user_id.slice(0, 8)}…</p>
+                      <p className="text-xs text-gray-600">Rejoint le {formatDate(m.joined_at)}</p>
+                    </div>
+                    <button
+                      onClick={() =>
+                        handleMemberStatusChange(
+                          m.id,
+                          m.student_user_id,
+                          m.status === "active" ? "removed" : "active"
+                        )
+                      }
+                      className={`rounded-lg border px-2 py-1 text-xs font-bold transition ${
+                        m.status === "active"
+                          ? "border-red-800/50 text-red-500 hover:border-red-600 hover:text-red-400"
+                          : "border-gray-700 text-gray-400 hover:border-gray-500 hover:text-white"
+                      }`}
+                    >
+                      {m.status === "active" ? "Retirer" : "Réintégrer"}
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Devoirs section */}
+        {pageTab === "devoirs" && (
+          <div className="rounded-2xl border border-gray-800 bg-gray-900 p-5">
+            <h2 className="font-black text-white mb-4">📋 Devoirs</h2>
+            <AssignmentsTab classId={id} />
+          </div>
+        )}
 
       </div>
 
