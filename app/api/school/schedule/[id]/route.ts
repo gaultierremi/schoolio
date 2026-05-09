@@ -13,10 +13,13 @@ function createAdminClient() {
 }
 
 type SlotRow = {
+  id: string;
   day_of_week: number;
   start_time: string;
   end_time: string;
   week_pattern: string;
+  class_id: string | null;
+  subject_label: string | null;
 };
 
 function timesOverlap(a: SlotRow, b: SlotRow): boolean {
@@ -110,7 +113,7 @@ export async function PATCH(
         ? body.notes.trim().slice(0, 500) : null;
     }
 
-    const merged = { ...existing, ...updates } as SlotRow & { id: string };
+    const merged = { ...existing, ...updates } as SlotRow;
 
     if (merged.start_time >= merged.end_time) {
       return NextResponse.json({ error: "L'heure de fin doit être après l'heure de début" }, { status: 400 });

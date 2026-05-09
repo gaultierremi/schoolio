@@ -146,7 +146,7 @@ export async function GET(req: NextRequest) {
 
     if (slotsResult.error) throw slotsResult.error;
 
-    const slots = (slotsResult.data ?? []) as Slot[];
+    const slots = (slotsResult.data ?? []) as unknown as Slot[];
     const override = profileResult.data?.week_pattern_override ?? "auto";
     const current_week = currentWeekLetter(localDate, override);
 
