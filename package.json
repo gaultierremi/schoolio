@@ -14,11 +14,16 @@
     "@supabase/ssr": "^0.10.2",
     "@supabase/supabase-js": "^2.105.3",
     "@tailwindcss/postcss": "^4.2.4",
+    "@types/katex": "^0.16.8",
     "canvas-confetti": "^1.9.4",
     "framer-motion": "^12.38.0",
+    "katex": "^0.16.45",
     "next": "14.2.3",
     "react": "^18",
-    "react-dom": "^18"
+    "react-dom": "^18",
+    "react-markdown": "^10.1.0",
+    "rehype-katex": "^7.0.1",
+    "remark-math": "^6.0.0"
   },
   "devDependencies": {
     "@types/canvas-confetti": "^1.9.0",

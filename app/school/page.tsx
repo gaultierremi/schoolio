@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import type { User } from "@supabase/supabase-js";
 import { motion, useReducedMotion } from "framer-motion";
@@ -301,6 +302,10 @@ export default function SchoolDashboardPage() {
   return (
     <main className="min-h-screen bg-gray-950 px-4 py-8 text-white">
       <div className="mx-auto w-full max-w-5xl">
+
+        <Link href="/" className="inline-block text-sm text-gray-400 hover:text-purple-400 transition-colors mb-6">
+          ← Retour à l&apos;accueil
+        </Link>
 
         {/* ── BANDEAU BASELINE ── */}
         <div className="mb-6">

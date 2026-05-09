@@ -575,7 +575,7 @@ export default function ExerciseDetailPage() {
 
           {exercise.generated_by_model && (
             <span className="text-xs text-gray-600 ml-auto">
-              {exercise.generated_by_model}
+              Généré par Schoolio
             </span>
           )}
         </div>

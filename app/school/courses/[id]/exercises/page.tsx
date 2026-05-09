@@ -49,13 +49,6 @@ const TYPE_BADGE_STYLE: Record<string, string> = {
   autre:         "bg-gray-500/20 text-gray-400",
 };
 
-function modelShortName(model: string | null): string {
-  if (!model) return "";
-  if (model.includes("pro")) return "Gemini Pro";
-  if (model.includes("flash")) return "Gemini Flash";
-  if (model.includes("sonnet")) return "Claude Sonnet";
-  return model;
-}
 
 function Stars({ count }: { count: number | null }) {
   if (!count) return null;
@@ -120,7 +113,7 @@ function GenerateModal({
         {state === "loading" ? (
           <div className="flex flex-col items-center gap-4 py-4">
             <div className="h-10 w-10 animate-spin rounded-full border-4 border-gray-700 border-t-purple-500" />
-            <p className="font-black text-white">Génération en cours via Gemini Pro…</p>
+            <p className="font-black text-white">Génération en cours via Schoolio…</p>
             <p className="text-sm text-gray-400 text-center">
               Patience, ~60s en moyenne. L&apos;IA analyse le PDF et génère {count} exercices avec résolutions détaillées.
             </p>
@@ -200,7 +193,7 @@ function ExerciseCard({
       </div>
       <p className="font-bold text-white leading-snug">{exercise.title}</p>
       {exercise.generated_by_model && (
-        <p className="mt-2 text-xs text-gray-600">{modelShortName(exercise.generated_by_model)}</p>
+        <p className="mt-2 text-xs text-gray-600">Généré par Schoolio</p>
       )}
     </Link>
   );
