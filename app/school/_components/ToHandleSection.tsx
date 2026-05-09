@@ -10,9 +10,11 @@ type ToHandle = {
 export default function ToHandleSection({
   toHandle,
   loading,
+  suggestions,
 }: {
   toHandle?: ToHandle;
   loading: boolean;
+  suggestions?: string[];
 }) {
   if (loading) {
     return <div className="h-10 animate-pulse rounded-xl bg-gray-800" />;
@@ -71,6 +73,13 @@ export default function ToHandleSection({
           </Link>
         )}
       </div>
+      {suggestions && suggestions.length > 0 && (
+        <div className="mt-3 space-y-1">
+          {suggestions.map((s, i) => (
+            <p key={i} className="text-xs text-gray-500 italic">{s}</p>
+          ))}
+        </div>
+      )}
     </section>
   );
 }

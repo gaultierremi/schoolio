@@ -38,11 +38,11 @@ const ACTIONS = [
     textClass: "text-cyan-300",
   },
   {
-    label: "Mes questions",
-    icon: "📚",
-    href: "/school/questions",
-    colorClass: "border-gray-700 bg-gray-800 hover:bg-gray-700",
-    textClass: "text-gray-300",
+    label: "Mon emploi du temps",
+    icon: "🗓️",
+    href: "/school/schedule",
+    colorClass: "border-indigo-500/20 bg-indigo-500/10 hover:bg-indigo-500/20",
+    textClass: "text-indigo-300",
   },
 ] as const;
 

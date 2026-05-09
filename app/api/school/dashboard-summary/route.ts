@@ -136,6 +136,16 @@ export async function GET() {
       }
     }
 
+    // Schedule setup info
+    const [profileResult, slotCountResult] = await Promise.all([
+      admin.from("user_profiles").select("schedule_onboarding_dismissed").eq("id", user.id).maybeSingle(),
+      admin.from("teacher_schedule_slots").select("id", { count: "exact", head: true }).eq("teacher_id", user.id),
+    ]);
+    const schedule_setup = {
+      onboarding_dismissed: profileResult.data?.schedule_onboarding_dismissed ?? false,
+      has_slots: (slotCountResult.count ?? 0) > 0,
+    };
+
     // Classes preview: top 3 active with member counts
     const previewClasses = activeClasses.slice(0, 3);
     const previewIds = previewClasses.map((c) => c.id as string);
@@ -175,6 +185,7 @@ export async function GET() {
         overdue_assignments: overdueCount,
       },
       classes_preview,
+      schedule_setup,
     });
   } catch (error) {
     console.error("[dashboard-summary:GET]", error);
