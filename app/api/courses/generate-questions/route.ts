@@ -9,6 +9,8 @@ import { createClient as createSupabaseAdminClient } from "@supabase/supabase-js
 import { createClient } from "@/lib/supabase-server";
 import { isValidSubject, isValidLevel, SUBJECTS_BY_ID } from "@/lib/subjects";
 import type { SubjectId, SchoolLevel } from "@/lib/subjects";
+import { extractPagesFromPdf } from "@/lib/pdf/extract-pages";
+import { logActivity } from "@/lib/activity/log";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 120;
@@ -102,7 +104,10 @@ type CourseRow = {
   level: number | null;
   pdf_storage_path: string | null;
   organization_tags: string[] | null;
+  pages_count: number | null;
 };
+
+type PageRange = { start: number; end: number };
 
 const QUESTIONS_SCHEMA: ResponseSchema = {
   type: SchemaType.OBJECT,
@@ -264,12 +269,24 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Acces refuse" }, { status: 403 });
     }
 
-    const body = (await request.json()) as { courseId?: unknown; questionsCount?: unknown };
+    const body = (await request.json()) as {
+      courseId?: unknown;
+      questionsCount?: unknown;
+      page_range?: unknown;
+    };
     const courseId = typeof body.courseId === "string" ? body.courseId : "";
     const questionsCount =
       typeof body.questionsCount === "number" && body.questionsCount > 0
         ? Math.min(body.questionsCount, 30)
         : 30;
+
+    let pageRange: PageRange | null = null;
+    if (body.page_range !== null && typeof body.page_range === "object") {
+      const pr = body.page_range as Record<string, unknown>;
+      if (typeof pr.start === "number" && typeof pr.end === "number") {
+        pageRange = { start: Math.round(pr.start), end: Math.round(pr.end) };
+      }
+    }
 
     if (!UUID_REGEX.test(courseId)) {
       return NextResponse.json({ error: "courseId invalide" }, { status: 400 });
@@ -279,7 +296,7 @@ export async function POST(request: NextRequest) {
 
     const { data: course, error: courseError } = await admin
       .from("courses")
-      .select("id, teacher_id, subject_enum, level, pdf_storage_path, organization_tags")
+      .select("id, teacher_id, subject_enum, level, pdf_storage_path, organization_tags, pages_count")
       .eq("id", courseId)
       .limit(1)
       .maybeSingle();
@@ -307,10 +324,41 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Impossible de telecharger le PDF" }, { status: 500 });
     }
 
-    const pdfBase64 = Buffer.from(await pdfBlob.arrayBuffer()).toString("base64");
-    if (Buffer.byteLength(pdfBase64, "base64") > MAX_PDF_BYTES) {
+    const fullPdfBuffer = Buffer.from(await pdfBlob.arrayBuffer());
+    if (fullPdfBuffer.byteLength > MAX_PDF_BYTES) {
       return NextResponse.json({ error: "PDF trop volumineux" }, { status: 400 });
     }
+
+    // Validate page range if provided
+    if (pageRange !== null) {
+      if (pageRange.start < 1 || pageRange.end < pageRange.start) {
+        return NextResponse.json({ error: "Plage de pages invalide" }, { status: 400 });
+      }
+      if (typedCourse.pages_count && pageRange.end > typedCourse.pages_count) {
+        return NextResponse.json(
+          { error: `La plage dépasse le nombre de pages du PDF (${typedCourse.pages_count})` },
+          { status: 400 }
+        );
+      }
+    }
+
+    // Extract page subset if requested, fallback to full PDF on error
+    let pdfBuffer: Buffer = fullPdfBuffer;
+    if (pageRange !== null) {
+      try {
+        const extracted = await extractPagesFromPdf({
+          pdfBuffer: fullPdfBuffer,
+          startPage: pageRange.start,
+          endPage: pageRange.end,
+        });
+        pdfBuffer = Buffer.from(extracted);
+      } catch (err) {
+        console.warn("[generate-questions] Extraction pages échouée, fallback PDF entier:", err);
+        pageRange = null;
+      }
+    }
+
+    const pdfBase64 = pdfBuffer.toString("base64");
 
     const subject: SubjectId = isValidSubject(typedCourse.subject_enum)
       ? typedCourse.subject_enum
@@ -320,9 +368,14 @@ export async function POST(request: NextRequest) {
       : null;
     const systemPrompt = buildSystemPrompt(subject, level);
 
+    const pageRangePromptSuffix = pageRange !== null
+      ? ` Le contenu fourni correspond aux pages ${pageRange.start} à ${pageRange.end} du document original.`
+      : "";
+    const promptWithRange = systemPrompt + pageRangePromptSuffix;
+
     const workerOutputs = await Promise.all(
       Array.from({ length: WORKER_COUNT }, (_, workerIndex) =>
-        generateQuestionsWithFallback(pdfBase64, systemPrompt, workerIndex)
+        generateQuestionsWithFallback(pdfBase64, promptWithRange, workerIndex)
       )
     );
 
@@ -355,10 +408,24 @@ export async function POST(request: NextRequest) {
       organization_tags: typedCourse.organization_tags ?? [],
       is_ai_generated: true,
       is_public: false,
+      page_range_start: pageRange?.start ?? null,
+      page_range_end: pageRange?.end ?? null,
     }));
 
     const { error: insertError } = await admin.from("teacher_questions").insert(rows);
     if (insertError) throw insertError;
+
+    if (pageRange !== null) {
+      await logActivity({
+        event_type: "teacher_generated_targeted_questions",
+        actor_id: user.id,
+        actor_type: "teacher",
+        target_type: "course",
+        target_id: courseId,
+        teacher_id: user.id,
+        context: { count: rows.length, page_range: pageRange },
+      });
+    }
 
     return NextResponse.json({
       success: true,

@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
+import { PageRangeGenerator } from "./_components/PageRangeGenerator";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -19,12 +20,15 @@ type Exercise = {
   generated_by_model: string | null;
   created_at: string;
   exercise_steps: { id: string }[];
+  page_range_start: number | null;
+  page_range_end: number | null;
 };
 
 type CourseInfo = {
   id: string;
   title: string | null;
   subject_enum: string | null;
+  pages_count: number | null;
 };
 
 type ValTab = "pending" | "validated" | "rejected" | "archived";
@@ -172,6 +176,14 @@ function GenerateModal({
 
 // ── Exercise card ─────────────────────────────────────────────────────────────
 
+function PageRangeBadge({ start, end }: { start: number; end: number }) {
+  return (
+    <span className="inline-flex items-center gap-1 rounded-full bg-gray-700/60 px-2 py-0.5 text-xs text-gray-400">
+      📄 p.{start}–{end}
+    </span>
+  );
+}
+
 function ExerciseCard({
   exercise,
   courseId,
@@ -187,6 +199,9 @@ function ExerciseCard({
       <div className="flex flex-wrap items-center gap-2 mb-2">
         {exercise.exercise_type && <TypeBadge type={exercise.exercise_type} />}
         {exercise.status === "validated" && <Stars count={exercise.difficulty} />}
+        {exercise.page_range_start !== null && exercise.page_range_end !== null && (
+          <PageRangeBadge start={exercise.page_range_start} end={exercise.page_range_end} />
+        )}
         <span className="ml-auto text-xs text-gray-600">
           {exercise.exercise_steps.length} étape{exercise.exercise_steps.length > 1 ? "s" : ""}
         </span>
@@ -210,6 +225,7 @@ export default function ExercisesListPage() {
   const [tab, setTab] = useState<ValTab>("pending");
   const [filterStars, setFilterStars] = useState<0 | 1 | 2 | 3>(0);
   const [showGenerate, setShowGenerate] = useState(false);
+  const [showRangeGenerator, setShowRangeGenerator] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
 
   function showToast(msg: string) {
@@ -224,7 +240,7 @@ export default function ExercisesListPage() {
     ]);
     const [exData, courseData] = await Promise.all([
       exRes.json() as Promise<{ exercises?: Exercise[] }>,
-      courseRes.json() as Promise<CourseInfo & { error?: string }>,
+      courseRes.json() as Promise<{ id: string; title: string | null; subject_enum: string | null; pages_count: number | null; error?: string }>,
     ]);
     if (Array.isArray(exData.exercises)) setExercises(exData.exercises);
     if (courseData && !courseData.error) setCourse(courseData);
@@ -292,12 +308,20 @@ export default function ExercisesListPage() {
               <p className="mt-1 text-gray-400 text-sm">{course.title}</p>
             )}
           </div>
-          <button
-            onClick={() => setShowGenerate(true)}
-            className="rounded-2xl bg-purple-500 px-5 py-3 font-black text-gray-950 hover:bg-purple-400 transition"
-          >
-            + Générer des exercices
-          </button>
+          <div className="flex flex-wrap gap-2">
+            <button
+              onClick={() => setShowRangeGenerator(true)}
+              className="rounded-2xl border border-purple-500/40 bg-purple-500/10 px-4 py-3 font-black text-purple-300 hover:bg-purple-500/20 transition text-sm"
+            >
+              🎯 Sélection de pages
+            </button>
+            <button
+              onClick={() => setShowGenerate(true)}
+              className="rounded-2xl bg-purple-500 px-5 py-3 font-black text-gray-950 hover:bg-purple-400 transition"
+            >
+              + Générer des exercices
+            </button>
+          </div>
         </div>
 
         {/* Tabs */}
@@ -368,6 +392,23 @@ export default function ExercisesListPage() {
           onSuccess={(count) => {
             setShowGenerate(false);
             showToast(`${count} exercice${count > 1 ? "s" : ""} généré${count > 1 ? "s" : ""} !`);
+            loadData();
+          }}
+        />
+      )}
+
+      {showRangeGenerator && (
+        <PageRangeGenerator
+          courseId={courseId}
+          pagesCount={course?.pages_count ?? null}
+          courseTitle={course?.title ?? ""}
+          onClose={() => setShowRangeGenerator(false)}
+          onSuccess={({ questions, exercises: exCount, start, end }) => {
+            setShowRangeGenerator(false);
+            const parts: string[] = [];
+            if (questions > 0) parts.push(`${questions} question${questions > 1 ? "s" : ""}`);
+            if (exCount > 0) parts.push(`${exCount} exercice${exCount > 1 ? "s" : ""}`);
+            showToast(`${parts.join(" et ")} généré${parts.length > 1 || (questions + exCount) > 1 ? "s" : ""} sur les pages ${start}–${end} !`);
             loadData();
           }}
         />

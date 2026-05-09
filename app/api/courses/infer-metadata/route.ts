@@ -9,6 +9,7 @@ import { createClient as createSupabaseAdminClient } from "@supabase/supabase-js
 import { createClient } from "@/lib/supabase-server";
 import type { SchoolLevel } from "@/lib/subjects";
 import { logActivity } from "@/lib/activity/log";
+import { getPdfPagesCount } from "@/lib/pdf/extract-pages";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
@@ -324,14 +325,18 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const pdfBase64 = Buffer.from(await pdfBlob.arrayBuffer()).toString("base64");
-    if (Buffer.byteLength(pdfBase64, "base64") > MAX_PDF_BYTES) {
+    const pdfArrayBuffer = await pdfBlob.arrayBuffer();
+    const pdfBuffer = Buffer.from(pdfArrayBuffer);
+    const pdfBase64 = pdfBuffer.toString("base64");
+    if (pdfBuffer.byteLength > MAX_PDF_BYTES) {
       return NextResponse.json({ error: "PDF trop volumineux" }, { status: 400 });
     }
 
-    const fallbackTitle = getFilenameFromPath(typedCourse.pdf_storage_path);
-    const rawText = await generateInferenceJson(pdfBase64, INFERENCE_PROMPT);
-    const inference = normalizeInference(parseGeminiJson(rawText, fallbackTitle));
+    const [pagesCount, rawText] = await Promise.all([
+      getPdfPagesCount(pdfBuffer),
+      generateInferenceJson(pdfBase64, INFERENCE_PROMPT),
+    ]);
+    const inference = normalizeInference(parseGeminiJson(rawText, getFilenameFromPath(typedCourse.pdf_storage_path)));
 
     const { error: updateError } = await admin
       .from("courses")
@@ -339,6 +344,7 @@ export async function POST(request: NextRequest) {
         subject_enum: inference.subject,
         level: inference.level,
         title: inference.title,
+        pages_count: pagesCount > 0 ? pagesCount : null,
         updated_at: new Date().toISOString(),
       })
       .eq("id", courseId);

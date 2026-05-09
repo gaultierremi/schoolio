@@ -43,26 +43,21 @@ export async function middleware(request: NextRequest) {
   }
 
   if (isAuthenticated) {
-    // Students cannot access teacher/admin areas
     if (
       isStudent &&
       (pathname.startsWith("/school") || pathname.startsWith("/admin"))
     ) {
       return redirect("/student");
     }
-
-    // Teachers/admins cannot access student area
     if (!isStudent && pathname.startsWith("/student")) {
       return redirect("/school");
     }
-
-    // Root redirect based on role
-    if (pathname === "/") {
-      return redirect(isStudent ? "/student" : "/school");
-    }
   } else {
-    // Unauthenticated users cannot access protected areas
-    if (pathname.startsWith("/student")) {
+    if (
+      pathname.startsWith("/student") ||
+      pathname.startsWith("/school") ||
+      pathname.startsWith("/admin")
+    ) {
       return redirect("/");
     }
   }
