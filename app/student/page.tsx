@@ -2,6 +2,12 @@ import { createClient as createSupabaseAdminClient } from "@supabase/supabase-js
 import { createClient } from "@/lib/supabase-server";
 import { redirect } from "next/navigation";
 import StudentDashboardClient from "./StudentDashboardClient";
+import { getStudyStreak } from "@/lib/recommendations";
+import { getUserMastery, type ConceptMastery } from "@/lib/concepts";
+import DailyStudyCard from "@/components/DailyStudyCard";
+import StreakHeroCard from "./_components/StreakHeroCard";
+import MasterySubjectGrid from "./_components/MasterySubjectGrid";
+import ExplorerFooter from "./_components/ExplorerFooter";
 
 function createAdminClient() {
   return createSupabaseAdminClient(
@@ -45,6 +51,26 @@ export type AssignmentEntry = {
 };
 
 const STATUS_ORDER: Record<string, number> = { pending: 0, in_progress: 1, completed: 2 };
+
+function aggregateMasteryBySubject(mastery: ConceptMastery[]) {
+  const map = new Map<string, { sum: number; count: number }>();
+  for (const m of mastery) {
+    const subj = m.concept.subject;
+    if (!subj) continue;
+    const entry = map.get(subj) ?? { sum: 0, count: 0 };
+    entry.sum += m.mastery_score;
+    entry.count += 1;
+    map.set(subj, entry);
+  }
+  return Array.from(map.entries())
+    .map(([subjectId, { sum, count }]) => ({
+      subjectId,
+      averageScore: Math.round(sum / count),
+      conceptCount: count,
+    }))
+    .sort((a, b) => b.conceptCount - a.conceptCount)
+    .slice(0, 6);
+}
 
 export default async function StudentPage() {
   const supabase = createClient();
@@ -148,7 +174,50 @@ export default async function StudentPage() {
     joinedAt: r.joined_at,
   }));
 
+  let streak = 0;
+  let mastery: ConceptMastery[] = [];
+  try {
+    [streak, mastery] = await Promise.all([
+      getStudyStreak(user.id),
+      getUserMastery(user.id),
+    ]);
+  } catch {
+    // degrade gracefully — hero and grid simply hide
+  }
+
+  const subjectMastery = aggregateMasteryBySubject(mastery);
+
   return (
-    <StudentDashboardClient displayName={displayName} classes={classes} assignments={assignments} identity={identity} />
+    <main className="min-h-screen bg-gray-950 px-4 py-8 text-white">
+      <div className="mx-auto flex w-full max-w-3xl flex-col gap-8">
+
+        <StreakHeroCard
+          displayName={displayName}
+          streak={streak}
+          classCount={classes.length}
+          identity={identity}
+        />
+
+        <div>
+          <a
+            href="/join"
+            className="inline-block rounded-2xl bg-purple-500 px-5 py-2.5 font-black text-gray-950 transition hover:bg-purple-400"
+          >
+            + Rejoindre une autre classe
+          </a>
+        </div>
+
+        <DailyStudyCard userId={user.id} />
+
+        {subjectMastery.length > 0 && (
+          <MasterySubjectGrid subjects={subjectMastery} />
+        )}
+
+        <StudentDashboardClient classes={classes} assignments={assignments} />
+
+        <ExplorerFooter />
+
+      </div>
+    </main>
   );
 }
