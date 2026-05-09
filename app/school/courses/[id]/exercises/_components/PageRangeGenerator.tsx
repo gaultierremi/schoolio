@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { PageRangeSlider } from "@/components/pdf/PageRangeSlider";
+import PageRangeSlider from "@/components/pdf/PageRangeSlider";
 
 type Props = {
   courseId: string;

@@ -265,11 +265,11 @@ export async function generateExercises(
   console.log(`[generate-exercises] PDF téléchargé : ${pdfSizeKB}KB en ${Date.now() - t0}ms`);
 
   // Extract page subset if a range is requested, fallback to full PDF on error
-  let pdfBuffer: ArrayBuffer | Buffer = fullPdfBuffer;
+  let pdfBuffer: Buffer = Buffer.from(fullPdfBuffer);
   if (pageRange) {
     try {
       const extracted = await extractPagesFromPdf({
-        pdfBuffer: Buffer.from(fullPdfBuffer),
+        pdfBuffer,
         startPage: pageRange.start,
         endPage: pageRange.end,
       });
@@ -281,7 +281,7 @@ export async function generateExercises(
     }
   }
 
-  const pdfBase64 = Buffer.from(pdfBuffer).toString("base64");
+  const pdfBase64 = pdfBuffer.toString("base64");
 
   // ── Build prompts ────────────────────────────────────────────────────────────
   const systemPrompt = buildSystemPrompt(subject);
