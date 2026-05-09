@@ -24,6 +24,7 @@ type ClassDetail = {
 type Member = {
   id: string;
   student_user_id: string;
+  display_name: string;
   joined_at: string;
   status: "active" | "removed";
 };
@@ -253,6 +254,26 @@ function AssignmentsTab({ classId }: { classId: string }) {
   const [assignments, setAssignments] = useState<AssignmentItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [archiving, setArchiving] = useState<string | null>(null);
+  const [exporting, setExporting] = useState(false);
+
+  async function handleExportClass() {
+    setExporting(true);
+    const res = await fetch(`/api/classes/${classId}/export`);
+    if (res.ok) {
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      const cd = res.headers.get("Content-Disposition") ?? "";
+      const match = /filename="([^"]+)"/.exec(cd);
+      a.download = match?.[1] ?? "export-classe.csv";
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }
+    setExporting(false);
+  }
 
   useEffect(() => {
     fetch(`/api/classes/${classId}/assignments`)
@@ -285,12 +306,21 @@ function AssignmentsTab({ classId }: { classId: string }) {
     <div>
       <div className="flex items-center justify-between mb-4">
         <p className="text-sm text-gray-500">{assignments.length} devoir{assignments.length !== 1 ? "s" : ""}</p>
-        <a
-          href={`/school/classes/${classId}/assignments/new`}
-          className="rounded-2xl bg-purple-500 px-4 py-2 text-sm font-black text-gray-950 transition hover:bg-purple-400"
-        >
-          + Créer un devoir
-        </a>
+        <div className="flex gap-2">
+          <button
+            onClick={handleExportClass}
+            disabled={exporting || assignments.length === 0}
+            className="rounded-2xl border border-gray-700 px-4 py-2 text-sm font-bold text-gray-400 transition hover:border-gray-500 hover:text-white disabled:opacity-40"
+          >
+            {exporting ? "Export..." : "📥 Exporter CSV"}
+          </button>
+          <a
+            href={`/school/classes/${classId}/assignments/new`}
+            className="rounded-2xl bg-purple-500 px-4 py-2 text-sm font-black text-gray-950 transition hover:bg-purple-400"
+          >
+            + Créer un devoir
+          </a>
+        </div>
       </div>
 
       {assignments.length === 0 ? (
@@ -654,7 +684,7 @@ export default function ClassDetailPage() {
                 {visibleMembers.map((m) => (
                   <div key={m.id} className="flex items-center justify-between gap-4 py-3">
                     <div>
-                      <p className="font-mono text-xs text-gray-500">{m.student_user_id.slice(0, 8)}…</p>
+                      <p className="text-sm font-bold text-white">{m.display_name}</p>
                       <p className="text-xs text-gray-600">Rejoint le {formatDate(m.joined_at)}</p>
                     </div>
                     <button

@@ -72,34 +72,49 @@ export async function GET(
 
     // Get student names from user_profiles
     const studentIds = members.map((m) => m.student_user_id);
-    const profileMap: Record<string, string> = {};
+    type ProfileRow = { id: string; first_name: string | null; last_name: string | null; pseudo: string | null; auth_mode: string | null; user_name: string | null };
+    const profileMap = new Map<string, ProfileRow>();
     if (studentIds.length > 0) {
       const { data: profiles } = await admin
         .from("user_profiles")
-        .select("id, user_name, pseudo, auth_mode")
+        .select("id, first_name, last_name, pseudo, auth_mode, user_name")
         .in("id", studentIds);
-      for (const p of profiles ?? []) {
-        const profile = p as { id: string; user_name: string | null; pseudo: string | null; auth_mode: string | null };
-        profileMap[profile.id] =
-          profile.auth_mode === "light" && profile.pseudo
-            ? profile.pseudo
-            : (profile.user_name ?? profile.id.slice(0, 8));
-      }
+      for (const p of (profiles ?? []) as ProfileRow[]) profileMap.set(p.id, p);
     }
 
-    const students = members.map((m) => {
-      const c = completionByStudent[m.student_user_id];
-      return {
-        student_user_id: m.student_user_id,
-        display_name: profileMap[m.student_user_id] ?? m.student_user_id.slice(0, 8),
-        status: c?.status ?? "pending",
-        score: c?.score ?? null,
-        duration_seconds: c?.duration_seconds ?? null,
-        attempts_count: c?.attempts_count ?? 0,
-        last_attempt_at: c?.last_attempt_at ?? null,
-        completed_at: c?.completed_at ?? null,
-      };
-    });
+    function buildDisplayName(p: ProfileRow | undefined): string {
+      if (!p) return "—";
+      if (p.auth_mode === "light") {
+        const parts = [p.first_name, p.last_name].filter(Boolean).join(" ");
+        return parts ? `${parts} (pseudo: ${p.pseudo ?? ""})` : (p.pseudo ?? "—");
+      }
+      if (p.first_name) return [p.first_name, p.last_name].filter(Boolean).join(" ");
+      return p.user_name ?? "—";
+    }
+
+    const students = members
+      .map((m) => {
+        const c = completionByStudent[m.student_user_id];
+        const p = profileMap.get(m.student_user_id);
+        return {
+          student_user_id: m.student_user_id,
+          display_name: buildDisplayName(p),
+          status: c?.status ?? "pending",
+          score: c?.score ?? null,
+          duration_seconds: c?.duration_seconds ?? null,
+          attempts_count: c?.attempts_count ?? 0,
+          last_attempt_at: c?.last_attempt_at ?? null,
+          completed_at: c?.completed_at ?? null,
+          _sortLast: (p?.last_name ?? "").toLowerCase(),
+          _sortFirst: (p?.first_name ?? p?.user_name ?? "").toLowerCase(),
+        };
+      })
+      .sort((a, b) => {
+        const lc = a._sortLast.localeCompare(b._sortLast, "fr", { sensitivity: "base" });
+        if (lc !== 0) return lc;
+        return a._sortFirst.localeCompare(b._sortFirst, "fr", { sensitivity: "base" });
+      })
+      .map(({ _sortLast: _l, _sortFirst: _f, ...rest }) => rest);
 
     return NextResponse.json({
       assignment: { ...assignment, course_title: courseRes.data?.title ?? "—" },

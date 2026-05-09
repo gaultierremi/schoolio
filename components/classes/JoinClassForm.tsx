@@ -10,7 +10,7 @@ type JoinClassFormSubmitData =
       firstName: string;
       lastName: string;
     }
-  | { mode: "light"; pseudo: string };
+  | { mode: "light"; pseudo: string; firstName: string; lastName?: string };
 
 type JoinClassFormProps = {
   authMode: "full" | "light";
@@ -65,6 +65,22 @@ export default function JoinClassForm({
         "Utilise seulement des lettres, chiffres, espaces, tirets ou underscores.";
     }
 
+    const trimmedFirst = firstName.trim();
+    if (trimmedFirst.length < 2) {
+      nextErrors.firstName = "Le prénom doit contenir au moins 2 caractères.";
+    } else if (!namePattern.test(trimmedFirst)) {
+      nextErrors.firstName = "Utilise seulement des lettres, espaces ou tirets.";
+    }
+
+    const trimmedLast = lastName.trim();
+    if (trimmedLast.length > 0) {
+      if (trimmedLast.length < 2) {
+        nextErrors.lastName = "Le nom doit contenir au moins 2 caractères.";
+      } else if (!namePattern.test(trimmedLast)) {
+        nextErrors.lastName = "Utilise seulement des lettres, espaces ou tirets.";
+      }
+    }
+
     return nextErrors;
   }
 
@@ -106,7 +122,13 @@ export default function JoinClassForm({
     if (Object.keys(nextErrors).length > 0) return;
 
     if (authMode === "light") {
-      onSubmit({ mode: "light", pseudo: pseudo.trim() });
+      const trimmedLast = lastName.trim();
+      onSubmit({
+        mode: "light",
+        pseudo: pseudo.trim(),
+        firstName: firstName.trim(),
+        lastName: trimmedLast || undefined,
+      });
       return;
     }
 
@@ -135,19 +157,48 @@ export default function JoinClassForm({
 
       <form className="space-y-5" noValidate onSubmit={handleSubmit}>
         {authMode === "light" ? (
-          <Field
-            id={`${formId}-pseudo`}
-            label="Choisis ton pseudo"
-            value={pseudo}
-            error={errors.pseudo}
-            helperText="Ton prof verra ce pseudo dans la classe"
-            autoComplete="nickname"
-            disabled={loading}
-            onChange={(value) => {
-              setPseudo(value);
-              clearError("pseudo");
-            }}
-          />
+          <>
+            <Field
+              id={`${formId}-pseudo`}
+              label="Choisis ton pseudo"
+              value={pseudo}
+              error={errors.pseudo}
+              helperText="Ton prof verra ce pseudo dans la classe"
+              autoComplete="nickname"
+              disabled={loading}
+              onChange={(value) => {
+                setPseudo(value);
+                clearError("pseudo");
+              }}
+            />
+            <div className="grid gap-5 sm:grid-cols-2">
+              <Field
+                id={`${formId}-first-name`}
+                label="Prénom"
+                value={firstName}
+                error={errors.firstName}
+                helperText="Pour que ton prof te reconnaisse"
+                autoComplete="given-name"
+                disabled={loading}
+                onChange={(value) => {
+                  setFirstName(value);
+                  clearError("firstName");
+                }}
+              />
+              <Field
+                id={`${formId}-last-name`}
+                label="Nom (optionnel)"
+                value={lastName}
+                error={errors.lastName}
+                autoComplete="family-name"
+                disabled={loading}
+                onChange={(value) => {
+                  setLastName(value);
+                  clearError("lastName");
+                }}
+              />
+            </div>
+          </>
         ) : (
           <>
             <div className="grid gap-5 sm:grid-cols-2">

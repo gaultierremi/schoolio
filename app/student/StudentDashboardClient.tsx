@@ -16,10 +16,18 @@ type ClassEntry = {
   joinedAt: string;
 };
 
+type Identity = {
+  firstName: string;
+  lastName: string | null;
+  pseudo: string;
+  authMode: "full" | "light";
+};
+
 type Props = {
   displayName: string;
   classes: ClassEntry[];
   assignments: AssignmentEntry[];
+  identity?: Identity | null;
 };
 
 function formatDate(iso: string): string {
@@ -145,7 +153,7 @@ function ClassCard({
   );
 }
 
-export default function StudentDashboardClient({ displayName, classes: initialClasses, assignments }: Props) {
+export default function StudentDashboardClient({ displayName, classes: initialClasses, assignments, identity }: Props) {
   const router = useRouter();
   const [classes, setClasses] = useState(initialClasses);
   const [leavingId, setLeavingId] = useState<string | null>(null);
@@ -181,6 +189,12 @@ export default function StudentDashboardClient({ displayName, classes: initialCl
             <p className="mt-1 text-sm text-gray-400">
               Espace élève · {classes.length} classe{classes.length !== 1 ? "s" : ""}
             </p>
+            {identity?.pseudo && (
+              <p className="mt-0.5 text-xs text-gray-600">
+                Connecté en tant que {identity.firstName}{identity.lastName ? ` ${identity.lastName}` : ""}{" "}
+                (pseudo&nbsp;: {identity.pseudo})
+              </p>
+            )}
           </div>
           <button
             onClick={handleSignOut}

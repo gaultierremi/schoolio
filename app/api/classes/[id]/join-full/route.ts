@@ -126,6 +126,8 @@ export async function POST(
       admin.from("user_profiles").upsert({
         id: userId,
         user_name: `${firstName} ${lastName}`,
+        first_name: firstName,
+        last_name: lastName,
         avatar_color: "#a855f7",
         unlocked_skins: ["default"],
         active_skin: "default",

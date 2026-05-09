@@ -39,7 +39,7 @@ export default function JoinTokenClient({
             firstName: data.firstName,
             lastName: data.lastName,
           }
-        : { pseudo: data.pseudo };
+        : { pseudo: data.pseudo, firstName: data.firstName, lastName: data.lastName };
 
     const res = await fetch(endpoint, {
       method: "POST",
