@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
+import { GRADE_LABEL, GRADE_STYLE } from "@/lib/grading";
 
 type StudentRow = {
   student_user_id: string;
@@ -12,6 +13,9 @@ type StudentRow = {
   attempts_count: number;
   last_attempt_at: string | null;
   completed_at: string | null;
+  letter_grade: string;
+  requested_solution: boolean;
+  requested_explanation: boolean;
 };
 
 type AssignmentDetail = {
@@ -25,7 +29,7 @@ type AssignmentDetail = {
   created_at: string;
 };
 
-type SortKey = "display_name" | "status" | "score" | "duration_seconds" | "attempts_count" | "last_attempt_at";
+type SortKey = "display_name" | "status" | "score" | "duration_seconds" | "attempts_count" | "last_attempt_at" | "letter_grade";
 type StatusFilter = "all" | "pending" | "in_progress" | "completed";
 
 const STATUS_LABEL: Record<string, string> = {
@@ -184,6 +188,13 @@ export default function AssignmentDetailPage() {
           return scores.length > 0 ? Math.round(scores.reduce((a, b) => a + b, 0) / scores.length) : null;
         })()
       : null;
+  const gradeDist =
+    assignment.resource_type === "quiz"
+      ? (["A", "B", "C", "D"] as const).map((g) => ({
+          grade: g,
+          count: students.filter((s) => s.letter_grade === g).length,
+        }))
+      : null;
 
   return (
     <main className="min-h-screen bg-gray-950 px-4 py-8 text-white">
@@ -280,7 +291,7 @@ export default function AssignmentDetailPage() {
         )}
 
         {/* Stats bar */}
-        <div className="grid grid-cols-3 gap-3">
+        <div className={`grid gap-3 ${gradeDist ? "grid-cols-2 sm:grid-cols-4" : "grid-cols-3"}`}>
           <div className="rounded-2xl border border-gray-800 bg-gray-900 p-4 text-center">
             <p className="text-2xl font-black text-white">{nbCompleted}/{nbTotal}</p>
             <p className="mt-0.5 text-xs text-gray-500">Élèves ont terminé</p>
@@ -297,6 +308,21 @@ export default function AssignmentDetailPage() {
             </p>
             <p className="mt-0.5 text-xs text-gray-500">Score moyen</p>
           </div>
+          {gradeDist && (
+            <div className="rounded-2xl border border-gray-800 bg-gray-900 p-4">
+              <p className="mb-2 text-center text-xs text-gray-500">Répartition</p>
+              <div className="flex justify-center gap-2">
+                {gradeDist.map(({ grade, count }) => (
+                  <div key={grade} className="flex flex-col items-center gap-0.5">
+                    <span className={`rounded-full border px-1.5 py-0.5 text-[10px] font-black ${GRADE_STYLE[grade as keyof typeof GRADE_STYLE]}`}>
+                      {grade}
+                    </span>
+                    <span className="text-[11px] font-bold text-gray-400">{count}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Filters */}
@@ -330,6 +356,7 @@ export default function AssignmentDetailPage() {
                     {assignment.resource_type === "quiz" && (
                       <>
                         <SortTh label="Score" k="score" />
+                        <SortTh label="Lettre" k="letter_grade" />
                         <SortTh label="Temps" k="duration_seconds" />
                         <SortTh label="Tentatives" k="attempts_count" />
                       </>
@@ -354,6 +381,14 @@ export default function AssignmentDetailPage() {
                                 {Math.round(Number(s.score))}%
                               </span>
                             ) : "—"}
+                          </td>
+                          <td className="px-3 py-3">
+                            <span
+                              className={`rounded-full border px-2 py-0.5 text-[11px] font-black ${GRADE_STYLE[s.letter_grade as keyof typeof GRADE_STYLE]}`}
+                              title={GRADE_LABEL[s.letter_grade as keyof typeof GRADE_LABEL]}
+                            >
+                              {s.letter_grade}
+                            </span>
                           </td>
                           <td className="px-3 py-3 text-gray-400">{fmtDuration(s.duration_seconds)}</td>
                           <td className="px-3 py-3 text-gray-400">{s.attempts_count || "—"}</td>

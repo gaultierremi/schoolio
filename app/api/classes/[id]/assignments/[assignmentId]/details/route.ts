@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient as createSupabaseAdminClient } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase-server";
+import { computeLetterGrade } from "@/lib/grading";
 
 export const dynamic = "force-dynamic";
 
@@ -19,6 +20,9 @@ type CompletionRow = {
   attempts_count: number;
   last_attempt_at: string | null;
   completed_at: string | null;
+  requested_solution: boolean;
+  requested_explanation: boolean;
+  bonus_questions_completed: number;
 };
 
 export async function GET(
@@ -54,7 +58,7 @@ export async function GET(
         .eq("status", "active"),
       admin
         .from("assignment_completions")
-        .select("student_user_id, status, score, duration_seconds, attempts_count, last_attempt_at, completed_at")
+        .select("student_user_id, status, score, duration_seconds, attempts_count, last_attempt_at, completed_at, requested_solution, requested_explanation, bonus_questions_completed")
         .eq("assignment_id", params.assignmentId),
       admin
         .from("courses")
@@ -96,6 +100,10 @@ export async function GET(
       .map((m) => {
         const c = completionByStudent[m.student_user_id];
         const p = profileMap.get(m.student_user_id);
+        const completion = c ? {
+          status: c.status,
+          score: c.score,
+        } : null;
         return {
           student_user_id: m.student_user_id,
           display_name: buildDisplayName(p),
@@ -105,6 +113,10 @@ export async function GET(
           attempts_count: c?.attempts_count ?? 0,
           last_attempt_at: c?.last_attempt_at ?? null,
           completed_at: c?.completed_at ?? null,
+          requested_solution: c?.requested_solution ?? false,
+          requested_explanation: c?.requested_explanation ?? false,
+          bonus_questions_completed: c?.bonus_questions_completed ?? 0,
+          letter_grade: computeLetterGrade(completion),
           _sortLast: (p?.last_name ?? "").toLowerCase(),
           _sortFirst: (p?.first_name ?? p?.user_name ?? "").toLowerCase(),
         };
