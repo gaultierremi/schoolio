@@ -16,21 +16,24 @@ export default async function ProfilePage() {
   if (!user) {
     return (
       <main className="mx-auto max-w-2xl px-4 py-16 text-center">
-        <h1 className="text-3xl font-black text-slate-900">
+        <h1 className="text-3xl font-black text-white">
           Connecte-toi pour personnaliser ton profil
         </h1>
-        <p className="mt-3 text-slate-600">
+        <p className="mt-3 text-gray-400">
           Ton avatar, tes skins et ta progression sont liés à ton compte.
         </p>
         <Link
           href="/"
           className="mt-6 inline-flex rounded-2xl bg-purple-500 px-6 py-3 font-black text-white transition hover:bg-purple-600"
         >
-          Retour à l’accueil
+          Retour à l&apos;accueil
         </Link>
       </main>
     );
   }
+
+  const role = (user.user_metadata as Record<string, unknown>)?.role as string | undefined;
+  const isStudent = role === "student";
 
   const defaultName =
     user.user_metadata?.full_name ||
@@ -53,10 +56,10 @@ export default async function ProfilePage() {
   if (!profile) {
     return (
       <main className="mx-auto max-w-2xl px-4 py-16 text-center">
-        <h1 className="text-3xl font-black text-slate-900">
+        <h1 className="text-3xl font-black text-white">
           Profil introuvable
         </h1>
-        <p className="mt-3 text-slate-600">
+        <p className="mt-3 text-gray-400">
           Impossible de charger ton profil pour le moment.
         </p>
       </main>
@@ -64,27 +67,29 @@ export default async function ProfilePage() {
   }
 
   return (
-    <main className="min-h-screen bg-slate-50">
-      <div className="mx-auto flex max-w-5xl items-center justify-between px-4 pt-6">
+    <main className="min-h-screen bg-gray-950">
+      <div className="mx-auto flex max-w-5xl items-center justify-between gap-3 px-4 pt-6">
         <Link
           href="/"
-          className="rounded-2xl bg-white px-4 py-2 text-sm font-bold text-slate-700 shadow-sm transition hover:bg-slate-100"
+          className="rounded-2xl border border-gray-800 bg-gray-900 px-4 py-2 text-sm font-bold text-gray-300 transition hover:text-white"
         >
           ← Accueil
         </Link>
 
-        <Link
-          href="/scoreboard"
-          className="rounded-2xl bg-white px-4 py-2 text-sm font-bold text-slate-700 shadow-sm transition hover:bg-slate-100"
-        >
-          Classements
-        </Link>
+        {isStudent && (
+          <Link
+            href="/student?welcome=1"
+            className="rounded-2xl border border-gray-800 bg-gray-900 px-4 py-2 text-sm font-bold text-gray-300 transition hover:text-white"
+          >
+            Revoir le tutoriel
+          </Link>
+        )}
       </div>
 
       <ProfileEditor initialProfile={profile} />
 
       <div className="mx-auto max-w-2xl px-4 pb-12">
-        <h2 className="mb-6 text-2xl font-black text-slate-800">
+        <h2 className="mb-6 text-2xl font-black text-white">
           📊 Mes progrès
         </h2>
         <MasteryDashboard mastery={mastery} />
