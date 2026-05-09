@@ -2,10 +2,10 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { createClient } from "@/lib/supabase-browser";
 import { SUBJECTS_BY_ID } from "@/lib/subjects";
 import type { SubjectId } from "@/lib/subjects";
 import type { AssignmentEntry } from "./page";
+import StudentWelcomeOnboarding from "@/components/StudentWelcomeOnboarding";
 
 type ClassEntry = {
   classId: string;
@@ -16,18 +16,11 @@ type ClassEntry = {
   joinedAt: string;
 };
 
-type Identity = {
-  firstName: string;
-  lastName: string | null;
-  pseudo: string;
-  authMode: "full" | "light";
-};
-
 type Props = {
-  displayName: string;
   classes: ClassEntry[];
   assignments: AssignmentEntry[];
-  identity?: Identity | null;
+  displayName: string;
+  showOnboarding: boolean;
 };
 
 function formatDate(iso: string): string {
@@ -153,11 +146,9 @@ function ClassCard({
   );
 }
 
-export default function StudentDashboardClient({ displayName, classes: initialClasses, assignments, identity }: Props) {
-  const router = useRouter();
+export default function StudentDashboardClient({ classes: initialClasses, assignments, displayName, showOnboarding }: Props) {
   const [classes, setClasses] = useState(initialClasses);
   const [leavingId, setLeavingId] = useState<string | null>(null);
-  const [signingOut, setSigningOut] = useState(false);
   const [assignTab, setAssignTab] = useState<"todo" | "done">("todo");
 
   async function handleLeave(classId: string) {
@@ -167,123 +158,83 @@ export default function StudentDashboardClient({ displayName, classes: initialCl
     setLeavingId(null);
   }
 
-  async function handleSignOut() {
-    setSigningOut(true);
-    const supabase = createClient();
-    await supabase.auth.signOut();
-    router.push("/");
-  }
-
   const todoAssignments = assignments.filter((a) => a.status !== "completed");
   const doneAssignments = assignments.filter((a) => a.status === "completed");
   const visibleAssignments = assignTab === "todo" ? todoAssignments : doneAssignments;
 
   return (
-    <main className="min-h-screen bg-gray-950 px-4 py-8 text-white">
-      <div className="mx-auto w-full max-w-3xl">
+    <div className="flex flex-col gap-8">
 
-        {/* Header */}
-        <div className="flex items-start justify-between gap-4">
-          <div>
-            <h1 className="text-3xl font-black text-white">🎒 Bonjour, {displayName} !</h1>
-            <p className="mt-1 text-sm text-gray-400">
-              Espace élève · {classes.length} classe{classes.length !== 1 ? "s" : ""}
-            </p>
-            {identity?.pseudo && (
-              <p className="mt-0.5 text-xs text-gray-600">
-                Connecté en tant que {identity.firstName}{identity.lastName ? ` ${identity.lastName}` : ""}{" "}
-                (pseudo&nbsp;: {identity.pseudo})
+      {showOnboarding && <StudentWelcomeOnboarding displayName={displayName} />}
+
+      {/* Assignments */}
+      {assignments.length > 0 && (
+        <div>
+          <h2 className="text-xl font-black text-white">📋 Mes devoirs</h2>
+          <div className="mt-3 flex gap-2">
+            <button
+              onClick={() => setAssignTab("todo")}
+              className={`rounded-full px-4 py-1.5 text-sm font-bold transition ${
+                assignTab === "todo"
+                  ? "bg-purple-500 text-gray-950"
+                  : "border border-gray-700 text-gray-500 hover:border-gray-600 hover:text-gray-300"
+              }`}
+            >
+              À faire ({todoAssignments.length})
+            </button>
+            <button
+              onClick={() => setAssignTab("done")}
+              className={`rounded-full px-4 py-1.5 text-sm font-bold transition ${
+                assignTab === "done"
+                  ? "bg-purple-500 text-gray-950"
+                  : "border border-gray-700 text-gray-500 hover:border-gray-600 hover:text-gray-300"
+              }`}
+            >
+              Fait ({doneAssignments.length})
+            </button>
+          </div>
+          <div className="mt-3 grid gap-3 sm:grid-cols-2">
+            {visibleAssignments.length === 0 ? (
+              <p className="col-span-2 py-6 text-center text-sm text-gray-600">
+                {assignTab === "todo" ? "Aucun devoir en attente. Bien joué !" : "Aucun devoir complété pour l'instant."}
               </p>
-            )}
-          </div>
-          <button
-            onClick={handleSignOut}
-            disabled={signingOut}
-            className="shrink-0 rounded-2xl border border-gray-700 px-4 py-2 text-sm font-bold text-gray-400 transition hover:border-gray-600 hover:text-white disabled:opacity-50"
-          >
-            {signingOut ? "..." : "Se déconnecter"}
-          </button>
-        </div>
-
-        {/* Join another class */}
-        <div className="mt-6">
-          <a
-            href="/join"
-            className="inline-block rounded-2xl bg-purple-500 px-5 py-2.5 font-black text-gray-950 transition hover:bg-purple-400"
-          >
-            + Rejoindre une autre classe
-          </a>
-        </div>
-
-        {/* Assignments */}
-        {assignments.length > 0 && (
-          <div className="mt-8">
-            <h2 className="text-xl font-black text-white">📋 Mes devoirs</h2>
-            <div className="mt-3 flex gap-2">
-              <button
-                onClick={() => setAssignTab("todo")}
-                className={`rounded-full px-4 py-1.5 text-sm font-bold transition ${
-                  assignTab === "todo"
-                    ? "bg-purple-500 text-gray-950"
-                    : "border border-gray-700 text-gray-500 hover:border-gray-600 hover:text-gray-300"
-                }`}
-              >
-                À faire ({todoAssignments.length})
-              </button>
-              <button
-                onClick={() => setAssignTab("done")}
-                className={`rounded-full px-4 py-1.5 text-sm font-bold transition ${
-                  assignTab === "done"
-                    ? "bg-purple-500 text-gray-950"
-                    : "border border-gray-700 text-gray-500 hover:border-gray-600 hover:text-gray-300"
-                }`}
-              >
-                Fait ({doneAssignments.length})
-              </button>
-            </div>
-            <div className="mt-3 grid gap-3 sm:grid-cols-2">
-              {visibleAssignments.length === 0 ? (
-                <p className="col-span-2 py-6 text-center text-sm text-gray-600">
-                  {assignTab === "todo" ? "Aucun devoir en attente. Bien joué !" : "Aucun devoir complété pour l'instant."}
-                </p>
-              ) : (
-                visibleAssignments.map((a) => <AssignmentCard key={a.id} a={a} />)
-              )}
-            </div>
-          </div>
-        )}
-
-        {/* Classes */}
-        <div className="mt-8">
-          <h2 className="text-xl font-black text-white">🏫 Mes classes</h2>
-          <div className="mt-3">
-            {classes.length === 0 ? (
-              <div className="mt-4 text-center">
-                <p className="text-4xl">🏫</p>
-                <p className="mt-4 text-lg font-black text-white">Tu n&apos;es inscrit dans aucune classe</p>
-                <a
-                  href="/join"
-                  className="mt-4 inline-block rounded-2xl bg-purple-500 px-6 py-2.5 font-black text-gray-950 transition hover:bg-purple-400"
-                >
-                  Rejoindre une classe
-                </a>
-              </div>
             ) : (
-              <div className="grid gap-4 sm:grid-cols-2">
-                {classes.map((entry) => (
-                  <ClassCard
-                    key={entry.classId}
-                    entry={entry}
-                    onLeave={handleLeave}
-                    leaving={leavingId === entry.classId}
-                  />
-                ))}
-              </div>
+              visibleAssignments.map((a) => <AssignmentCard key={a.id} a={a} />)
             )}
           </div>
         </div>
+      )}
 
+      {/* Classes */}
+      <div>
+        <h2 className="text-xl font-black text-white">🏫 Mes classes</h2>
+        <div className="mt-3">
+          {classes.length === 0 ? (
+            <div className="mt-4 text-center">
+              <p className="text-4xl">🏫</p>
+              <p className="mt-4 text-lg font-black text-white">Tu n&apos;es inscrit dans aucune classe</p>
+              <a
+                href="/join"
+                className="mt-4 inline-block rounded-2xl bg-purple-500 px-6 py-2.5 font-black text-gray-950 transition hover:bg-purple-400"
+              >
+                Rejoindre une classe
+              </a>
+            </div>
+          ) : (
+            <div className="grid gap-4 sm:grid-cols-2">
+              {classes.map((entry) => (
+                <ClassCard
+                  key={entry.classId}
+                  entry={entry}
+                  onLeave={handleLeave}
+                  leaving={leavingId === entry.classId}
+                />
+              ))}
+            </div>
+          )}
+        </div>
       </div>
-    </main>
+
+    </div>
   );
 }

@@ -50,7 +50,7 @@ export default function StudySessionPage() {
   const [sessionId, setSessionId] = useState<string | null>(null);
 
   useEffect(() => {
-    const raw = sessionStorage.getItem("study_session");
+    const raw = localStorage.getItem("study_session");
     if (!raw) {
       setNotFound(true);
       setLoading(false);

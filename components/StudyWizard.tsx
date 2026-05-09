@@ -294,7 +294,7 @@ export default function StudyWizard() {
 
   function handleLaunchSession() {
     if (previewQuestions.length === 0) return;
-    sessionStorage.setItem(
+    localStorage.setItem(
       "study_session",
       JSON.stringify({
         questions: previewQuestions,

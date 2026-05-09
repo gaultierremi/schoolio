@@ -6,7 +6,6 @@ export type BadgeId =
   | "streak_3"
   | "streak_7"
   | "quiz_expert"
-  | "timeline_master"
   | "daily_winner"
   | "founder";
 
@@ -25,7 +24,6 @@ export const BADGES: Badge[] = [
   { id: "streak_3", name: "Régulier", emoji: "📅", description: "3 jours de streak" },
   { id: "streak_7", name: "Dévoué", emoji: "⚡", description: "7 jours de streak" },
   { id: "quiz_expert", name: "Expert quiz", emoji: "🧠", description: "Maîtrise du quiz" },
-  { id: "timeline_master", name: "Maître du temps", emoji: "⏳", description: "Expert timeline" },
   { id: "daily_winner", name: "Champion du jour", emoji: "🥇", description: "Top daily" },
   { id: "founder", name: "Fondateur", emoji: "👑", description: "Early supporter" },
 ];
