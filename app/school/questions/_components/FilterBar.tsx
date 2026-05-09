@@ -1,0 +1,54 @@
+import { PERIODS } from "../_types";
+
+export function FilterBar({
+  filterType,
+  setFilterType,
+  filterPeriod,
+  setFilterPeriod,
+  filterText,
+  setFilterText,
+  showText = false,
+}: {
+  filterType: string;
+  setFilterType: (v: string) => void;
+  filterPeriod: string;
+  setFilterPeriod: (v: string) => void;
+  filterText?: string;
+  setFilterText?: (v: string) => void;
+  showText?: boolean;
+}) {
+  return (
+    <div className="flex flex-wrap gap-2">
+      {showText && setFilterText !== undefined && (
+        <input
+          type="text"
+          value={filterText ?? ""}
+          onChange={(e) => setFilterText(e.target.value)}
+          placeholder="Rechercher..."
+          className="flex-1 min-w-[160px] rounded-xl border border-gray-700 bg-gray-900 px-3 py-2 text-sm text-white outline-none placeholder:text-gray-600 focus:border-purple-500"
+        />
+      )}
+      <select
+        value={filterType}
+        onChange={(e) => setFilterType(e.target.value)}
+        className="rounded-xl border border-gray-700 bg-gray-900 px-3 py-2 text-sm text-white outline-none focus:border-purple-500"
+      >
+        <option value="">Tous les types</option>
+        <option value="mcq">QCM</option>
+        <option value="truefalse">Vrai / Faux</option>
+      </select>
+      <select
+        value={filterPeriod}
+        onChange={(e) => setFilterPeriod(e.target.value)}
+        className="rounded-xl border border-gray-700 bg-gray-900 px-3 py-2 text-sm text-white outline-none focus:border-purple-500"
+      >
+        <option value="">Toutes les périodes</option>
+        {PERIODS.map((p) => (
+          <option key={p} value={p}>
+            {p}
+          </option>
+        ))}
+      </select>
+    </div>
+  );
+}
