@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import {
   GoogleGenerativeAI,
-  GoogleGenerativeAIFetchError,
   SchemaType,
   type ResponseSchema,
 } from "@google/generative-ai";
+import { isRateLimitError } from "@/lib/rate-limit-utils";
 import { createClient as createSupabaseAdminClient } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase-server";
 import type { SchoolLevel } from "@/lib/subjects";
@@ -205,15 +205,6 @@ const INFERENCE_SCHEMA: ResponseSchema = {
   },
   required: ["subject", "level", "title", "confidence"],
 };
-
-function isRateLimitError(error: unknown) {
-  if (error instanceof GoogleGenerativeAIFetchError && error.status === 429) {
-    return true;
-  }
-
-  const message = error instanceof Error ? error.message : String(error);
-  return message.includes("429") || /rate.?limit|quota|resource.?exhausted/i.test(message);
-}
 
 async function generateGeminiJson(modelName: string, pdfBase64: string, prompt: string) {
   const model = gemini.getGenerativeModel({

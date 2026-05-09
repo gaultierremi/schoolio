@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import {
   GoogleGenerativeAI,
-  GoogleGenerativeAIFetchError,
   SchemaType,
   type ResponseSchema,
 } from "@google/generative-ai";
+import { isRateLimitError } from "@/lib/rate-limit-utils";
 import { createClient as createSupabaseAdminClient } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase-server";
 import { isValidSubject, isValidLevel, SUBJECTS_BY_ID } from "@/lib/subjects";
@@ -135,15 +135,6 @@ const QUESTIONS_SCHEMA: ResponseSchema = {
   },
   required: ["page_count", "questions"],
 };
-
-function isRateLimitError(error: unknown) {
-  if (error instanceof GoogleGenerativeAIFetchError && error.status === 429) {
-    return true;
-  }
-
-  const message = error instanceof Error ? error.message : String(error);
-  return message.includes("429") || /rate.?limit|quota|resource.?exhausted/i.test(message);
-}
 
 function parseJsonObject<T>(rawText: string): T {
   const trimmed = rawText.trim();

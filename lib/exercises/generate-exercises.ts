@@ -1,6 +1,5 @@
 import {
   GoogleGenerativeAI,
-  GoogleGenerativeAIFetchError,
   SchemaType,
   type ResponseSchema,
 } from "@google/generative-ai";
@@ -9,6 +8,7 @@ import { createClient as createSupabaseAdminClient } from "@supabase/supabase-js
 import { buildSystemPrompt, buildUserPrompt } from "./prompt";
 import { extractPagesFromPdf } from "@/lib/pdf/extract-pages";
 import { logActivity } from "@/lib/activity/log";
+import { isRateLimitError } from "@/lib/rate-limit-utils";
 
 const GEMINI_PRO    = "gemini-2.5-pro";
 const GEMINI_FLASH  = "gemini-2.5-flash";
@@ -24,15 +24,6 @@ function createAdminClient() {
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE_KEY!
   );
-}
-
-// ── Rate-limit detection ───────────────────────────────────────────────────────
-// Mirrors isRateLimitError in generate-questions/route.ts — covers both Gemini
-// (GoogleGenerativeAIFetchError.status === 429) and Anthropic (RateLimitError).
-function isRateLimitError(error: unknown): boolean {
-  if (error instanceof GoogleGenerativeAIFetchError && error.status === 429) return true;
-  const message = error instanceof Error ? error.message : String(error);
-  return message.includes("429") || /rate.?limit|quota|resource.?exhausted/i.test(message);
 }
 
 // ── JSON parser (3-tier) ───────────────────────────────────────────────────────
