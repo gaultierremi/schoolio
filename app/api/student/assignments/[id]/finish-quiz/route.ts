@@ -12,10 +12,31 @@ function createAdminClient() {
   );
 }
 
+type QuestionAnswer = {
+  question_id: string;
+  is_correct: boolean;
+  requested_solution: boolean;
+  requested_explanation: boolean;
+};
+
 type FinishBody = {
   score?: unknown;
   duration_seconds?: unknown;
+  question_answers?: unknown;
 };
+
+const UUID_REGEX = /^[0-9a-f-]{36}$/i;
+
+function isValidAnswer(v: unknown): v is QuestionAnswer {
+  if (!v || typeof v !== "object") return false;
+  const qa = v as Record<string, unknown>;
+  return (
+    typeof qa.question_id === "string" && UUID_REGEX.test(qa.question_id) &&
+    typeof qa.is_correct === "boolean" &&
+    typeof qa.requested_solution === "boolean" &&
+    typeof qa.requested_explanation === "boolean"
+  );
+}
 
 export async function POST(
   req: NextRequest,
@@ -34,6 +55,10 @@ export async function POST(
     if (score === null || score < 0 || score > 100) {
       return NextResponse.json({ error: "Score invalide (0–100)" }, { status: 400 });
     }
+
+    const question_answers: QuestionAnswer[] = Array.isArray(body.question_answers)
+      ? (body.question_answers as unknown[]).filter(isValidAnswer)
+      : [];
 
     const admin = createAdminClient();
 
@@ -59,10 +84,10 @@ export async function POST(
 
     if (!membership) return NextResponse.json({ error: "Accès refusé" }, { status: 403 });
 
-    // Get existing to keep best score
+    // Fetch existing completion to preserve best score and OR tracking flags
     const { data: existing } = await admin
       .from("assignment_completions")
-      .select("score")
+      .select("score, requested_solution, requested_explanation")
       .eq("assignment_id", params.id)
       .eq("student_user_id", user.id)
       .maybeSingle();
@@ -72,17 +97,43 @@ export async function POST(
         ? Math.max(Number(existing.score), score)
         : score;
 
+    const thisRequestedSolution = question_answers.some((qa) => qa.requested_solution);
+    const thisRequestedExplanation = question_answers.some((qa) => qa.requested_explanation);
+
+    // OR with historical flags — once asked, always recorded
+    const finalRequestedSolution = (existing?.requested_solution ?? false) || thisRequestedSolution;
+    const finalRequestedExplanation = (existing?.requested_explanation ?? false) || thisRequestedExplanation;
+
     const now = new Date().toISOString();
 
-    await admin.from("assignment_completions").upsert({
-      assignment_id: params.id,
-      student_user_id: user.id,
-      status: "completed",
-      score: bestScore,
-      duration_seconds,
-      completed_at: now,
-      last_attempt_at: now,
-    }, { onConflict: "assignment_id,student_user_id" });
+    // Insert per-question answers for this attempt
+    if (question_answers.length > 0) {
+      await admin.from("assignment_question_answers").insert(
+        question_answers.map((qa) => ({
+          assignment_id: params.id,
+          student_user_id: user.id,
+          question_id: qa.question_id,
+          is_correct: qa.is_correct,
+          requested_solution: qa.requested_solution,
+          requested_explanation: qa.requested_explanation,
+        }))
+      );
+    }
+
+    await admin.from("assignment_completions").upsert(
+      {
+        assignment_id: params.id,
+        student_user_id: user.id,
+        status: "completed",
+        score: bestScore,
+        duration_seconds,
+        completed_at: now,
+        last_attempt_at: now,
+        requested_solution: finalRequestedSolution,
+        requested_explanation: finalRequestedExplanation,
+      },
+      { onConflict: "assignment_id,student_user_id" }
+    );
 
     const { data: clsData } = await admin
       .from("classes")

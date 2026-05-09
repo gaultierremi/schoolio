@@ -25,6 +25,16 @@ type CompletionRow = {
   bonus_questions_completed: number;
 };
 
+type AnswerRow = {
+  question_id: string;
+  is_correct: boolean;
+};
+
+type QuestionRow = {
+  id: string;
+  question: string;
+};
+
 export async function GET(
   _req: NextRequest,
   { params }: { params: { id: string; assignmentId: string } }
@@ -50,7 +60,7 @@ export async function GET(
     if (aErr) throw aErr;
     if (!assignment) return NextResponse.json({ error: "Devoir introuvable" }, { status: 404 });
 
-    const [membersRes, completionsRes, courseRes] = await Promise.all([
+    const [membersRes, completionsRes, courseRes, answersRes] = await Promise.all([
       admin
         .from("class_memberships")
         .select("student_user_id, joined_at")
@@ -65,16 +75,54 @@ export async function GET(
         .select("title")
         .eq("id", assignment.resource_id)
         .maybeSingle(),
+      admin
+        .from("assignment_question_answers")
+        .select("question_id, is_correct")
+        .eq("assignment_id", params.assignmentId),
     ]);
 
     const members = membersRes.data ?? [];
-    const completions = completionsRes.data ?? [] as CompletionRow[];
+    const completions = (completionsRes.data ?? []) as CompletionRow[];
     const completionByStudent: Record<string, CompletionRow> = {};
-    for (const c of completions) {
-      completionByStudent[c.student_user_id] = c as CompletionRow;
+    for (const c of completions) completionByStudent[c.student_user_id] = c;
+
+    // Aggregate per-question answer stats
+    const answers = (answersRes.data ?? []) as AnswerRow[];
+    const questionStats: Record<string, { wrong: number; total: number }> = {};
+    for (const a of answers) {
+      if (!questionStats[a.question_id]) questionStats[a.question_id] = { wrong: 0, total: 0 };
+      questionStats[a.question_id].total++;
+      if (!a.is_correct) questionStats[a.question_id].wrong++;
     }
 
-    // Get student names from user_profiles
+    // Top 10 questions by wrong count (only questions with at least 1 wrong)
+    const topQuestionIds = Object.entries(questionStats)
+      .filter(([, s]) => s.wrong > 0)
+      .sort((a, b) => b[1].wrong - a[1].wrong)
+      .slice(0, 10)
+      .map(([id]) => id);
+
+    let topErrors: { question_id: string; question: string; wrong_count: number; total_answers: number; error_rate: number }[] = [];
+    if (topQuestionIds.length > 0) {
+      const { data: qRows } = await admin
+        .from("teacher_questions")
+        .select("id, question")
+        .in("id", topQuestionIds);
+      const qMap = new Map<string, string>();
+      for (const q of (qRows ?? []) as QuestionRow[]) qMap.set(q.id, q.question);
+      topErrors = topQuestionIds.map((qid) => {
+        const s = questionStats[qid];
+        return {
+          question_id: qid,
+          question: qMap.get(qid) ?? "—",
+          wrong_count: s.wrong,
+          total_answers: s.total,
+          error_rate: s.total > 0 ? Math.round((s.wrong / s.total) * 100) : 0,
+        };
+      });
+    }
+
+    // Get student profiles
     const studentIds = members.map((m) => m.student_user_id);
     type ProfileRow = { id: string; first_name: string | null; last_name: string | null; pseudo: string | null; auth_mode: string | null; user_name: string | null };
     const profileMap = new Map<string, ProfileRow>();
@@ -100,10 +148,6 @@ export async function GET(
       .map((m) => {
         const c = completionByStudent[m.student_user_id];
         const p = profileMap.get(m.student_user_id);
-        const completion = c ? {
-          status: c.status,
-          score: c.score,
-        } : null;
         return {
           student_user_id: m.student_user_id,
           display_name: buildDisplayName(p),
@@ -116,7 +160,7 @@ export async function GET(
           requested_solution: c?.requested_solution ?? false,
           requested_explanation: c?.requested_explanation ?? false,
           bonus_questions_completed: c?.bonus_questions_completed ?? 0,
-          letter_grade: computeLetterGrade(completion),
+          letter_grade: computeLetterGrade(c ? { status: c.status, score: c.score } : null),
           _sortLast: (p?.last_name ?? "").toLowerCase(),
           _sortFirst: (p?.first_name ?? p?.user_name ?? "").toLowerCase(),
         };
@@ -128,12 +172,30 @@ export async function GET(
       })
       .map(({ _sortLast: _l, _sortFirst: _f, ...rest }) => rest);
 
+    // Overview aggregates
+    const completedStudents = students.filter((s) => s.status === "completed");
+    const scores = completedStudents.map((s) => Number(s.score)).filter((n) => !isNaN(n) && n !== null);
+    const avgScore = scores.length > 0 ? Math.round(scores.reduce((a, b) => a + b, 0) / scores.length) : null;
+    const gradeDist = { A: 0, B: 0, C: 0, D: 0 } as Record<string, number>;
+    for (const s of students) gradeDist[s.letter_grade] = (gradeDist[s.letter_grade] ?? 0) + 1;
+
+    const overview = {
+      nb_total: students.length,
+      nb_completed: completedStudents.length,
+      avg_score: avgScore,
+      grade_dist: gradeDist,
+      nb_requested_solution: students.filter((s) => s.requested_solution).length,
+      nb_requested_explanation: students.filter((s) => s.requested_explanation).length,
+    };
+
     return NextResponse.json({
       assignment: { ...assignment, course_title: courseRes.data?.title ?? "—" },
+      overview,
       students,
+      top_errors: topErrors,
     });
   } catch (err) {
-    console.error("[assignment/details:GET]", err);
+    console.error("[assignment/dashboard:GET]", err);
     return NextResponse.json({ error: "Erreur serveur" }, { status: 500 });
   }
 }
