@@ -41,6 +41,37 @@ async function requireCourseOwnership(courseId: string, userId: string) {
   return { course: typed, admin };
 }
 
+export async function GET(
+  _req: NextRequest,
+  { params }: { params: { id: string } }
+) {
+  try {
+    const supabase = createClient();
+    const { data: { user }, error: userError } = await supabase.auth.getUser();
+    if (userError) return NextResponse.json({ error: "Erreur d'authentification" }, { status: 500 });
+    if (!user) return NextResponse.json({ error: "Non authentifié" }, { status: 401 });
+
+    const { data: isTeacher } = await supabase.rpc("is_current_user_school_teacher");
+    if (isTeacher !== true) return NextResponse.json({ error: "Accès refusé" }, { status: 403 });
+
+    const admin = createAdminClient();
+    const { data: course, error } = await admin
+      .from("courses")
+      .select("id, title, subject_enum, level, pdf_storage_path, teacher_id")
+      .eq("id", params.id)
+      .eq("teacher_id", user.id)
+      .maybeSingle();
+
+    if (error) throw error;
+    if (!course) return NextResponse.json({ error: "Cours introuvable" }, { status: 404 });
+
+    return NextResponse.json(course);
+  } catch (error) {
+    console.error("[courses/[id] GET]", error);
+    return NextResponse.json({ error: getErrorMessage(error) }, { status: 500 });
+  }
+}
+
 export async function DELETE(
   _req: NextRequest,
   { params }: { params: { id: string } }
