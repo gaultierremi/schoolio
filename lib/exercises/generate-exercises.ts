@@ -7,6 +7,8 @@ import {
 import Anthropic from "@anthropic-ai/sdk";
 import { createClient as createSupabaseAdminClient } from "@supabase/supabase-js";
 import { buildSystemPrompt, buildUserPrompt } from "./prompt";
+import { extractPagesFromPdf } from "@/lib/pdf/extract-pages";
+import { logActivity } from "@/lib/activity/log";
 
 const GEMINI_PRO    = "gemini-2.5-pro";
 const GEMINI_FLASH  = "gemini-2.5-flash";
@@ -223,6 +225,7 @@ export type GenerateExercisesParams = {
   level: number | null;
   pdfStoragePath: string | null;
   count: number;
+  pageRange?: { start: number; end: number } | null;
 };
 
 export type GenerateExercisesResult = {
@@ -234,6 +237,7 @@ export async function generateExercises(
   params: GenerateExercisesParams
 ): Promise<GenerateExercisesResult> {
   const { courseId, teacherId, courseTitle, subject, level, pdfStoragePath, count } = params;
+  let { pageRange } = params;
 
   const admin = createAdminClient();
 
@@ -251,19 +255,41 @@ export async function generateExercises(
     throw new Error("Impossible de télécharger le PDF du cours");
   }
 
-  const pdfBuffer = await pdfBlob.arrayBuffer();
-  const pdfSizeKB = Math.round(pdfBuffer.byteLength / 1024);
+  const fullPdfBuffer = await pdfBlob.arrayBuffer();
+  const pdfSizeKB = Math.round(fullPdfBuffer.byteLength / 1024);
 
-  if (pdfBuffer.byteLength > MAX_PDF_BYTES) {
-    throw new Error(`PDF trop volumineux (${Math.round(pdfBuffer.byteLength / 1024 / 1024)}MB)`);
+  if (fullPdfBuffer.byteLength > MAX_PDF_BYTES) {
+    throw new Error(`PDF trop volumineux (${Math.round(fullPdfBuffer.byteLength / 1024 / 1024)}MB)`);
+  }
+
+  console.log(`[generate-exercises] PDF téléchargé : ${pdfSizeKB}KB en ${Date.now() - t0}ms`);
+
+  // Extract page subset if a range is requested, fallback to full PDF on error
+  let pdfBuffer: ArrayBuffer | Buffer = fullPdfBuffer;
+  if (pageRange) {
+    try {
+      const extracted = await extractPagesFromPdf({
+        pdfBuffer: Buffer.from(fullPdfBuffer),
+        startPage: pageRange.start,
+        endPage: pageRange.end,
+      });
+      pdfBuffer = Buffer.from(extracted);
+      console.log(`[generate-exercises] Pages ${pageRange.start}–${pageRange.end} extraites (${Math.round(pdfBuffer.byteLength / 1024)}KB)`);
+    } catch (err) {
+      console.warn("[generate-exercises] Extraction pages échouée, fallback PDF entier:", err);
+      pageRange = null;
+    }
   }
 
   const pdfBase64 = Buffer.from(pdfBuffer).toString("base64");
-  console.log(`[generate-exercises] PDF téléchargé : ${pdfSizeKB}KB en ${Date.now() - t0}ms`);
 
   // ── Build prompts ────────────────────────────────────────────────────────────
   const systemPrompt = buildSystemPrompt(subject);
-  const userPrompt   = buildUserPrompt({ courseTitle, subject, level, count });
+  const baseUserPrompt = buildUserPrompt({ courseTitle, subject, level, count });
+  const pageRangeSuffix = pageRange
+    ? ` Le contenu fourni correspond aux pages ${pageRange.start} à ${pageRange.end} du document original.`
+    : "";
+  const userPrompt = baseUserPrompt + pageRangeSuffix;
 
   console.log(
     `[generate-exercises] Génération — cours: "${courseTitle}", matière: ${subject ?? "N/A"}, niveau: ${level ?? "N/A"}, count: ${count}`
@@ -298,6 +324,8 @@ export async function generateExercises(
         difficulty:         ex.difficulty ?? null,
         status:             "pending",
         generated_by_model: modelUsed,
+        page_range_start:   pageRange?.start ?? null,
+        page_range_end:     pageRange?.end ?? null,
       })
       .select("id")
       .single();
@@ -329,6 +357,18 @@ export async function generateExercises(
   console.log(
     `[generate-exercises] Terminé : ${exerciseIds.length}/${validated.exercises.length} exercices insérés en ${Date.now() - t0}ms total`
   );
+
+  if (pageRange) {
+    await logActivity({
+      event_type: "teacher_generated_targeted_exercises",
+      actor_id: teacherId,
+      actor_type: "teacher",
+      target_type: "course",
+      target_id: courseId,
+      teacher_id: teacherId,
+      context: { count: exerciseIds.length, page_range: pageRange },
+    });
+  }
 
   return { generated: exerciseIds.length, exerciseIds };
 }

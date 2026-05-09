@@ -20,6 +20,7 @@ type CourseRow = {
   level: number | null;
   pdf_storage_path: string | null;
   teacher_id: string;
+  pages_count: number | null;
 };
 
 export async function POST(
@@ -45,7 +46,7 @@ export async function POST(
 
     const { data: course, error: courseErr } = await admin
       .from("courses")
-      .select("id, title, subject_enum, level, pdf_storage_path, teacher_id")
+      .select("id, title, subject_enum, level, pdf_storage_path, teacher_id, pages_count")
       .eq("id", params.id)
       .eq("teacher_id", user.id)
       .single();
@@ -58,13 +59,30 @@ export async function POST(
 
     // Parse optional body — default 5 exercises, clamped to [3, 10]
     let count = 5;
+    let pageRange: { start: number; end: number } | null = null;
     try {
-      const body = await req.json() as { count?: unknown };
+      const body = await req.json() as { count?: unknown; page_range?: unknown };
       if (typeof body.count === "number" && Number.isFinite(body.count)) {
         count = Math.min(10, Math.max(3, Math.round(body.count)));
       }
+      if (body.page_range !== null && typeof body.page_range === "object") {
+        const pr = body.page_range as Record<string, unknown>;
+        if (typeof pr.start === "number" && typeof pr.end === "number") {
+          const start = Math.round(pr.start);
+          const end = Math.round(pr.end);
+          if (start >= 1 && end >= start) {
+            if (typedCourse.pages_count && end > typedCourse.pages_count) {
+              return NextResponse.json(
+                { error: `La plage dépasse le nombre de pages du PDF (${typedCourse.pages_count})` },
+                { status: 400 }
+              );
+            }
+            pageRange = { start, end };
+          }
+        }
+      }
     } catch {
-      // body absent or not JSON — use default
+      // body absent or not JSON — use defaults
     }
 
     const result = await generateExercises({
@@ -75,6 +93,7 @@ export async function POST(
       level: typedCourse.level ?? null,
       pdfStoragePath: typedCourse.pdf_storage_path ?? null,
       count,
+      pageRange,
     });
 
     return NextResponse.json(result);

@@ -32,6 +32,8 @@ const EVENT_LABELS: Record<string, string> = {
   teacher_added_schedule_slot:   "Créneau ajouté à l'emploi du temps",
   teacher_updated_schedule_slot: "Créneau modifié",
   teacher_dismissed_onboarding:  "Onboarding emploi du temps ignoré",
+  teacher_generated_targeted_questions: "Questions générées sur une sélection de pages",
+  teacher_generated_targeted_exercises: "Exercices générés sur une sélection de pages",
 };
 
 type FilterParam = "all" | "students" | "teacher" | "system";
