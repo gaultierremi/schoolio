@@ -32,7 +32,9 @@ export default async function ProfilePage() {
     );
   }
 
-  const role = (user.user_metadata as Record<string, unknown>)?.role as string | undefined;
+  // Trust app_metadata.role first; fall back to user_metadata for legacy users.
+  const role = ((user.app_metadata as Record<string, unknown>)?.role
+    ?? (user.user_metadata as Record<string, unknown>)?.role) as string | undefined;
   const isStudent = role === "student";
 
   const defaultName =

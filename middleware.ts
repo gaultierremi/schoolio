@@ -105,8 +105,12 @@ export async function middleware(request: NextRequest) {
 
   // ── Authenticated ──────────────────────────────────────────────────────────
   const email = user.email?.toLowerCase() ?? "";
-  const meta = (user.user_metadata ?? {}) as Record<string, unknown>;
-  const isStudent = meta.role === "student";
+  // Read role from app_metadata (only writable by service role) and fall back
+  // to user_metadata for accounts created before the role migration.
+  const appMeta = (user.app_metadata ?? {}) as Record<string, unknown>;
+  const userMeta = (user.user_metadata ?? {}) as Record<string, unknown>;
+  const role = (appMeta.role ?? userMeta.role) as string | undefined;
+  const isStudent = role === "student";
 
   // /beta-pending and /join (incl. token sub-paths) always accessible to
   // authenticated users — they're how a user resolves the beta gate.

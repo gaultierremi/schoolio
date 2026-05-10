@@ -64,7 +64,11 @@ export default async function StudentPage() {
 
   if (!user) redirect("/");
 
-  const role = (user.user_metadata as Record<string, unknown>)?.role;
+  // Trust app_metadata.role first (only service-role writable). Fall back to
+  // user_metadata.role for accounts created before the role migration.
+  const role =
+    (user.app_metadata as Record<string, unknown>)?.role ??
+    (user.user_metadata as Record<string, unknown>)?.role;
   if (role !== "student") redirect("/school");
 
   const admin = createAdminClient();
