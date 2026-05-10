@@ -101,7 +101,10 @@ export async function POST(
       await admin.auth.admin.createUser({
         email,
         password,
-        email_confirm: true,
+        // email_confirm:true previously bypassed verification, letting any
+        // caller squat on a real victim's email. Removed: Supabase now
+        // requires actual verification (depending on project settings).
+        app_metadata: { role: "student" },
         user_metadata: {
           role: "student",
           auth_mode: "full",
@@ -150,7 +153,20 @@ export async function POST(
       email,
       password,
     });
-    if (signInError) throw signInError;
+
+    // If the project requires email verification, sign-in fails with an
+    // "Email not confirmed" message. Treat that as success and instruct
+    // the user to check their inbox.
+    if (signInError) {
+      const msg = signInError.message?.toLowerCase() ?? "";
+      if (msg.includes("not confirmed") || msg.includes("not verified")) {
+        return NextResponse.json({
+          pendingEmailConfirmation: true,
+          email,
+        });
+      }
+      throw signInError;
+    }
 
     if (cls && typeof cls.teacher_id === "string") {
       await logActivity({
