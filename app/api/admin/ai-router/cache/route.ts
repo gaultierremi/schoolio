@@ -17,7 +17,7 @@ export async function DELETE() {
       data: { user },
     } = await supabase.auth.getUser();
     if (!user) return NextResponse.json({ error: "Non authentifié" }, { status: 401 });
-    if (!(SUPER_ADMIN_EMAILS as readonly string[]).includes(user.email ?? "")) {
+    if (!(SUPER_ADMIN_EMAILS as readonly string[]).includes((user.email ?? "").toLowerCase())) {
       return NextResponse.json({ error: "Accès refusé" }, { status: 403 });
     }
 
