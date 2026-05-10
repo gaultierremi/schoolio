@@ -153,14 +153,13 @@ export function useMicCapture({
     };
 
     rec.onerror = (event: ISpeechRecognitionErrorEvent) => {
-      // not-allowed = permission denied; no-speech = silence timeout (Chrome)
+      // Stop listening on permission denial so the consumer can reflect the state
       if (event.error === "not-allowed") {
-        onError("Accès au microphone refusé. Autorise le micro dans les paramètres du navigateur.");
         setIsListening(false);
         isListeningRef.current = false;
-      } else if (event.error !== "no-speech") {
-        onError(`Erreur microphone : ${event.error}`);
       }
+      // Always forward the raw error code; consumer classifies and filters
+      onError(event.error);
     };
 
     rec.onend = () => {
