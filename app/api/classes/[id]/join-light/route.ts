@@ -4,6 +4,7 @@ import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 import crypto from "crypto";
 import { logActivity } from "@/lib/activity/log";
+import { generateReconnectPin, hashReconnectPin } from "@/lib/api/pin";
 
 export const dynamic = "force-dynamic";
 
@@ -117,7 +118,22 @@ export async function POST(
       .maybeSingle();
 
     if (existing) {
-      // Reconnection: don't overwrite firstName/lastName, just restore session
+      // If a reconnect PIN is set on this account, require it via the
+      // dedicated /verify-pin endpoint. Without this gate, anyone in the
+      // class could impersonate the student by typing the pseudo.
+      const { data: profile } = await admin
+        .from("user_profiles")
+        .select("reconnect_pin_hash")
+        .eq("id", existing.student_user_id)
+        .maybeSingle();
+
+      if (profile?.reconnect_pin_hash) {
+        return NextResponse.json({ requirePin: true });
+      }
+
+      // Legacy account (created before the PIN was introduced).
+      // Allow reconnect by pseudo only for now. PR 9 will add a
+      // teacher-driven flow to set a PIN for these accounts.
       const { data: authUser, error: fetchError } =
         await admin.auth.admin.getUserById(existing.student_user_id);
       if (fetchError || !authUser.user) throw fetchError ?? new Error("User not found");
@@ -145,23 +161,30 @@ export async function POST(
           target_type: "class",
           target_id: params.id,
           teacher_id: cls.teacher_id,
-          context: { auth_mode: "light", is_reconnect: true },
+          context: { auth_mode: "light", is_reconnect: true, legacy_no_pin: true },
         });
       }
 
-      return NextResponse.json({ redirectUrl: "/student" });
+      return NextResponse.json({ redirectUrl: "/student", legacyReconnect: true });
     }
 
-    // New user: create synthetic account
+    // New user: create synthetic account with a reconnect PIN.
     const email = syntheticEmail(pseudo, params.id);
     const password = crypto.randomBytes(32).toString("hex");
+    const reconnectPin = generateReconnectPin();
+    const reconnectPinHash = hashReconnectPin(reconnectPin);
 
     const { data: userData, error: createError } =
       await admin.auth.admin.createUser({
         email,
         password,
         email_confirm: true,
+        // Role goes in app_metadata: only the service role can mutate it,
+        // unlike user_metadata which the user can edit from the browser.
+        app_metadata: { role: "student" },
         user_metadata: {
+          // Kept in user_metadata too for legacy read sites until they all
+          // migrate. The fields below are non-sensitive (display only).
           role: "student",
           auth_mode: "light",
           pseudo,
@@ -188,6 +211,7 @@ export async function POST(
         role: "student",
         auth_mode: "light",
         pseudo,
+        reconnect_pin_hash: reconnectPinHash,
       }),
       admin.from("class_memberships").insert({
         class_id: params.id,
@@ -215,7 +239,9 @@ export async function POST(
       });
     }
 
-    return NextResponse.json({ redirectUrl: "/student" });
+    // The PIN is returned ONCE in the signup response so the UI can show it
+    // to the student. It is NEVER returned again - only the hash is stored.
+    return NextResponse.json({ redirectUrl: "/student", reconnectPin });
   } catch (err) {
     console.error("[join-light:POST]", err);
     return NextResponse.json({ error: "Erreur serveur" }, { status: 500 });
