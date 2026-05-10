@@ -19,14 +19,17 @@ export async function GET(
   try {
     const admin = createAdminClient();
 
-    const { data: session, error: sessionError } = await admin
+    // Fetch the most recent session for this code — no ended_at filter so we
+    // always find the right row even if ended_at was just set concurrently.
+    const { data: sessions, error: sessionError } = await admin
       .from("live_sessions")
-      .select("id, projected_question_id, show_answer, ended_at")
+      .select("*")
       .eq("code", params.code.toUpperCase())
-      .is("ended_at", null)
-      .maybeSingle();
+      .order("started_at", { ascending: false })
+      .limit(1);
 
     if (sessionError) throw sessionError;
+    const session = sessions?.[0] ?? null;
     console.log("[projected-question] session:", JSON.stringify({ found: !!session, projected_question_id: session?.projected_question_id, show_answer: session?.show_answer, ended_at: session?.ended_at }));
     if (!session) return NextResponse.json({ error: "Session introuvable ou terminée" }, { status: 404 });
 
