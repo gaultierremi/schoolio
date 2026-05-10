@@ -1,12 +1,25 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextRequest, NextResponse } from "next/server";
 import { ADMIN_EMAILS } from "@/lib/admin-config";
+import {
+  signBetaCookie,
+  verifyBetaCookie,
+  BETA_COOKIE_MAX_AGE,
+} from "@/lib/api/beta-cookie";
 
-// Paths accessible to authenticated users even without beta clearance
-const BETA_EXEMPT = new Set(["/beta-pending", "/join"]);
+// Paths or path prefixes accessible to authenticated users even without
+// beta clearance. Use prefix matching: "/join" covers "/join/[token]" too.
+const BETA_EXEMPT_PREFIXES = ["/beta-pending", "/join"];
 
-// Paths accessible to anyone (auth or not)
+// Paths accessible to anyone (auth or not). Exact match.
 const PUBLIC_PATHS = new Set(["/", "/login", "/signup"]);
+
+function matchesPrefix(pathname: string, prefixes: string[]): boolean {
+  for (const p of prefixes) {
+    if (pathname === p || pathname.startsWith(p + "/")) return true;
+  }
+  return false;
+}
 
 async function checkBetaWhitelist(email: string): Promise<boolean> {
   const base = process.env.NEXT_PUBLIC_SUPABASE_URL!;
@@ -14,19 +27,22 @@ async function checkBetaWhitelist(email: string): Promise<boolean> {
   const headers = { apikey: key, Authorization: `Bearer ${key}` };
 
   try {
-    // Check if this email is whitelisted (case-insensitive)
+    // Exact lookup by lowercased email. The unique index in the migration is
+    // on LOWER(email), so eq is the correct PostgREST filter (and avoids the
+    // ilike wildcard-injection surface).
+    const lower = email.toLowerCase();
     const emailRes = await fetch(
-      `${base}/rest/v1/beta_whitelist?select=id&email=ilike.${encodeURIComponent(email)}&limit=1`,
-      { headers },
+      `${base}/rest/v1/beta_whitelist?select=id&email=eq.${encodeURIComponent(lower)}&limit=1`,
+      { headers, cache: "no-store" },
     );
     if (!emailRes.ok) return true; // fail open on DB error
     const emailData = (await emailRes.json()) as unknown[];
     if (emailData.length > 0) return true;
 
-    // Kill switch: if table is empty → let everyone through
+    // Kill switch: if table is empty → let everyone through.
     const anyRes = await fetch(
       `${base}/rest/v1/beta_whitelist?select=id&limit=1`,
-      { headers },
+      { headers, cache: "no-store" },
     );
     if (!anyRes.ok) return true;
     const anyData = (await anyRes.json()) as unknown[];
@@ -74,7 +90,7 @@ export async function middleware(request: NextRequest) {
 
   // ── Unauthenticated ────────────────────────────────────────────────────────
   if (!user) {
-    if (PUBLIC_PATHS.has(pathname) || BETA_EXEMPT.has(pathname)) {
+    if (PUBLIC_PATHS.has(pathname) || matchesPrefix(pathname, BETA_EXEMPT_PREFIXES)) {
       return supabaseResponse;
     }
     if (
@@ -92,32 +108,41 @@ export async function middleware(request: NextRequest) {
   const meta = (user.user_metadata ?? {}) as Record<string, unknown>;
   const isStudent = meta.role === "student";
 
-  // /beta-pending always accessible to authenticated users
-  if (BETA_EXEMPT.has(pathname)) return supabaseResponse;
+  // /beta-pending and /join (incl. token sub-paths) always accessible to
+  // authenticated users — they're how a user resolves the beta gate.
+  if (matchesPrefix(pathname, BETA_EXEMPT_PREFIXES)) return supabaseResponse;
 
   // Admins bypass the beta whitelist entirely
   const isAdmin = (ADMIN_EMAILS as readonly string[]).includes(email);
 
   if (!isAdmin) {
-    // Check 1-hour cache cookie (keyed by email to prevent cross-account reuse)
-    const cached = request.cookies.get("beta-checked")?.value;
-    const betaCached = cached === email;
+    // Verify the signed cookie. Verification fails if BETA_COOKIE_SECRET
+    // isn't set, which is fail-closed: every request hits the DB check
+    // until the secret is configured.
+    const cookieVal = request.cookies.get("beta-checked")?.value;
+    const betaCached = verifyBetaCookie(cookieVal, email);
 
     if (!betaCached) {
       const allowed = await checkBetaWhitelist(email);
       if (!allowed) return redirect("/beta-pending");
 
-      // Set cache cookie on the response
-      supabaseResponse.cookies.set("beta-checked", email, {
-        httpOnly: true,
-        sameSite: "lax",
-        maxAge: 3600,
-        path: "/",
-      });
+      // Set a signed cookie so subsequent requests skip the DB roundtrip.
+      try {
+        supabaseResponse.cookies.set("beta-checked", signBetaCookie(email), {
+          httpOnly: true,
+          sameSite: "lax",
+          secure: true,
+          maxAge: BETA_COOKIE_MAX_AGE,
+          path: "/",
+        });
+      } catch {
+        // BETA_COOKIE_SECRET missing — skip caching, the next request will
+        // re-hit the DB check. No security impact.
+      }
     }
   }
 
-  // Role-based redirects (unchanged from previous middleware)
+  // Role-based redirects (unchanged)
   if (isStudent && (pathname.startsWith("/school") || pathname.startsWith("/admin"))) {
     return redirect("/student");
   }
