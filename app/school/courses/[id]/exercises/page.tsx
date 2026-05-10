@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { PageRangeGenerator } from "./_components/PageRangeGenerator";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -218,6 +218,7 @@ function ExerciseCard({
 
 export default function ExercisesListPage() {
   const { id: courseId } = useParams<{ id: string }>();
+  const router = useRouter();
 
   const [exercises, setExercises] = useState<Exercise[]>([]);
   const [course, setCourse] = useState<CourseInfo | null>(null);
@@ -227,7 +228,13 @@ export default function ExercisesListPage() {
   const [showGenerate, setShowGenerate] = useState(false);
   const [showRangeGenerator, setShowRangeGenerator] = useState(false);
   const [extracting, setExtracting] = useState(false);
+  const [startingLive, setStartingLive] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
+
+  async function handleStartLive() {
+    setStartingLive(true);
+    router.push(`/school/courses/${courseId}/live`);
+  }
 
   function showToast(msg: string) {
     setToast(msg);
@@ -328,6 +335,13 @@ export default function ExercisesListPage() {
             )}
           </div>
           <div className="flex flex-wrap gap-2">
+            <button
+              onClick={handleStartLive}
+              disabled={startingLive}
+              className="rounded-2xl border border-red-500/40 bg-red-500/10 px-4 py-3 font-black text-red-300 hover:bg-red-500/20 transition text-sm disabled:opacity-50"
+            >
+              {startingLive ? "Chargement…" : "🎬 Cours live"}
+            </button>
             <button
               onClick={handleExtractQuestions}
               disabled={extracting}
