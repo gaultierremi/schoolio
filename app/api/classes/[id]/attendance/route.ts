@@ -55,7 +55,7 @@ export async function POST(
       class_id: params.id,
       student_user_id: r.student_user_id,
       date: body.date,
-      period: body.period ?? null,
+      period: body.period ?? 0,
       status: r.status,
       notes: r.notes ?? null,
       recorded_by: user.id,

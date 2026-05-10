@@ -3,7 +3,7 @@ CREATE TABLE class_attendance_records (
   class_id        UUID NOT NULL REFERENCES classes(id) ON DELETE CASCADE,
   student_user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
   date            DATE NOT NULL,
-  period          INT NULL,
+  period          INT NOT NULL DEFAULT 0,
   status          TEXT NOT NULL CHECK (status IN ('present', 'absent', 'late')),
   notes           TEXT NULL,
   recorded_by     UUID NOT NULL REFERENCES auth.users(id),
