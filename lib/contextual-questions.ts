@@ -40,7 +40,7 @@ export type ContextualQuestion = {
   options: string[];
   answer_index: number;
   explanation: string | null;
-  origin: "ai_generated" | "extracted_from_pdf" | "ai_live";
+  origin: "ai_generated" | "extracted_from_pdf" | "ai_live" | "ai_listen";
   page_range_start: number | null;
   page_range_end: number | null;
 };
