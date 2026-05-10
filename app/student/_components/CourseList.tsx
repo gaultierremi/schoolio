@@ -1,0 +1,91 @@
+"use client";
+
+import { useState } from "react";
+import { EmptyState } from "@/components/ui/EmptyState";
+import type { AvailableCourse } from "@/lib/types/student-dashboard";
+
+// TODO: swap card for <CourseProgressCard variant="student" /> when codex/course-progress-card merges
+// Expected props: title, subjectEnum, level, pdfPages, progressPercent?, lastActivityDate?, variant, onClick
+
+const SUBJECT_EMOJI: Record<string, string> = {
+  chimie: "⚗️",
+  physique: "⚡",
+  biologie: "🧬",
+  mathematiques: "📐",
+  histoire: "📜",
+  geographie: "🌍",
+  francais: "📝",
+  anglais: "🇬🇧",
+  neerlandais: "🇳🇱",
+  autre: "📚",
+};
+
+type Props = { courses: AvailableCourse[] };
+
+export default function CourseList({ courses }: Props) {
+  const [loadingId, setLoadingId] = useState<string | null>(null);
+
+  async function handleOpen(courseId: string) {
+    if (loadingId) return;
+    setLoadingId(courseId);
+    try {
+      const res = await fetch(`/api/student/courses/${courseId}/pdf-url`);
+      if (!res.ok) throw new Error("Impossible d'obtenir le PDF");
+      const { url } = (await res.json()) as { url: string };
+      window.open(url, "_blank", "noopener,noreferrer");
+    } catch {
+      alert("PDF temporairement indisponible");
+    } finally {
+      setLoadingId(null);
+    }
+  }
+
+  if (courses.length === 0) {
+    return (
+      <EmptyState
+        variant="compact"
+        icon="📚"
+        title="Aucun cours disponible"
+        description="Tes professeurs n'ont pas encore partagé de cours PDF."
+      />
+    );
+  }
+
+  return (
+    <ul className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+      {courses.map((c) => {
+        const emoji = SUBJECT_EMOJI[c.subject_enum ?? "autre"] ?? "📚";
+        const isLoading = loadingId === c.id;
+        return (
+          <li key={c.id}>
+            <button
+              onClick={() => handleOpen(c.id)}
+              disabled={!!loadingId}
+              className="w-full rounded-xl border border-zinc-800 bg-zinc-900 px-4 py-3 text-left transition-colors hover:bg-zinc-800 disabled:opacity-60"
+            >
+              <div className="flex items-start gap-3">
+                <span className="text-2xl leading-none">{emoji}</span>
+                <div className="min-w-0 flex-1">
+                  <p className="truncate font-semibold text-white">{c.title}</p>
+                  <p className="mt-0.5 text-xs text-zinc-500">
+                    {c.subject_enum ?? "Autre"}
+                    {c.level ? ` · ${c.level}e` : ""}
+                  </p>
+                </div>
+                <span className="shrink-0 text-zinc-500">
+                  {isLoading ? (
+                    <span className="block h-4 w-4 animate-spin rounded-full border-2 border-zinc-500 border-t-purple-400" />
+                  ) : (
+                    <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                    </svg>
+                  )}
+                </span>
+              </div>
+            </button>
+          </li>
+        );
+      })}
+    </ul>
+  );
+}
