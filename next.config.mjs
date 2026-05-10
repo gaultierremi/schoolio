@@ -1,5 +1,10 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  webpack: (config) => {
+    // pdfjs-dist tries to import the native `canvas` module in Node; alias it away
+    config.resolve.alias.canvas = false;
+    return config;
+  },
   images: {
     remotePatterns: [
       {
