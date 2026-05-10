@@ -1,10 +1,9 @@
 /** Accès aux pages /admin/* et aux routes board */
 export const ADMIN_EMAILS = [
-  "presti013@gmail.com",
   "gaultierremi@gmail.com",
-  "kenzaboulet26@gmail.com",
-  "christophe.lecrenier@gmail.com",
   "alex.bourdouxhe@gmail.com",
+  "christophe.lecrenier@gmail.com",
+  "presti013@gmail.com",
 ] as const;
 
 /** Opérations sensibles : inviter des profs, vider le cache IA */
