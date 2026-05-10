@@ -2,11 +2,55 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 
-// Web Speech API types not in the default TS lib for all targets
+// Web Speech API — experimental, not in the standard TS DOM lib; declared manually.
+interface ISpeechRecognitionAlternative {
+  transcript: string;
+  confidence: number;
+}
+
+interface ISpeechRecognitionResult {
+  readonly length: number;
+  isFinal: boolean;
+  item(index: number): ISpeechRecognitionAlternative;
+  [index: number]: ISpeechRecognitionAlternative;
+}
+
+interface ISpeechRecognitionResultList {
+  readonly length: number;
+  item(index: number): ISpeechRecognitionResult;
+  [index: number]: ISpeechRecognitionResult;
+}
+
+interface ISpeechRecognitionEvent extends Event {
+  results: ISpeechRecognitionResultList;
+  resultIndex: number;
+}
+
+interface ISpeechRecognitionErrorEvent extends Event {
+  error: string;
+  message?: string;
+}
+
+interface ISpeechRecognition extends EventTarget {
+  lang: string;
+  continuous: boolean;
+  interimResults: boolean;
+  start(): void;
+  stop(): void;
+  abort(): void;
+  onresult: ((event: ISpeechRecognitionEvent) => void) | null;
+  onerror: ((event: ISpeechRecognitionErrorEvent) => void) | null;
+  onend: (() => void) | null;
+}
+
+interface ISpeechRecognitionConstructor {
+  new(): ISpeechRecognition;
+}
+
 declare global {
   interface Window {
-    SpeechRecognition: typeof SpeechRecognition | undefined;
-    webkitSpeechRecognition: typeof SpeechRecognition | undefined;
+    SpeechRecognition: ISpeechRecognitionConstructor | undefined;
+    webkitSpeechRecognition: ISpeechRecognitionConstructor | undefined;
   }
 }
 
@@ -41,7 +85,7 @@ export function useMicCapture({
   const [isListening, setIsListening] = useState(false);
   const [bufferText, setBufferText] = useState("");
 
-  const recognitionRef = useRef<SpeechRecognition | null>(null);
+  const recognitionRef = useRef<ISpeechRecognition | null>(null);
   const segmentsRef = useRef<BufferSegment[]>([]);
   const intervalTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const reconnectTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -85,7 +129,7 @@ export function useMicCapture({
     intervalTimerRef.current = setInterval(flushBuffer, intervalMs);
   }
 
-  const createRecognition = useCallback((): SpeechRecognition | null => {
+  const createRecognition = useCallback((): ISpeechRecognition | null => {
     const SpeechRecognitionImpl =
       window.SpeechRecognition ?? window.webkitSpeechRecognition;
     if (!SpeechRecognitionImpl) return null;
@@ -95,7 +139,7 @@ export function useMicCapture({
     rec.continuous = true;
     rec.interimResults = true;
 
-    rec.onresult = (event: SpeechRecognitionEvent) => {
+    rec.onresult = (event: ISpeechRecognitionEvent) => {
       if (!event.results?.length) return;
       const lastResult = event.results[event.results.length - 1];
       if (!lastResult?.[0]) return;
@@ -108,7 +152,7 @@ export function useMicCapture({
       }
     };
 
-    rec.onerror = (event: SpeechRecognitionErrorEvent) => {
+    rec.onerror = (event: ISpeechRecognitionErrorEvent) => {
       // not-allowed = permission denied; no-speech = silence timeout (Chrome)
       if (event.error === "not-allowed") {
         onError("Accès au microphone refusé. Autorise le micro dans les paramètres du navigateur.");
