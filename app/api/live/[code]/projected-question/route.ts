@@ -17,31 +17,60 @@ export async function GET(
   { params }: { params: { code: string } },
 ) {
   try {
-    const admin = createAdminClient();
-
-    // RPC returns JSONB so PostgREST passes the blob as-is, bypassing the
-    // schema cache that silently nulls columns unknown to it (projected_question_id,
-    // show_answer were added after PostgREST started).
     const upperCode = params.code.toUpperCase();
-    console.log("[projected-question] looking up code:", upperCode);
-    const { data: rpcData, error: sessionError } = await admin
-      .rpc("get_live_session_by_code", { p_code: upperCode });
+    console.log("[projected-question] === START, code:", upperCode);
 
-    if (sessionError) throw sessionError;
-    // JSONB scalar → supabase-js wraps in array; unwrap either way
-    const session = (Array.isArray(rpcData) ? rpcData[0] : rpcData) as {
+    // Direct REST fetch bypasses supabase-js client processing so we can see
+    // exactly what PostgREST returns without any SDK transformation.
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+    const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
+
+    const restUrl =
+      `${supabaseUrl}/rest/v1/live_sessions` +
+      `?code=eq.${upperCode}` +
+      `&select=id,projected_question_id,show_answer,ended_at` +
+      `&order=started_at.desc` +
+      `&limit=1`;
+
+    const rawRes = await fetch(restUrl, {
+      headers: {
+        apikey: serviceKey,
+        Authorization: `Bearer ${serviceKey}`,
+        Accept: "application/json",
+      },
+      cache: "no-store",
+    });
+
+    console.log("[projected-question] REST status:", rawRes.status);
+    const rawText = await rawRes.text();
+    console.log("[projected-question] REST raw body:", rawText);
+
+    if (!rawRes.ok) {
+      console.error("[projected-question] REST error response");
+      return NextResponse.json({ error: "Erreur réseau Supabase" }, { status: 500 });
+    }
+
+    const sessions = JSON.parse(rawText) as Array<{
       id: string;
       projected_question_id: string | null;
       show_answer: boolean;
       ended_at: string | null;
-    } | null;
-    console.log("[projected-question] session via RPC:", JSON.stringify(session));
-    if (!session) return NextResponse.json({ error: "Session introuvable ou terminée" }, { status: 404 });
+    }>;
+
+    const session = sessions?.[0] ?? null;
+    console.log("[projected-question] parsed session:", JSON.stringify(session));
+    console.log("[projected-question] session.projected_question_id:", session?.projected_question_id);
+
+    if (!session) {
+      return NextResponse.json({ error: "Session introuvable ou terminée" }, { status: 404 });
+    }
 
     if (!session.projected_question_id) {
-      console.log("[projected-question] projected_question_id is null → projected:false");
+      console.log("[projected-question] projected_question_id null/undefined → projected:false");
       return NextResponse.json({ projected: false });
     }
+
+    const admin = createAdminClient();
 
     const { data: question, error: qError } = await admin
       .from("teacher_questions")
@@ -52,7 +81,6 @@ export async function GET(
     console.log("[projected-question] question fetch:", JSON.stringify({ found: !!question, qError: qError?.message }));
     if (qError) throw qError;
     if (!question) {
-      console.log("[projected-question] question not found for id:", session.projected_question_id);
       return NextResponse.json({ projected: false });
     }
 
@@ -60,9 +88,8 @@ export async function GET(
     const answerIndex = question.answer_index as number;
     const showAnswer = session.show_answer as boolean;
 
-    // Map options to letter objects; is_correct only revealed with show_answer
     const mappedOptions = options.map((text, i) => {
-      const letter = String.fromCharCode(65 + i); // A, B, C, D
+      const letter = String.fromCharCode(65 + i);
       const base = { letter, text };
       return showAnswer ? { ...base, is_correct: i === answerIndex } : base;
     });
@@ -83,6 +110,7 @@ export async function GET(
       response.explanation = question.explanation ?? null;
     }
 
+    console.log("[projected-question] returning projected:true, show_answer:", showAnswer);
     return NextResponse.json(response);
   } catch (err) {
     console.error("[live/[code]/projected-question:GET]", err);
