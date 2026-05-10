@@ -113,7 +113,7 @@ export default function AssignmentQuizPage() {
     try {
       const res = await fetch(`/api/student/assignments/${id}/course-pdf-url`);
       const json = await res.json() as { url?: string };
-      if (json.url) window.open(`${json.url}#page=${page}`, "_blank");
+      if (json.url) window.open(`${json.url}#page=${page}`, "_blank", "noopener,noreferrer");
     } finally {
       setPdfLoading(false);
     }
