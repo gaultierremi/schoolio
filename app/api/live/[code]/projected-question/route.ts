@@ -19,22 +19,18 @@ export async function GET(
   try {
     const admin = createAdminClient();
 
-    // Fetch the most recent session for this code — no ended_at filter so we
-    // always find the right row even if ended_at was just set concurrently.
-    const { data: sessions, error: sessionError } = await admin
-      .from("live_sessions")
-      .select("*")
-      .eq("code", params.code.toUpperCase())
-      .order("started_at", { ascending: false })
-      .limit(1);
+    // Use RPC instead of direct table query to bypass PostgREST schema cache —
+    // the cache was built before projected_question_id/show_answer were added,
+    // so SELECT * on live_sessions silently omits those columns.
+    const { data: rpcRows, error: sessionError } = await admin
+      .rpc("get_live_session_by_code", { p_code: params.code });
 
     if (sessionError) throw sessionError;
-    const session = sessions?.[0] ?? null;
-    console.log("[projected-question] session:", JSON.stringify({ found: !!session, projected_question_id: session?.projected_question_id, show_answer: session?.show_answer, ended_at: session?.ended_at }));
+    const session = (rpcRows as Array<{ id: string; projected_question_id: string | null; show_answer: boolean; ended_at: string | null }>)?.[0] ?? null;
+    console.log("[projected-question] session via RPC:", JSON.stringify(session));
     if (!session) return NextResponse.json({ error: "Session introuvable ou terminée" }, { status: 404 });
 
     if (!session.projected_question_id) {
-      console.log("[projected-question] no projected_question_id → projected:false");
       return NextResponse.json({ projected: false });
     }
 
