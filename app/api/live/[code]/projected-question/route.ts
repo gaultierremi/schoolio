@@ -19,18 +19,27 @@ export async function GET(
   try {
     const admin = createAdminClient();
 
-    // Use RPC instead of direct table query to bypass PostgREST schema cache —
-    // the cache was built before projected_question_id/show_answer were added,
-    // so SELECT * on live_sessions silently omits those columns.
-    const { data: rpcRows, error: sessionError } = await admin
-      .rpc("get_live_session_by_code", { p_code: params.code });
+    // RPC returns JSONB so PostgREST passes the blob as-is, bypassing the
+    // schema cache that silently nulls columns unknown to it (projected_question_id,
+    // show_answer were added after PostgREST started).
+    const upperCode = params.code.toUpperCase();
+    console.log("[projected-question] looking up code:", upperCode);
+    const { data: rpcData, error: sessionError } = await admin
+      .rpc("get_live_session_by_code", { p_code: upperCode });
 
     if (sessionError) throw sessionError;
-    const session = (rpcRows as Array<{ id: string; projected_question_id: string | null; show_answer: boolean; ended_at: string | null }>)?.[0] ?? null;
+    // JSONB scalar → supabase-js wraps in array; unwrap either way
+    const session = (Array.isArray(rpcData) ? rpcData[0] : rpcData) as {
+      id: string;
+      projected_question_id: string | null;
+      show_answer: boolean;
+      ended_at: string | null;
+    } | null;
     console.log("[projected-question] session via RPC:", JSON.stringify(session));
     if (!session) return NextResponse.json({ error: "Session introuvable ou terminée" }, { status: 404 });
 
     if (!session.projected_question_id) {
+      console.log("[projected-question] projected_question_id is null → projected:false");
       return NextResponse.json({ projected: false });
     }
 
