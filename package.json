@@ -36,5 +36,8 @@
     "postcss": "^8",
     "tailwindcss": "^4.2.4",
     "typescript": "^5"
+  },
+  "overrides": {
+    "pdfjs-dist": "4.10.38"
   }
 }
