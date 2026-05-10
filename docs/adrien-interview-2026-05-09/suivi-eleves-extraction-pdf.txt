@@ -1,0 +1,75 @@
+ Un des plus gros trucs pour lequel je vais utiliser
+ c'est...
+ Le suivi individualisé des élèves.
+ Je veux pouvoir voir.
+ ce qu'ils font et quelles performances ils ont dans ce qu'ils font
+ Et tu te rends compte que si un élève
+ de difficultés sur une matière particulière.
+ Parce que... Enfin on en reparlera après mais...
+ Deuxième chose.
+ je veux que ce couliot distingue
+ les énoncés des exercices qui étaient présents dans mon cours.
+ d'exercices qu'il va créer sur base de ceux qui sont présents dans mon cours.
+ parce que je veux pouvoir dire à mes élèves
+ Tu vas dans ce couloir, tu fais les exercices de ton cours.
+ qui sont les exercices du ordre 1 à 5 par exemple.
+ qui sont déjà créés par toi.
+ par mois et qui sont déjà présents sur la plateforme.
+ Et puis...
+ Donc ça c'est le strict minimum que j'exige de mes élèves.
+ C'est ça.
+ quand tu upload un pdf qui possède
+ des questions des QCM.
+ Une feature que tu apprécierais serait que
+ et l'extrait du PDF.
+ le fasse devenir une question interactive sur le site.
+ Tu ne veux pas uniquement qu'il analyse de PDF pour faire des questions ?
+ Non, première étape.
+ J'envoie Péder, je sors toutes les questions que j'ai pensées moi-même.
+ Et donc voilà, première étape.
+ C'est ce que j'ai déjà écrit dans l'autre truc.
+ Parce que ça, il ne le fait pas encore.
+ première étape, Adrien va uploader un PDF ou n'importe quel autre prof
+ Tu l'analyses, tu le découpes comme tu le fais déjà.
+ Et en plus de ça, directement,
+ Tu formalises les questions qui sont présentes dans le PDF
+ afin de les rendre avalidées.
+ dans la base de données bibliothèques.
+ personnel d'Adrien.
+ en notifiant sur chaque question que ce ne sont pas des questions
+ générée par Scurio mais des questions qui sont d'Adrien.
+ Ça c'est la première étape sur le PDF.
+ l'objectif de ça c'est au final
+ de dire à mes élèves tu vas sur school you tu fais les exercices de 1 à 5
+ de ton cours.
+Comme ça moi j'ai après le
+ une vision de qui a fait et de
+ Comment ils l'ont fait de la qualité ?
+ Non, non, Sarah ne l'a pas fait.
+ Je veux savoir qui l'a fait, qui l'a pas fait et qui l'a compris
+ n'a pas compris qu'est ce que tu veux savoir est ce que tu veux savoir
+ Combien de fois il s'est connecté, combien de fois il a essayé, je veux savoir quoi.
+ Quels sont les données intéressantes pour toi ?
+ Alors sur ce genre de...
+ d'exercices en particulier, enfin sur ce genre de sessions en particulier
+ La durée de la session.
+La session qu'on appelle devoir.
+ La durée de la session peut être intéressante.
+ Et la performance aux exercices peut être intéressante.
+ dans le cas où l'élève qui s'appelle Mathieu
+ se connecte sur la plateforme pour réaliser le devoir que tu lui as envoyé.
+ Il a les questions devant lui.
+Est-ce que...
+ S'il se trompe...
+ tu lui affiches
+ quelque chose pour lui expliquer l'idée ou est-ce qu'il
+ finis le quiz et après tu lui expliques tu l'aide
+ ou il fait le quiz et on lui montre
+ ses erreurs directement ou lui montrer à la fin comment est-ce que tu vois la chose.
+ Sur Imagineur, il y a 10 questions.
+ Est-ce qu'il répond aux 10 questions, puis il sait à la fin s'il a juste ou faux ?
+ Est-ce que question par question on lui dit faux, vrai, mais on lui explique pas ?
+ moi je vois le truc
+ parce que théoriquement quand tu vas devoir papier, je ne le sais que quand t'as corrigé.
+ Donc moi ce qui m'intéresserait, c'est ceci.
+ On fait notre vocale spécifiquement pour ça, voilà.

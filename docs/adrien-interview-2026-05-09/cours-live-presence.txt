@@ -1,0 +1,204 @@
+ Donc si je fais ça, oui.
+ Quand je donne cours, qu'est-ce que j'aimerais bien voir ?
+ donc sur les 20% de gauche de l'écran
+ la liste des élèves.
+ présence donc ce que j'aimerais bien c'est que
+ Par défaut, quand le cours commence, tous les élèves soient considérés comme étant.
+ présent mais que j'ai la possibilité en cliquant
+ sur une case ou sur le nom de l'élève peu importe.
+ soit de les marquer absents soit de les marquer
+ En retard.
+ Comme ça, ça me permet de prendre mes présences dès le début du coup.
+ je sais qui est présent qui est absent et s'il y en a qui arrive pendant le cours
+ Je reclic pendant le cours sur son nom.
+ Et je change de absent à en retard.
+ est-ce que cette feature doit apparaître
+ dans chaque cours où il y a le premier du matin et le premier de l'après-midi.
+ Non, chaque cours.
+De base, chaque cours et du coup...
+ s'il y a un moment un échange dans les bases de données,
+ entre tous les profs de la même école.
+ Ceux du premier cours apparaissent tous présents.
+ ceux du deuxième cours qui ont été considérés comme absents en première période.
+ et qui n'ont pas été modifiées par le professeur.
+ du coup apparaissent aussi absents sur la deuxième période.
+ Ça pourrait être intéressant et plus rapide pour le point.
+ Voilà, donc c'est sûr.
+ Si le professeur ne l'a pas modifié et que tu es considéré comme absent,
+ à la fin de la première période, tu seras considéré comme absent.
+ à la début de la deuxième.
+ Et la seule chose qui change, c'est que ça se remet tout.
+ à la première période de l'après-midi.
+ Et de coup, ce que un professeur...
+ valide à la fin de sa période.
+ et reporté au début de la période de la même classe pour un autre professeur.
+ Oui.
+ Donc ça c'est...
+ c'est pour les 20% de la gauche ensuite pour le reste
+ j'aimerais bien que mon pdf soit
+ visible que sur ce PDF je puisse voir
+ une marque qui me montre l'endroit où je suis arrivé avec
+ avec mes élèves au cours précédent.
+ que ce PDF quand il est ouvert.
+ s'ouvre à l'endroit où je suis arrivé au cours précédent.
+ intention, c'est ça que je disais tout à l'heure.
+ que moi je navigue beaucoup dans mes PDF.
+ Parce que il y a une partie théorie d'abord, une partie...
+ énoncé d'exercice ensuite et donc ça m'arrive de faire
+ les quatre premières pages de la partie théorie.
+ et puis d'aller à la page 21
+ pour commencer la liste d'exercices.
+ et de faire les six premiers exercices.
+ de la barre
+ 21 parce que c'est les six exercices qui sont en rapport avec les quatre premiers
+ page de théorie que je viens de faire.
+ dans ton exercice.
+ Est-ce que du coup il est marqué ?
+ la même formulation, c'est-à-dire...
+ La théorie au-dessus, on parle...
+ tableau périodique des éléments et d'autres exercices et marqués exercices du tableau périodique des éléments.
+ Alors non, moi j'ai juste section exercice.
+ Et moi je sais que les 4 premiers, c'est sur le tableau périodique.
+ Il n'y a pas de marquage.
+ les mêmes genre la théorie 1.3 ne vaut pas l'exercice
+ 1.3
+ Mais du coup, l'exercice
+ est en rapport direct avec la théorie.
+ Si l'officier est analysé par une IA,
+ et que dans le PDF, il reconnaît
+ directement qu'il y a un exercice déjà présent en rapport avec ce passage là.
+ le fait d'avoir un bouton
+ un petit bouton qui apparaît au dessus en disant
+ aller à l'exercice, qui t'emmène directement à l'exercice, c'est un gain de temps pour toi.
+ Oui.
+ Parce que du coup, théoriquement, si tu fais toute la théorie... Oui, c'est nécessaire.
+ et que dans des essais sur le terme opériodique, s'il a lu tout le PDF, il peut simplement...
+ au bon endroit de la voiture.
+Donc c'est agréable.
+ Donc c'est un truc intéressant à voir si c'est faisable ou pas faisable.
+ Ça me permettrait de ne balader avec un seul écran.
+ un seul outil informatique.
+ parce que pour le moment je me balade avec ma tablette plus mon ordinateur.
+ pour avoir d'un côté le
+ le système de gestion des élèves on va dire.
+ et de l'autre côté mon système de gestion de mes cours.
+ manuscrit à la fin de la période à la fin du cours
+ est-ce qu'il est intéressant que
+ quelque chose de spécifique apparaissent que tu dois remplir
+ ou pas, est-ce que c'est un truc que tu veux guir pas ?
+ quand tu rentres chez toi le soir.
+ Alors il y a plusieurs choses, moi je me dis que ce qui serait intéressant...
+ c'est d'avoir des comptes du temps restant du cours.
+ Visible.
+ le double aussi relativement gros.
+ parce que ça me permettra d'avoir une idée du temps qui me reste pour pouvoir boucler la matière.
+ que je voulais boucler.
+ Quand tu donnes cours, toi tu as un écran.
+ Est-ce que tu pogètes quelque chose à tes élèves ?
+Est-ce qu'ils voient un écran ou pas ?
+ Alors j'ai l'ordinateur de l'école.
+ sur lequel je branche une clé USB.
+ et cette clé USB elle contient tous les PDF que
+ que je sais que je vais pouvoir produire devant mes élèves.
+ et donc j'ai le pdf
+ sur mon ordinateur à moi.
+ j'ai le même pdf mais ils sont pas
+ connecté j'ai le même pdf derrière à la vidéo
+ les élèves mais du coup tu décides de par cet ordinateur
+ de l'école de vous montrer ce que uniquement tu veux montrer aux élèves
+ Oui.
+Mais l'ordinateur de l'école était le branché Internet.
+ Oui.
+Donc, est-ce que ce serait pas incroyable pour toi ?
+ quand tu donnes cours que tu as ton PDF devant toi, que uniquement le PDF
+ deux barres, une fenêtre esclave
+ que tu ouvres, simplement.
+ Je vois ce que tu veux dire.
+ l'esclave n'affiche que le PDF et quand tu bouges dans ton PDF à toi, ça bouge.
+ Juste dans le même PDF sur l'autre côté.
+Pour moi, oui.
+ Mais pour la majorité de mes collègues non, parce que...
+ pour toi pour moi oui maintenant la majorité
+ de mes collègues se font deux versions du même PDF.
+ une version remplie pour eux, une version vide pour les élèves.
+ donc tout ce qui est texte à trous tout ce qui est
+ blocs où les élèves doivent prendre note de la définition de quelque chose, etc.
+ C'est vide dans la version élève, c'est rempli dans la version élève.
+ comme ça le prof a une idée de...
+ Mais ça veut dire que...
+ Tu veux ravalimiser un PDF, un lien ?
+ Oui mais ce que je veux dire c'est que si moi je défile...
+ Tu dis que l'esclave affiche le même PDF ?
+ sauf comme les documents de l'affaire Epstein.
+ Il affiche, mais c'est blanc.
+Tu vois ce que je veux dire ?
+Il y a un filtre avant.
+ qui dit affiche pour l'esclave le même pdf
+ en obliterant toutes les réponses.
+Et donc du coup dès que toi tu fais ça sur ton PDF,
+ ça fait ça et tu vas pas le faire deux fois.
+C'est cool ou c'est pas cool ?
+ C'est cool.
+C'est une option que tu peux activer.
+ Oui, mais ça demande, à mon avis...
+ De la... Alors toi oui !
+ Mais ça demande de la...
+ de la capacité de
+ manipulation informatique de la part de mes collègues qui n'ont pas nécessairement tous.
+ tu arrives dans ta classe, ça détecte que c'est ce cours là.
+ ça t'affiche simplement que tu souhaites utiliser quelque chose pour afficher
+ vos élèves, va sur...
+ l'adresse IP, tu arrives sur l'adresse IP qui était propre, tu tapes juste le code
+ court en 6 caractères et ça l'affiche.
+ C'est une option qui peut être incroyable.
+ C'est ce genre de futur qui n'existe pas, c'est super intéressant.
+ Et à chaque fois qu'il me dit que ça n'existe pas, il me dit que ça représente tellement trop.
+ Toutes les notes, on se prie bien à voir ça.
+ T'es une grosse raleuse, Claude.
+ Je lui ai envoyé ta réponse à tes questions et l'autre jour tu m'as envoyé un message.
+ ce serait bien qu'il y ait ça.
+Il m'a dit ce que je te propose
+ c'est que pour la version bêta, on ne le fasse pas parce que ça doit être prêt pour Adrian.
+ et c'est un chantier de quatre semaines.
+J'ai commencé hier, c'est fait.
+ Donc arrête de faire ta pleurite.
+ Mais donc vraiment ce genre de truc, ça pourrait être incroyable.
+ En plus, il y a un filtre anonyme.
+ agonisation, agonisation.
+ Oui, je ne comprends pas.
+ Fille Treppstein.
+ Ok, d'accord, c'est parti.
+ Moi j'essaye de trouver des trucs qui n'existent nulle part là tu vois.
+ Lorsque tu arrives dans ta classe, ça te propose le mode court live.
+ Le mode Cour Life te crée une fenêtre esclave.
+ et l'avantage de ça c'est que tout sur l'ordinateur de l'école
+ la fenêtre esclave et toi depuis ta tablette ton pc ou ton téléphone
+ Tu peux faire le cours et ton téléphone, tu slides le PDF.
+ Et sur l'écran du BSC de Machac, ça se lègue de PDF.
+ Ce serait génial.
+ donc il faut bien garder en tête et je crois que c'est le plus gros
+ problème de l'enseignement de manière générale.
+ il n'y a pas internet.
+ dans toutes les écoles, qu'il n'y a pas d'ordinateur nécessairement dans toutes
+ Il y en a de plus en plus de classe, la question n'est pas là.
+ Mais surtout tableaux interactifs.
+ mais ce qu'il faut
+ bien comprendre c'est que
+ L'enseignement impose quasiment...
+ à ses enseignants d'avoir acheté eux-mêmes
+ pour pouvoir être efficace.
+ les ordinateurs qui sont dans les classes
+ Ce sera un boîtier.
+ Un écran face aux élèves.
+ et que donc il faut résoudre ce problème
+ de montrer ce que tu veux montrer aux élèves
+ Toi ton outil
+ qui te permet de navigation, donc ce que ce soit le téléphone ou la table.
+ la tablette, l'ordinateur, et du
+ du coup l'énorme avantage de ça c'est que
+ même si l'ordinateur ou n'importe quoi qui est disponible dans la classe est
+ obsolète et dégueulasse tout ce qu'on lui demande c'est d'afficher une fenêtre
+ un live stream entre guillemets et du coup
+ tu t'en fous que ce soit le dernier PC Gamer de ma chaîne.
+ d'une fenêtre web.
+ On va juste envoier.

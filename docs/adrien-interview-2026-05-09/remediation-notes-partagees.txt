@@ -1,0 +1,88 @@
+ Donc.
+ Le principe de la remédiation, AudicCollège en tout cas.
+ Et le suivant.
+ des remédiations qui sont à heures fixes pour des cours particuliers.
+ Donc le cours de mathématiques
+ Remédiation, le cours de...
+ le cours de langue est une remédiation.
+ Mais c'est un professeur.
+ qui s'occupe de la remédiation pour une année.
+ ça veut dire que le professeur qui s'occupe de la remédiation
+ va avoir devant lui des élèves qui
+ n'a pas eu nécessairement en classe.
+ Ce qui serait intéressant...
+ une base de données élèves en remédiation de cette année-là.
+ Voilà donc ce qui serait intéressant
+ c'est que le professeur qui donne la remédiation
+ AXA.
+ au problème...
+ de l'élève qu'il a en face de lui.
+ dans l'année qui l'intéresse.
+Comment ça marche ?
+ par hôtesse.
+ ce qu'Adrien a dit, ce qui serait intéressant c'est que
+ les informations et les lacunes
+ des élèves que le professeur a en retour.
+ soit stocké sur l'utilisateur, donc l'élève,
+ de façon cachée pour lui.
+ mais qu'aux besoins soient accessibles
+ par un professeur qui fait une requête sur l'élève.
+Par exemple,
+ Marie a des problèmes en mathématiques.
+ sur les équations à deux variables.
+ Marie, sur son profil élève, n'a pas cette information-là.
+ ne sait pas que le professeur a dit qu'elle avait des problèmes.
+ mais par contre un professeur qui va avoir Marie pour une remédiation.
+ peut accéder aux notes cachées
+ qu'un professeur a mis sur elle dans le but de l'aider.
+ Et ce n'est pas nécessairement...
+ cloisonné par matière, c'est-à-dire que moi par exemple en science
+ j'ai des élèves qui ont des problèmes de résolution d'équations du second degré
+ c'est clairement un problème
+ mathématiques donc ce serait
+ intéressant de l'aborder dans la remédiation de maths.
+ mais je suis le prof de science et c'est moi qui le vois
+ au moment où Marie fait son travail en science.
+ sur chaque élève.
+ qui possède sa...
+ table dans super bass.
+ pour stocker des données par rapport à son profil.
+ quand un professeur met quelque chose
+ qui le concernent particulièrement, quelle que soit la matière qu'il donne.
+ d'importe quel professeur qui fait une requête par rapport à cet élève-là.
+ et accès aux produits de n'importe quel professeur.
+ Et donc si Adrien souligne
+ un problème de résolution de mathématiques.
+ ça ne doit pas être visible uniquement par les profs de chimie.
+ ou de science, mais par tous les professeurs.
+ et évidemment un professeur de langue.
+ n'aura pas besoin de cette information-là, mais un professeur de maths aura besoin de cette information.
+ Je vous remercie
+ ça ne doit pas être limité au...
+ champs, c'est à dire qu'on comprend que les mathématiques c'est lié aux
+ aux sciences.
+ mais le plus gros problème des élèves
+ En ce moment, c'est par exemple l'analyse
+ des énoncés et donc le professeur de français
+ pourrait très bien être amené à aider un élève.
+ dans sa lecture des énoncés en sciences par exemple.
+ de l'Europe.
+ regarde la possibilité de faire une analyse.
+ dynamique et évolutive sur chaque profil.
+ et de mettre en exergue
+ des beaux-clés et des problématiques.
+ sur chaque élève.
+ professeur décide de consulter la fiche personnelle d'un élève.
+ Voilà, ça c'était sur la remédiation, je ne sais pas si j'ai tout dit mais a priori c'est ce que...
+ Donc cette table particulière
+ est une table partagée et donc si
+ Adrien à certains éléments en chimie.
+ et qui décide de mettre des notes dessus.
+ il peut décider de mettre des notes qui le concernent lui.
+ mais s'il décide de mettre des notes plus généralistes.
+ Il le fait parce que c'est quelque chose qui est dans l'intérêt des élèves et donc
+ et partager avec tout le corps profond.
+ ainsi que peut-être la direction des éducateurs.
+ parce que c'est des données qui ne sont pas privées mais des données dans le bulletin.
+ de l'élève.
+ Bonsoir.
