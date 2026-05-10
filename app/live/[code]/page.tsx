@@ -26,8 +26,21 @@ export default function SlavePage() {
   const [pdfUrl, setPdfUrl] = useState<string | null>(null);
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [isOffline, setIsOffline] = useState(false);
 
   const sessionIdRef = useRef<string | null>(null);
+
+  // Online/offline detection
+  useEffect(() => {
+    function handleOffline() { setIsOffline(true); }
+    function handleOnline() { setIsOffline(false); }
+    window.addEventListener("offline", handleOffline);
+    window.addEventListener("online", handleOnline);
+    return () => {
+      window.removeEventListener("offline", handleOffline);
+      window.removeEventListener("online", handleOnline);
+    };
+  }, []);
 
   // Bootstrap: fetch session + PDF URL
   useEffect(() => {
@@ -146,6 +159,12 @@ export default function SlavePage() {
 
   return (
     <div className="flex h-screen flex-col overflow-hidden bg-black">
+      {isOffline && (
+        <div className="z-50 flex shrink-0 items-center justify-center gap-2 bg-amber-500 px-4 py-1.5 text-center text-sm font-black text-gray-950">
+          <span className="animate-pulse">●</span>
+          Reconnexion en cours…
+        </div>
+      )}
       {pdfUrl ? (
         <iframe
           key={currentPage}
