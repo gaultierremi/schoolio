@@ -27,9 +27,11 @@ export async function GET(
       .maybeSingle();
 
     if (sessionError) throw sessionError;
+    console.log("[projected-question] session:", JSON.stringify({ found: !!session, projected_question_id: session?.projected_question_id, show_answer: session?.show_answer, ended_at: session?.ended_at }));
     if (!session) return NextResponse.json({ error: "Session introuvable ou terminée" }, { status: 404 });
 
     if (!session.projected_question_id) {
+      console.log("[projected-question] no projected_question_id → projected:false");
       return NextResponse.json({ projected: false });
     }
 
@@ -39,8 +41,12 @@ export async function GET(
       .eq("id", session.projected_question_id)
       .maybeSingle();
 
+    console.log("[projected-question] question fetch:", JSON.stringify({ found: !!question, qError: qError?.message }));
     if (qError) throw qError;
-    if (!question) return NextResponse.json({ projected: false });
+    if (!question) {
+      console.log("[projected-question] question not found for id:", session.projected_question_id);
+      return NextResponse.json({ projected: false });
+    }
 
     const options = question.options as string[];
     const answerIndex = question.answer_index as number;
