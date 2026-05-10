@@ -230,9 +230,14 @@ export function TeacherCockpitMobile({
     if (!sessionId || questionFlow.stage === "idle") return;
     const usedId = questionFlow.question.id;
     try {
-      await fetch(`/api/live-sessions/${sessionId}/back-to-pdf`, { method: "POST" });
-    } catch {
-      // noop
+      const res = await fetch(`/api/live-sessions/${sessionId}/back-to-pdf`, { method: "POST" });
+      if (!res.ok) {
+        console.error("[cockpit] back-to-pdf failed:", res.status);
+        return;
+      }
+    } catch (err) {
+      console.error("[cockpit] back-to-pdf network error:", err);
+      return;
     }
     setProjectedQuestionIds((prev) => new Set([...prev, usedId]));
     setQuestionFlow({ stage: "idle" });

@@ -79,14 +79,26 @@ export function QuestionFlowModal({
 
         <div className="flex flex-col gap-2">
           {!isRevealed ? (
-            <button
-              className="w-full rounded-xl bg-purple-600 py-3 text-sm font-bold text-white transition-colors hover:bg-purple-500 disabled:opacity-60"
-              disabled={isRevealing}
-              onClick={onReveal}
-              type="button"
-            >
-              {isRevealing ? "Révélation…" : "✨ Révéler la réponse"}
-            </button>
+            <div className="grid grid-cols-2 gap-2">
+              {(
+                [
+                  { label: "✅ Correct",   className: "bg-green-700 hover:bg-green-600" },
+                  { label: "〜 Partiel",   className: "bg-yellow-700 hover:bg-yellow-600" },
+                  { label: "❌ Faux",      className: "bg-red-700 hover:bg-red-600" },
+                  { label: "🤷 Sait pas", className: "bg-gray-700 hover:bg-gray-600" },
+                ] as const
+              ).map(({ label, className }) => (
+                <button
+                  className={`rounded-xl py-3 text-sm font-bold text-white transition-colors disabled:opacity-60 ${className}`}
+                  disabled={isRevealing}
+                  key={label}
+                  onClick={onReveal}
+                  type="button"
+                >
+                  {isRevealing ? "…" : label}
+                </button>
+              ))}
+            </div>
           ) : null}
           <button
             className="w-full rounded-xl border border-gray-700 py-3 text-sm font-semibold text-gray-300 transition-colors hover:border-gray-600 hover:text-white"

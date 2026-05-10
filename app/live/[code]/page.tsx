@@ -180,6 +180,9 @@ export default function SlavePage() {
 
   const sessionIdRef = useRef<string | null>(null);
   const codeRef = useRef(code.toUpperCase());
+  // Incremented on every Realtime event; fetchProjectedQuestion checks this to
+  // discard stale poll responses that arrive after a newer Realtime update.
+  const realtimeGenRef = useRef(0);
 
   // Online/offline detection
   useEffect(() => {
@@ -195,13 +198,17 @@ export default function SlavePage() {
 
   const fetchProjectedQuestion = useCallback(async () => {
     const upperCode = codeRef.current;
-    console.log("[Slave] fetchProjectedQuestion called, code:", upperCode);
+    const gen = realtimeGenRef.current;
+    console.log("[Slave] fetchProjectedQuestion called, code:", upperCode, "gen:", gen);
     try {
       const res = await fetch(`/api/live/${upperCode}/projected-question`);
       console.log("[Slave] projected-question status:", res.status);
       if (!res.ok) return;
+      // Discard if a newer Realtime event arrived while this request was in flight
+      if (realtimeGenRef.current !== gen) return;
       const data = await res.json() as ProjectedQuestionResponse;
       console.log("[Slave] projected-question data:", data);
+      if (realtimeGenRef.current !== gen) return;
       if (!data.projected) {
         setProjectedQuestion(null);
         setDisplayMode("pdf");
@@ -295,7 +302,9 @@ export default function SlavePage() {
           if (typeof row.scroll_y === "number") setScrollY(row.scroll_y);
           if (typeof row.zoom === "number") setZoom(row.zoom);
 
-          // Projection state changed — re-fetch question details
+          // Increment generation so any in-flight poll responses are discarded
+          realtimeGenRef.current++;
+
           if (row.projected_question_id === null) {
             setProjectedQuestion(null);
             setDisplayMode("pdf");
