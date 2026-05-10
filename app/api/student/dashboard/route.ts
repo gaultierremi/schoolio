@@ -92,10 +92,15 @@ export async function GET() {
     }
 
     // ── 3. All queries in parallel ─────────────────────────────────────────────
+    //
+    // Note: previously we fetched "available courses" via teacher_id, which
+    // exposed every PDF a teacher had ever uploaded across all their classes
+    // (audit finding HIGH). The available_courses list is now derived from
+    // assignments.resource_id below — only courses the student has been
+    // explicitly assigned are visible.
     const [
       assignmentsRes,
       scheduleRes,
-      coursesRes,
       completedCountRes,
       questionsRes,
       livePicksRes,
@@ -116,15 +121,6 @@ export async function GET() {
         .select("start_time, end_time, subject_label, class_id, teacher_id, week_pattern")
         .in("class_id", classIds)
         .eq("day_of_week", todayDow),
-
-      // Available courses (from teachers of student's classes)
-      admin
-        .from("courses")
-        .select("id, title, subject_enum, level, pdf_storage_path")
-        .in("teacher_id", teacherIds)
-        .not("pdf_storage_path", "is", null)
-        .order("created_at", { ascending: false })
-        .limit(20),
 
       // Weekly: completed assignments count
       admin
@@ -190,14 +186,21 @@ export async function GET() {
       for (const c of completions ?? []) completionMap[c.assignment_id] = c;
     }
 
+    // Fetch the courses referenced by the student's assignments. This serves
+    // both the title lookup AND the available_courses list (replacing the
+    // previous teacher_id-scoped query that leaked unrelated PDFs).
     const resourceIds = [...new Set(rawAssignments.map((a) => a.resource_id))];
     const courseTitleMap: Record<string, string> = {};
+    type CourseRow = { id: string; title: string; subject_enum: string | null; level: number | null; pdf_storage_path: string | null };
+    let assignedCourses: CourseRow[] = [];
     if (resourceIds.length > 0) {
-      const { data: coursesTitles } = await admin
+      const { data: coursesData } = await admin
         .from("courses")
-        .select("id, title")
-        .in("id", resourceIds);
-      for (const c of coursesTitles ?? []) courseTitleMap[c.id] = c.title ?? "Sans titre";
+        .select("id, title, subject_enum, level, pdf_storage_path")
+        .in("id", resourceIds)
+        .order("created_at", { ascending: false });
+      assignedCourses = (coursesData ?? []) as CourseRow[];
+      for (const c of assignedCourses) courseTitleMap[c.id] = c.title ?? "Sans titre";
     }
 
     const upcomingAssignments: UpcomingAssignment[] = [];
@@ -274,14 +277,18 @@ export async function GET() {
       }));
 
     // ── 6. Available courses ───────────────────────────────────────────────────
-    type CourseRow = { id: string; title: string; subject_enum: string | null; level: number | null; pdf_storage_path: string };
-    const availableCourses: AvailableCourse[] = ((coursesRes.data ?? []) as CourseRow[]).map((c) => ({
-      id: c.id,
-      title: c.title,
-      subject_enum: c.subject_enum,
-      level: c.level,
-      pdf_storage_path: c.pdf_storage_path,
-    }));
+    // Built from assignedCourses (computed above) so a student only sees
+    // courses they have actually been assigned. Filtered to those with a PDF.
+    const availableCourses: AvailableCourse[] = assignedCourses
+      .filter((c): c is CourseRow & { pdf_storage_path: string } => c.pdf_storage_path != null)
+      .slice(0, 20)
+      .map((c) => ({
+        id: c.id,
+        title: c.title,
+        subject_enum: c.subject_enum,
+        level: c.level,
+        pdf_storage_path: c.pdf_storage_path,
+      }));
 
     // ── 7. Weekly stats ────────────────────────────────────────────────────────
     const assignmentsCompleted = completedCountRes.count ?? 0;

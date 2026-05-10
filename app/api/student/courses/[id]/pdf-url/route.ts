@@ -30,7 +30,7 @@ export async function GET(
     // Fetch the course and verify it has a PDF
     const { data: course } = await admin
       .from("courses")
-      .select("id, teacher_id, pdf_storage_path")
+      .select("id, pdf_storage_path")
       .eq("id", params.id)
       .maybeSingle();
 
@@ -38,16 +38,32 @@ export async function GET(
       return NextResponse.json({ error: "Cours introuvable ou sans PDF" }, { status: 404 });
     }
 
-    // Verify student is in a class taught by this teacher
-    const { data: membership } = await admin
+    // Authz via the assignment chain: the student must have an active
+    // membership in a class that has been assigned this specific course.
+    //
+    // The previous check (membership in any class taught by course.teacher_id)
+    // let any student of teacher T read every PDF T has ever uploaded -
+    // including drafts, other classes, private prep material - by guessing
+    // course UUIDs. Reported in audit (CRITICAL).
+    const { data: memberships } = await admin
       .from("class_memberships")
-      .select("id, classes!inner(teacher_id)")
+      .select("class_id")
       .eq("student_user_id", user.id)
-      .eq("status", "active")
-      .eq("classes.teacher_id", course.teacher_id)
-      .maybeSingle();
+      .eq("status", "active");
 
-    if (!membership) {
+    const classIds = (memberships ?? []).map((m) => m.class_id);
+    if (classIds.length === 0) {
+      return NextResponse.json({ error: "Accès refusé" }, { status: 403 });
+    }
+
+    const { count: assignmentCount } = await admin
+      .from("assignments")
+      .select("id", { count: "exact", head: true })
+      .eq("resource_id", course.id)
+      .in("class_id", classIds)
+      .is("archived_at", null);
+
+    if (!assignmentCount) {
       return NextResponse.json({ error: "Accès refusé" }, { status: 403 });
     }
 
