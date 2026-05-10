@@ -578,7 +578,15 @@ export default function ClassDetailPage() {
 
         {/* Invite section */}
         <div className="rounded-2xl border border-gray-800 bg-gray-900 p-5 space-y-4">
-          <h2 className="font-black text-white">🔗 Inviter des élèves</h2>
+          <div className="flex items-center justify-between gap-3">
+            <h2 className="font-black text-white">🔗 Inviter des élèves</h2>
+            <a
+              href={`/school/classes/${cls.id}/invite`}
+              className="shrink-0 rounded-xl bg-purple-600 px-3 py-1.5 text-xs font-bold text-white transition hover:bg-purple-500"
+            >
+              Page d&apos;invitation →
+            </a>
+          </div>
 
           {/* Code */}
           <div>

@@ -27,7 +27,10 @@ export async function GET(request: NextRequest) {
 
     const { error } = await supabase.auth.exchangeCodeForSession(code);
     if (!error) {
-      return NextResponse.redirect(origin + "/");
+      // Support ?next= for post-auth redirects (must be a relative path)
+      const next = searchParams.get("next");
+      const destination = next && next.startsWith("/") ? next : "/";
+      return NextResponse.redirect(origin + destination);
     }
   }
 

@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { ADMIN_EMAILS } from "@/lib/admin-config";
 
 // Paths accessible to authenticated users even without beta clearance
-const BETA_EXEMPT = new Set(["/beta-pending"]);
+const BETA_EXEMPT = new Set(["/beta-pending", "/join"]);
 
 // Paths accessible to anyone (auth or not)
 const PUBLIC_PATHS = new Set(["/", "/login", "/signup"]);
