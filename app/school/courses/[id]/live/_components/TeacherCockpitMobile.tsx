@@ -216,9 +216,9 @@ export function TeacherCockpitMobile({
         body: JSON.stringify({ show_answer: true }),
       });
       if (!res.ok) return;
-      if (questionFlow.stage !== "idle") {
-        setQuestionFlow({ stage: "revealed", question: questionFlow.question });
-      }
+      setQuestionFlow((prev) =>
+        prev.stage !== "idle" ? { stage: "revealed", question: prev.question } : prev,
+      );
     } catch {
       // noop
     } finally {
