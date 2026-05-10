@@ -44,7 +44,7 @@ export async function GET(
     if (error) throw error;
 
     const members = (memberships ?? []).map((m) => {
-      const profile = m.user_profiles as { first_name: string | null; last_name: string | null } | null;
+      const profile = (m.user_profiles as unknown) as { first_name: string | null; last_name: string | null } | null;
       return {
         student_user_id: m.student_user_id,
         first_name: profile?.first_name ?? null,
