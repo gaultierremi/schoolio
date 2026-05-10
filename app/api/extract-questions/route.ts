@@ -5,6 +5,7 @@ import { routeAIRequest, GracefulAIError } from "@/lib/ai-router";
 import { createClient } from "@supabase/supabase-js";
 import { isValidSubject, isValidLevel, SUBJECTS_BY_ID } from "@/lib/subjects";
 import type { SubjectId, SchoolLevel } from "@/lib/subjects";
+import { requireUser } from "@/lib/api/auth";
 
 export const maxDuration = 60;
 
@@ -145,6 +146,9 @@ async function generateQuestionsWithFallback(pdfBase64: string, prompt: string):
 
 export async function POST(req: NextRequest) {
   try {
+    const auth = await requireUser();
+    if (!auth.ok) return auth.response;
+
     const body = (await req.json()) as {
       pdf?: string;
       subject?: unknown;

@@ -1,8 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { routeAIRequest, GracefulAIError } from "@/lib/ai-router";
+import { requireUser } from "@/lib/api/auth";
 
 export async function POST(req: NextRequest) {
   try {
+    const auth = await requireUser();
+    if (!auth.ok) return auth.response;
+
     const { question, options, answerIndex } = (await req.json()) as {
       question: string;
       options: string[];
