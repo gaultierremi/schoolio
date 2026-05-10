@@ -195,10 +195,13 @@ export default function SlavePage() {
 
   const fetchProjectedQuestion = useCallback(async () => {
     const upperCode = codeRef.current;
+    console.log("[Slave] fetchProjectedQuestion called, code:", upperCode);
     try {
       const res = await fetch(`/api/live/${upperCode}/projected-question`);
+      console.log("[Slave] projected-question status:", res.status);
       if (!res.ok) return;
       const data = await res.json() as ProjectedQuestionResponse;
+      console.log("[Slave] projected-question data:", data);
       if (!data.projected) {
         setProjectedQuestion(null);
         setDisplayMode("pdf");
@@ -206,8 +209,9 @@ export default function SlavePage() {
       }
       setProjectedQuestion(data);
       setDisplayMode(data.show_answer ? "answer" : "question");
-    } catch {
-      // Non-blocking — will retry via poll
+      console.log("[Slave] displayMode →", data.show_answer ? "answer" : "question");
+    } catch (err) {
+      console.error("[Slave] fetchProjectedQuestion error:", err);
     }
   }, []);
 
