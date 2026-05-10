@@ -6,9 +6,6 @@ import "react-pdf/dist/Page/AnnotationLayer.css";
 import "react-pdf/dist/Page/TextLayer.css";
 import { PdfPageNavigator } from "@/components/ui/PdfPageNavigator";
 
-// Worker served from public/ — local file, no CDN dependency
-pdfjs.GlobalWorkerOptions.workerSrc = "/pdf.worker.min.mjs";
-
 // ── Constants ─────────────────────────────────────────────────────────────────
 
 const WINDOW_HALF = 3;   // render ±3 pages around currentPage
@@ -63,6 +60,13 @@ export function LivePdfViewer({
   // Natural page height at scale=1 (in CSS px) — tracked from page 1 render
   const [naturalPageHeight, setNaturalPageHeight] = useState(842); // A4 fallback
   const [naturalPageWidth, setNaturalPageWidth] = useState(595);
+
+  // Configure worker once, browser-only (module-level assignment breaks in Next.js 14 SSR eval)
+  useEffect(() => {
+    if (!pdfjs.GlobalWorkerOptions.workerSrc) {
+      pdfjs.GlobalWorkerOptions.workerSrc = "/pdf.worker.min.mjs";
+    }
+  }, []);
 
   const containerRef = useRef<HTMLDivElement>(null);
   const scrollDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
