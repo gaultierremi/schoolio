@@ -14,6 +14,11 @@ const LivePdfViewer = dynamic(
   { ssr: false, loading: () => <PdfLoadingFallback /> },
 );
 
+const TeacherCockpitMobile = dynamic(
+  () => import("./_components/TeacherCockpitMobile").then((m) => m.TeacherCockpitMobile),
+  { ssr: false },
+);
+
 function PdfLoadingFallback() {
   return (
     <div className="flex h-full items-center justify-center bg-gray-950 text-gray-500">
@@ -266,76 +271,101 @@ export default function LiveMasterPage() {
     : new Date(Date.now() + SESSION_MAX_MS);
 
   return (
-    <div className="flex h-screen flex-col overflow-hidden bg-gray-950 text-white">
-      <header className="flex h-12 shrink-0 items-center justify-between gap-3 border-b border-gray-800 bg-gray-900 px-3">
-        <div className="flex min-w-0 items-center gap-3">
-          {session && (
-            <PairingCodeDisplay code={session.code} size="compact" onRegenerate={handleRegenerate} />
+    <>
+      {/* ── Desktop layout (lg+) ─────────────────────────────────────────────── */}
+      <div className="hidden h-screen flex-col overflow-hidden bg-gray-950 text-white lg:flex">
+        <header className="flex h-12 shrink-0 items-center justify-between gap-3 border-b border-gray-800 bg-gray-900 px-3">
+          <div className="flex min-w-0 items-center gap-3">
+            {session && (
+              <PairingCodeDisplay code={session.code} size="compact" onRegenerate={handleRegenerate} />
+            )}
+            {startedAt && (
+              <LiveSessionTimer endsAt={endsAt} startedAt={startedAt} size="compact" />
+            )}
+          </div>
+          <div className="flex shrink-0 items-center gap-2">
+            {totalPages > 0 && (
+              <span className="hidden text-xs text-gray-500 sm:block">
+                {currentPage} / {totalPages}
+              </span>
+            )}
+            <button
+              onClick={() => setShowEndConfirm(true)}
+              className="rounded-lg border border-red-500/40 bg-red-500/10 px-3 py-1.5 text-xs font-black text-red-300 hover:bg-red-500/20"
+            >
+              Terminer
+            </button>
+          </div>
+        </header>
+
+        <div className="flex flex-1 overflow-hidden">
+          {members.length > 0 && (
+            <aside className="flex w-1/5 min-w-[160px] flex-col overflow-y-auto border-r border-gray-800 bg-gray-900/50">
+              <div className="px-2 py-3">
+                <p className="text-xs font-black uppercase tracking-widest text-gray-500">Présences</p>
+              </div>
+              <div className="flex-1 space-y-0.5 px-1 pb-2">
+                {members.map((m) => (
+                  <AttendanceRow
+                    key={m.student_user_id}
+                    studentId={m.student_user_id}
+                    studentName={m.display_name}
+                    status={attendance[m.student_user_id] ?? "present"}
+                    onChange={(s) => handleAttendanceChange(m.student_user_id, s)}
+                    size="compact"
+                  />
+                ))}
+              </div>
+            </aside>
           )}
-          {startedAt && (
-            <LiveSessionTimer endsAt={endsAt} startedAt={startedAt} size="compact" />
+
+          {pdfUrl && (
+            <LivePdfViewer
+              pdfUrl={pdfUrl}
+              currentPage={currentPage}
+              scrollY={scrollY}
+              zoom={zoom}
+              mode="master"
+              onPageChange={handlePageChange}
+              onScrollChange={handleScrollChange}
+              onZoomChange={handleZoomChange}
+              onTotalPagesLoaded={setTotalPages}
+              className="flex-1"
+            />
           )}
         </div>
-        <div className="flex shrink-0 items-center gap-2">
-          {totalPages > 0 && (
-            <span className="hidden text-xs text-gray-500 sm:block">
-              {currentPage} / {totalPages}
-            </span>
-          )}
-          <button
-            onClick={() => setShowEndConfirm(true)}
-            className="rounded-lg border border-red-500/40 bg-red-500/10 px-3 py-1.5 text-xs font-black text-red-300 hover:bg-red-500/20"
-          >
-            Terminer
-          </button>
-        </div>
-      </header>
 
-      <div className="flex flex-1 overflow-hidden">
-        {members.length > 0 && (
-          <aside className="flex w-1/5 min-w-[160px] flex-col overflow-y-auto border-r border-gray-800 bg-gray-900/50">
-            <div className="px-2 py-3">
-              <p className="text-xs font-black uppercase tracking-widest text-gray-500">Présences</p>
-            </div>
-            <div className="flex-1 space-y-0.5 px-1 pb-2">
-              {members.map((m) => (
-                <AttendanceRow
-                  key={m.student_user_id}
-                  studentId={m.student_user_id}
-                  studentName={m.display_name}
-                  status={attendance[m.student_user_id] ?? "present"}
-                  onChange={(s) => handleAttendanceChange(m.student_user_id, s)}
-                  size="compact"
-                />
-              ))}
-            </div>
-          </aside>
-        )}
-
-        {pdfUrl && (
-          <LivePdfViewer
-            pdfUrl={pdfUrl}
-            currentPage={currentPage}
-            scrollY={scrollY}
-            zoom={zoom}
-            mode="master"
-            onPageChange={handlePageChange}
-            onScrollChange={handleScrollChange}
-            onZoomChange={handleZoomChange}
-            onTotalPagesLoaded={setTotalPages}
-            className="flex-1"
-          />
-        )}
+        <ConfirmDialog
+          isOpen={showEndConfirm}
+          title="Terminer le cours live ?"
+          description="L'écran de classe affichera « Cours terminé » et la session sera fermée."
+          confirmLabel="Terminer"
+          onConfirm={handleEnd}
+          onCancel={() => setShowEndConfirm(false)}
+        />
       </div>
 
-      <ConfirmDialog
-        isOpen={showEndConfirm}
-        title="Terminer le cours live ?"
-        description="L'écran de classe affichera « Cours terminé » et la session sera fermée."
-        confirmLabel="Terminer"
-        onConfirm={handleEnd}
-        onCancel={() => setShowEndConfirm(false)}
-      />
-    </div>
+      {/* ── Mobile cockpit (< lg) ────────────────────────────────────────────── */}
+      {session && startedAt && (
+        <TeacherCockpitMobile
+          session={session}
+          pdfUrl={pdfUrl}
+          currentPage={currentPage}
+          totalPages={totalPages}
+          zoom={zoom}
+          members={members}
+          attendance={attendance}
+          classId={selectedClassId}
+          sessionId={session.id}
+          startedAt={startedAt}
+          endsAt={endsAt}
+          onPageChange={handlePageChange}
+          onZoomChange={handleZoomChange}
+          onAttendanceChange={handleAttendanceChange}
+          onEnd={handleEnd}
+          onRegenerate={handleRegenerate}
+        />
+      )}
+    </>
   );
 }

@@ -31,6 +31,7 @@ export type RandomPickAnimationProps = {
   isVisible: boolean;
   onComplete?: () => void;
   onClose: () => void;
+  onCancel?: () => void;
   duration?: number;
   className?: string;
 };
@@ -141,6 +142,7 @@ export function RandomPickAnimation({
   isVisible,
   onComplete,
   onClose,
+  onCancel,
   duration = defaultDurationMs,
   className,
 }: RandomPickAnimationProps) {
@@ -387,7 +389,7 @@ export function RandomPickAnimation({
           <div className="relative mt-8 flex flex-col gap-3 sm:flex-row">
             <button
               className="inline-flex min-h-11 flex-1 items-center justify-center rounded-xl border border-gray-700 bg-transparent px-4 py-2.5 text-sm font-semibold text-gray-300 transition-colors hover:border-gray-600 hover:text-white focus:outline-none focus:ring-2 focus:ring-purple-400 focus:ring-offset-2 focus:ring-offset-gray-950"
-              onClick={onClose}
+              onClick={onCancel ?? onClose}
               ref={cancelButtonRef}
               type="button"
             >
