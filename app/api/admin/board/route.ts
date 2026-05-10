@@ -9,14 +9,9 @@ import {
   sendDiscordNotification,
 } from "@/lib/discord-notifications";
 
-export const dynamic = "force-dynamic";
+import { ADMIN_EMAILS } from "@/lib/admin-config";
 
-const ADMIN_EMAILS = [
-  "presti013@gmail.com",
-  "gaultierremi@gmail.com",
-  "kenzaboulet26@gmail.com",
-  "christophe.lecrenier@gmail.com",
-];
+export const dynamic = "force-dynamic";
 
 const CARD_TYPES: BoardCardType[] = ["bug", "feature", "idea", "comment", "task"];
 const CARD_PRIORITIES: BoardCardPriority[] = ["low", "medium", "high", "critical"];
@@ -66,7 +61,7 @@ async function requireAdminUser() {
   }
 
   const email = user.email?.toLowerCase() ?? "";
-  if (!ADMIN_EMAILS.includes(email)) {
+  if (!(ADMIN_EMAILS as readonly string[]).includes(email)) {
     return { response: NextResponse.json({ error: "Accès refusé" }, { status: 403 }) };
   }
 

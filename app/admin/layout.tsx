@@ -1,12 +1,6 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase-server";
-
-const ADMIN_EMAILS = [
-  "presti013@gmail.com",
-  "gaultierremi@gmail.com",
-  "kenzaboulet26@gmail.com",
-  "christophe.lecrenier@gmail.com",
-];
+import { ADMIN_EMAILS } from "@/lib/admin-config";
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
   const supabase = createClient();
@@ -14,7 +8,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
     data: { user },
   } = await supabase.auth.getUser();
 
-  if (!user || !ADMIN_EMAILS.includes(user.email?.toLowerCase() ?? "")) {
+  if (!user || !(ADMIN_EMAILS as readonly string[]).includes(user.email?.toLowerCase() ?? "")) {
     redirect("/");
   }
 

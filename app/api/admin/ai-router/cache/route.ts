@@ -1,8 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { createClient as createServerClient } from "@/lib/supabase-server";
-
-const SUPER_ADMINS = ["gaultierremi@gmail.com"];
+import { SUPER_ADMIN_EMAILS } from "@/lib/admin-config";
 
 function createAdminClient() {
   return createClient(
@@ -18,7 +17,7 @@ export async function DELETE() {
       data: { user },
     } = await supabase.auth.getUser();
     if (!user) return NextResponse.json({ error: "Non authentifié" }, { status: 401 });
-    if (!SUPER_ADMINS.includes(user.email ?? "")) {
+    if (!(SUPER_ADMIN_EMAILS as readonly string[]).includes(user.email ?? "")) {
       return NextResponse.json({ error: "Accès refusé" }, { status: 403 });
     }
 

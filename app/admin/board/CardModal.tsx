@@ -7,13 +7,7 @@ import type {
   BoardCardStatus,
   BoardCardType,
 } from "@/lib/discord-notifications";
-
-const ADMIN_EMAILS = [
-  "presti013@gmail.com",
-  "gaultierremi@gmail.com",
-  "kenzaboulet26@gmail.com",
-  "christophe.lecrenier@gmail.com",
-];
+import { ADMIN_EMAILS } from "@/lib/admin-config";
 
 const inputCls =
   "w-full bg-gray-800 border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder-white/30 focus:outline-none focus:border-purple-500 transition-colors";

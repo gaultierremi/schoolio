@@ -2,9 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient as createSupabaseAdminClient } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase-server";
 
-export const dynamic = "force-dynamic";
+import { SUPER_ADMIN_EMAILS } from "@/lib/admin-config";
 
-const SUPER_ADMINS = ["gaultierremi@gmail.com"];
+export const dynamic = "force-dynamic";
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 function createAdminClient() {
@@ -36,7 +36,7 @@ export async function POST(request: NextRequest) {
     }
 
     const userEmail = user.email?.toLowerCase() ?? "";
-    if (!SUPER_ADMINS.includes(userEmail)) {
+    if (!(SUPER_ADMIN_EMAILS as readonly string[]).includes(userEmail)) {
       return NextResponse.json({ error: "Accès refusé" }, { status: 403 });
     }
 
