@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient as createSupabaseAdminClient } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase-server";
-import { getContextualQuestions, generateLiveQuestions } from "@/lib/contextual-questions";
+import { getContextualQuestions, generateLiveQuestions, type ContextualQuestion } from "@/lib/contextual-questions";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
@@ -51,7 +51,7 @@ export async function GET(
     const courseId = session.course_id as string;
 
     const existing = await getContextualQuestions(admin, courseId, currentPage);
-    let aiGenerated: ReturnType<typeof getContextualQuestions> extends Promise<infer T> ? T : never = [];
+    let aiGenerated: ContextualQuestion[] = [];
 
     if (shouldGenerate) {
       const { data: course } = await admin
