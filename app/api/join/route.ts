@@ -64,13 +64,24 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ ok: true, already_member: true, class_name: cls.name });
     }
 
-    // Ensure user is set as student (Google OAuth users may have no role yet)
-    const meta = (user.user_metadata ?? {}) as Record<string, unknown>;
-    if (!meta.role) {
+    // Ensure user is set as student (Google OAuth users may have no role yet).
+    // Role goes in app_metadata so it cannot be tampered with from the
+    // browser. We also write it to user_metadata for legacy code that still
+    // reads from there (transitional; will be removed in a follow-up).
+    const userMeta = (user.user_metadata ?? {}) as Record<string, unknown>;
+    const appMeta = (user.app_metadata ?? {}) as Record<string, unknown>;
+    if (!appMeta.role && !userMeta.role) {
       await admin.auth.admin.updateUserById(user.id, {
-        user_metadata: { role: "student" },
+        app_metadata: { role: "student" },
+        user_metadata: { ...userMeta, role: "student" },
+      });
+    } else if (!appMeta.role) {
+      // Role is in user_metadata but not app_metadata: backfill app_metadata.
+      await admin.auth.admin.updateUserById(user.id, {
+        app_metadata: { role: userMeta.role },
       });
     }
+    const meta = userMeta;
 
     // Ensure user_profile exists
     const { data: profile } = await admin
@@ -100,40 +111,37 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    // Check if already in beta_whitelist
+    // Add or reactivate class membership. We DO NOT auto-whitelist the user
+    // for the beta. Granting beta access from a guessable invitation code
+    // defeated the entire whitelist gate (any auth user with a leaked or
+    // brute-forced code unlocked permanent access). Beta status now requires
+    // explicit admin approval via /admin/beta-whitelist.
+    if (existingMember) {
+      await admin
+        .from("class_memberships")
+        .update({ status: "active" })
+        .eq("id", existingMember.id);
+    } else {
+      await admin.from("class_memberships").insert({
+        class_id: cls.id,
+        student_user_id: user.id,
+        status: "active",
+      });
+    }
+
+    // Tell the client whether the user can actually use the app (whitelisted)
+    // or will be parked on /beta-pending after redirect. The membership is
+    // recorded either way so the teacher sees them in the class roster.
     const { data: whitelisted } = await admin
       .from("beta_whitelist")
       .select("id")
-      .ilike("email", email)
+      .eq("email", email)
       .maybeSingle();
-
-    await Promise.all([
-      whitelisted
-        ? Promise.resolve()
-        : admin.from("beta_whitelist").insert({
-            email,
-            added_by: null,
-            source: "class_invitation",
-            notes: `Classe: ${cls.name}`,
-          }).then(),
-
-      existingMember
-        ? admin
-            .from("class_memberships")
-            .update({ status: "active" })
-            .eq("id", existingMember.id)
-            .then()
-        : admin.from("class_memberships").insert({
-            class_id: cls.id,
-            student_user_id: user.id,
-            status: "active",
-          }).then(),
-    ]);
 
     return NextResponse.json({
       ok: true,
       class_name: cls.name,
-      already_whitelisted: !!whitelisted,
+      whitelisted: !!whitelisted,
     });
   } catch (err) {
     console.error("[api/join:POST]", err);
