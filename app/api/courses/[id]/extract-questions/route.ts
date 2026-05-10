@@ -1,14 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
-import { GoogleGenerativeAI, SchemaType, type ResponseSchema } from "@google/generative-ai";
+import { SchemaType, type ResponseSchema } from "@google/generative-ai";
 import { createClient as createSupabaseAdminClient } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase-server";
+import { routeAIRequest, GracefulAIError } from "@/lib/ai-router";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 120;
 
 const UUID_REGEX = /^[0-9a-f-]{36}$/i;
 const MAX_PDF_BYTES = 52428800;
-const gemini = new GoogleGenerativeAI(process.env.GOOGLE_AI_API_KEY!);
 
 function createAdminClient() {
   return createSupabaseAdminClient(
@@ -106,15 +106,6 @@ export async function POST(
 
     const pdfBase64 = pdfBuffer.toString("base64");
 
-    const model = gemini.getGenerativeModel({
-      model: "gemini-2.5-flash",
-      generationConfig: {
-        maxOutputTokens: 16384,
-        responseMimeType: "application/json",
-        responseSchema: EXTRACT_SCHEMA,
-      },
-    });
-
     const prompt =
       "Tu es un assistant pédagogique. Trouve et extrait TOUTES les questions de quiz (QCM ou Vrai/Faux) qui sont DÉJÀ ÉCRITES dans ce document PDF. " +
       "Ne génère PAS de nouvelles questions. Extrais uniquement les questions présentes verbatim dans le document. " +
@@ -122,12 +113,14 @@ export async function POST(
       "Si le document ne contient aucune question, retourne un tableau vide. " +
       "Réponds UNIQUEMENT avec le JSON demandé.";
 
-    const result = await model.generateContent([
-      { inlineData: { data: pdfBase64, mimeType: "application/pdf" } },
-      { text: prompt },
-    ]);
-
-    const raw = result.response.text();
+    const aiResponse = await routeAIRequest("extract_questions", prompt, {
+      pdfBase64,
+      requireVision: true,
+      responseSchema: EXTRACT_SCHEMA,
+      maxTokens: 16384,
+      cacheTtlMs: 0,
+    });
+    const raw = aiResponse.text;
     let parsed: { questions: ExtractedQ[] };
     try {
       parsed = JSON.parse(raw) as { questions: ExtractedQ[] };
@@ -167,6 +160,9 @@ export async function POST(
     return NextResponse.json({ extracted: rows.length });
   } catch (err) {
     console.error("[courses/extract-questions]", err);
+    if (err instanceof GracefulAIError) {
+      return NextResponse.json({ error: "Service IA temporairement indisponible" }, { status: 503 });
+    }
     return NextResponse.json({ error: "Erreur serveur" }, { status: 500 });
   }
 }

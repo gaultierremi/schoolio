@@ -1,7 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import Anthropic from "@anthropic-ai/sdk";
-
-const client = new Anthropic();
+import { routeAIRequest, GracefulAIError } from "@/lib/ai-router";
 
 export async function POST(req: NextRequest) {
   try {
@@ -16,26 +14,17 @@ export async function POST(req: NextRequest) {
     }
 
     const correctAnswer = options?.[answerIndex] ?? "";
+    const prompt =
+      `Génère une explication pédagogique courte (2-3 phrases) pour cette question de quiz :\n\n` +
+      `Question : ${question}\nRéponse correcte : ${correctAnswer}\n\n` +
+      `Réponds en français, de façon claire et concise, sans répéter la question ni commencer par "Explication :".`;
 
-    const message = await client.messages.create({
-      model: "claude-haiku-4-5-20251001",
-      max_tokens: 300,
-      messages: [
-        {
-          role: "user",
-          content: `Génère une explication pédagogique courte (2-3 phrases) pour cette question de quiz :\n\nQuestion : ${question}\nRéponse correcte : ${correctAnswer}\n\nRéponds en français, de façon claire et concise, sans répéter la question ni commencer par "Explication :".`,
-        },
-      ],
-    });
-
-    const text = message.content
-      .filter((b): b is Anthropic.TextBlock => b.type === "text")
-      .map((b) => b.text)
-      .join("")
-      .trim();
-
-    return NextResponse.json({ explanation: text });
+    const response = await routeAIRequest("explain_answer", prompt, { maxTokens: 300 });
+    return NextResponse.json({ explanation: response.text.trim() });
   } catch (err) {
+    if (err instanceof GracefulAIError) {
+      return NextResponse.json({ error: "Service IA temporairement indisponible" }, { status: 503 });
+    }
     const msg = err instanceof Error ? err.message : "Erreur inconnue";
     return NextResponse.json({ error: msg }, { status: 500 });
   }

@@ -1,8 +1,7 @@
 import { SupabaseClient } from "@supabase/supabase-js";
-import { GoogleGenerativeAI, SchemaType, type ResponseSchema } from "@google/generative-ai";
+import { SchemaType, type ResponseSchema } from "@google/generative-ai";
 import { PDFDocument } from "pdf-lib";
-
-const gemini = new GoogleGenerativeAI(process.env.GOOGLE_AI_API_KEY!);
+import { routeAIRequest } from "./ai-router";
 
 const LIVE_SCHEMA: ResponseSchema = {
   type: SchemaType.OBJECT,
@@ -107,28 +106,21 @@ export async function generateLiveQuestions(
   const pageBuffer = await extractPageRange(pdfBuffer, currentPage);
   const pdfBase64 = pageBuffer.toString("base64");
 
-  const model = gemini.getGenerativeModel({
-    model: "gemini-2.5-flash",
-    generationConfig: {
-      maxOutputTokens: 8192,
-      responseMimeType: "application/json",
-      responseSchema: LIVE_SCHEMA,
-    },
+  const prompt =
+    "Tu es un assistant pédagogique. Génère 3 à 5 questions QCM (4 options chacune, une seule bonne réponse) " +
+    "basées sur le contenu visible dans ces pages du cours. " +
+    "Les questions doivent tester la compréhension du contenu de ces pages spécifiquement. " +
+    "Pour chaque question, indique les numéros de page (page_start, page_end) de la matière concernée. " +
+    "Réponds UNIQUEMENT avec le JSON demandé.";
+
+  const aiResponse = await routeAIRequest("live_contextual_questions", prompt, {
+    pdfBase64,
+    requireVision: true,
+    responseSchema: LIVE_SCHEMA,
+    maxTokens: 8192,
+    cacheTtlMs: 0,
   });
-
-  const result = await model.generateContent([
-    { inlineData: { data: pdfBase64, mimeType: "application/pdf" } },
-    {
-      text:
-        "Tu es un assistant pédagogique. Génère 3 à 5 questions QCM (4 options chacune, une seule bonne réponse) " +
-        "basées sur le contenu visible dans ces pages du cours. " +
-        "Les questions doivent tester la compréhension du contenu de ces pages spécifiquement. " +
-        "Pour chaque question, indique les numéros de page (page_start, page_end) de la matière concernée. " +
-        "Réponds UNIQUEMENT avec le JSON demandé.",
-    },
-  ]);
-
-  const raw = result.response.text();
+  const raw = aiResponse.text;
   let parsed: { questions: GeminiQuestion[] };
   try {
     parsed = JSON.parse(raw) as { questions: GeminiQuestion[] };

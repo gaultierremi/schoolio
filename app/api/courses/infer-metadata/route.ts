@@ -1,10 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import {
-  GoogleGenerativeAI,
-  SchemaType,
-  type ResponseSchema,
-} from "@google/generative-ai";
-import { isRateLimitError } from "@/lib/rate-limit-utils";
+import { SchemaType, type ResponseSchema } from "@google/generative-ai";
+import { routeAIRequest, GracefulAIError } from "@/lib/ai-router";
 import { createClient as createSupabaseAdminClient } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase-server";
 import type { SchoolLevel } from "@/lib/subjects";
@@ -25,7 +21,6 @@ const message = await client.messages.create({
 });
 */
 
-const gemini = new GoogleGenerativeAI(process.env.GOOGLE_AI_API_KEY!);
 const UUID_REGEX = /^[0-9a-f-]{36}$/i;
 const MAX_PDF_BYTES = 52428800;
 
@@ -206,40 +201,15 @@ const INFERENCE_SCHEMA: ResponseSchema = {
   required: ["subject", "level", "title", "confidence"],
 };
 
-async function generateGeminiJson(modelName: string, pdfBase64: string, prompt: string) {
-  const model = gemini.getGenerativeModel({
-    model: modelName,
-    generationConfig: {
-      maxOutputTokens: 4096,
-      responseMimeType: "application/json",
-      responseSchema: INFERENCE_SCHEMA,
-    },
+async function generateInferenceJson(pdfBase64: string, prompt: string): Promise<string> {
+  const response = await routeAIRequest("infer_metadata", prompt, {
+    pdfBase64,
+    requireVision: true,
+    responseSchema: INFERENCE_SCHEMA,
+    maxTokens: 256,
+    cacheTtlMs: 0,
   });
-
-  const result = await model.generateContent([
-    { inlineData: { data: pdfBase64, mimeType: "application/pdf" } },
-    { text: prompt },
-  ]);
-
-  const text = result.response.text();
-  return text;
-}
-
-async function generateInferenceJson(pdfBase64: string, prompt: string) {
-  try {
-    return await generateGeminiJson("gemini-2.5-pro", pdfBase64, prompt);
-  } catch (error) {
-    if (!isRateLimitError(error)) throw error;
-  }
-
-  try {
-    return await generateGeminiJson("gemini-2.5-flash", pdfBase64, prompt);
-  } catch (error) {
-    if (isRateLimitError(error)) {
-      throw new Error("GEMINI_RATE_LIMIT");
-    }
-    throw error;
-  }
+  return response.text;
 }
 
 export async function POST(request: NextRequest) {
@@ -359,11 +329,8 @@ export async function POST(request: NextRequest) {
     });
   } catch (error) {
     console.error("[courses/infer-metadata]", error);
-    if (error instanceof Error && error.message === "GEMINI_RATE_LIMIT") {
-      return NextResponse.json(
-        { error: "Service temporairement sature" },
-        { status: 503 }
-      );
+    if (error instanceof GracefulAIError) {
+      return NextResponse.json({ error: "Service temporairement saturé" }, { status: 503 });
     }
     return NextResponse.json({ error: getErrorMessage(error) }, { status: 500 });
   }

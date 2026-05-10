@@ -1,11 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import {
-  GoogleGenerativeAI,
-  SchemaType,
-  type ResponseSchema,
-} from "@google/generative-ai";
-import { isRateLimitError } from "@/lib/rate-limit-utils";
+import { SchemaType, type ResponseSchema } from "@google/generative-ai";
 import { createHash } from "crypto";
+import { routeAIRequest, GracefulAIError } from "@/lib/ai-router";
 import { createClient } from "@supabase/supabase-js";
 import { isValidSubject, isValidLevel, SUBJECTS_BY_ID } from "@/lib/subjects";
 import type { SubjectId, SchoolLevel } from "@/lib/subjects";
@@ -31,7 +27,6 @@ const message = await client.messages.create({
 */
 
 const MAX_PDF_BYTES = 52428800;
-const gemini = new GoogleGenerativeAI(process.env.GOOGLE_AI_API_KEY!);
 
 function getDb() {
   return createClient(
@@ -137,37 +132,15 @@ function parseJsonObject<T>(rawText: string): T {
   throw new Error("Reponse JSON invalide");
 }
 
-async function generateGeminiJson(modelName: string, pdfBase64: string, prompt: string) {
-  const model = gemini.getGenerativeModel({
-    model: modelName,
-    generationConfig: {
-      maxOutputTokens: 4096,
-      responseMimeType: "application/json",
-      responseSchema: QUESTIONS_SCHEMA,
-    },
+async function generateQuestionsWithFallback(pdfBase64: string, prompt: string): Promise<string> {
+  const response = await routeAIRequest("extract_questions_from_pdf", `${prompt}\n\nGenere les questions de quiz basees sur ce document.`, {
+    pdfBase64,
+    requireVision: true,
+    responseSchema: QUESTIONS_SCHEMA,
+    maxTokens: 4096,
+    cacheTtlMs: 0,
   });
-
-  const result = await model.generateContent([
-    { inlineData: { data: pdfBase64, mimeType: "application/pdf" } },
-    { text: `${prompt}\n\nGenere les questions de quiz basees sur ce document.` },
-  ]);
-
-  return result.response.text();
-}
-
-async function generateQuestionsWithFallback(pdfBase64: string, prompt: string) {
-  try {
-    return await generateGeminiJson("gemini-2.5-pro", pdfBase64, prompt);
-  } catch (error) {
-    if (!isRateLimitError(error)) throw error;
-  }
-
-  try {
-    return await generateGeminiJson("gemini-2.5-flash", pdfBase64, prompt);
-  } catch (error) {
-    if (isRateLimitError(error)) throw new Error("GEMINI_RATE_LIMIT");
-    throw error;
-  }
+  return response.text;
 }
 
 export async function POST(req: NextRequest) {
@@ -241,10 +214,9 @@ export async function POST(req: NextRequest) {
       pageCount,
     });
   } catch (err) {
-    if (err instanceof Error && err.message === "GEMINI_RATE_LIMIT") {
+    if (err instanceof GracefulAIError) {
       return NextResponse.json({ error: "Service temporairement sature" }, { status: 503 });
     }
-
     const msg = err instanceof Error ? err.message : "Erreur inconnue";
     return NextResponse.json({ error: msg }, { status: 500 });
   }

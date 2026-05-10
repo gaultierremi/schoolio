@@ -1,10 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import {
-  GoogleGenerativeAI,
-  SchemaType,
-  type ResponseSchema,
-} from "@google/generative-ai";
-import { isRateLimitError } from "@/lib/rate-limit-utils";
+import { SchemaType, type ResponseSchema } from "@google/generative-ai";
+import { routeAIRequest, GracefulAIError } from "@/lib/ai-router";
 import { createClient as createSupabaseAdminClient } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase-server";
 import { isValidSubject, isValidLevel, SUBJECTS_BY_ID } from "@/lib/subjects";
@@ -37,7 +33,6 @@ const UUID_REGEX = /^[0-9a-f-]{36}$/i;
 const MAX_PDF_BYTES = 52428800;
 const WORKER_COUNT = 3;
 const QUESTIONS_PER_WORKER = 10;
-const gemini = new GoogleGenerativeAI(process.env.GOOGLE_AI_API_KEY!);
 
 function createAdminClient() {
   return createSupabaseAdminClient(
@@ -161,51 +156,24 @@ function parseJsonObject<T>(rawText: string): T {
   throw new Error("Reponse JSON invalide");
 }
 
-async function generateGeminiQuestions(
-  modelName: string,
-  pdfBase64: string,
-  systemPrompt: string,
-  workerIndex: number
-) {
-  const model = gemini.getGenerativeModel({
-    model: modelName,
-    generationConfig: {
-      maxOutputTokens: 32768,
-      responseMimeType: "application/json",
-      responseSchema: QUESTIONS_SCHEMA,
-    },
-  });
-
-  const result = await model.generateContent([
-    { inlineData: { data: pdfBase64, mimeType: "application/pdf" } },
-    {
-      text:
-        `${systemPrompt}\n\n` +
-        `Worker ${workerIndex + 1}/${WORKER_COUNT}: genere ${QUESTIONS_PER_WORKER} QCM distincts. ` +
-        `Evite les doublons et couvre une partie differente du document.`,
-    },
-  ]);
-
-  return result.response.text();
-}
-
 async function generateQuestionsWithFallback(
   pdfBase64: string,
   systemPrompt: string,
-  workerIndex: number
-) {
-  try {
-    return await generateGeminiQuestions("gemini-2.5-pro", pdfBase64, systemPrompt, workerIndex);
-  } catch (error) {
-    if (!isRateLimitError(error)) throw error;
-  }
+  workerIndex: number,
+): Promise<string> {
+  const fullPrompt =
+    `${systemPrompt}\n\n` +
+    `Worker ${workerIndex + 1}/${WORKER_COUNT}: genere ${QUESTIONS_PER_WORKER} QCM distincts. ` +
+    `Evite les doublons et couvre une partie differente du document.`;
 
-  try {
-    return await generateGeminiQuestions("gemini-2.5-flash", pdfBase64, systemPrompt, workerIndex);
-  } catch (error) {
-    if (isRateLimitError(error)) throw new Error("GEMINI_RATE_LIMIT");
-    throw error;
-  }
+  const response = await routeAIRequest("generate_questions", fullPrompt, {
+    pdfBase64,
+    requireVision: true,
+    responseSchema: QUESTIONS_SCHEMA,
+    maxTokens: 32768,
+    cacheTtlMs: 0,
+  });
+  return response.text;
 }
 
 function normalizeQuestion(question: ExtractedQuestion): ExtractedQuestion {
@@ -431,7 +399,7 @@ export async function POST(request: NextRequest) {
     });
   } catch (error) {
     console.error("[courses/generate-questions]", error);
-    if (error instanceof Error && error.message === "GEMINI_RATE_LIMIT") {
+    if (error instanceof GracefulAIError) {
       return NextResponse.json({ error: "Service temporairement sature" }, { status: 503 });
     }
     return NextResponse.json(
