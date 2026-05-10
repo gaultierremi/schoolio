@@ -33,8 +33,12 @@ export async function middleware(request: NextRequest) {
   } = await supabase.auth.getUser();
 
   const isAuthenticated = !!user;
-  const meta = (user?.user_metadata ?? {}) as Record<string, unknown>;
-  const isStudent = meta.role === "student";
+  // Read role from app_metadata (only writable by service role) and fall back
+  // to user_metadata for accounts created before the role migration.
+  const appMeta = (user?.app_metadata ?? {}) as Record<string, unknown>;
+  const userMeta = (user?.user_metadata ?? {}) as Record<string, unknown>;
+  const role = (appMeta.role ?? userMeta.role) as string | undefined;
+  const isStudent = role === "student";
 
   function redirect(path: string) {
     const url = request.nextUrl.clone();
