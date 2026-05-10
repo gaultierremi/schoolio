@@ -186,6 +186,7 @@ export function TeacherCockpitMobile({
               onZoomChange={onZoomChange}
               size="compact"
               disabled={totalPages === 0}
+              captureKeyboard
             />
           </div>
         </div>
@@ -199,6 +200,7 @@ export function TeacherCockpitMobile({
               className="w-full rounded-2xl bg-gradient-to-r from-purple-600 to-purple-500 py-4 text-base font-black text-white shadow-lg shadow-purple-950/30 transition-opacity active:opacity-80 disabled:opacity-60"
               type="button"
               aria-label="Tirer un élève au hasard"
+              aria-busy={isPickLoading}
             >
               {isPickLoading ? "Tirage…" : "🎲 Tirer un élève"}
             </button>
