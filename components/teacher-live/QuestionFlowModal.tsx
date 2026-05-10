@@ -27,17 +27,10 @@ export function QuestionFlowModal({
   return (
     <div className="fixed inset-0 z-40 flex flex-col items-stretch justify-end bg-black/60 backdrop-blur-sm">
       <div className="max-h-[85vh] overflow-y-auto rounded-t-3xl border-t-2 border-purple-500/40 bg-gray-900 p-5 shadow-2xl">
-        <div className="mb-4 flex items-center justify-between gap-3">
+        <div className="mb-4">
           <span className="text-sm font-bold text-purple-300">
             {isRevealed ? "✅ Réponse révélée" : "📡 Projetée sur l'écran"}
           </span>
-          <button
-            className="rounded-lg px-2 py-1 text-xs text-gray-400 hover:text-white"
-            onClick={onBackToPdf}
-            type="button"
-          >
-            Retour au PDF
-          </button>
         </div>
 
         <p className="mb-4 text-base font-semibold leading-6 text-gray-100">
