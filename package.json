@@ -19,7 +19,7 @@
     "canvas-confetti": "^1.9.4",
     "framer-motion": "^12.38.0",
     "katex": "^0.16.45",
-    "next": "14.2.3",
+    "next": "14.2.35",
     "pdf-lib": "^1.17.1",
     "react": "^18",
     "react-dom": "^18",

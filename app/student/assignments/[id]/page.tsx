@@ -71,7 +71,7 @@ export default function StudentAssignmentPage() {
     const json = await res.json() as { url?: string };
     if (json.url) {
       setPdfUrl(json.url);
-      window.open(json.url, "_blank");
+      window.open(json.url, "_blank", "noopener,noreferrer");
     }
     setPdfLoading(false);
   }

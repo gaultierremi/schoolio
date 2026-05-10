@@ -63,7 +63,7 @@ export default function Header() {
               {name}
             </span>
             <button
-              onClick={() => supabase.auth.signOut()}
+              onClick={() => supabase.auth.signOut({ scope: "global" })}
               className="rounded-full border border-gray-700 px-3 py-1 text-xs text-gray-400 transition-colors hover:border-gray-500 hover:text-white"
             >
               Se déconnecter

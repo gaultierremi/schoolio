@@ -33,7 +33,7 @@ export default function AuthButton() {
   }
 
   function signOut() {
-    supabase.auth.signOut();
+    supabase.auth.signOut({ scope: "global" });
   }
 
   if (loading) {
