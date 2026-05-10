@@ -4,7 +4,17 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { SUBJECTS_BY_ID } from "@/lib/subjects";
 import type { SubjectId } from "@/lib/subjects";
-import type { AssignmentEntry } from "./page";
+type AssignmentEntry = {
+  id: string;
+  title: string;
+  resource_type: string;
+  resource_id: string;
+  due_date: string | null;
+  class_id: string;
+  class_name: string;
+  status: string;
+  score: number | null;
+};
 import StudentWelcomeOnboarding from "@/components/StudentWelcomeOnboarding";
 
 type ClassEntry = {
