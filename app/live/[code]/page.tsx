@@ -263,6 +263,8 @@ export default function SlavePage() {
   useEffect(() => {
     if (slaveState !== "active" || !sessionId) return;
 
+    console.log("[Slave] Setting up Realtime subscription for session:", sessionId);
+
     const supabase = createClient();
 
     const channel = supabase
@@ -276,6 +278,7 @@ export default function SlavePage() {
           filter: `id=eq.${sessionId}`,
         },
         (payload) => {
+          console.log("[Slave] Received Realtime UPDATE:", payload.new);
           const row = payload.new as SessionSnapshot;
 
           if (row.ended_at) {
@@ -293,27 +296,24 @@ export default function SlavePage() {
             setProjectedQuestion(null);
             setDisplayMode("pdf");
           } else {
-            // Fetch full question content (includes is_correct only when show_answer=true)
             fetchProjectedQuestion();
           }
         },
       )
-      .subscribe();
+      .subscribe((status, err) => {
+        console.log("[Slave] Realtime status:", status, err ?? "");
+      });
 
     return () => { supabase.removeChannel(channel); };
   }, [slaveState, sessionId, fetchProjectedQuestion]);
 
-  // Resilience poll: re-fetch projection every 5s when a question is active
-  // (guards against missed Realtime events)
+  // Resilience poll every 5s regardless of display mode.
+  // Realtime handles instant updates; this catches any missed events.
   useEffect(() => {
     if (slaveState !== "active") return;
-    pollRef.current = setInterval(() => {
-      if (displayMode === "question" || displayMode === "answer") {
-        fetchProjectedQuestion();
-      }
-    }, 5000);
+    pollRef.current = setInterval(fetchProjectedQuestion, 5000);
     return () => { if (pollRef.current) clearInterval(pollRef.current); };
-  }, [slaveState, displayMode, fetchProjectedQuestion]);
+  }, [slaveState, fetchProjectedQuestion]);
 
   // ── Loading ──────────────────────────────────────────────────────────────────
   if (slaveState === "loading") {
