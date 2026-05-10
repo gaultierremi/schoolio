@@ -20,7 +20,7 @@ export async function GET(
 
     const { data: session, error } = await admin
       .from("live_sessions")
-      .select("id, code, course_id, class_id, current_page, total_pages, started_at, ended_at")
+      .select("id, code, course_id, class_id, current_page, total_pages, scroll_y, zoom, started_at, ended_at")
       .eq("code", params.code.toUpperCase())
       .is("ended_at", null)
       .maybeSingle();

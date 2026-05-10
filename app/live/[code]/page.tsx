@@ -1,8 +1,15 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import dynamic from "next/dynamic";
 import { useParams } from "next/navigation";
 import { createClient } from "@/lib/supabase-browser";
+
+// ── react-pdf — client-only ───────────────────────────────────────────────────
+const LivePdfViewer = dynamic(
+  () => import("@/components/pdf/LivePdfViewer").then((m) => m.LivePdfViewer),
+  { ssr: false },
+);
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -12,7 +19,8 @@ type SessionSnapshot = {
   id: string;
   code: string;
   current_page: number;
-  total_pages: number | null;
+  scroll_y: number;
+  zoom: number;
   ended_at: string | null;
 };
 
@@ -22,18 +30,22 @@ export default function SlavePage() {
   const { code } = useParams<{ code: string }>();
 
   const [slaveState, setSlaveState] = useState<SlaveState>("loading");
-  const [currentPage, setCurrentPage] = useState(1);
-  const [pdfUrl, setPdfUrl] = useState<string | null>(null);
   const [sessionId, setSessionId] = useState<string | null>(null);
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [pdfUrl, setPdfUrl] = useState<string | null>(null);
   const [isOffline, setIsOffline] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  // Viewport state — driven by Realtime
+  const [currentPage, setCurrentPage] = useState(1);
+  const [scrollY, setScrollY] = useState(0);
+  const [zoom, setZoom] = useState(1.0);
 
   const sessionIdRef = useRef<string | null>(null);
 
   // Online/offline detection
   useEffect(() => {
-    function handleOffline() { setIsOffline(true); }
-    function handleOnline() { setIsOffline(false); }
+    const handleOffline = () => setIsOffline(true);
+    const handleOnline = () => setIsOffline(false);
     window.addEventListener("offline", handleOffline);
     window.addEventListener("online", handleOnline);
     return () => {
@@ -42,7 +54,7 @@ export default function SlavePage() {
     };
   }, []);
 
-  // Bootstrap: fetch session + PDF URL
+  // Bootstrap: fetch session (includes scroll_y, zoom) + PDF URL
   useEffect(() => {
     const upperCode = code.toUpperCase();
 
@@ -74,6 +86,8 @@ export default function SlavePage() {
         sessionIdRef.current = session.id;
         setSessionId(session.id);
         setCurrentPage(session.current_page);
+        setScrollY(session.scroll_y ?? 0);
+        setZoom(session.zoom ?? 1.0);
         setPdfUrl(pdfData.url);
         setSlaveState("active");
       } catch {
@@ -85,7 +99,7 @@ export default function SlavePage() {
     bootstrap();
   }, [code]);
 
-  // Realtime subscription to live_sessions via postgres_changes
+  // Realtime — receive full viewport state from master
   useEffect(() => {
     if (slaveState !== "active" || !sessionId) return;
 
@@ -103,25 +117,24 @@ export default function SlavePage() {
         },
         (payload) => {
           const row = payload.new as SessionSnapshot;
+
           if (row.ended_at) {
             setSlaveState("ended");
             supabase.removeChannel(channel);
             return;
           }
-          if (typeof row.current_page === "number") {
-            setCurrentPage(row.current_page);
-          }
+
+          if (typeof row.current_page === "number") setCurrentPage(row.current_page);
+          if (typeof row.scroll_y === "number") setScrollY(row.scroll_y);
+          if (typeof row.zoom === "number") setZoom(row.zoom);
         }
       )
       .subscribe();
 
-    return () => {
-      supabase.removeChannel(channel);
-    };
+    return () => { supabase.removeChannel(channel); };
   }, [slaveState, sessionId]);
 
-  // ── Loading ───────────────────────────────────────────────────────────────
-
+  // ── Loading ───────────────────────────────────────────────────────────────────
   if (slaveState === "loading") {
     return (
       <main className="flex min-h-screen flex-col items-center justify-center gap-4 bg-gray-950 text-white">
@@ -131,8 +144,7 @@ export default function SlavePage() {
     );
   }
 
-  // ── Error ─────────────────────────────────────────────────────────────────
-
+  // ── Error ─────────────────────────────────────────────────────────────────────
   if (slaveState === "error") {
     return (
       <main className="flex min-h-screen flex-col items-center justify-center gap-4 bg-gray-950 px-4 text-center text-white">
@@ -143,8 +155,7 @@ export default function SlavePage() {
     );
   }
 
-  // ── Ended ─────────────────────────────────────────────────────────────────
-
+  // ── Ended ─────────────────────────────────────────────────────────────────────
   if (slaveState === "ended") {
     return (
       <main className="flex min-h-screen flex-col items-center justify-center gap-4 bg-gray-950 px-4 text-center text-white">
@@ -155,27 +166,24 @@ export default function SlavePage() {
     );
   }
 
-  // ── Active — full-screen PDF ───────────────────────────────────────────────
-
+  // ── Active — full-screen react-pdf slave ──────────────────────────────────────
   return (
-    <div className="flex h-screen flex-col overflow-hidden bg-black">
+    <div className="flex h-screen flex-col overflow-hidden bg-gray-950">
       {isOffline && (
         <div className="z-50 flex shrink-0 items-center justify-center gap-2 bg-amber-500 px-4 py-1.5 text-center text-sm font-black text-gray-950">
           <span className="animate-pulse">●</span>
           Reconnexion en cours…
         </div>
       )}
-      {pdfUrl ? (
-        <iframe
-          key={currentPage}
-          className="h-full w-full border-0"
-          src={`${pdfUrl}#page=${currentPage}&toolbar=0&navpanes=0&scrollbar=0`}
-          title="Cours live"
+      {pdfUrl && (
+        <LivePdfViewer
+          pdfUrl={pdfUrl}
+          currentPage={currentPage}
+          scrollY={scrollY}
+          zoom={zoom}
+          mode="slave"
+          className="flex-1"
         />
-      ) : (
-        <div className="flex h-full items-center justify-center text-gray-500">
-          Chargement du PDF…
-        </div>
       )}
     </div>
   );
