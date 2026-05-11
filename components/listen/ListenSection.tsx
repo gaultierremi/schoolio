@@ -11,6 +11,7 @@ import type { ContextualQuestion } from "@/lib/contextual-questions";
 const MAX_SUGGESTIONS = 6;
 const COOLDOWN_MS = 20_000;
 const INTERVAL_MS = 90_000;
+const HEARTBEAT_INTERVAL_MS = 10_000;
 
 type ListenSuggestion = {
   id: string;
@@ -50,11 +51,14 @@ export function ListenSection({ liveSessionId, currentPageNumber, onProjectQuest
   const [cooldownRemaining, setCooldownRemaining] = useState(0);
   const [emptyBufferMsg, setEmptyBufferMsg] = useState<string | null>(null);
   const [projectedIds, setProjectedIds] = useState(new Set<string>());
+  const [generatedCount, setGeneratedCount] = useState(0);
 
   const lastFlushAtRef = useRef<number | null>(null);
   const lastTriggerAtRef = useRef<number | null>(null);
   const currentPageRef = useRef(currentPageNumber);
   const emptyMsgTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const heartbeatTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const isListeningRef = useRef(false);
 
   useEffect(() => { currentPageRef.current = currentPageNumber; }, [currentPageNumber]);
 
@@ -64,6 +68,21 @@ export function ListenSection({ liveSessionId, currentPageNumber, onProjectQuest
       if (emptyMsgTimerRef.current) clearTimeout(emptyMsgTimerRef.current);
     };
   }, []);
+
+  // Cleanup on unmount: turn off listening in DB if still active (e.g. teacher navigates away).
+  // keepalive: true ensures the request survives tab close.
+  useEffect(() => {
+    return () => {
+      if (isListeningRef.current) {
+        fetch(`/api/live-sessions/${liveSessionId}/listen-toggle`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ active: false }),
+          keepalive: true,
+        }).catch(() => undefined);
+      }
+    };
+  }, [liveSessionId]);
 
   const handleError = useCallback((error: string) => {
     if (error === "no-speech" || error === "aborted") return;
@@ -93,6 +112,7 @@ export function ListenSection({ liveSessionId, currentPageNumber, onProjectQuest
       const mapped = (data.suggestions ?? []).map(mapToContextualQuestion);
       if (mapped.length > 0) {
         setSuggestions((prev) => [...mapped, ...prev].slice(0, MAX_SUGGESTIONS));
+        setGeneratedCount((n) => n + mapped.length);
       }
     } catch {
       // network error — noop
@@ -106,6 +126,34 @@ export function ListenSection({ liveSessionId, currentPageNumber, onProjectQuest
     onError: handleError,
     intervalMs: INTERVAL_MS,
   });
+
+  // Keep ref in sync so the unmount cleanup sees the latest value
+  useEffect(() => {
+    isListeningRef.current = isListening;
+  }, [isListening]);
+
+  // Heartbeat: refresh listening_heartbeat_at every 10 s while active.
+  // Slave uses this to detect stale listening state after network loss (>15 s = stale).
+  useEffect(() => {
+    if (!isListening) {
+      if (heartbeatTimerRef.current) {
+        clearInterval(heartbeatTimerRef.current);
+        heartbeatTimerRef.current = null;
+      }
+      return;
+    }
+    heartbeatTimerRef.current = setInterval(() => {
+      fetch(`/api/live-sessions/${liveSessionId}/listen-heartbeat`, {
+        method: "POST",
+      }).catch(() => undefined);
+    }, HEARTBEAT_INTERVAL_MS);
+    return () => {
+      if (heartbeatTimerRef.current) {
+        clearInterval(heartbeatTimerRef.current);
+        heartbeatTimerRef.current = null;
+      }
+    };
+  }, [isListening, liveSessionId]);
 
   // Countdown + cooldown ticker (1s) while listening
   useEffect(() => {
@@ -136,15 +184,25 @@ export function ListenSection({ liveSessionId, currentPageNumber, onProjectQuest
     setIsModalOpen(true);
   }
 
-  function handleModalActivate() {
+  async function handleModalActivate() {
     setIsModalOpen(false);
     lastFlushAtRef.current = Date.now();
     setCountdown(INTERVAL_MS / 1000);
     start();
+    await fetch(`/api/live-sessions/${liveSessionId}/listen-toggle`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ active: true }),
+    }).catch(() => undefined);
   }
 
-  function handleStop() {
+  async function handleStop() {
     stop();
+    await fetch(`/api/live-sessions/${liveSessionId}/listen-toggle`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ active: false }),
+    }).catch(() => undefined);
     // Suggestions remain visible intentionally
   }
 
@@ -243,6 +301,13 @@ export function ListenSection({ liveSessionId, currentPageNumber, onProjectQuest
                   : "🤔 Suggérer maintenant"}
             </button>
           </div>
+        )}
+
+        {/* Generated count */}
+        {generatedCount > 0 && (
+          <p className="mb-2 text-xs text-gray-600">
+            {generatedCount} question{generatedCount > 1 ? "s" : ""} générée{generatedCount > 1 ? "s" : ""} ce cours
+          </p>
         )}
 
         {/* Empty buffer message */}
