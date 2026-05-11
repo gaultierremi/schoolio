@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import dynamic from "next/dynamic";
 import { useParams } from "next/navigation";
 import { createClient } from "@/lib/supabase-browser";
+import { ListeningIndicator } from "@/components/ui/ListeningIndicator";
 
 // ── react-pdf — client-only ─────────────────────────────────────────────────
 const LivePdfViewer = dynamic(
@@ -26,6 +27,8 @@ type SessionSnapshot = {
   ended_at: string | null;
   projected_question_id: string | null;
   show_answer: boolean;
+  listening_active: boolean;
+  listening_heartbeat_at: string | null;
 };
 
 type ProjectedOption = {
@@ -159,6 +162,9 @@ function QuestionDisplay({
 
 // ── Slave page ───────────────────────────────────────────────────────────────
 
+const HEARTBEAT_STALE_MS = 15_000;
+const STALE_CHECK_INTERVAL_MS = 5_000;
+
 export default function SlavePage() {
   const { code } = useParams<{ code: string }>();
 
@@ -178,6 +184,11 @@ export default function SlavePage() {
   const [projectedQuestion, setProjectedQuestion] = useState<ProjectedQuestion | null>(null);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
+  // Listening badge state
+  const [listeningActive, setListeningActive] = useState(false);
+  // Tracks the last known heartbeat timestamp (ms epoch) for staleness detection
+  const lastHeartbeatAtRef = useRef<number | null>(null);
+
   const sessionIdRef = useRef<string | null>(null);
   const codeRef = useRef(code.toUpperCase());
   // Incremented on every Realtime event; fetchProjectedQuestion checks this to
@@ -195,6 +206,22 @@ export default function SlavePage() {
       window.removeEventListener("online", handleOnline);
     };
   }, []);
+
+  // Staleness check: if listening_active is true but no heartbeat received for
+  // >15 s (teacher lost network / muted mic), hide the badge locally.
+  // Resets automatically when a fresh Realtime heartbeat event arrives.
+  useEffect(() => {
+    if (!listeningActive) return;
+    const timer = setInterval(() => {
+      if (
+        lastHeartbeatAtRef.current !== null &&
+        Date.now() - lastHeartbeatAtRef.current > HEARTBEAT_STALE_MS
+      ) {
+        setListeningActive(false);
+      }
+    }, STALE_CHECK_INTERVAL_MS);
+    return () => clearInterval(timer);
+  }, [listeningActive]);
 
   const fetchProjectedQuestion = useCallback(async () => {
     const upperCode = codeRef.current;
@@ -259,6 +286,12 @@ export default function SlavePage() {
         setPdfUrl(pdfData.url);
         setSlaveState("active");
 
+        // Initialise listening badge state from bootstrap snapshot
+        setListeningActive(session.listening_active ?? false);
+        if (session.listening_heartbeat_at) {
+          lastHeartbeatAtRef.current = new Date(session.listening_heartbeat_at).getTime();
+        }
+
         // Load initial projection state
         await fetchProjectedQuestion();
       } catch {
@@ -270,7 +303,7 @@ export default function SlavePage() {
     bootstrap();
   }, [code, fetchProjectedQuestion]);
 
-  // Realtime — receive viewport + projection changes from master
+  // Realtime — receive viewport + projection + listening changes from master
   useEffect(() => {
     if (slaveState !== "active" || !sessionId) return;
 
@@ -301,6 +334,14 @@ export default function SlavePage() {
           if (typeof row.current_page === "number") setCurrentPage(row.current_page);
           if (typeof row.scroll_y === "number") setScrollY(row.scroll_y);
           if (typeof row.zoom === "number") setZoom(row.zoom);
+
+          // Update listening badge and refresh heartbeat ref so staleness timer resets
+          if (typeof row.listening_active === "boolean") {
+            setListeningActive(row.listening_active);
+          }
+          if (row.listening_heartbeat_at) {
+            lastHeartbeatAtRef.current = new Date(row.listening_heartbeat_at).getTime();
+          }
 
           // Increment generation so any in-flight poll responses are discarded
           realtimeGenRef.current++;
@@ -368,6 +409,11 @@ export default function SlavePage() {
           <span className="animate-pulse">●</span>
           Reconnexion en cours…
         </div>
+      ) : null}
+
+      {/* Listening badge — transparent indicator for students */}
+      {listeningActive ? (
+        <ListeningIndicator position="top-right" size="sm" label="🎙️ Schoolio écoute" />
       ) : null}
 
       {/* ── Mode: question or answer (overlays PDF) ─────────────────────────── */}
