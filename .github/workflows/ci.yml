@@ -1,0 +1,50 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: Lint + Type Check + Test + Build
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+        continue-on-error: true # next lint hasn't been hardened yet; do not block merges on it for v1
+
+      - name: Type check
+        run: npx tsc --noEmit
+
+      - name: Unit tests
+        run: npm run test:run
+
+      - name: Build
+        run: npm run build
+        env:
+          # CI uses placeholder values so the build can resolve env access
+          # without leaking real secrets. The actual deploy on Vercel uses the
+          # project-level env vars configured in the dashboard.
+          NEXT_PUBLIC_SUPABASE_URL: https://placeholder.supabase.co
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: placeholder-anon-key
+          SUPABASE_SERVICE_ROLE_KEY: placeholder-service-role-key
+          BETA_COOKIE_SECRET: placeholder-cookie-secret-for-ci-only
+          ADMIN_EMAILS: ci@placeholder.local
+          SUPER_ADMIN_EMAILS: ci@placeholder.local
+          VALIDATOR_EMAILS: ci@placeholder.local
