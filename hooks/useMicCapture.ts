@@ -197,8 +197,10 @@ export function useMicCapture({
       setIsListening(true);
       isListeningRef.current = true;
       startIntervalTimer();
-    } catch {
-      onError("Impossible de démarrer la reconnaissance vocale.");
+    } catch (e) {
+      // Forward the actual exception message so debug logging surfaces the real cause.
+      const msg = e instanceof Error ? `start-threw: ${e.message}` : "start-threw: unknown";
+      onError(msg);
     }
   }, [isSupported, createRecognition, onError]); // eslint-disable-line react-hooks/exhaustive-deps
 
