@@ -1,0 +1,46 @@
+{
+  "unites": [
+    {
+      "id": "sciences-3e-u1",
+      "titre": "Matiere et transformations",
+      "competences": [
+        "Decrire une transformation chimique simple",
+        "Interpreter une reaction a partir d'observations",
+        "Utiliser un vocabulaire scientifique precis"
+      ],
+      "savoirs": [
+        "Atomes et molecules",
+        "Reactifs et produits",
+        "Conservation de la masse"
+      ]
+    },
+    {
+      "id": "sciences-3e-u2",
+      "titre": "Energie et circuits",
+      "competences": [
+        "Representer un circuit electrique simple",
+        "Identifier les transferts d'energie"
+      ],
+      "savoirs": [
+        "Generateur et recepteur",
+        "Circuit ouvert et circuit ferme",
+        "Energie electrique",
+        "Securite domestique"
+      ]
+    },
+    {
+      "id": "sciences-3e-u3",
+      "titre": "Vivants et environnement",
+      "competences": [
+        "Relier des organismes a leur milieu",
+        "Expliquer un desequilibre dans un ecosysteme",
+        "Lire un schema de chaine alimentaire"
+      ],
+      "savoirs": [
+        "Ecosysteme",
+        "Relations alimentaires",
+        "Biodiversite"
+      ]
+    }
+  ]
+}
