@@ -3,6 +3,8 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useMicCapture } from "@/hooks/useMicCapture";
 import { MicPermissionModal } from "@/components/listen/MicPermissionModal";
+import { MicPermissionRecoveryModal } from "@/components/permissions/MicPermissionRecoveryModal";
+import type { RecoveryReason } from "@/components/permissions/MicPermissionRecoveryModal";
 import { ListeningIndicator } from "@/components/ui/ListeningIndicator";
 import { UnsupportedBrowserNotice } from "@/components/ui/UnsupportedBrowserNotice";
 import { ContextualQuestionCard } from "@/components/ui/ContextualQuestionCard";
@@ -104,7 +106,8 @@ function DebugPanel({ entries, onClear }: { entries: string[]; onClear: () => vo
 
 export function ListenSection({ liveSessionId, currentPageNumber, onProjectQuestion }: Props) {
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [permissionDenied, setPermissionDenied] = useState(false);
+  const [isRecoveryModalOpen, setIsRecoveryModalOpen] = useState(false);
+  const [recoveryReason, setRecoveryReason] = useState<RecoveryReason>("denied");
   const [genericError, setGenericError] = useState<string | null>(null);
   const [suggestions, setSuggestions] = useState<ContextualQuestion[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -171,7 +174,7 @@ export function ListenSection({ liveSessionId, currentPageNumber, onProjectQuest
     debugLog(`onError: "${error}"`);
     if (error === "no-speech" || error === "aborted") return;
     if (error === "not-allowed" || error === "service-not-allowed" || error === "audio-capture") {
-      setPermissionDenied(true);
+      // Recovery modal is opened via the permissionState effect below.
     } else {
       setGenericError("Erreur audio — réactive pour réessayer");
       console.warn("[ListenSection] mic error:", error);
@@ -205,7 +208,16 @@ export function ListenSection({ liveSessionId, currentPageNumber, onProjectQuest
     }
   }, [liveSessionId]);
 
-  const { isSupported, isListening, start, stop, triggerNow, bufferText } = useMicCapture({
+  const {
+    isSupported,
+    isListening,
+    permissionState,
+    refreshPermission,
+    start,
+    stop,
+    triggerNow,
+    bufferText,
+  } = useMicCapture({
     onBufferReady: postSuggestions,
     onError: handleError,
     intervalMs: INTERVAL_MS,
@@ -215,6 +227,33 @@ export function ListenSection({ liveSessionId, currentPageNumber, onProjectQuest
   useEffect(() => {
     isListeningRef.current = isListening;
   }, [isListening]);
+
+  // When permission improves to 'granted', close the recovery modal and start.
+  useEffect(() => {
+    if (permissionState === "granted" && isRecoveryModalOpen) {
+      setIsRecoveryModalOpen(false);
+      lastFlushAtRef.current = Date.now();
+      setCountdown(INTERVAL_MS / 1000);
+      start();
+      fetch(`/api/live-sessions/${liveSessionId}/listen-toggle`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ active: true }),
+      }).catch(() => undefined);
+    }
+  }, [permissionState]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // When permission becomes denied/dismissed while not listening, surface the recovery modal.
+  useEffect(() => {
+    if (
+      (permissionState === "denied" || permissionState === "dismissed") &&
+      !isListening &&
+      !isRecoveryModalOpen
+    ) {
+      setRecoveryReason(permissionState);
+      setIsRecoveryModalOpen(true);
+    }
+  }, [permissionState]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Heartbeat: refresh listening_heartbeat_at every 10 s while active.
   // Slave uses this to detect stale listening state after network loss (>15 s = stale).
@@ -263,20 +302,40 @@ export function ListenSection({ liveSessionId, currentPageNumber, onProjectQuest
   }
 
   function handleActivate() {
-    debugLog("handleActivate: opening modal");
-    setPermissionDenied(false);
+    debugLog(`handleActivate: permissionState=${permissionState}`);
     setGenericError(null);
+
+    if (permissionState === "denied" || permissionState === "dismissed") {
+      setRecoveryReason(permissionState);
+      setIsRecoveryModalOpen(true);
+      return;
+    }
+
+    if (permissionState === "granted") {
+      // Skip modal — start immediately.
+      lastFlushAtRef.current = Date.now();
+      setCountdown(INTERVAL_MS / 1000);
+      start();
+      fetch(`/api/live-sessions/${liveSessionId}/listen-toggle`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ active: true }),
+      }).catch(() => undefined);
+      return;
+    }
+
+    // 'prompt' or 'unsupported' — show the initial info modal.
     setIsModalOpen(true);
   }
 
-  async function handleModalActivate() {
+  function handleModalActivate() {
     debugLog("handleModalActivate: modal confirmed → calling start()");
     setIsModalOpen(false);
     lastFlushAtRef.current = Date.now();
     setCountdown(INTERVAL_MS / 1000);
     start();
     debugLog("handleModalActivate: start() returned");
-    await fetch(`/api/live-sessions/${liveSessionId}/listen-toggle`, {
+    fetch(`/api/live-sessions/${liveSessionId}/listen-toggle`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ active: true }),
@@ -328,6 +387,23 @@ export function ListenSection({ liveSessionId, currentPageNumber, onProjectQuest
         onActivate={handleModalActivate}
         onDismiss={() => setIsModalOpen(false)}
       />
+      <MicPermissionRecoveryModal
+        isOpen={isRecoveryModalOpen}
+        reason={recoveryReason}
+        onRetry={() => {
+          setIsRecoveryModalOpen(false);
+          lastFlushAtRef.current = Date.now();
+          setCountdown(INTERVAL_MS / 1000);
+          start();
+          fetch(`/api/live-sessions/${liveSessionId}/listen-toggle`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ active: true }),
+          }).catch(() => undefined);
+        }}
+        onRefresh={() => { refreshPermission(); }}
+        onDismiss={() => setIsRecoveryModalOpen(false)}
+      />
 
       <div className="border-b border-gray-800 px-3 py-4">
         {/* Section header */}
@@ -351,8 +427,8 @@ export function ListenSection({ liveSessionId, currentPageNumber, onProjectQuest
               type="button"
               className="rounded-lg border border-purple-500/30 bg-purple-500/10 px-2.5 py-1 text-xs font-semibold text-purple-300 transition-colors hover:bg-purple-500/20"
             >
-              {permissionDenied
-                ? "🚫 Permission refusée — Réactiver"
+              {(permissionState === "denied" || permissionState === "dismissed")
+                ? "🚫 Micro bloqué — Configurer"
                 : genericError
                   ? "⚠️ Réactiver"
                   : "🎙️ Activer Schoolio écoute"}

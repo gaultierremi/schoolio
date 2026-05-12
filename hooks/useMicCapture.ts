@@ -1,6 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useMicPermission } from "@/hooks/useMicPermission";
+import type { MicPermissionState } from "@/hooks/useMicPermission";
 
 // Web Speech API — experimental, not in the standard TS DOM lib; declared manually.
 interface ISpeechRecognitionAlternative {
@@ -71,6 +73,8 @@ type UseMicCaptureOptions = {
 type UseMicCaptureReturn = {
   isSupported: boolean;
   isListening: boolean;
+  permissionState: MicPermissionState;
+  refreshPermission: () => void;
   start: () => void;
   stop: () => void;
   triggerNow: () => void;
@@ -85,20 +89,29 @@ export function useMicCapture({
   const [isListening, setIsListening] = useState(false);
   const [bufferText, setBufferText] = useState("");
 
+  const { state: permissionState, refresh: refreshPermission, reportNotAllowed } = useMicPermission();
+
   const recognitionRef = useRef<ISpeechRecognition | null>(null);
   const segmentsRef = useRef<BufferSegment[]>([]);
   const intervalTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const reconnectTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isListeningRef = useRef(false);
+  // Guards against concurrent getUserMedia calls (e.g. double-tap on Android).
+  const isRequestingRef = useRef(false);
+  // Mirror of permissionState in a ref so onerror callbacks always see the latest value.
+  const permissionStateRef = useRef<MicPermissionState>(permissionState);
 
   const isSupported =
     typeof window !== "undefined" &&
     !!(window.SpeechRecognition ?? window.webkitSpeechRecognition);
 
-  // Keep ref in sync so callbacks always see latest value
   useEffect(() => {
     isListeningRef.current = isListening;
   }, [isListening]);
+
+  useEffect(() => {
+    permissionStateRef.current = permissionState;
+  }, [permissionState]);
 
   function getRollingTranscript(): string {
     const cutoff = Date.now() - BUFFER_WINDOW_MS;
@@ -129,10 +142,10 @@ export function useMicCapture({
     intervalTimerRef.current = setInterval(flushBuffer, intervalMs);
   }
 
-  const createRecognition = useCallback((): ISpeechRecognition | null => {
+  const launchRecognition = useCallback(() => {
     const SpeechRecognitionImpl =
       window.SpeechRecognition ?? window.webkitSpeechRecognition;
-    if (!SpeechRecognitionImpl) return null;
+    if (!SpeechRecognitionImpl) return;
 
     const rec = new SpeechRecognitionImpl();
     rec.lang = "fr-FR";
@@ -153,17 +166,16 @@ export function useMicCapture({
     };
 
     rec.onerror = (event: ISpeechRecognitionErrorEvent) => {
-      // Stop listening on permission denial so the consumer can reflect the state
       if (event.error === "not-allowed") {
         setIsListening(false);
         isListeningRef.current = false;
+        // Delegate to useMicPermission — it re-queries to distinguish 'dismissed' vs 'denied'.
+        reportNotAllowed();
       }
-      // Always forward the raw error code; consumer classifies and filters
       onError(event.error);
     };
 
     rec.onend = () => {
-      // Chrome stops recognition after ~60s of inactivity; reconnect if still intended to listen
       if (isListeningRef.current) {
         if (reconnectTimerRef.current) clearTimeout(reconnectTimerRef.current);
         reconnectTimerRef.current = setTimeout(() => {
@@ -178,19 +190,6 @@ export function useMicCapture({
       }
     };
 
-    return rec;
-  }, [onError]);
-
-  const start = useCallback(() => {
-    if (!isSupported) {
-      onError("Web Speech API non supportée par ce navigateur (utilisez Chrome ou Edge).");
-      return;
-    }
-    if (isListeningRef.current) return;
-
-    const rec = createRecognition();
-    if (!rec) return;
-
     recognitionRef.current = rec;
     try {
       rec.start();
@@ -198,11 +197,56 @@ export function useMicCapture({
       isListeningRef.current = true;
       startIntervalTimer();
     } catch (e) {
-      // Forward the actual exception message so debug logging surfaces the real cause.
       const msg = e instanceof Error ? `start-threw: ${e.message}` : "start-threw: unknown";
       onError(msg);
     }
-  }, [isSupported, createRecognition, onError]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [reportNotAllowed, onError]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const start = useCallback(() => {
+    if (!isSupported) {
+      onError("Web Speech API non supportée par ce navigateur (utilisez Chrome ou Edge).");
+      return;
+    }
+    if (isListeningRef.current) return;
+    if (isRequestingRef.current) return;
+
+    const pState = permissionStateRef.current;
+
+    // Permission explicitly denied — don't attempt, surface the state for the UI.
+    if (pState === "denied") {
+      onError("not-allowed");
+      return;
+    }
+
+    // Permission already granted or permissions API unavailable — start directly.
+    if (pState === "granted" || pState === "unsupported") {
+      launchRecognition();
+      return;
+    }
+
+    // pState === 'prompt' | 'dismissed':
+    // Must call getUserMedia from inside a gesture handler to trigger the browser popup.
+    // We stop the stream immediately after — we only need it to request permission;
+    // SpeechRecognition acquires its own mic track once started.
+    isRequestingRef.current = true;
+    navigator.mediaDevices
+      .getUserMedia({ audio: true })
+      .then((stream) => {
+        stream.getTracks().forEach((t) => t.stop());
+        isRequestingRef.current = false;
+        launchRecognition();
+      })
+      .catch((err: unknown) => {
+        isRequestingRef.current = false;
+        const code =
+          err instanceof DOMException
+            ? (err.name === "NotAllowedError" ? "not-allowed" : err.name)
+            : "getUserMedia-failed";
+        // Let useMicPermission re-query so 'dismissed' vs 'denied' is set canonically.
+        reportNotAllowed();
+        onError(code);
+      });
+  }, [isSupported, launchRecognition, reportNotAllowed, onError]);
 
   const stop = useCallback(() => {
     isListeningRef.current = false;
@@ -231,11 +275,9 @@ export function useMicCapture({
 
   const triggerNow = useCallback(() => {
     flushBuffer();
-    // Reset the 90s interval so it doesn't fire again too soon
     startIntervalTimer();
   }, [flushBuffer]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Cleanup on unmount
   useEffect(() => {
     return () => {
       isListeningRef.current = false;
@@ -251,5 +293,14 @@ export function useMicCapture({
     };
   }, []);
 
-  return { isSupported, isListening, start, stop, triggerNow, bufferText };
+  return {
+    isSupported,
+    isListening,
+    permissionState,
+    refreshPermission,
+    start,
+    stop,
+    triggerNow,
+    bufferText,
+  };
 }
