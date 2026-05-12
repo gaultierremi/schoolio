@@ -41,6 +41,67 @@ function mapToContextualQuestion(s: ListenSuggestion): ContextualQuestion {
   };
 }
 
+// ── On-screen debug panel ─────────────────────────────────────────────────────
+// Active only when ?debug=1 is present in the URL.
+// Usage: open the live session URL with ?debug=1 appended on Android, then tap
+// the mic button — events appear in a fixed panel at the bottom of the screen.
+// Remove via the × button or by reloading without ?debug=1.
+
+function useDebugLog() {
+  const isDebug = useRef(
+    typeof window !== "undefined" &&
+    new URLSearchParams(window.location.search).get("debug") === "1",
+  );
+  const [entries, setEntries] = useState<string[]>([]);
+
+  const log = useCallback((msg: string) => {
+    if (!isDebug.current) return;
+    const ts = new Date().toISOString().slice(11, 23); // HH:MM:SS.mmm
+    setEntries((prev) => [`[${ts}] ${msg}`, ...prev].slice(0, 30));
+  }, []);
+
+  return { isDebug: isDebug.current, entries, log };
+}
+
+function DebugPanel({ entries, onClear }: { entries: string[]; onClear: () => void }) {
+  return (
+    <div
+      style={{
+        position: "fixed",
+        bottom: 0,
+        left: 0,
+        right: 0,
+        zIndex: 9999,
+        background: "rgba(0,0,0,0.92)",
+        borderTop: "1px solid #4b5563",
+        maxHeight: "40vh",
+        overflowY: "auto",
+        fontFamily: "monospace",
+        fontSize: "11px",
+        color: "#86efac",
+        padding: "8px",
+      }}
+    >
+      <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}>
+        <span style={{ color: "#f9a8d4", fontWeight: "bold" }}>🎙️ debug (?debug=1)</span>
+        <button
+          onClick={onClear}
+          style={{ color: "#9ca3af", background: "none", border: "none", cursor: "pointer" }}
+        >
+          × clear
+        </button>
+      </div>
+      {entries.length === 0 ? (
+        <div style={{ color: "#6b7280" }}>En attente d&apos;événements…</div>
+      ) : (
+        entries.map((e, i) => (
+          <div key={i} style={{ borderBottom: "1px solid #1f2937", padding: "2px 0" }}>{e}</div>
+        ))
+      )}
+    </div>
+  );
+}
+
 export function ListenSection({ liveSessionId, currentPageNumber, onProjectQuestion }: Props) {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [permissionDenied, setPermissionDenied] = useState(false);
@@ -60,7 +121,29 @@ export function ListenSection({ liveSessionId, currentPageNumber, onProjectQuest
   const heartbeatTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const isListeningRef = useRef(false);
 
+  const { isDebug, entries: debugEntries, log: debugLog } = useDebugLog();
+  const [debugVisible, setDebugVisible] = useState(true);
+
   useEffect(() => { currentPageRef.current = currentPageNumber; }, [currentPageNumber]);
+
+  // Log environment on mount
+  useEffect(() => {
+    if (!isDebug) return;
+    debugLog(`UA: ${navigator.userAgent.slice(0, 80)}`);
+    debugLog(`SpeechRecognition: ${typeof window.SpeechRecognition}`);
+    debugLog(`webkitSpeechRecognition: ${typeof window.webkitSpeechRecognition}`);
+    debugLog(`navigator.mediaDevices: ${typeof navigator.mediaDevices}`);
+    debugLog(`getUserMedia: ${typeof navigator.mediaDevices?.getUserMedia}`);
+    if (navigator.permissions) {
+      navigator.permissions
+        .query({ name: "microphone" as PermissionName })
+        .then((result) => debugLog(`permissions.query(mic): ${result.state}`))
+        .catch((e: unknown) => debugLog(`permissions.query error: ${String(e)}`));
+    } else {
+      debugLog("navigator.permissions: undefined");
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Cleanup
   useEffect(() => {
@@ -85,6 +168,7 @@ export function ListenSection({ liveSessionId, currentPageNumber, onProjectQuest
   }, [liveSessionId]);
 
   const handleError = useCallback((error: string) => {
+    debugLog(`onError: "${error}"`);
     if (error === "no-speech" || error === "aborted") return;
     if (error === "not-allowed" || error === "service-not-allowed" || error === "audio-capture") {
       setPermissionDenied(true);
@@ -92,7 +176,7 @@ export function ListenSection({ liveSessionId, currentPageNumber, onProjectQuest
       setGenericError("Erreur audio — réactive pour réessayer");
       console.warn("[ListenSection] mic error:", error);
     }
-  }, []);
+  }, [debugLog]);
 
   const postSuggestions = useCallback(async (transcript: string) => {
     const page = currentPageRef.current;
@@ -179,16 +263,19 @@ export function ListenSection({ liveSessionId, currentPageNumber, onProjectQuest
   }
 
   function handleActivate() {
+    debugLog("handleActivate: opening modal");
     setPermissionDenied(false);
     setGenericError(null);
     setIsModalOpen(true);
   }
 
   async function handleModalActivate() {
+    debugLog("handleModalActivate: modal confirmed → calling start()");
     setIsModalOpen(false);
     lastFlushAtRef.current = Date.now();
     setCountdown(INTERVAL_MS / 1000);
     start();
+    debugLog("handleModalActivate: start() returned");
     await fetch(`/api/live-sessions/${liveSessionId}/listen-toggle`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -358,6 +445,14 @@ export function ListenSection({ liveSessionId, currentPageNumber, onProjectQuest
           </div>
         )}
       </div>
+
+      {/* On-screen debug panel — visible only with ?debug=1 */}
+      {isDebug && debugVisible && (
+        <DebugPanel
+          entries={debugEntries}
+          onClear={() => setDebugVisible(false)}
+        />
+      )}
     </>
   );
 }
