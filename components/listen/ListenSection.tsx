@@ -228,9 +228,14 @@ export function ListenSection({ liveSessionId, currentPageNumber, onProjectQuest
     isListeningRef.current = isListening;
   }, [isListening]);
 
-  // When permission improves to 'granted', close the recovery modal and start.
+  // When permission improves to 'granted' or resets to 'prompt', close the recovery modal and start.
+  // 'prompt' happens when the user cleared site data entirely — getUserMedia inside start()
+  // will re-trigger the browser popup from that clean state.
   useEffect(() => {
-    if (permissionState === "granted" && isRecoveryModalOpen) {
+    if (
+      (permissionState === "granted" || permissionState === "prompt") &&
+      isRecoveryModalOpen
+    ) {
       setIsRecoveryModalOpen(false);
       lastFlushAtRef.current = Date.now();
       setCountdown(INTERVAL_MS / 1000);

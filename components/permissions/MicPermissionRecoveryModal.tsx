@@ -1,6 +1,6 @@
 "use client";
 
-import { useId } from "react";
+import { useId, useState } from "react";
 
 // 'dismissed' = user closed the browser permission popup without choosing.
 //   CTA: "Réessayer maintenant" — re-triggers getUserMedia immediately.
@@ -79,6 +79,17 @@ function getInstructions(browser: BrowserKind, reason: RecoveryReason): Instruct
   }
 }
 
+// Deep-reset instructions shown after 2 failed "Retester" attempts (Chrome only).
+function getDeepResetHint(browser: BrowserKind): string | null {
+  if (browser === "chrome-android") {
+    return "Chrome Settings → Paramètres des sites → Tous les sites → schoolio-two.vercel.app → Effacer et réinitialiser";
+  }
+  if (browser === "chrome-desktop") {
+    return "Chrome → Paramètres → Confidentialité → Paramètres des sites → schoolio-two.vercel.app → Réinitialiser les autorisations";
+  }
+  return null;
+}
+
 export function MicPermissionRecoveryModal({
   isOpen,
   reason,
@@ -89,10 +100,15 @@ export function MicPermissionRecoveryModal({
   const titleId = useId();
   const browser = detectBrowser();
   const steps = getInstructions(browser, reason);
+  // Counts how many times "Retester" was clicked without success.
+  // Resets automatically on unmount (component returns null when !isOpen).
+  const [retryCount, setRetryCount] = useState(0);
 
   if (!isOpen) return null;
 
   const isDismissed = reason === "dismissed";
+  const deepResetHint =
+    !isDismissed && retryCount >= 2 ? getDeepResetHint(browser) : null;
 
   return (
     <div
@@ -150,6 +166,14 @@ export function MicPermissionRecoveryModal({
           ))}
         </ol>
 
+        {/* Deep-reset fallback — shown after 2 failed retries on Chrome */}
+        {deepResetHint && (
+          <div className="mb-4 rounded-xl border border-amber-500/20 bg-amber-500/10 px-3.5 py-2.5 text-xs text-amber-300">
+            <span className="font-semibold">Toujours bloqué ?</span> Va dans :{" "}
+            <span className="font-mono">{deepResetHint}</span>
+          </div>
+        )}
+
         {/* CTA */}
         <div className="flex flex-col gap-2 sm:flex-row">
           {isDismissed ? (
@@ -163,7 +187,7 @@ export function MicPermissionRecoveryModal({
           ) : (
             <button
               type="button"
-              onClick={onRefresh}
+              onClick={() => { setRetryCount((n) => n + 1); onRefresh(); }}
               className="flex-1 rounded-lg bg-purple-600 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-purple-500"
             >
               ✅ J&apos;ai réautorisé — Retester
