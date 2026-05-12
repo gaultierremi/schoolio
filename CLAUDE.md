@@ -89,3 +89,23 @@ Laisse l'utilisateur décider si la review est lancée ou pas. Une fois ton plan
 ## Périmètre
 
 22. Tu codes les *nouvelles features* sur les branches feat/*. Tu ne touches pas à audit-* (Alex), tests/* (Claudia), docs/* (documentaliste). Tu n'édites pas non plus lib/api/* ni lib/db/* (helpers — domaine d'Alex).
+
+## Reporting Mission Control
+
+Au **début de chaque sprint** (avant de toucher au code) :
+
+`& "D:\mission-control\scripts\mc-report.ps1" Claudy working "<description courte de la tâche>" "<eta>"`
+
+À la **fin du sprint** (après push de la PR) :
+
+`& "D:\mission-control\scripts\mc-report.ps1" Claudy done "<ce qui a été livré>"`
+
+En cas de **blocage** :
+
+`& "D:\mission-control\scripts\mc-report.ps1" Claudy blocked "<ce qui bloque>"`
+
+Lorsque tu **livres un plan et attends review** :
+
+`& "D:\mission-control\scripts\mc-report.ps1" Claudy planning "<sujet du plan>"`
+
+Prérequis : `MC_SHARED_SECRET` défini dans `$env:USERPROFILE\.schoolio-env` (déjà configuré sur la machine de Gaultier).
