@@ -3,17 +3,7 @@
 import { useEffect, useId, useRef, useState } from "react";
 import type { KeyboardEvent, MouseEvent } from "react";
 import { Mic, Square } from "lucide-react";
-
-export type BetaFeedbackPayload = {
-  transcript: string;
-  input_method: "voice" | "text" | "mixed";
-  page_url: string;
-  page_title: string;
-  user_agent: string;
-  viewport: string;
-  duration_sec: number | null;
-  suggested_type: "bug" | "feature_request" | "general" | null;
-};
+import type { BetaFeedbackPayload, BetaFeedbackSuggestedType } from "@/types/beta-feedback";
 
 export type BetaFeedbackOverlayProps = {
   isOpen: boolean;
@@ -24,7 +14,7 @@ export type BetaFeedbackOverlayProps = {
 const MOCK_TRANSCRIPT =
   "Ceci est un transcript de test. Adrien dit que le bouton X n'est pas visible sur Android.";
 
-type FeedbackType = BetaFeedbackPayload["suggested_type"];
+type FeedbackType = BetaFeedbackSuggestedType;
 
 const FEEDBACK_TYPES: Array<{ id: NonNullable<FeedbackType>; label: string }> = [
   { id: "bug", label: "Bug" },
@@ -58,6 +48,9 @@ export default function BetaFeedbackOverlay({
   const [suggestedType, setSuggestedType] = useState<FeedbackType>(null);
   const [hasTyped, setHasTyped] = useState(false);
   const [hasVoiceInput, setHasVoiceInput] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showSlowSubmitMessage, setShowSlowSubmitMessage] = useState(false);
+  const [toastMessage, setToastMessage] = useState("");
 
   useEffect(() => {
     if (!isOpen) {
@@ -73,6 +66,9 @@ export default function BetaFeedbackOverlay({
     setSuggestedType(null);
     setHasTyped(false);
     setHasVoiceInput(false);
+    setIsSubmitting(false);
+    setShowSlowSubmitMessage(false);
+    setToastMessage("");
 
     window.setTimeout(() => textareaRef.current?.focus(), 0);
 
@@ -111,20 +107,41 @@ export default function BetaFeedbackOverlay({
     function handleEscape(event: globalThis.KeyboardEvent) {
       if (event.key === "Escape") {
         event.preventDefault();
-        onClose();
+        if (!isSubmitting) {
+          onClose();
+        }
       }
     }
 
     window.addEventListener("keydown", handleEscape);
     return () => window.removeEventListener("keydown", handleEscape);
-  }, [isOpen, onClose]);
+  }, [isOpen, isSubmitting, onClose]);
+
+  useEffect(() => {
+    if (!toastMessage) {
+      return undefined;
+    }
+
+    const timeoutId = window.setTimeout(() => setToastMessage(""), 3600);
+    return () => window.clearTimeout(timeoutId);
+  }, [toastMessage]);
+
+  useEffect(() => {
+    if (!isSubmitting) {
+      setShowSlowSubmitMessage(false);
+      return undefined;
+    }
+
+    const timeoutId = window.setTimeout(() => setShowSlowSubmitMessage(true), 3000);
+    return () => window.clearTimeout(timeoutId);
+  }, [isSubmitting]);
 
   if (!isOpen) {
     return null;
   }
 
   function handleBackdropClick(event: MouseEvent<HTMLDivElement>) {
-    if (event.target === event.currentTarget) {
+    if (!isSubmitting && event.target === event.currentTarget) {
       onClose();
     }
   }
@@ -163,7 +180,7 @@ export default function BetaFeedbackOverlay({
     return "text";
   }
 
-  function handleSubmit() {
+  async function handleSubmit() {
     const payload: BetaFeedbackPayload = {
       transcript,
       input_method: detectInputMethod(),
@@ -175,8 +192,45 @@ export default function BetaFeedbackOverlay({
       suggested_type: suggestedType,
     };
 
-    console.log(payload);
-    onSubmit(payload);
+    setIsSubmitting(true);
+    setToastMessage("");
+
+    try {
+      const response = await fetch("/api/beta-feedback", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+
+      if (response.ok) {
+        onSubmit(payload);
+        return;
+      }
+
+      if (response.status === 401) {
+        setToastMessage("Connecte-toi pour envoyer un retour");
+        return;
+      }
+
+      if (response.status === 403) {
+        setToastMessage("Tu n'es pas dans le programme beta — contacte Gaultier si tu veux participer");
+        return;
+      }
+
+      if (response.status === 400) {
+        console.error("[beta-feedback] Validation error", await response.text());
+        setToastMessage("Format invalide");
+        return;
+      }
+
+      console.error("[beta-feedback] Server error", response.status, await response.text());
+      setToastMessage("Erreur serveur, réessaie");
+    } catch (error) {
+      console.error("[beta-feedback] Submit failed", error);
+      setToastMessage("Erreur serveur, réessaie");
+    } finally {
+      setIsSubmitting(false);
+    }
   }
 
   function handleDialogKeyDown(event: KeyboardEvent<HTMLDivElement>) {
@@ -279,6 +333,7 @@ export default function BetaFeedbackOverlay({
               ref={startButtonRef}
               type="button"
               onClick={handleToggleRecording}
+              disabled={isSubmitting}
               aria-label={isRecording ? "Arrêter l'enregistrement" : "Démarrer l'enregistrement"}
               className={`inline-flex min-h-11 items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-bold transition focus:outline-none focus:ring-2 focus:ring-purple-400 focus:ring-offset-2 focus:ring-offset-gray-950 ${
                 isRecording
@@ -337,6 +392,7 @@ export default function BetaFeedbackOverlay({
           <button
             type="button"
             onClick={onClose}
+            disabled={isSubmitting}
             className="inline-flex min-h-11 flex-1 items-center justify-center rounded-xl border border-gray-700 px-4 py-2.5 text-sm font-semibold text-gray-300 transition hover:border-gray-600 hover:text-white focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:ring-offset-2 focus:ring-offset-gray-900"
           >
             Annuler
@@ -344,12 +400,31 @@ export default function BetaFeedbackOverlay({
           <button
             type="button"
             onClick={handleSubmit}
-            disabled={!transcript.trim()}
-            className="inline-flex min-h-11 flex-1 items-center justify-center rounded-xl bg-purple-500 px-4 py-2.5 text-sm font-bold text-gray-950 transition hover:bg-purple-400 focus:outline-none focus:ring-2 focus:ring-purple-400 focus:ring-offset-2 focus:ring-offset-gray-900 disabled:cursor-not-allowed disabled:opacity-50"
+            disabled={isSubmitting || !transcript.trim()}
+            className="inline-flex min-h-11 flex-1 items-center justify-center gap-2 rounded-xl bg-purple-500 px-4 py-2.5 text-sm font-bold text-gray-950 transition hover:bg-purple-400 focus:outline-none focus:ring-2 focus:ring-purple-400 focus:ring-offset-2 focus:ring-offset-gray-900 disabled:cursor-not-allowed disabled:opacity-50"
           >
-            Envoyer le retour
+            {isSubmitting ? (
+              <span
+                aria-hidden="true"
+                className="h-4 w-4 animate-spin rounded-full border-2 border-gray-950/30 border-t-gray-950"
+              />
+            ) : null}
+            {isSubmitting ? "Envoi..." : "Envoyer le retour"}
           </button>
         </div>
+
+        {showSlowSubmitMessage ? (
+          <p className="mt-3 text-center text-sm text-gray-400">Envoi en cours...</p>
+        ) : null}
+
+        {toastMessage ? (
+          <div
+            role="status"
+            className="mt-4 rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm font-semibold text-red-200"
+          >
+            {toastMessage}
+          </div>
+        ) : null}
       </section>
     </div>
   );

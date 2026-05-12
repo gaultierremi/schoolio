@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { Mic } from "lucide-react";
 import BetaFeedbackOverlay from "@/components/beta/BetaFeedbackOverlay";
-import type { BetaFeedbackPayload } from "@/components/beta/BetaFeedbackOverlay";
+import type { BetaFeedbackPayload } from "@/types/beta-feedback";
 
 export default function BetaFeedbackButton() {
   // TODO: gate on user_profiles.beta_tester once column exists
