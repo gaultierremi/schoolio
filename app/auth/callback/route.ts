@@ -72,7 +72,7 @@ export async function GET(request: NextRequest) {
     // Check if a user_profiles row already exists
     const { data: existing } = await admin
       .from("user_profiles")
-      .select("id, role, school_id")
+      .select("id, role, school_id, first_name, last_name")
       .eq("id", user.id)
       .maybeSingle();
 
@@ -115,6 +115,23 @@ export async function GET(request: NextRequest) {
     destination = "/school";
   } else {
     destination = "/student";
+  }
+
+  // Onboarding name gate : si le profil n'a pas first_name + last_name, on
+  // intercepte la destination et on envoie vers /onboarding/name. Le name
+  // n'est pas auto-rempli depuis le profil OAuth car celui-ci est souvent
+  // pollué (full_name = combo prénom + nom non séparable, casing variable, etc.)
+  // et le besoin business demande des champs propres pour les messages élève.
+  if (user) {
+    const admin = createAdminClient();
+    const { data: profile } = await admin
+      .from("user_profiles")
+      .select("first_name, last_name")
+      .eq("id", user.id)
+      .maybeSingle();
+    if (!profile?.first_name || !profile?.last_name) {
+      destination = `/onboarding/name?next=${encodeURIComponent(destination)}`;
+    }
   }
 
   // Mutate the existing response's Location header instead of building a new

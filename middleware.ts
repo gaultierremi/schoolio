@@ -3,7 +3,10 @@ import { NextRequest, NextResponse } from "next/server";
 import { SUPER_ADMIN_EMAILS } from "@/lib/admin-config";
 
 // Paths accessible to anyone (auth or not)
-const PUBLIC_PATHS = new Set(["/", "/login", "/signup", "/join"]);
+// Note : /join est passé en auth-required — c'est désormais une feature
+// post-login côté élève (le QR code mène à /join?code=X → si non connecté,
+// /login?next=/join?code=X → après auth, retour ici).
+const PUBLIC_PATHS = new Set(["/", "/login", "/signup"]);
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
@@ -46,12 +49,20 @@ export async function middleware(request: NextRequest) {
     if (PUBLIC_PATHS.has(pathname)) {
       return supabaseResponse;
     }
+    // Auth-required routes : envoie sur /login avec ?next préservé (préserve
+    // le code de classe dans /join?code=X, le slug d'un /student/... etc.)
     if (
       pathname.startsWith("/student") ||
       pathname.startsWith("/school") ||
-      pathname.startsWith("/admin")
+      pathname.startsWith("/admin") ||
+      pathname.startsWith("/join") ||
+      pathname.startsWith("/onboarding")
     ) {
-      return redirect("/");
+      const next = pathname + request.nextUrl.search;
+      const url = request.nextUrl.clone();
+      url.pathname = "/login";
+      url.search = `?next=${encodeURIComponent(next)}`;
+      return NextResponse.redirect(url);
     }
     return supabaseResponse;
   }
