@@ -45,8 +45,12 @@ export async function extractMarkdownFromPdf(
   // hits that ceiling. The stream helper exposes .finalMessage() which
   // collects all chunks into the same Message shape as the sync API.
   const stream = client.messages.stream({
-    model: "claude-sonnet-4-6",
-    max_tokens: 64000,
+    // Haiku 4.5 : 3-5× cheaper than Sonnet for verbatim text extraction,
+    // quality more than sufficient for preserving UAA markers + page boundaries.
+    // Sonnet (or the upcoming Opus) is reserved for the downstream theory
+    // generation prompt where pedagogical reasoning matters.
+    model: "claude-haiku-4-5-20251001",
+    max_tokens: 32000,
     messages: [
       {
         role: "user",
