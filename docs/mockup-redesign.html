@@ -1,0 +1,618 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Schoolio — Mockup redesign (audit 2026-05)</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,typography"></script>
+<script>
+  tailwind.config = {
+    darkMode: ["class"],
+    theme: {
+      extend: {
+        fontFamily: {
+          sans: ['Inter','ui-sans-serif','system-ui','sans-serif'],
+          serif: ['"Source Serif 4"','"Source Serif Pro"','ui-serif','Georgia','serif'],
+        },
+        colors: {
+          surface:   "rgb(var(--surface) / <alpha-value>)",
+          surface2:  "rgb(var(--surface-2) / <alpha-value>)",
+          border1:   "rgb(var(--border) / <alpha-value>)",
+          ink:       "rgb(var(--text-primary) / <alpha-value>)",
+          ink2:      "rgb(var(--text-secondary) / <alpha-value>)",
+          ink3:      "rgb(var(--text-tertiary) / <alpha-value>)",
+          accent:    "rgb(var(--accent) / <alpha-value>)",
+          accent2:   "rgb(var(--accent-2) / <alpha-value>)",
+        },
+      }
+    }
+  };
+</script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Source+Serif+4:opsz,wght@8..60,500;8..60,600;8..60,700&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/lucide@0.469.0/dist/umd/lucide.min.js"></script>
+<style>
+  :root {
+    --surface: 255 255 255;
+    --surface-2: 247 248 250;
+    --border: 230 232 236;
+    --text-primary: 11 18 32;
+    --text-secondary: 91 100 120;
+    --text-tertiary: 138 146 162;
+    --accent: 109 40 217;        /* violet-700 */
+    --accent-2: 124 58 237;      /* violet-600 */
+    --shadow: 11 18 32;
+  }
+  .dark {
+    --surface: 11 15 23;
+    --surface-2: 17 24 39;
+    --border: 31 41 55;
+    --text-primary: 243 244 246;
+    --text-secondary: 156 163 175;
+    --text-tertiary: 107 114 128;
+    --accent: 167 139 250;       /* violet-400 — desaturated for dark, not inverted */
+    --accent-2: 139 92 246;
+  }
+  html, body { background: rgb(var(--surface-2)); color: rgb(var(--text-primary)); }
+  *:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 2px rgb(var(--surface)), 0 0 0 4px rgb(var(--accent));
+    border-radius: 8px;
+  }
+  /* Subject palette — single source of truth, light + dark variants share hue */
+  [data-subject="histoire"]      { --subj: 217 119 6;  }
+  [data-subject="chimie"]        { --subj: 37 99 235;  }
+  [data-subject="physique"]      { --subj: 8 145 178;  }
+  [data-subject="biologie"]      { --subj: 22 163 74;  }
+  [data-subject="mathematiques"] { --subj: 5 150 105;  }
+  [data-subject="geographie"]    { --subj: 13 148 136; }
+  [data-subject="francais"]      { --subj: 220 38 38;  }
+  [data-subject="anglais"]       { --subj: 30 64 175;  }
+  [data-subject="neerlandais"]   { --subj: 234 88 12;  }
+  [data-subject="litterature"]   { --subj: 124 58 237; }
+  [data-subject="droit"]         { --subj: 190 18 60;  }
+  [data-subject="medecine"]      { --subj: 219 39 119; }
+  [data-subject="permis"]        { --subj: 234 88 12;  }
+  .subj-stripe { background: rgb(var(--subj)); }
+  .subj-tint   { background: rgb(var(--subj) / 0.10); color: rgb(var(--subj)); }
+  .dark .subj-tint { background: rgb(var(--subj) / 0.18); color: rgb(var(--subj) / 1); filter: brightness(1.15); }
+  /* Card */
+  .card {
+    background: rgb(var(--surface));
+    border: 1px solid rgb(var(--border));
+    border-radius: 16px;
+  }
+  .chip {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 4px 10px; border-radius: 999px;
+    font-size: 12px; font-weight: 500;
+    border: 1px solid rgb(var(--border));
+    background: rgb(var(--surface));
+    color: rgb(var(--text-secondary));
+  }
+  .btn-primary {
+    display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+    background: rgb(var(--accent));
+    color: white;
+    font-weight: 600;
+    padding: 10px 16px; min-height: 44px; min-width: 44px;
+    border-radius: 12px;
+    transition: filter 200ms ease, transform 80ms ease;
+  }
+  .btn-primary:hover { filter: brightness(1.08); }
+  .btn-primary:active { transform: scale(.98); }
+  .btn-ghost {
+    display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+    color: rgb(var(--text-secondary));
+    font-weight: 500;
+    padding: 10px 14px; min-height: 44px; min-width: 44px;
+    border: 1px solid rgb(var(--border));
+    border-radius: 12px;
+    background: rgb(var(--surface));
+    transition: color 150ms ease, border-color 150ms ease;
+  }
+  .btn-ghost:hover { color: rgb(var(--text-primary)); border-color: rgb(var(--text-tertiary)); }
+  .icon-sm { width: 16px; height: 16px; }
+  .icon-md { width: 20px; height: 20px; }
+  .icon-lg { width: 24px; height: 24px; }
+  @media (prefers-reduced-motion: reduce) {
+    * { animation: none !important; transition: none !important; }
+  }
+</style>
+</head>
+<body class="font-sans antialiased">
+
+<!-- ─────────────────────────────────────────────────────────────────────────── -->
+<!-- Demo control bar (mockup only — would not ship)                            -->
+<!-- ─────────────────────────────────────────────────────────────────────────── -->
+<div class="sticky top-0 z-50 border-b border-border1 bg-surface/80 backdrop-blur">
+  <div class="mx-auto flex max-w-7xl items-center gap-3 px-4 py-2 text-xs">
+    <span class="font-semibold text-ink">Mockup controls</span>
+    <span class="text-ink3">·</span>
+    <div class="flex items-center gap-1">
+      <button data-view="student"  class="view-btn rounded-md px-2 py-1 font-medium">Élève</button>
+      <button data-view="teacher"  class="view-btn rounded-md px-2 py-1 font-medium">Professeur</button>
+      <button data-view="landing"  class="view-btn rounded-md px-2 py-1 font-medium">Landing</button>
+    </div>
+    <span class="text-ink3">·</span>
+    <button id="theme-toggle" class="flex items-center gap-1.5 rounded-md px-2 py-1 font-medium text-ink2 hover:text-ink">
+      <i data-lucide="sun-moon" class="icon-sm"></i> Thème
+    </button>
+    <span class="ml-auto text-ink3">Audit 2026-05 · Single-file mockup</span>
+  </div>
+</div>
+
+<!-- ─────────────────────────────────────────────────────────────────────────── -->
+<!-- App shell                                                                  -->
+<!-- ─────────────────────────────────────────────────────────────────────────── -->
+<div id="app" class="mx-auto flex max-w-[1400px]">
+
+  <!-- ───── Sidebar (≥lg) ───── -->
+  <aside class="sticky top-[41px] hidden h-[calc(100vh-41px)] w-64 shrink-0 flex-col border-r border-border1 bg-surface px-3 py-4 lg:flex">
+    <a href="#" class="mx-2 mb-6 flex items-center gap-2">
+      <div class="flex h-8 w-8 items-center justify-center rounded-lg bg-accent text-white">
+        <i data-lucide="graduation-cap" class="icon-md"></i>
+      </div>
+      <span class="font-serif text-xl font-semibold tracking-tight text-ink">Schoolio</span>
+    </a>
+
+    <nav id="sidebar-nav" class="flex flex-col gap-0.5"></nav>
+
+    <div class="mt-auto rounded-xl border border-border1 bg-surface2 p-3">
+      <div class="flex items-center gap-2.5">
+        <div class="flex h-9 w-9 items-center justify-center rounded-full bg-accent/15 font-semibold text-accent">EM</div>
+        <div class="min-w-0 flex-1">
+          <p class="truncate text-sm font-semibold text-ink">Emma Martin</p>
+          <p class="truncate text-xs text-ink2" id="role-label">5ème secondaire</p>
+        </div>
+        <button class="rounded-md p-1.5 text-ink3 hover:text-ink" aria-label="Paramètres">
+          <i data-lucide="settings" class="icon-sm"></i>
+        </button>
+      </div>
+    </div>
+  </aside>
+
+  <!-- ───── Main column ───── -->
+  <main class="min-w-0 flex-1 pb-24 lg:pb-10">
+
+    <!-- ────────── STUDENT VIEW ────────── -->
+    <section id="view-student" class="px-4 py-6 sm:px-6 lg:px-10">
+
+      <!-- greeting -->
+      <header class="mb-6 flex flex-wrap items-end justify-between gap-3">
+        <div>
+          <p class="text-sm font-medium text-ink2">Lundi 11 mai · semaine 20</p>
+          <h1 class="font-serif text-3xl font-semibold tracking-tight text-ink sm:text-4xl">Bonjour, Emma.</h1>
+        </div>
+        <div class="flex items-center gap-2">
+          <button class="btn-ghost text-sm">
+            <i data-lucide="search" class="icon-sm"></i><span class="hidden sm:inline">Rechercher</span>
+          </button>
+          <button class="btn-ghost text-sm">
+            <i data-lucide="bell" class="icon-sm"></i><span class="hidden sm:inline">Notifs</span>
+            <span class="ml-1 inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-accent px-1 text-[11px] font-semibold text-white">3</span>
+          </button>
+        </div>
+      </header>
+
+      <!-- daily plan hero -->
+      <div class="card mb-6 overflow-hidden p-0">
+        <div class="grid gap-0 md:grid-cols-[1.4fr_1fr]">
+          <div class="p-6 sm:p-7">
+            <div class="flex items-center gap-2">
+              <i data-lucide="flame" class="icon-sm text-amber-500"></i>
+              <span class="text-sm font-medium text-ink2">Série de <strong class="text-ink">7 jours</strong></span>
+            </div>
+            <h2 class="mt-3 font-serif text-2xl font-semibold text-ink">Ta révision du jour</h2>
+            <p class="mt-1 text-sm text-ink2">
+              <strong class="text-ink">12 questions</strong> à réviser ·
+              <strong class="text-ink">4 nouvelles</strong> ·
+              ~15 min
+            </p>
+            <div class="mt-4 flex flex-wrap gap-1.5">
+              <span class="chip"><span class="h-1.5 w-1.5 rounded-full" style="background:#7c3aed"></span>Révolution française</span>
+              <span class="chip"><span class="h-1.5 w-1.5 rounded-full" style="background:#0891b2"></span>Forces &amp; mouvement</span>
+              <span class="chip"><span class="h-1.5 w-1.5 rounded-full" style="background:#16a34a"></span>Photosynthèse</span>
+            </div>
+            <div class="mt-5 flex flex-wrap items-center gap-3">
+              <button class="btn-primary text-sm">
+                Commencer la révision <i data-lucide="arrow-right" class="icon-sm"></i>
+              </button>
+              <button class="btn-ghost text-sm">Plus tard</button>
+            </div>
+          </div>
+          <div class="relative hidden bg-surface2 p-6 md:block">
+            <p class="text-xs font-medium uppercase tracking-wide text-ink3">Progression cette semaine</p>
+            <p class="mt-2 font-serif text-3xl font-semibold text-ink">+18 <span class="text-base text-ink2 font-sans font-normal">pts de maîtrise</span></p>
+            <div class="mt-4 space-y-2.5">
+              <div>
+                <div class="flex justify-between text-xs font-medium text-ink2"><span>Histoire</span><span>72 / 100</span></div>
+                <div class="mt-1 h-1.5 rounded-full bg-border1"><div class="h-full rounded-full" style="width:72%;background:#d97706"></div></div>
+              </div>
+              <div>
+                <div class="flex justify-between text-xs font-medium text-ink2"><span>Physique</span><span>61 / 100</span></div>
+                <div class="mt-1 h-1.5 rounded-full bg-border1"><div class="h-full rounded-full" style="width:61%;background:#0891b2"></div></div>
+              </div>
+              <div>
+                <div class="flex justify-between text-xs font-medium text-ink2"><span>Biologie</span><span>54 / 100</span></div>
+                <div class="mt-1 h-1.5 rounded-full bg-border1"><div class="h-full rounded-full" style="width:54%;background:#16a34a"></div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Assignments -->
+      <section class="mb-8">
+        <div class="mb-3 flex items-end justify-between">
+          <h3 class="font-serif text-xl font-semibold text-ink">Mes devoirs</h3>
+          <div class="flex gap-1 rounded-xl border border-border1 bg-surface p-1">
+            <button class="rounded-lg bg-accent px-3 py-1.5 text-sm font-medium text-white">À faire <span class="opacity-75">(4)</span></button>
+            <button class="rounded-lg px-3 py-1.5 text-sm font-medium text-ink2 hover:text-ink">Fait <span class="opacity-60">(12)</span></button>
+          </div>
+        </div>
+
+        <div class="grid gap-3 sm:grid-cols-2">
+
+          <!-- assignment card: overdue -->
+          <a href="#" class="card group flex overflow-hidden transition hover:border-ink3" data-subject="histoire">
+            <div class="subj-stripe w-1.5"></div>
+            <div class="flex-1 p-4">
+              <div class="flex items-start justify-between gap-3">
+                <div class="min-w-0">
+                  <p class="text-xs font-medium text-ink2">5ème — Histoire · Mme Dubois</p>
+                  <p class="mt-0.5 truncate font-semibold text-ink">QCM · Révolution française</p>
+                </div>
+                <span class="inline-flex shrink-0 items-center gap-1 rounded-full bg-rose-50 px-2 py-0.5 text-[11px] font-semibold text-rose-700 dark:bg-rose-500/15 dark:text-rose-300">
+                  <i data-lucide="alert-triangle" class="h-3 w-3"></i> En retard
+                </span>
+              </div>
+              <div class="mt-3 flex items-center gap-3 text-xs text-ink2">
+                <span class="inline-flex items-center gap-1"><i data-lucide="calendar" class="h-3.5 w-3.5"></i>Pour le 9 mai</span>
+                <span class="inline-flex items-center gap-1"><i data-lucide="brain" class="h-3.5 w-3.5"></i>20 questions</span>
+              </div>
+            </div>
+          </a>
+
+          <!-- assignment card: in progress -->
+          <a href="#" class="card group flex overflow-hidden transition hover:border-ink3" data-subject="physique">
+            <div class="subj-stripe w-1.5"></div>
+            <div class="flex-1 p-4">
+              <div class="flex items-start justify-between gap-3">
+                <div class="min-w-0">
+                  <p class="text-xs font-medium text-ink2">5ème — Physique · M. Lefèvre</p>
+                  <p class="mt-0.5 truncate font-semibold text-ink">Lecture · Mécanique chap. 4</p>
+                </div>
+                <span class="inline-flex shrink-0 items-center gap-1 rounded-full bg-amber-50 px-2 py-0.5 text-[11px] font-semibold text-amber-800 dark:bg-amber-500/15 dark:text-amber-300">
+                  <i data-lucide="clock" class="h-3 w-3"></i> En cours
+                </span>
+              </div>
+              <div class="mt-3 flex items-center gap-3 text-xs text-ink2">
+                <span class="inline-flex items-center gap-1"><i data-lucide="calendar" class="h-3.5 w-3.5"></i>Pour le 14 mai</span>
+                <span class="inline-flex items-center gap-1"><i data-lucide="file-text" class="h-3.5 w-3.5"></i>PDF · 12 p.</span>
+              </div>
+              <div class="mt-3 h-1 overflow-hidden rounded-full bg-border1">
+                <div class="h-full bg-accent" style="width:55%"></div>
+              </div>
+            </div>
+          </a>
+
+          <!-- assignment card: pending -->
+          <a href="#" class="card group flex overflow-hidden transition hover:border-ink3" data-subject="biologie">
+            <div class="subj-stripe w-1.5"></div>
+            <div class="flex-1 p-4">
+              <div class="flex items-start justify-between gap-3">
+                <div class="min-w-0">
+                  <p class="text-xs font-medium text-ink2">5ème — Biologie · Mme Janssens</p>
+                  <p class="mt-0.5 truncate font-semibold text-ink">QCM · Photosynthèse</p>
+                </div>
+                <span class="inline-flex shrink-0 items-center gap-1 rounded-full border border-border1 px-2 py-0.5 text-[11px] font-medium text-ink2">
+                  <i data-lucide="circle" class="h-3 w-3"></i> À faire
+                </span>
+              </div>
+              <div class="mt-3 flex items-center gap-3 text-xs text-ink2">
+                <span class="inline-flex items-center gap-1"><i data-lucide="calendar" class="h-3.5 w-3.5"></i>Pour le 18 mai</span>
+                <span class="inline-flex items-center gap-1"><i data-lucide="brain" class="h-3.5 w-3.5"></i>15 questions</span>
+              </div>
+            </div>
+          </a>
+
+          <!-- assignment card: pending math -->
+          <a href="#" class="card group flex overflow-hidden transition hover:border-ink3" data-subject="mathematiques">
+            <div class="subj-stripe w-1.5"></div>
+            <div class="flex-1 p-4">
+              <div class="flex items-start justify-between gap-3">
+                <div class="min-w-0">
+                  <p class="text-xs font-medium text-ink2">5ème — Mathématiques · M. Pirotte</p>
+                  <p class="mt-0.5 truncate font-semibold text-ink">Exercices · Trigonométrie</p>
+                </div>
+                <span class="inline-flex shrink-0 items-center gap-1 rounded-full border border-border1 px-2 py-0.5 text-[11px] font-medium text-ink2">
+                  <i data-lucide="circle" class="h-3 w-3"></i> À faire
+                </span>
+              </div>
+              <div class="mt-3 flex items-center gap-3 text-xs text-ink2">
+                <span class="inline-flex items-center gap-1"><i data-lucide="calendar" class="h-3.5 w-3.5"></i>Pour le 21 mai</span>
+                <span class="inline-flex items-center gap-1"><i data-lucide="sigma" class="h-3.5 w-3.5"></i>8 exercices</span>
+              </div>
+            </div>
+          </a>
+
+        </div>
+      </section>
+
+      <!-- Classes -->
+      <section>
+        <div class="mb-3 flex items-end justify-between">
+          <h3 class="font-serif text-xl font-semibold text-ink">Mes classes</h3>
+          <button class="btn-ghost text-sm"><i data-lucide="plus" class="icon-sm"></i>Rejoindre</button>
+        </div>
+        <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          <div class="card p-4" data-subject="histoire">
+            <div class="flex items-center gap-3">
+              <div class="subj-tint flex h-10 w-10 items-center justify-center rounded-lg"><i data-lucide="landmark" class="icon-md"></i></div>
+              <div class="min-w-0 flex-1">
+                <p class="truncate font-semibold text-ink">5B · Histoire</p>
+                <p class="truncate text-xs text-ink2">Mme Dubois · 24 élèves</p>
+              </div>
+            </div>
+          </div>
+          <div class="card p-4" data-subject="physique">
+            <div class="flex items-center gap-3">
+              <div class="subj-tint flex h-10 w-10 items-center justify-center rounded-lg"><i data-lucide="atom" class="icon-md"></i></div>
+              <div class="min-w-0 flex-1">
+                <p class="truncate font-semibold text-ink">5B · Physique</p>
+                <p class="truncate text-xs text-ink2">M. Lefèvre · 24 élèves</p>
+              </div>
+            </div>
+          </div>
+          <div class="card p-4" data-subject="biologie">
+            <div class="flex items-center gap-3">
+              <div class="subj-tint flex h-10 w-10 items-center justify-center rounded-lg"><i data-lucide="dna" class="icon-md"></i></div>
+              <div class="min-w-0 flex-1">
+                <p class="truncate font-semibold text-ink">5B · Biologie</p>
+                <p class="truncate text-xs text-ink2">Mme Janssens · 24 élèves</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+    </section>
+
+    <!-- ────────── TEACHER VIEW ────────── -->
+    <section id="view-teacher" class="hidden px-4 py-6 sm:px-6 lg:px-10">
+      <header class="mb-6 flex flex-wrap items-end justify-between gap-3">
+        <div>
+          <p class="text-sm font-medium text-ink2">Tableau de bord · Cette semaine</p>
+          <h1 class="font-serif text-3xl font-semibold tracking-tight text-ink sm:text-4xl">Bonjour, Mme Dubois.</h1>
+        </div>
+        <div class="flex items-center gap-2">
+          <button class="btn-ghost text-sm"><i data-lucide="upload" class="icon-sm"></i>Importer PDF</button>
+          <button class="btn-primary text-sm"><i data-lucide="plus" class="icon-sm"></i>Nouveau devoir</button>
+        </div>
+      </header>
+
+      <!-- to handle -->
+      <section class="mb-6">
+        <h2 class="mb-3 font-serif text-lg font-semibold text-ink">À traiter</h2>
+        <div class="grid gap-3 sm:grid-cols-3">
+          <div class="card flex items-center gap-3 p-4">
+            <div class="flex h-10 w-10 items-center justify-center rounded-lg bg-amber-100 text-amber-700 dark:bg-amber-500/15 dark:text-amber-300">
+              <i data-lucide="file-question" class="icon-md"></i>
+            </div>
+            <div>
+              <p class="text-2xl font-semibold text-ink leading-none">14</p>
+              <p class="mt-1 text-xs text-ink2">Questions à valider</p>
+            </div>
+          </div>
+          <div class="card flex items-center gap-3 p-4">
+            <div class="flex h-10 w-10 items-center justify-center rounded-lg bg-violet-100 text-violet-700 dark:bg-violet-500/15 dark:text-violet-300">
+              <i data-lucide="pencil-ruler" class="icon-md"></i>
+            </div>
+            <div>
+              <p class="text-2xl font-semibold text-ink leading-none">3</p>
+              <p class="mt-1 text-xs text-ink2">Exercices à relire</p>
+            </div>
+          </div>
+          <div class="card flex items-center gap-3 p-4">
+            <div class="flex h-10 w-10 items-center justify-center rounded-lg bg-rose-100 text-rose-700 dark:bg-rose-500/15 dark:text-rose-300">
+              <i data-lucide="alarm-clock" class="icon-md"></i>
+            </div>
+            <div>
+              <p class="text-2xl font-semibold text-ink leading-none">2</p>
+              <p class="mt-1 text-xs text-ink2">Devoirs en retard côté élèves</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- KPI -->
+      <section class="mb-6">
+        <h2 class="mb-3 font-serif text-lg font-semibold text-ink">Vue d'ensemble</h2>
+        <div class="grid grid-cols-2 gap-3 sm:grid-cols-4">
+          <div class="card p-4"><p class="text-xs text-ink2">Cours</p><p class="mt-1 text-xl font-semibold text-ink">28</p></div>
+          <div class="card p-4"><p class="text-xs text-ink2">Élèves actifs</p><p class="mt-1 text-xl font-semibold text-ink">142</p></div>
+          <div class="card p-4"><p class="text-xs text-ink2">Classes</p><p class="mt-1 text-xl font-semibold text-ink">6</p></div>
+          <div class="card p-4"><p class="text-xs text-ink2">Devoirs envoyés</p><p class="mt-1 text-xl font-semibold text-ink">47</p></div>
+        </div>
+      </section>
+
+      <!-- classes preview -->
+      <section>
+        <h2 class="mb-3 font-serif text-lg font-semibold text-ink">Mes classes</h2>
+        <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          <div class="card p-4" data-subject="histoire">
+            <div class="flex items-center gap-3">
+              <div class="subj-tint flex h-11 w-11 items-center justify-center rounded-lg"><i data-lucide="landmark" class="icon-md"></i></div>
+              <div class="min-w-0 flex-1">
+                <p class="truncate font-semibold text-ink">5B · Histoire</p>
+                <p class="truncate text-xs text-ink2">24 élèves · 8 devoirs actifs</p>
+              </div>
+              <i data-lucide="chevron-right" class="icon-sm text-ink3"></i>
+            </div>
+          </div>
+          <div class="card p-4" data-subject="histoire">
+            <div class="flex items-center gap-3">
+              <div class="subj-tint flex h-11 w-11 items-center justify-center rounded-lg"><i data-lucide="landmark" class="icon-md"></i></div>
+              <div class="min-w-0 flex-1">
+                <p class="truncate font-semibold text-ink">6A · Histoire</p>
+                <p class="truncate text-xs text-ink2">22 élèves · 5 devoirs actifs</p>
+              </div>
+              <i data-lucide="chevron-right" class="icon-sm text-ink3"></i>
+            </div>
+          </div>
+          <div class="card p-4" data-subject="histoire">
+            <div class="flex items-center gap-3">
+              <div class="subj-tint flex h-11 w-11 items-center justify-center rounded-lg"><i data-lucide="landmark" class="icon-md"></i></div>
+              <div class="min-w-0 flex-1">
+                <p class="truncate font-semibold text-ink">4C · Histoire</p>
+                <p class="truncate text-xs text-ink2">26 élèves · 2 devoirs actifs</p>
+              </div>
+              <i data-lucide="chevron-right" class="icon-sm text-ink3"></i>
+            </div>
+          </div>
+        </div>
+      </section>
+    </section>
+
+    <!-- ────────── LANDING VIEW ────────── -->
+    <section id="view-landing" class="hidden">
+      <div class="relative overflow-hidden border-b border-border1 bg-surface px-4 py-16 sm:px-6 lg:px-10 lg:py-24">
+        <div class="mx-auto max-w-5xl">
+          <span class="chip"><i data-lucide="shield-check" class="icon-sm text-emerald-600"></i>Conforme RGPD · Hébergé en UE</span>
+          <h1 class="mt-5 font-serif text-4xl font-semibold tracking-tight text-ink sm:text-5xl">
+            La plateforme d'apprentissage adaptatif
+            <span class="text-accent">pour le secondaire belge.</span>
+          </h1>
+          <p class="mt-4 max-w-2xl text-lg text-ink2">
+            Importez un PDF de cours, Schoolio génère 25 questions calibrées et chaque élève reçoit un parcours adapté à ses lacunes. Vous suivez la classe en un coup d'œil.
+          </p>
+          <div class="mt-7 flex flex-wrap gap-3">
+            <button class="btn-primary">Demander une démo<i data-lucide="arrow-right" class="icon-sm"></i></button>
+            <button class="btn-ghost">Voir comment ça marche</button>
+          </div>
+          <div class="mt-10 flex flex-wrap items-center gap-x-8 gap-y-3 text-sm text-ink2">
+            <span class="font-medium text-ink3">Ils nous font confiance —</span>
+            <span class="font-semibold tracking-tight text-ink2">Athénée Royal de Mons</span>
+            <span class="font-semibold tracking-tight text-ink2">Collège Saint-Michel</span>
+            <span class="font-semibold tracking-tight text-ink2">Lycée Émile Jacqmain</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="mx-auto max-w-5xl px-4 py-12 sm:px-6 lg:px-10">
+        <div class="grid gap-6 md:grid-cols-3">
+          <div class="card p-6">
+            <div class="flex h-10 w-10 items-center justify-center rounded-lg bg-accent/10 text-accent"><i data-lucide="file-up" class="icon-md"></i></div>
+            <h3 class="mt-4 font-serif text-lg font-semibold text-ink">Importez un cours</h3>
+            <p class="mt-1.5 text-sm text-ink2">Un PDF suffit. L'IA en extrait les notions clés et propose 25 questions calibrées.</p>
+          </div>
+          <div class="card p-6">
+            <div class="flex h-10 w-10 items-center justify-center rounded-lg bg-accent/10 text-accent"><i data-lucide="users" class="icon-md"></i></div>
+            <h3 class="mt-4 font-serif text-lg font-semibold text-ink">Distribuez à la classe</h3>
+            <p class="mt-1.5 text-sm text-ink2">Lien d'invitation chiffré, sans mot de passe pour les élèves. RGPD-compliant.</p>
+          </div>
+          <div class="card p-6">
+            <div class="flex h-10 w-10 items-center justify-center rounded-lg bg-accent/10 text-accent"><i data-lucide="line-chart" class="icon-md"></i></div>
+            <h3 class="mt-4 font-serif text-lg font-semibold text-ink">Suivez les progrès</h3>
+            <p class="mt-1.5 text-sm text-ink2">Maîtrise par concept, lacunes par élève, alertes sur les décrochages. Sans corriger.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+</div>
+
+<!-- ───── Bottom tab bar (mobile only) ───── -->
+<nav class="fixed inset-x-0 bottom-0 z-40 border-t border-border1 bg-surface/95 backdrop-blur lg:hidden">
+  <div id="bottom-nav" class="mx-auto grid max-w-md grid-cols-4 px-2 py-1.5"></div>
+</nav>
+
+<!-- ─────────────────────────────────────────────────────────────────────────── -->
+<script>
+  /* ---------- nav definitions per role ---------- */
+  const NAV = {
+    student: [
+      { key: "home",    label: "Accueil",    icon: "home" },
+      { key: "courses", label: "Mes cours",  icon: "book-open" },
+      { key: "train",   label: "M'entraîner",icon: "target" },
+      { key: "stats",   label: "Mes progrès",icon: "line-chart" },
+    ],
+    teacher: [
+      { key: "home",      label: "Accueil",      icon: "home" },
+      { key: "classes",   label: "Classes",      icon: "users" },
+      { key: "library",   label: "Bibliothèque", icon: "library" },
+      { key: "schedule",  label: "Horaire",      icon: "calendar-days" },
+      { key: "questions", label: "Questions",    icon: "file-question" },
+    ],
+  };
+  const ROLE_LABELS = { student: "5ème secondaire", teacher: "Professeure · Histoire" };
+
+  /* ---------- view switching ---------- */
+  function setView(view) {
+    document.querySelectorAll('[id^="view-"]').forEach(el => el.classList.add("hidden"));
+    document.getElementById("view-" + view).classList.remove("hidden");
+
+    document.querySelectorAll(".view-btn").forEach(b => {
+      const active = b.dataset.view === view;
+      b.classList.toggle("bg-accent",    active);
+      b.classList.toggle("text-white",   active);
+      b.classList.toggle("text-ink2",    !active);
+    });
+
+    const role = view === "teacher" ? "teacher" : "student";
+    renderNav(role);
+    document.getElementById("role-label").textContent = ROLE_LABELS[role] ?? "";
+  }
+
+  function renderNav(role) {
+    const items = NAV[role];
+    const side = document.getElementById("sidebar-nav");
+    const bot  = document.getElementById("bottom-nav");
+    side.innerHTML = "";
+    bot.innerHTML  = "";
+
+    items.forEach((it, i) => {
+      const active = i === 0;
+      const link = document.createElement("a");
+      link.href = "#";
+      link.className = `flex items-center gap-2.5 rounded-lg px-3 py-2.5 text-sm font-medium transition ${active ? "bg-accent/10 text-accent" : "text-ink2 hover:bg-surface2 hover:text-ink"}`;
+      link.innerHTML = `<i data-lucide="${it.icon}" class="icon-md"></i><span>${it.label}</span>`;
+      side.appendChild(link);
+
+      const tab = document.createElement("a");
+      tab.href = "#";
+      tab.className = `flex flex-col items-center gap-0.5 rounded-lg py-2 text-[11px] font-medium ${active ? "text-accent" : "text-ink2"}`;
+      tab.style.minHeight = "48px";
+      tab.innerHTML = `<i data-lucide="${it.icon}" class="icon-md"></i><span>${it.label}</span>`;
+      bot.appendChild(tab);
+    });
+
+    // re-render icons
+    if (window.lucide) lucide.createIcons();
+  }
+
+  /* ---------- theme toggle ---------- */
+  function toggleTheme() {
+    const dark = document.documentElement.classList.toggle("dark");
+    try { localStorage.setItem("schoolio-mockup-theme", dark ? "dark" : "light"); } catch {}
+  }
+  (function initTheme() {
+    let stored = null;
+    try { stored = localStorage.getItem("schoolio-mockup-theme"); } catch {}
+    if (stored === "dark") document.documentElement.classList.add("dark");
+  })();
+
+  /* ---------- wire up ---------- */
+  document.getElementById("theme-toggle").addEventListener("click", toggleTheme);
+  document.querySelectorAll(".view-btn").forEach(b => {
+    b.addEventListener("click", () => setView(b.dataset.view));
+  });
+
+  /* ---------- init ---------- */
+  setView("student");
+  lucide.createIcons();
+</script>
+</body>
+</html>
