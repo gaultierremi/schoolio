@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
 vi.mock("@anthropic-ai/sdk", () => {
-  const create = vi.fn(async () => ({
+  const finalMessage = vi.fn(async () => ({
     content: [
       {
         type: "text",
@@ -9,7 +9,8 @@ vi.mock("@anthropic-ai/sdk", () => {
       },
     ],
   }));
-  const Anthropic = vi.fn(() => ({ messages: { create } }));
+  const stream = vi.fn(() => ({ finalMessage }));
+  const Anthropic = vi.fn(() => ({ messages: { stream } }));
   return { default: Anthropic };
 });
 

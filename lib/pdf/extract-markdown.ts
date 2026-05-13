@@ -40,7 +40,11 @@ export async function extractMarkdownFromPdf(
   // Convert ArrayBuffer → base64 (Node Buffer for size efficiency)
   const base64 = Buffer.from(pdfBuffer).toString("base64");
 
-  const response = await client.messages.create({
+  // Use streaming : Anthropic SDK requires it for requests that may exceed
+  // 10 minutes. PDF extraction with max_tokens=64000 on a 25+ page syllabus
+  // hits that ceiling. The stream helper exposes .finalMessage() which
+  // collects all chunks into the same Message shape as the sync API.
+  const stream = client.messages.stream({
     model: "claude-sonnet-4-6",
     max_tokens: 64000,
     messages: [
@@ -75,6 +79,8 @@ export async function extractMarkdownFromPdf(
       },
     ],
   });
+
+  const response = await stream.finalMessage();
 
   const firstBlock = response.content[0];
   if (!firstBlock || firstBlock.type !== "text") {
