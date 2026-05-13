@@ -12,7 +12,6 @@ import { ContextualQuestionCard } from "@/components/ui/ContextualQuestionCard";
 import { StudentPickBadge } from "@/components/ui/StudentPickBadge";
 import { QuestionFlowModal } from "@/components/teacher-live/QuestionFlowModal";
 import MiniPdfPreview from "./MiniPdfPreview";
-import { ListenSection } from "@/components/listen/ListenSection";
 import type { ContextualQuestion } from "@/lib/contextual-questions";
 
 type Member = { student_user_id: string; display_name: string };
@@ -375,13 +374,6 @@ export function TeacherCockpitMobile({
             </div>
           )}
         </div>
-
-        {/* Schoolio écoute */}
-        <ListenSection
-          liveSessionId={sessionId}
-          currentPageNumber={currentPage}
-          onProjectQuestion={handleProjectQuestion}
-        />
 
         {/* Random pick CTA */}
         {hasClass ? (

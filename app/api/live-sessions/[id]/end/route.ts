@@ -34,7 +34,7 @@ export async function POST(
 
     const { error } = await admin
       .from("live_sessions")
-      .update({ ended_at: new Date().toISOString(), listening_active: false })
+      .update({ ended_at: new Date().toISOString() })
       .eq("id", params.id);
 
     if (error) throw error;
