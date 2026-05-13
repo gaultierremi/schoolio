@@ -39,7 +39,6 @@ export type AvailableCourse = {
 export type WeeklyStats = {
   assignments_completed: number;
   questions_practiced: number;
-  live_participations: number;
   avg_grade_letter: LetterGrade | null;
 };
 

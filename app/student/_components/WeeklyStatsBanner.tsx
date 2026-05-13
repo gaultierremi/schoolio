@@ -6,7 +6,6 @@ type Props = { stats: WeeklyStats };
 const STATS = [
   { key: "assignments_completed", label: "Devoirs", emoji: "✅" },
   { key: "questions_practiced",   label: "Questions", emoji: "🧠" },
-  { key: "live_participations",   label: "Lives", emoji: "🎤" },
 ] as const;
 
 export default function WeeklyStatsBanner({ stats }: Props) {
