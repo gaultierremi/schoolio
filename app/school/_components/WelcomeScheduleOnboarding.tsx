@@ -40,7 +40,7 @@ export function WelcomeScheduleOnboarding({ firstName, onDismiss }: Props) {
           👋 Bienvenue{firstName ? `, ${firstName}` : ""} !
         </h2>
         <p className="text-gray-400 text-sm mb-6">
-          Configure ton emploi du temps pour que Schoolio affiche tes cours du moment et t'aide à mieux t'organiser.
+          Configure ton emploi du temps pour que Maïa affiche tes cours du moment et t'aide à mieux t'organiser.
         </p>
         <div className="flex flex-col gap-2">
           <button

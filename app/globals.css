@@ -1,5 +1,18 @@
 @import "tailwindcss";
 
+:root {
+  /* Maïa palette */
+  --maia-primary: #7c3aed;
+  --maia-primary-dark: #5b21b6;
+  --maia-accent: #f59e0b;
+  --maia-success: #10b981;
+  --maia-error: #ef4444;
+  --maia-bg: #0a0a0a;
+  --maia-surface: #111827;
+  --maia-text: #f9fafb;
+  --maia-muted: #6b7280;
+}
+
 @keyframes fade-slide-down {
   from {
     opacity: 0;

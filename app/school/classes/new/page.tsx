@@ -12,7 +12,6 @@ export default function NewClassPage() {
   const [name, setName] = useState("");
   const [level, setLevel] = useState<string>("");
   const [subject, setSubject] = useState<string>("");
-  const [authMode, setAuthMode] = useState<"full" | "light">("full");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -38,7 +37,6 @@ export default function NewClassPage() {
         name: trimmedName,
         level: level || null,
         subject: subject || null,
-        auth_mode: authMode,
       }),
     });
 
@@ -118,44 +116,6 @@ export default function NewClassPage() {
                 </option>
               ))}
             </select>
-          </div>
-
-          {/* Auth mode */}
-          <div>
-            <label className="block text-sm font-bold text-gray-200">
-              Mode d'authentification des élèves
-            </label>
-            <div className="mt-3 space-y-3">
-              {(["full", "light"] as const).map((mode) => (
-                <label
-                  key={mode}
-                  className={`flex cursor-pointer items-start gap-3 rounded-2xl border p-4 transition ${
-                    authMode === mode
-                      ? "border-purple-500 bg-purple-500/10"
-                      : "border-gray-700 bg-gray-900 hover:border-gray-600"
-                  }`}
-                >
-                  <input
-                    type="radio"
-                    name="auth_mode"
-                    value={mode}
-                    checked={authMode === mode}
-                    onChange={() => setAuthMode(mode)}
-                    className="mt-0.5 accent-purple-500"
-                  />
-                  <div>
-                    <p className="font-bold text-white">
-                      {mode === "full" ? "🔐 Compte complet" : "🔓 Pseudo seulement"}
-                    </p>
-                    <p className="mt-0.5 text-xs text-gray-500">
-                      {mode === "full"
-                        ? "L'élève crée un compte avec email et mot de passe. Recommandé pour un suivi individuel."
-                        : "L'élève choisit juste un pseudo. Idéal pour une séance rapide ou des jeunes élèves."}
-                    </p>
-                  </div>
-                </label>
-              ))}
-            </div>
           </div>
 
           {/* Error */}

@@ -1,4 +1,4 @@
-/* Page promo Schoolio - non-listée */
+/* Page promo Maïa - non-listée */
 export default function PubPage() {
   return (
     <iframe
@@ -13,7 +13,7 @@ export default function PubPage() {
         padding: 0,
         overflow: "hidden",
       }}
-      title="Schoolio Promo"
+      title="Maïa Promo"
     />
   );
 }

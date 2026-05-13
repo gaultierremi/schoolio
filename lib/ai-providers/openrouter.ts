@@ -15,7 +15,7 @@ export function OpenRouterProvider(): AIProvider {
         req,
         {
           "HTTP-Referer": "https://schoolio.app",
-          "X-Title": "Schoolio",
+          "X-Title": "Maïa",
         },
       );
     },

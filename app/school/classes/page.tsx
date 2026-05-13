@@ -13,7 +13,6 @@ type ClassItem = {
   name: string;
   level: string | null;
   subject: string | null;
-  auth_mode: "full" | "light";
   invite_code: string;
   archived_at: string | null;
   created_at: string;
@@ -77,10 +76,6 @@ function ClassCard({ cls, onArchiveToggle }: { cls: ClassItem; onArchiveToggle: 
       {/* Stats */}
       <div className="flex items-center gap-4 text-sm text-gray-400">
         <span>👥 {cls.member_count} élève{cls.member_count !== 1 ? "s" : ""}</span>
-        <span className="text-gray-600">·</span>
-        <span className={cls.auth_mode === "light" ? "text-yellow-400" : "text-blue-400"}>
-          {cls.auth_mode === "light" ? "🔓 Pseudo" : "🔐 Compte"}
-        </span>
       </div>
 
       {/* Invite code */}
