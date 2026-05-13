@@ -1,16 +1,8 @@
 import { redirect } from "next/navigation";
-import { createClient as createSupabaseAdminClient } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase-server";
 import JoinClassForm from "./JoinClassForm";
 
 export const dynamic = "force-dynamic";
-
-function createAdminClient() {
-  return createSupabaseAdminClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!,
-  );
-}
 
 export default async function JoinPage({
   searchParams,
@@ -24,20 +16,9 @@ export default async function JoinPage({
 
   const code = searchParams.code?.trim().toUpperCase() ?? "";
 
-  // Authenticated user: check if already whitelisted
-  if (user) {
-    const email = user.email?.toLowerCase() ?? "";
-    const admin = createAdminClient();
-    const { data: whitelisted } = await admin
-      .from("beta_whitelist")
-      .select("id")
-      .ilike("email", email)
-      .maybeSingle();
-
-    // Already whitelisted with no code → go to dashboard
-    if (whitelisted && !code) {
-      redirect("/student");
-    }
+  // Authenticated user with no code → go to dashboard
+  if (user && !code) {
+    redirect("/student");
   }
 
   return (

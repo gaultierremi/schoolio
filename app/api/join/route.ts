@@ -100,40 +100,23 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    // Check if already in beta_whitelist
-    const { data: whitelisted } = await admin
-      .from("beta_whitelist")
-      .select("id")
-      .ilike("email", email)
-      .maybeSingle();
-
-    await Promise.all([
-      whitelisted
-        ? Promise.resolve()
-        : admin.from("beta_whitelist").insert({
-            email,
-            added_by: null,
-            source: "class_invitation",
-            notes: `Classe: ${cls.name}`,
-          }).then(),
-
-      existingMember
-        ? admin
-            .from("class_memberships")
-            .update({ status: "active" })
-            .eq("id", existingMember.id)
-            .then()
-        : admin.from("class_memberships").insert({
-            class_id: cls.id,
-            student_user_id: user.id,
-            status: "active",
-          }).then(),
-    ]);
+    // Upsert class membership
+    if (existingMember) {
+      await admin
+        .from("class_memberships")
+        .update({ status: "active" })
+        .eq("id", existingMember.id);
+    } else {
+      await admin.from("class_memberships").insert({
+        class_id: cls.id,
+        student_user_id: user.id,
+        status: "active",
+      });
+    }
 
     return NextResponse.json({
       ok: true,
       class_name: cls.name,
-      already_whitelisted: !!whitelisted,
     });
   } catch (err) {
     console.error("[api/join:POST]", err);
