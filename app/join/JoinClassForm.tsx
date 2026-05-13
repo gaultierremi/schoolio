@@ -92,6 +92,18 @@ export default function JoinClassForm({ initialCode }: Props) {
     });
   }
 
+  async function handleMicrosoftLogin() {
+    const supabase = createClient();
+    const next = `/join${code ? `?code=${code}` : ""}`;
+    await supabase.auth.signInWithOAuth({
+      provider: "azure",
+      options: {
+        scopes: "email profile openid",
+        redirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(next)}`,
+      },
+    });
+  }
+
   return (
     <div className="space-y-5">
       {/* Code input */}
@@ -186,6 +198,19 @@ export default function JoinClassForm({ initialCode }: Props) {
           <path fill="#EA4335" d="M8.98 3.58c1.17 0 2.23.4 3.06 1.2l2.3-2.3A8 8 0 0 0 8.98 1a8 8 0 0 0-7.13 4.39l2.66 2.07c.63-1.89 2.39-3.28 4.47-3.28z"/>
         </svg>
         Se connecter avec Google
+      </button>
+
+      <button
+        onClick={handleMicrosoftLogin}
+        className="flex w-full items-center justify-center gap-3 rounded-xl border border-zinc-700 bg-zinc-900 py-3.5 text-sm font-bold text-white transition hover:border-zinc-600 hover:bg-zinc-800"
+      >
+        <svg width="18" height="18" viewBox="0 0 21 21">
+          <rect x="1" y="1" width="9" height="9" fill="#f25022"/>
+          <rect x="11" y="1" width="9" height="9" fill="#7fba00"/>
+          <rect x="1" y="11" width="9" height="9" fill="#00a4ef"/>
+          <rect x="11" y="11" width="9" height="9" fill="#ffb900"/>
+        </svg>
+        Se connecter avec Microsoft
       </button>
     </div>
   );
