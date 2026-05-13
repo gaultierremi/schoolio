@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase-browser";
-import { SUBJECTS, LEVELS } from "@/lib/subjects";
+import { SUBJECTS, LEVELS, FWB_SECONDARY_SUBJECT_IDS } from "@/lib/subjects";
 
 export default function NewClassPage() {
   const supabase = useMemo(() => createClient(), []);
@@ -110,9 +110,9 @@ export default function NewClassPage() {
               className="mt-2 w-full rounded-xl border border-gray-700 bg-gray-950 px-4 py-3 text-sm text-white outline-none transition focus:border-purple-500 focus:ring-2 focus:ring-purple-500/40 disabled:opacity-50"
             >
               <option value="">Toutes matières</option>
-              {SUBJECTS.map((s) => (
+              {SUBJECTS.filter((s) => FWB_SECONDARY_SUBJECT_IDS.includes(s.id)).map((s) => (
                 <option key={s.id} value={s.id}>
-                  {s.emoji} {s.label}
+                  {s.label}
                 </option>
               ))}
             </select>

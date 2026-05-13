@@ -51,6 +51,22 @@ export function getSubjectContext(subject: SubjectId, level?: SchoolLevel | null
   return `${meta.label} - ${level}ème secondaire`;
 }
 
+// Matières effectivement enseignées en secondaire FWB — utilisé pour filtrer les dropdowns UI.
+// Latin, grec, allemand, espagnol sont absents de SUBJECTS pour l'instant ; à ajouter quand on étendra la liste.
+export const FWB_SECONDARY_SUBJECT_IDS: SubjectId[] = [
+  "histoire",
+  "geographie",
+  "francais",
+  "mathematiques",
+  "sciences",
+  "biologie",
+  "chimie",
+  "physique",
+  "anglais",
+  "neerlandais",
+  "litterature",
+];
+
 // Validation pour les routes API
 export function isValidSubject(value: unknown): value is SubjectId {
   return typeof value === "string" && value in SUBJECTS_BY_ID;
