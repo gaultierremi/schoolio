@@ -60,7 +60,7 @@ export async function runIngestion(jobId: string, opts: RunOptions = {}): Promis
       .download(job.pdf_storage_path);
     if (dlErr || !pdfBlob) throw new Error(`PDF download failed: ${dlErr?.message ?? "no blob"}`);
     const pdfBuffer = await pdfBlob.arrayBuffer();
-    const { markdown } = await extractMarkdownFromPdf(pdfBuffer);
+    const { markdown, pageCount, columnsDetected } = await extractMarkdownFromPdf(pdfBuffer);
 
     // ── 2. CHUNK ──────────────────────────────────────────────────────────────
     await setStatus("chunking");
@@ -187,6 +187,8 @@ export async function runIngestion(jobId: string, opts: RunOptions = {}): Promis
 
     await setStatus("done", undefined, {
       metadata: {
+        page_count: pageCount,
+        columns_detected: columnsDetected,
         chunks: chunks.length,
         concepts: conceptRows.length,
         succeeded_results: results.filter((r) => r.result.type === "succeeded").length,
