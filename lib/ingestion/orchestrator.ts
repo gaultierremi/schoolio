@@ -15,6 +15,7 @@ import {
   storeTheoryBlocks,
   type TheoryBlockInput,
 } from "@/lib/ingestion/store-outputs";
+import { logError } from "@/lib/observability/log-error";
 import type Anthropic from "@anthropic-ai/sdk";
 
 type JobStatus =
@@ -284,6 +285,12 @@ export async function runIngestion(
       },
     });
   } catch (err) {
+    // Record the full stack + context in error_logs (not just err.message in
+    // ingestion_jobs.error_message — that's what made Sprint 1 debug slow).
+    await logError(err, {
+      source: "orchestrator.runIngestion",
+      context: { jobId, fast: opts.fast === true },
+    });
     await setStatus("failed", (err as Error).message);
     throw err;
   }

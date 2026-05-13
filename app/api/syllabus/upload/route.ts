@@ -4,6 +4,7 @@ import { requireTeacher } from "@/lib/api/auth";
 import { apiError, apiOk, safeError } from "@/lib/api/respond";
 import { createClient } from "@/lib/supabase-server";
 import { requireSchoolMembership } from "@/lib/tenant";
+import { logError } from "@/lib/observability/log-error";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 60; // Vercel function timeout; uploads are fast but safety net
@@ -56,6 +57,10 @@ export async function POST(req: NextRequest) {
 
     return apiOk({ path: storagePath, sha256, size: pdf.size });
   } catch (err) {
+    await logError(err, {
+      source: "api.syllabus.upload.POST",
+      context: { route: "/api/syllabus/upload" },
+    });
     return safeError(err, "syllabus:upload");
   }
 }
