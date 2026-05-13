@@ -47,7 +47,7 @@ const ACTIONS: Action[] = [
     textClass: "text-[rgb(var(--warm))]",
   },
   {
-    label: "Générer des exercices",
+    label: "Gérer les exercices",
     Icon: Zap,
     href: "/school/courses",
     containerClass: "border-cyan-400/20 bg-cyan-50 hover:bg-cyan-100",
