@@ -25,13 +25,13 @@ function dueDateLabel(deadline: string | null, status: string): string {
 function statusChip(status: UpcomingAssignment["status"]) {
   if (status === "overdue")
     return (
-      <span className="rounded-full bg-red-900/60 px-2 py-0.5 text-xs font-semibold text-red-300">
+      <span className="rounded-full bg-[rgb(var(--red))]/10 px-2 py-0.5 text-xs font-semibold text-[rgb(var(--red))]">
         En retard
       </span>
     );
   if (status === "in_progress")
     return (
-      <span className="rounded-full bg-blue-900/60 px-2 py-0.5 text-xs font-semibold text-blue-300">
+      <span className="rounded-full bg-[rgb(var(--warm))]/10 px-2 py-0.5 text-xs font-semibold text-[rgb(var(--warm))]">
         En cours
       </span>
     );
@@ -43,7 +43,7 @@ export default function AssignmentList({ upcoming, recent }: Props) {
     <div className="space-y-6">
       {/* À FAIRE */}
       <section>
-        <h2 className="mb-3 text-xs font-bold uppercase tracking-widest text-purple-400">
+        <h2 className="mb-3 text-xs font-bold uppercase tracking-widest text-[rgb(var(--accent))]">
           À faire maintenant
         </h2>
 
@@ -62,16 +62,16 @@ export default function AssignmentList({ upcoming, recent }: Props) {
                   href={`/student/assignments/${a.id}`}
                   className={`flex items-start justify-between gap-3 rounded-xl border px-4 py-3 transition-colors ${
                     a.status === "overdue"
-                      ? "border-red-800/50 bg-red-950/30 hover:bg-red-950/50"
-                      : "border-zinc-800 bg-zinc-900 hover:bg-zinc-800"
+                      ? "border-[rgb(var(--red))]/30 bg-[rgb(var(--red))]/5 hover:bg-[rgb(var(--red))]/10"
+                      : "border-[rgb(var(--border))] bg-[rgb(var(--surface))] hover:bg-[rgb(var(--surface-3))]"
                   }`}
                 >
                   <div className="min-w-0 flex-1">
                     <div className="flex flex-wrap items-center gap-2">
-                      <span className="truncate font-semibold text-white">{a.title}</span>
+                      <span className="truncate font-semibold text-[rgb(var(--ink))]">{a.title}</span>
                       {statusChip(a.status)}
                     </div>
-                    <p className="mt-0.5 truncate text-xs text-zinc-500">
+                    <p className="mt-0.5 truncate text-xs text-[rgb(var(--ink-3))]">
                       {a.class_name}
                       {a.course_title ? ` · ${a.course_title}` : ""}
                     </p>
@@ -79,7 +79,7 @@ export default function AssignmentList({ upcoming, recent }: Props) {
                   {a.deadline && (
                     <span
                       className={`shrink-0 text-xs font-medium ${
-                        a.status === "overdue" ? "text-red-400" : "text-zinc-400"
+                        a.status === "overdue" ? "text-[rgb(var(--red))]" : "text-[rgb(var(--ink-2))]"
                       }`}
                     >
                       {dueDateLabel(a.deadline, a.status)}
@@ -95,7 +95,7 @@ export default function AssignmentList({ upcoming, recent }: Props) {
       {/* RÉCENTS */}
       {recent.length > 0 && (
         <section>
-          <h2 className="mb-2 text-xs font-bold uppercase tracking-widest text-zinc-500">
+          <h2 className="mb-2 text-xs font-bold uppercase tracking-widest text-[rgb(var(--ink-3))]">
             Récents
           </h2>
           <ul className="space-y-1.5">
@@ -106,7 +106,7 @@ export default function AssignmentList({ upcoming, recent }: Props) {
                   key={a.id}
                   className={`flex items-center justify-between gap-3 rounded-lg border px-3 py-2 text-sm ${GRADE_STYLE[grade]}`}
                 >
-                  <span className="truncate text-zinc-300">{a.title}</span>
+                  <span className="truncate text-[rgb(var(--ink-2))]">{a.title}</span>
                   <span className="shrink-0 text-xs">{GRADE_LABEL[grade]}</span>
                 </li>
               );
