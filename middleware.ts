@@ -56,8 +56,9 @@ export async function middleware(request: NextRequest) {
   }
 
   // ── Authenticated ──────────────────────────────────────────────────────────
-  const meta = (user.user_metadata ?? {}) as Record<string, unknown>;
-  const isStudent = meta.role === "student";
+  // Rule 3: role must come from app_metadata (server-trusted), NOT user_metadata (client-mutable).
+  const appMeta = (user.app_metadata ?? {}) as Record<string, unknown>;
+  const isStudent = appMeta.role === "student";
 
   // Role-based redirects
   if (isStudent && (pathname.startsWith("/school") || pathname.startsWith("/admin"))) {
