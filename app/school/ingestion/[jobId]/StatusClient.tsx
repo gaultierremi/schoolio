@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { ArrowLeft, ArrowRight, CheckCircle2, Clock, Loader2, XCircle } from "lucide-react";
+import { ArrowLeft, ArrowRight, CheckCircle2, Clock, Loader2, RefreshCw, XCircle } from "lucide-react";
 
 type JobStatus = "pending" | "extracting" | "chunking" | "batching" | "storing" | "done" | "failed";
 
@@ -29,6 +29,15 @@ const STEPS: { key: JobStatus; label: string }[] = [
 ];
 
 const POLL_INTERVAL_MS = 5_000;
+const ORPHAN_THRESHOLD_MS = 6 * 60 * 1000; // 6 min — past Vercel's 5-min maxDuration
+
+const IN_FLIGHT_STATUSES: JobStatus[] = [
+  "pending",
+  "extracting",
+  "chunking",
+  "batching",
+  "storing",
+];
 
 type Props = {
   jobId: string;
@@ -39,6 +48,8 @@ type Props = {
 export default function StatusClient({ jobId, initialStatus, programId }: Props) {
   const [data, setData] = useState<StatusResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [resuming, setResuming] = useState(false);
+  const [resumeError, setResumeError] = useState<string | null>(null);
 
   useEffect(() => {
     let alive = true;
@@ -67,6 +78,34 @@ export default function StatusClient({ jobId, initialStatus, programId }: Props)
   const currentStepIndex = STEPS.findIndex((s) => s.key === status);
   const isDone = status === "done";
   const isFailed = status === "failed";
+
+  // Show resume button when the job appears orphaned: in-flight status and
+  // started_at > 6 min ago (past Vercel's 5-min maxDuration, so the serverless
+  // is certainly dead). pending with no started_at uses triggeredAt as fallback.
+  const isOrphaned = (() => {
+    if (!IN_FLIGHT_STATUSES.includes(status)) return false;
+    const ref = data?.startedAt ?? data?.triggeredAt ?? null;
+    if (!ref) return false;
+    return Date.now() - new Date(ref).getTime() > ORPHAN_THRESHOLD_MS;
+  })();
+
+  async function handleResume() {
+    setResuming(true);
+    setResumeError(null);
+    try {
+      const res = await fetch(`/api/ingestion/${jobId}/resume`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ fast: true }),
+      });
+      const json = (await res.json()) as { error?: string };
+      if (!res.ok) throw new Error(json.error ?? "Echec de la reprise");
+    } catch (err) {
+      setResumeError((err as Error).message);
+    } finally {
+      setResuming(false);
+    }
+  }
 
   return (
     <main className="min-h-screen bg-[rgb(var(--surface-2))] px-4 py-12">
@@ -128,6 +167,33 @@ export default function StatusClient({ jobId, initialStatus, programId }: Props)
             <Counter label="Concepts" value={(data.metadata?.concepts as number) ?? "—"} />
             <Counter label="Paragraphes" value={data.theoryBlocksCount} />
             <Counter label="Mode" value={data.batchId ? "batch" : "fast"} />
+          </div>
+        )}
+
+        {/* Orphaned job : resume button (shown after 6 min in-flight) */}
+        {isOrphaned && (
+          <div className="mt-4 rounded-2xl border border-[rgb(var(--accent))]/30 bg-[rgb(var(--accent))]/5 p-4">
+            <p className="text-sm font-bold text-[rgb(var(--ink))]">Le job semble bloqué</p>
+            <p className="mt-1 text-xs text-[rgb(var(--ink-2))]">
+              Le serveur a probablement atteint la limite de 5 min de Vercel. Vous pouvez relancer
+              le job — la pipeline est idempotente (pas de doublons).
+            </p>
+            {resumeError && (
+              <p className="mt-2 text-xs text-[rgb(var(--red))]">{resumeError}</p>
+            )}
+            <button
+              type="button"
+              onClick={handleResume}
+              disabled={resuming}
+              className="mt-3 inline-flex items-center gap-2 rounded-xl bg-[rgb(var(--accent))] px-3 py-1.5 text-xs font-bold text-white transition hover:bg-[rgb(var(--accent-2))] disabled:opacity-50"
+            >
+              {resuming ? (
+                <Loader2 className="h-3 w-3 animate-spin" />
+              ) : (
+                <RefreshCw className="h-3 w-3" />
+              )}
+              {resuming ? "Reprise en cours…" : "Reprendre le job"}
+            </button>
           </div>
         )}
 
