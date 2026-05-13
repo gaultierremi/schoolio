@@ -1,5 +1,17 @@
 import Avatar, { getLevelInfo } from "@/components/Avatar";
-import type { UserStats } from "@/lib/profile";
+
+// Minimal stats shape used for display — skin fields removed (Sprint 0.5, spec §2.2).
+export type UserStats = {
+  id: string;
+  user_name: string;
+  avatar_color: string;
+  streak: number;
+  total_games: number;
+  total_score: number;
+  best_score: number;
+  global_rank: number | null;
+  favorite_mode: string | null;
+};
 
 function LevelBadge({ totalGames }: { totalGames: number }) {
   const { color, label } = getLevelInfo(totalGames);

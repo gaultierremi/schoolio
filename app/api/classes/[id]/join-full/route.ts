@@ -124,8 +124,6 @@ export async function POST(
         first_name: firstName,
         last_name: lastName,
         avatar_color: "#a855f7",
-        unlocked_skins: ["default"],
-        active_skin: "default",
         streak: 0,
         total_games: 0,
         total_score: 0,
