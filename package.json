@@ -20,6 +20,7 @@
     "@supabase/supabase-js": "^2.105.3",
     "@tailwindcss/postcss": "^4.2.4",
     "@types/katex": "^0.16.8",
+    "@vercel/functions": "^3.5.1",
     "canvas-confetti": "^1.9.4",
     "framer-motion": "^12.38.0",
     "katex": "^0.16.45",
