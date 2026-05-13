@@ -1,8 +1,6 @@
 import Link from "next/link";
-import { Suspense } from "react";
 import { createClient } from "@/lib/supabase-server";
 import Header from "@/components/Header";
-import DailyStudyCard from "@/components/DailyStudyCard";
 import LandingPage from "@/components/LandingPage";
 
 export const dynamic = "force-dynamic";
@@ -98,20 +96,13 @@ export default async function SchoolioHomePage() {
             🎓 Maïa
           </div>
           <h1 className="mt-4 text-4xl font-black tracking-tight text-white sm:text-5xl">
-            Ta plateforme
+            Apprentissage augmenté
             <br />
-            <span className="text-purple-400">d&apos;apprentissage adaptatif</span>
+            <span className="text-purple-400">le prof reste l&apos;autorité pédagogique</span>
           </h1>
           <p className="mt-3 text-base text-gray-500">
-            Étudie à ton rythme · Révision espacée · IA personnalisée
+            Renforcement adaptive · Banks Socratiques · 0 IA runtime face à l&apos;élève
           </p>
-        </div>
-
-        {/* Daily study card */}
-        <div className="mb-6">
-          <Suspense fallback={null}>
-            <DailyStudyCard userId={user.id} />
-          </Suspense>
         </div>
 
         {/* Navigation cards */}
@@ -119,23 +110,6 @@ export default async function SchoolioHomePage() {
           <p className="text-[10px] font-black uppercase tracking-widest text-gray-600">
             Modules
           </p>
-
-          <NavCard
-            href="/study"
-            emoji="📖"
-            label="Étudier"
-            desc="10 matières · Génération IA · Sessions personnalisées"
-            tag="IA"
-            color="purple"
-          />
-
-          <NavCard
-            href="/train"
-            emoji="🎯"
-            label="Entraînement"
-            desc="Quiz adaptatif · Concepts · Maîtrise progressive"
-            color="purple"
-          />
 
           <NavCard
             href="/school"
@@ -149,19 +123,9 @@ export default async function SchoolioHomePage() {
             href="/profile"
             emoji="📊"
             label="Mes progrès"
-            desc="Statistiques · Niveaux de maîtrise · Historique"
+            desc="Statistiques · Historique"
             color="green"
           />
-        </div>
-
-        <div className="mt-6">
-          <Link
-            href="/study/stats"
-            className="flex items-center justify-between rounded-2xl border border-gray-800 bg-gray-900/50 px-4 py-3 text-sm text-gray-500 transition hover:border-gray-700 hover:text-gray-300"
-          >
-            <span>Voir mes statistiques d&apos;apprentissage</span>
-            <span>→</span>
-          </Link>
         </div>
 
         <p className="mt-12 text-center text-xs text-gray-700">

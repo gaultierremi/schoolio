@@ -1,9 +1,59 @@
--- Sprint 0 — T17: Curriculum + concepts foundation tables
--- Populated by the Sprint 1 ingestion pipeline (PDF → markdown → chunking by UAA
--- → batch Claude → DB). Provenance fields (source_quote, source_concept_path) are
--- non-negotiable per spec §5 + smoke test Histoire findings (Q9 1945 glissement).
+-- Sprint 0 — T17: Curriculum foundation + Schoolio mastery legacy rename
+--
+-- Two coordinated changes in one transaction:
+--
+-- 1. Rename the 3 legacy Schoolio concept-mastery tables (concepts,
+--    user_concept_mastery, question_concepts) to *_legacy_schoolio. Data is
+--    preserved (198 + 46 + 0 rows) for potential Sprint 1 curriculum mining.
+--    The Schoolio code that called these tables is deleted in this same PR
+--    (lib/concepts.ts, lib/adaptive.ts, lib/recommendations.ts, app/study/*,
+--    app/train/*, etc.) — replaced by Maïa's Banks Socratiques + curriculum
+--    pipeline (spec §1, §4.3).
+--
+-- 2. Create Maïa's curriculum_programs, uaa, concepts tables — the
+--    foundation for the Sprint 1 ingestion pipeline (PDF → markdown → chunking
+--    by UAA → batch Claude → DB). Provenance fields (source_quote,
+--    source_concept_path) are non-negotiable per spec §5 + smoke test Histoire
+--    learnings.
 
 BEGIN;
+
+-- ─────────────────────────────────────────────────────────────────────────────
+-- Part 1: Rename legacy Schoolio mastery tables
+-- ─────────────────────────────────────────────────────────────────────────────
+
+-- 1.a — concepts → concepts_legacy_schoolio
+ALTER TABLE public.concepts RENAME TO concepts_legacy_schoolio;
+ALTER TABLE public.concepts_legacy_schoolio RENAME CONSTRAINT concepts_pkey TO concepts_legacy_schoolio_pkey;
+ALTER TABLE public.concepts_legacy_schoolio RENAME CONSTRAINT concepts_parent_id_fkey TO concepts_legacy_schoolio_parent_id_fkey;
+ALTER TABLE public.concepts_legacy_schoolio RENAME CONSTRAINT concepts_level_check TO concepts_legacy_schoolio_level_check;
+ALTER INDEX public.idx_concepts_subject_enum_level RENAME TO idx_concepts_legacy_schoolio_subject_enum_level;
+DROP POLICY IF EXISTS "Concepts insérables par authentifiés" ON public.concepts_legacy_schoolio;
+DROP POLICY IF EXISTS "Concepts lisibles par tous" ON public.concepts_legacy_schoolio;
+
+-- 1.b — user_concept_mastery → user_concept_mastery_legacy_schoolio
+ALTER TABLE public.user_concept_mastery RENAME TO user_concept_mastery_legacy_schoolio;
+ALTER TABLE public.user_concept_mastery_legacy_schoolio RENAME CONSTRAINT user_concept_mastery_pkey TO user_concept_mastery_legacy_schoolio_pkey;
+ALTER TABLE public.user_concept_mastery_legacy_schoolio RENAME CONSTRAINT user_concept_mastery_user_id_concept_id_key TO user_concept_mastery_legacy_schoolio_user_id_concept_id_key;
+ALTER TABLE public.user_concept_mastery_legacy_schoolio RENAME CONSTRAINT user_concept_mastery_concept_id_fkey TO user_concept_mastery_legacy_schoolio_concept_id_fkey;
+ALTER TABLE public.user_concept_mastery_legacy_schoolio RENAME CONSTRAINT user_concept_mastery_user_id_fkey TO user_concept_mastery_legacy_schoolio_user_id_fkey;
+ALTER TABLE public.user_concept_mastery_legacy_schoolio RENAME CONSTRAINT user_concept_mastery_mastery_score_check TO user_concept_mastery_legacy_schoolio_mastery_score_check;
+ALTER INDEX public.user_concept_mastery_next_review_idx RENAME TO user_concept_mastery_legacy_schoolio_next_review_idx;
+DROP POLICY IF EXISTS "Mastery insérables par propriétaire" ON public.user_concept_mastery_legacy_schoolio;
+DROP POLICY IF EXISTS "Mastery lisible par propriétaire" ON public.user_concept_mastery_legacy_schoolio;
+DROP POLICY IF EXISTS "Mastery modifiable par propriétaire" ON public.user_concept_mastery_legacy_schoolio;
+
+-- 1.c — question_concepts → question_concepts_legacy_schoolio
+ALTER TABLE public.question_concepts RENAME TO question_concepts_legacy_schoolio;
+ALTER TABLE public.question_concepts_legacy_schoolio RENAME CONSTRAINT question_concepts_pkey TO question_concepts_legacy_schoolio_pkey;
+ALTER TABLE public.question_concepts_legacy_schoolio RENAME CONSTRAINT question_concepts_concept_id_fkey TO question_concepts_legacy_schoolio_concept_id_fkey;
+ALTER TABLE public.question_concepts_legacy_schoolio RENAME CONSTRAINT question_concepts_question_type_check TO question_concepts_legacy_schoolio_question_type_check;
+DROP POLICY IF EXISTS "Question concepts insérables" ON public.question_concepts_legacy_schoolio;
+DROP POLICY IF EXISTS "Question concepts lisibles" ON public.question_concepts_legacy_schoolio;
+
+-- ─────────────────────────────────────────────────────────────────────────────
+-- Part 2: Create Maïa curriculum + concepts tables
+-- ─────────────────────────────────────────────────────────────────────────────
 
 CREATE TABLE IF NOT EXISTS public.curriculum_programs (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -51,8 +101,6 @@ ALTER TABLE public.curriculum_programs ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.uaa ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.concepts ENABLE ROW LEVEL SECURITY;
 
--- Programs and UAAs are public reference (FW-B official curricula) — read by all authenticated.
--- Writes only via service role (no INSERT/UPDATE/DELETE policy for authenticated = blocked by default).
 CREATE POLICY "curriculum_programs_read_all"
   ON public.curriculum_programs FOR SELECT TO authenticated
   USING (TRUE);
@@ -61,7 +109,6 @@ CREATE POLICY "uaa_read_all"
   ON public.uaa FOR SELECT TO authenticated
   USING (TRUE);
 
--- Concepts are tenant-scoped: a teacher only sees concepts belonging to their school.
 CREATE POLICY "concepts_tenant_scope"
   ON public.concepts FOR ALL TO authenticated
   USING (school_id = public.current_user_school_id())

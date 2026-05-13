@@ -1,10 +1,7 @@
 import Link from "next/link";
 import ProfileEditor from "@/components/ProfileEditor";
-import MasteryDashboard from "@/components/MasteryDashboard";
 import { getOrCreateProfile, getUserStats, unlockEligibleSkins } from "@/lib/profile";
 import { createClient } from "@/lib/supabase-server";
-import { getUserMastery } from "@/lib/concepts";
-import type { ConceptMastery } from "@/lib/concepts";
 
 export default async function ProfilePage() {
   const supabase = createClient();
@@ -46,13 +43,6 @@ export default async function ProfilePage() {
 
   const profile = await getUserStats(supabase, user.id);
 
-  let mastery: ConceptMastery[] = [];
-  try {
-    mastery = await getUserMastery(user.id);
-  } catch {
-    // Table not yet created — degrade gracefully
-  }
-
   if (!profile) {
     return (
       <main className="mx-auto max-w-2xl px-4 py-16 text-center">
@@ -87,13 +77,6 @@ export default async function ProfilePage() {
       </div>
 
       <ProfileEditor initialProfile={profile} />
-
-      <div className="mx-auto max-w-2xl px-4 pb-12">
-        <h2 className="mb-6 text-2xl font-black text-white">
-          📊 Mes progrès
-        </h2>
-        <MasteryDashboard mastery={mastery} />
-      </div>
     </main>
   );
 }
