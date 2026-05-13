@@ -111,7 +111,7 @@ export default async function StudentPage() {
     recent_completions: [],
     today_schedule: [],
     available_courses: [],
-    weekly_stats: { assignments_completed: 0, questions_practiced: 0, live_participations: 0, avg_grade_letter: null },
+    weekly_stats: { assignments_completed: 0, questions_practiced: 0, avg_grade_letter: null },
   };
   let streak = 0;
 
@@ -122,7 +122,6 @@ export default async function StudentPage() {
       coursesRes,
       completedCountRes,
       questionsRes,
-      livePicksRes,
       recentScoresRes,
     ] = await Promise.allSettled([
       admin
@@ -158,13 +157,6 @@ export default async function StudentPage() {
         .select("question_id")
         .eq("student_user_id", user.id)
         .gte("created_at", sevenDaysAgo),
-
-      admin
-        .from("student_random_picks")
-        .select("id", { count: "exact", head: true })
-        .eq("student_user_id", user.id)
-        .eq("was_cancelled", false)
-        .gte("picked_at", sevenDaysAgo),
 
       admin
         .from("assignment_completions")
@@ -261,7 +253,6 @@ export default async function StudentPage() {
     const uniqueQuestions = questionsRes.status === "fulfilled"
       ? new Set((questionsRes.value.data ?? []).map((r: { question_id: string }) => r.question_id)).size
       : 0;
-    const liveParticipations = livePicksRes.status === "fulfilled" ? (livePicksRes.value.count ?? 0) : 0;
     const scores = recentScoresRes.status === "fulfilled"
       ? (recentScoresRes.value.data ?? []).map((r: { score: number | null }) => r.score).filter((s): s is number => s !== null)
       : [];
@@ -271,7 +262,6 @@ export default async function StudentPage() {
     const weeklyStats: WeeklyStats = {
       assignments_completed: assignmentsCompleted,
       questions_practiced: uniqueQuestions,
-      live_participations: liveParticipations,
       avg_grade_letter,
     };
 

@@ -25,7 +25,9 @@ export function getLevelInfo(totalGames: number): {
 
 type AvatarProfile = {
   avatar_color: string;
-  active_skin: string | null;
+  // active_skin removed from DB in Sprint 0.5 (spec §2.2, skin system dropped).
+  // Optional so callers that no longer carry this field compile cleanly.
+  active_skin?: string | null;
   user_name: string;
   streak?: number;
 };

@@ -92,8 +92,6 @@ export async function POST(req: NextRequest) {
         role: "student",
         auth_mode: "full",
         avatar_color: "#a855f7",
-        unlocked_skins: ["default"],
-        active_skin: "default",
         streak: 0,
         total_games: 0,
         total_score: 0,
