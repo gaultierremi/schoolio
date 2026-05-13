@@ -76,7 +76,7 @@ export async function POST(
       const ids = (sampledRows as { question_id: string }[]).map((r) => r.question_id);
       const { data: qs, error: qErr } = await admin
         .from("teacher_questions")
-        .select("id, question, options, answer_index, type, difficulty_stars, explanation, concept_page_hint, page_range_start")
+        .select("id, question, options, answer_index, type, difficulty_stars, explanation, concept_page_hint, page_range_start, correction_steps")
         .in("id", ids)
         .not("validated_at", "is", null)
         .is("rejected_at", null);
@@ -85,7 +85,7 @@ export async function POST(
     } else {
       const { data: qs, error: qErr } = await admin
         .from("teacher_questions")
-        .select("id, question, options, answer_index, type, difficulty_stars, explanation, concept_page_hint, page_range_start")
+        .select("id, question, options, answer_index, type, difficulty_stars, explanation, concept_page_hint, page_range_start, correction_steps")
         .eq("course_id", assignment.resource_id)
         .not("validated_at", "is", null)
         .is("rejected_at", null)

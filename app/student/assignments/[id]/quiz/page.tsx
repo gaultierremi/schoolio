@@ -2,6 +2,8 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
+import { TutorPanel } from "./_components/TutorPanel";
+import { CorrectionPanel, type CorrectionStep } from "./_components/CorrectionPanel";
 
 type Question = {
   id: string;
@@ -13,6 +15,7 @@ type Question = {
   explanation: string | null;
   concept_page_hint: number | null;
   page_range_start: number | null;
+  correction_steps: CorrectionStep[] | null;
 };
 
 type QuestionResult = {
@@ -328,31 +331,27 @@ export default function AssignmentQuizPage() {
                 </>
               )}
 
-              {/* Wrong → help (theory) */}
+              {/* Wrong → help : correction au-dessus, tuteur dessous (mockup grid
+                  2-col aplati en mobile-friendly vertical — le container est max-w-lg) */}
               {wrongPhase === "help" && (
                 <>
-                  <div className="rounded-xl border border-blue-800/40 bg-blue-950/30 p-3">
-                    <p className="text-xs font-bold text-blue-400 mb-1">Revois la théorie</p>
-                    {theoryPage ? (
-                      <button
-                        onClick={handleOpenTheory}
-                        disabled={pdfLoading}
-                        className="mt-1 text-sm font-bold text-blue-300 underline underline-offset-2 hover:text-blue-200 disabled:opacity-50"
-                      >
-                        {pdfLoading ? "Chargement…" : `📄 Ouvrir le cours (p. ${theoryPage}) →`}
-                      </button>
-                    ) : (
-                      <p className="text-sm text-blue-200">
-                        Consulte la section correspondante dans ton cours, puis réessaie.
-                      </p>
-                    )}
-                  </div>
+                  <CorrectionPanel
+                    steps={q.correction_steps ?? []}
+                    fallbackExplanation={q.explanation}
+                  />
+                  <TutorPanel
+                    questionId={q.id}
+                    wrongAnswer={selected !== null ? q.options[selected] ?? "" : ""}
+                    theoryPage={theoryPage}
+                    onOpenTheory={handleOpenTheory}
+                    theoryLoading={pdfLoading}
+                  />
                   <div className="grid grid-cols-2 gap-3">
                     <button
                       onClick={handleRetry}
                       className="rounded-xl border border-gray-700 py-2.5 text-sm font-bold text-gray-300 transition hover:border-gray-500 hover:text-white"
                     >
-                      ↩ Réessayer
+                      Réessayer
                     </button>
                     <button
                       onClick={handleNext}

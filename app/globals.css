@@ -60,6 +60,23 @@ html, body {
   animation: fade-slide-down 200ms ease-out both;
 }
 
+/* Tutor IA panel : bulles d'indices qui slide-in du bas en cascade
+   (cf. dashboard-eleve-session mockup). Le délai est appliqué par
+   inline style sur chaque bulle pour cascade-réveler 0/800/1600/...ms. */
+@keyframes tutor-slide-up {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.animate-tutor-slide-up {
+  animation: tutor-slide-up 360ms ease-out both;
+}
+
 @keyframes avatar-breath {
   0% {
     transform: scale(1);
