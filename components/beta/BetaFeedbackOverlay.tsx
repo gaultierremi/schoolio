@@ -232,7 +232,7 @@ export default function BetaFeedbackOverlay({
           </div>
           <div className="min-w-0">
             <h2 id={titleId} className="text-xl font-bold text-white">
-              Envoie un retour vocal à l'équipe Schoolio
+              Envoie un retour vocal à l'équipe Maïa
             </h2>
             <p id={descriptionId} className="mt-2 text-sm leading-6 text-gray-400">
               Page : <span className="font-mono text-gray-200">{page}</span>

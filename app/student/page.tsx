@@ -1,9 +1,6 @@
 import { createClient as createSupabaseAdminClient } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase-server";
 import { redirect } from "next/navigation";
-import { getStudyStreak } from "@/lib/recommendations";
-import { getUserMastery, type ConceptMastery } from "@/lib/concepts";
-import MasterySubjectGrid from "./_components/MasterySubjectGrid";
 import ExplorerFooter from "./_components/ExplorerFooter";
 import DashboardHeader from "./_components/DashboardHeader";
 import AssignmentList from "./_components/AssignmentList";
@@ -36,26 +33,6 @@ function scoreToLetter(avg: number): LetterGrade {
   return "B";
 }
 
-function aggregateMasteryBySubject(mastery: ConceptMastery[]) {
-  const map = new Map<string, { sum: number; count: number }>();
-  for (const m of mastery) {
-    const subj = m.concept.subject;
-    if (!subj) continue;
-    const entry = map.get(subj) ?? { sum: 0, count: 0 };
-    entry.sum += m.mastery_score;
-    entry.count += 1;
-    map.set(subj, entry);
-  }
-  return Array.from(map.entries())
-    .map(([subjectId, { sum, count }]) => ({
-      subjectId,
-      averageScore: Math.round(sum / count),
-      conceptCount: count,
-    }))
-    .sort((a, b) => b.conceptCount - a.conceptCount)
-    .slice(0, 6);
-}
-
 export default async function StudentPage() {
   const supabase = createClient();
   const {
@@ -64,7 +41,9 @@ export default async function StudentPage() {
 
   if (!user) redirect("/");
 
-  const role = (user.user_metadata as Record<string, unknown>)?.role;
+  // Rule 3: role lives in app_metadata (server-trusted), not user_metadata
+  // (which is client-mutable and would let anyone self-promote).
+  const role = (user.app_metadata as Record<string, unknown>)?.role;
   if (role !== "student") redirect("/school");
 
   const admin = createAdminClient();
@@ -134,10 +113,9 @@ export default async function StudentPage() {
     recent_completions: [],
     today_schedule: [],
     available_courses: [],
-    weekly_stats: { assignments_completed: 0, questions_practiced: 0, live_participations: 0, avg_grade_letter: null },
+    weekly_stats: { assignments_completed: 0, questions_practiced: 0, avg_grade_letter: null },
   };
   let streak = 0;
-  let subjectMastery: ReturnType<typeof aggregateMasteryBySubject> = [];
 
   if (classIds.length > 0) {
     const [
@@ -146,10 +124,7 @@ export default async function StudentPage() {
       coursesRes,
       completedCountRes,
       questionsRes,
-      livePicksRes,
       recentScoresRes,
-      streakResult,
-      masteryResult,
     ] = await Promise.allSettled([
       admin
         .from("assignments")
@@ -186,13 +161,6 @@ export default async function StudentPage() {
         .gte("created_at", sevenDaysAgo),
 
       admin
-        .from("student_random_picks")
-        .select("id", { count: "exact", head: true })
-        .eq("student_user_id", user.id)
-        .eq("was_cancelled", false)
-        .gte("picked_at", sevenDaysAgo),
-
-      admin
         .from("assignment_completions")
         .select("score")
         .eq("student_user_id", user.id)
@@ -201,15 +169,7 @@ export default async function StudentPage() {
         .gte("completed_at", sevenDaysAgo)
         .order("completed_at", { ascending: false })
         .limit(5),
-
-      getStudyStreak(user.id),
-      getUserMastery(user.id),
     ]);
-
-    // streak + mastery
-    if (streakResult.status === "fulfilled") streak = streakResult.value;
-    if (masteryResult.status === "fulfilled")
-      subjectMastery = aggregateMasteryBySubject(masteryResult.value);
 
     // ── Assignments processing ────────────────────────────────────────────
     type RawAssignment = { id: string; title: string; resource_id: string; resource_type: string; due_date: string | null; class_id: string };
@@ -295,7 +255,6 @@ export default async function StudentPage() {
     const uniqueQuestions = questionsRes.status === "fulfilled"
       ? new Set((questionsRes.value.data ?? []).map((r: { question_id: string }) => r.question_id)).size
       : 0;
-    const liveParticipations = livePicksRes.status === "fulfilled" ? (livePicksRes.value.count ?? 0) : 0;
     const scores = recentScoresRes.status === "fulfilled"
       ? (recentScoresRes.value.data ?? []).map((r: { score: number | null }) => r.score).filter((s): s is number => s !== null)
       : [];
@@ -305,7 +264,6 @@ export default async function StudentPage() {
     const weeklyStats: WeeklyStats = {
       assignments_completed: assignmentsCompleted,
       questions_practiced: uniqueQuestions,
-      live_participations: liveParticipations,
       avg_grade_letter,
     };
 
@@ -316,16 +274,6 @@ export default async function StudentPage() {
       available_courses: availableCourses,
       weekly_stats: weeklyStats,
     };
-  } else {
-    // no classes — still fetch streak/mastery
-    try {
-      [streak, subjectMastery] = await Promise.all([
-        getStudyStreak(user.id),
-        getUserMastery(user.id).then(aggregateMasteryBySubject),
-      ]);
-    } catch {
-      // degrade gracefully
-    }
   }
 
   return (
@@ -347,9 +295,12 @@ export default async function StudentPage() {
 
         <TodaySchedule slots={dashboardData.today_schedule} />
 
-        {subjectMastery.length > 0 && (
-          <MasterySubjectGrid subjects={subjectMastery} />
-        )}
+        {/* Sprint 0 placeholder — mastery heatmaps rebuilt in Sprint 4 */}
+        <div className="rounded-2xl border border-zinc-800 bg-zinc-900/50 px-5 py-4 text-center">
+          <p className="text-sm font-bold text-zinc-400">
+            Tableau de bord en cours de construction (Sprint 4)
+          </p>
+        </div>
 
         <CourseList courses={dashboardData.available_courses} />
 

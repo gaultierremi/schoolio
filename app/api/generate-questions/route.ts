@@ -6,10 +6,6 @@ import { requireUser } from "@/lib/api/auth";
 import { apiError, apiOk, safeError } from "@/lib/api/respond";
 import { isValidSubject, SUBJECTS_BY_ID } from "@/lib/subjects";
 import type { SubjectId } from "@/lib/subjects";
-import {
-  inferConceptsFromQuestion,
-  tagQuestionWithConcepts,
-} from "@/lib/concepts";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 120;
@@ -223,19 +219,6 @@ export async function POST(req: NextRequest) {
       (q, i) => ({
         ...q,
         id: (insertedRows[i] as { id: string }).id,
-      }),
-    );
-
-    await Promise.allSettled(
-      persistedQuestions.map(async (q) => {
-        const conceptIds = await inferConceptsFromQuestion(
-          q.question,
-          q.period ?? null,
-          subject,
-        );
-        if (conceptIds.length > 0) {
-          await tagQuestionWithConcepts(q.id, q.type, conceptIds);
-        }
       }),
     );
 

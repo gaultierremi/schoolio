@@ -117,7 +117,7 @@ function GenerateModal({
         {state === "loading" ? (
           <div className="flex flex-col items-center gap-4 py-4">
             <div className="h-10 w-10 animate-spin rounded-full border-4 border-gray-700 border-t-purple-500" />
-            <p className="font-black text-white">Génération en cours via Schoolio…</p>
+            <p className="font-black text-white">Génération en cours via Maïa…</p>
             <p className="text-sm text-gray-400 text-center">
               Patience, ~60s en moyenne. L&apos;IA analyse le PDF et génère {count} exercices avec résolutions détaillées.
             </p>
@@ -208,7 +208,7 @@ function ExerciseCard({
       </div>
       <p className="font-bold text-white leading-snug">{exercise.title}</p>
       {exercise.generated_by_model && (
-        <p className="mt-2 text-xs text-gray-600">Généré par Schoolio</p>
+        <p className="mt-2 text-xs text-gray-600">Généré par Maïa</p>
       )}
     </Link>
   );

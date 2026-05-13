@@ -44,7 +44,7 @@ export type ContextualQuestionCardProps = {
   questionText: string;
   options: QuestionOption[];
   correctAnswerLetter?: string;
-  origin: "ai_generated" | "extracted_from_pdf" | "ai_live" | "ai_listen";
+  origin: "ai_generated" | "extracted_from_pdf" | "ai_live";
   pageRange?: { start: number; end: number };
   alreadyProjected?: boolean;
   isProjecting?: boolean;
@@ -89,19 +89,6 @@ function OriginBadge({ origin }: { origin: QuestionOrigin }) {
       >
         <span aria-hidden="true">⚡</span>
         <span>Live</span>
-      </span>
-    );
-  }
-
-  if (origin === "ai_listen") {
-    return (
-      <span
-        aria-label="Question suggérée par écoute active"
-        className="inline-flex min-h-6 shrink-0 items-center justify-center gap-1 rounded-md border border-red-400/30 bg-red-950/40 px-2 py-0.5 text-xs font-medium leading-none text-red-300"
-        title="Question suggérée par écoute active"
-      >
-        <span aria-hidden="true">🎙️</span>
-        <span>Écouté</span>
       </span>
     );
   }

@@ -1,7 +1,7 @@
 /**
  * // Feature audio non supportee :
  * // <UnsupportedBrowserNotice
- * //   feature="Schoolio écoute"
+ * //   feature="Maïa écoute"
  * //   recommendedBrowsers={["Chrome", "Edge", "Safari"]}
  * //   onDismiss={() => setShowUnsupportedNotice(false)}
  * // />
@@ -50,7 +50,7 @@ export function UnsupportedBrowserNotice({
         </div>
 
         <p className="text-xs leading-5 text-gray-500">
-          Tu peux continuer à utiliser Schoolio normalement, seule cette fonctionnalité est inactive.
+          Tu peux continuer à utiliser Maïa normalement, seule cette fonctionnalité est inactive.
         </p>
 
         {onDismiss && (

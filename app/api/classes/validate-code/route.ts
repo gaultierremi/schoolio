@@ -24,7 +24,7 @@ export async function POST(req: NextRequest) {
 
     const { data: cls, error } = await admin
       .from("classes")
-      .select("id, name, auth_mode, archived_at, invite_link_token, teacher_id")
+      .select("id, name, archived_at, invite_link_token, teacher_id")
       .eq("invite_code", code)
       .maybeSingle();
 
@@ -51,7 +51,6 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({
       classId: cls.id,
       className: cls.name,
-      authMode: cls.auth_mode as "full" | "light",
       inviteLinkToken: cls.invite_link_token,
       teacherName: teacherProfile?.user_name ?? undefined,
     });

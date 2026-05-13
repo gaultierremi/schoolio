@@ -4,7 +4,6 @@ type Identity = {
   firstName: string;
   lastName: string | null;
   pseudo: string;
-  authMode: "full" | "light";
 };
 
 type Props = {

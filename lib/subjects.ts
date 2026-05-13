@@ -1,4 +1,4 @@
-// Source de vérité pour les matières et niveaux scolaires de Schoolio.
+// Source de vérité pour les matières et niveaux scolaires de Maïa.
 // Compatible avec l'ancienne API (SUBJECTS as array, SubjectId) ET la nouvelle (typed Record, niveaux scolaires).
 
 export const SUBJECTS = [

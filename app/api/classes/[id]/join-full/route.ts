@@ -73,7 +73,7 @@ export async function POST(
 
     const { data: cls, error: clsError } = await admin
       .from("classes")
-      .select("auth_mode, archived_at, teacher_id")
+      .select("archived_at, teacher_id")
       .eq("id", params.id)
       .maybeSingle();
 
@@ -88,12 +88,6 @@ export async function POST(
       return NextResponse.json(
         { error: "Classe archivée" },
         { status: 410 }
-      );
-    }
-    if (cls.auth_mode !== "full") {
-      return NextResponse.json(
-        { error: "Cette classe utilise le mode pseudo" },
-        { status: 400 }
       );
     }
 
@@ -130,8 +124,6 @@ export async function POST(
         first_name: firstName,
         last_name: lastName,
         avatar_color: "#a855f7",
-        unlocked_skins: ["default"],
-        active_skin: "default",
         streak: 0,
         total_games: 0,
         total_score: 0,

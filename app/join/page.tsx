@@ -1,16 +1,8 @@
 import { redirect } from "next/navigation";
-import { createClient as createSupabaseAdminClient } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase-server";
 import JoinClassForm from "./JoinClassForm";
 
 export const dynamic = "force-dynamic";
-
-function createAdminClient() {
-  return createSupabaseAdminClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!,
-  );
-}
 
 export default async function JoinPage({
   searchParams,
@@ -24,20 +16,9 @@ export default async function JoinPage({
 
   const code = searchParams.code?.trim().toUpperCase() ?? "";
 
-  // Authenticated user: check if already whitelisted
-  if (user) {
-    const email = user.email?.toLowerCase() ?? "";
-    const admin = createAdminClient();
-    const { data: whitelisted } = await admin
-      .from("beta_whitelist")
-      .select("id")
-      .ilike("email", email)
-      .maybeSingle();
-
-    // Already whitelisted with no code → go to dashboard
-    if (whitelisted && !code) {
-      redirect("/student");
-    }
+  // Authenticated user with no code → go to dashboard
+  if (user && !code) {
+    redirect("/student");
   }
 
   return (
@@ -47,7 +28,7 @@ export default async function JoinPage({
         {/* Logo */}
         <div className="text-center">
           <div className="inline-flex items-center gap-2 rounded-full border border-purple-500/20 bg-purple-500/10 px-4 py-1.5 text-xs font-black uppercase tracking-widest text-purple-400">
-            🎓 Schoolio
+            🎓 Maïa
           </div>
           <h1 className="mt-4 text-3xl font-black text-white">
             Rejoindre une classe
@@ -79,7 +60,7 @@ export default async function JoinPage({
         <p className="text-center text-xs text-zinc-700">
           Tu as déjà un compte ?{" "}
           <a href="/" className="text-zinc-500 hover:text-zinc-300">
-            Accéder à Schoolio
+            Accéder à Maïa
           </a>
         </p>
 

@@ -3,14 +3,12 @@
  * // <WeeklyStatsBanner
  * //   assignmentsCompleted={3}
  * //   questionsPracticed={42}
- * //   liveParticipations={5}
  * //   avgGradeLetter="B"
  * // />
  */
 export type WeeklyStatsBannerProps = {
   assignmentsCompleted: number;
   questionsPracticed: number;
-  liveParticipations: number;
   avgGradeLetter: "A" | "B" | "C" | "D" | null;
   className?: string;
 };
@@ -58,13 +56,11 @@ function StatChip({ icon, value, label, isEmpty }: StatChip) {
 export function WeeklyStatsBanner({
   assignmentsCompleted,
   questionsPracticed,
-  liveParticipations,
   avgGradeLetter,
   className,
 }: WeeklyStatsBannerProps) {
   const completed = normalizeCount(assignmentsCompleted);
   const practiced = normalizeCount(questionsPracticed);
-  const participations = normalizeCount(liveParticipations);
 
   const stats: StatChip[] = [
     {
@@ -78,12 +74,6 @@ export function WeeklyStatsBanner({
       value: String(practiced),
       label: "questions",
       isEmpty: practiced === 0,
-    },
-    {
-      icon: "☝",
-      value: String(participations),
-      label: "participations",
-      isEmpty: participations === 0,
     },
     {
       icon: "Ø",

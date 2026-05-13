@@ -1,0 +1,35 @@
+{
+  "common": {
+    "app_name": "Maïa",
+    "tagline": "Apprentissage augmenté"
+  },
+  "nav": {
+    "home": "Accueil",
+    "dashboard": "Tableau de bord",
+    "classes": "Mes classes",
+    "logout": "Déconnexion"
+  },
+  "auth": {
+    "sign_in": "Se connecter",
+    "sign_in_google": "Se connecter avec Google",
+    "sign_out": "Se déconnecter"
+  },
+  "student": {
+    "my_gaps": "Mes lacunes",
+    "today_session": "Ma session du jour",
+    "start_session": "Commencer ma session"
+  },
+  "teacher": {
+    "my_classes": "Mes classes",
+    "upload_syllabus": "Ajouter un syllabus",
+    "heatmap_class": "Carte de maîtrise"
+  },
+  "tutor": {
+    "title": "Tuteur IA",
+    "tagline": "il analyse ton erreur · ne donne jamais la réponse",
+    "another_hint": "Je veux un autre indice",
+    "review_theory": "Revoir la théorie",
+    "useful": "Utile",
+    "not_useful": "Pas utile"
+  }
+}
