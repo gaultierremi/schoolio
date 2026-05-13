@@ -66,3 +66,11 @@ app/api/classes/[id]/join-light/route.ts
 app/school/classes/page.tsx
 app/school/classes/[id]/page.tsx
 supabase/migrations/20260508100000_create_classes_and_memberships.sql
+
+## EU hosting verified (Sprint 0 Task 15)
+
+- **Supabase region** : `eu-west-1` — West EU (Ireland). Instance tier `t4g.nano` (16/60 connections, 56 % RAM at verification time).
+- **Vercel function region** : _to verify_ (expected `fra1` or `cdg1` once the project is reconnected to `gaultierremi/maia`).
+- **Verified** : 2026-05-13.
+- **Compliance** : RGPD data residency requirement satisfied for FW-B pilot.
+- **Follow-up for prod** : the `t4g.nano` tier is sized for MVP / smoke-tests; consider scaling up before onboarding the first paying school (~50+ concurrent students).
