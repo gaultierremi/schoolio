@@ -39,20 +39,25 @@ export async function extractMarkdownFromPdf(
   // The legacy build is explicitly recommended by pdfjs-dist for Node environments.
   const pdfjs = await import("pdfjs-dist/legacy/build/pdf.mjs");
 
-  // The legacy build still needs a workerSrc. In Node, we point it at the
-  // bundled legacy worker — pdfjs uses a fake worker shim in this mode.
-  const workerPath = new URL(
-    "../../node_modules/pdfjs-dist/legacy/build/pdf.worker.mjs",
-    import.meta.url
-  );
+  // Worker resolution : the worker must be loadable via file://.
+  // - `new URL(..., import.meta.url)` works in Vitest (relative to source file)
+  //   but FAILS on Vercel (bundled output relocates the file).
+  // - https:// URLs are rejected by Node's ESM loader.
+  // - `require.resolve` uses Node's native resolution algorithm — works both
+  //   locally and in Vercel's traced output (when nft.json includes the
+  //   pdfjs-dist worker file).
+  const { createRequire } = await import("module");
+  const requireFromHere = createRequire(import.meta.url);
+  const workerPath = requireFromHere.resolve("pdfjs-dist/legacy/build/pdf.worker.mjs");
+  const workerUrl = new URL(`file://${workerPath}`).toString();
   (pdfjs as unknown as { GlobalWorkerOptions: { workerSrc: string } }).GlobalWorkerOptions.workerSrc =
-    workerPath.toString();
+    workerUrl;
 
   const loadingTask = pdfjs.getDocument({
     data: new Uint8Array(pdfBuffer),
     useWorkerFetch: false,
     isEvalSupported: false,
-    useSystemFonts: true,
+    useSystemFonts: false, // disable system font lookup (avoids fs/fetch in serverless)
   });
 
   const pdf = await loadingTask.promise;
