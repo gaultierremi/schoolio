@@ -99,39 +99,23 @@ export default function NewSchoolSessionPage() {
     setLoading(true);
     setMessage(null);
 
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-
-    if (!user) {
-      setMessage("Tu dois être connecté pour créer une session.");
-      setLoading(false);
-      return;
-    }
-
-    const code = makeCode();
-
-    const { data, error } = await supabase
-      .from("school_game_sessions")
-      .insert({
-        code,
+    const res = await fetch("/api/live/start", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
         title: title.trim() || "Quiz de classe",
-        teacher_id: user.id,
-        status: "waiting",
-        game_mode: "quiz",
-        current_question_index: 0,
         question_ids: selectedIds,
-      })
-      .select("id")
-      .single();
+      }),
+    });
 
-    if (error || !data) {
-      setMessage(error?.message ?? "Impossible de créer la session.");
+    const json = (await res.json()) as { session?: { id: string }; error?: string };
+    if (!res.ok || !json.session) {
+      setMessage(json.error ?? "Impossible de créer la session.");
       setLoading(false);
       return;
     }
 
-    window.location.href = `/play/session/${data.id}`;
+    window.location.href = `/school/live/${json.session.id}`;
   }
 
   const activeList = qTab === "mine" ? myQuestions : publicQuestions;
