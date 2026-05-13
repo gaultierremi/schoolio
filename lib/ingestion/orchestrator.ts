@@ -1,46 +1,89 @@
 import { createClient } from "@supabase/supabase-js";
 import { extractMarkdownFromPdf } from "@/lib/pdf/extract-markdown";
-import { chunkByUaa } from "@/lib/ingestion/chunk-by-uaa";
-import { createBatch, getBatchStatus, getBatchResults } from "@/lib/ingestion/batch-api";
+import {
+  detectSections,
+  chunkSections,
+  type SectionChunk,
+} from "@/lib/ingestion/detect-sections";
+import {
+  createBatch,
+  getBatchStatus,
+  getBatchResults,
+} from "@/lib/ingestion/batch-api";
 import { buildTheoryPrompt } from "@/lib/ingestion/prompts/theory";
-import { storeTheoryBlocks, type TheoryBlockInput } from "@/lib/ingestion/store-outputs";
+import {
+  storeTheoryBlocks,
+  type TheoryBlockInput,
+} from "@/lib/ingestion/store-outputs";
 import type Anthropic from "@anthropic-ai/sdk";
 
-type JobStatus = "pending" | "extracting" | "chunking" | "batching" | "storing" | "done" | "failed";
+type JobStatus =
+  | "pending"
+  | "extracting"
+  | "chunking"
+  | "batching"
+  | "storing"
+  | "done"
+  | "failed";
 
 export type RunOptions = {
-  fast?: boolean;   // skip batch, call Anthropic sync (test/dev iteration)
+  fast?: boolean; // skip batch, call Anthropic sync (test/dev iteration)
 };
 
-const MAX_CONCEPTS_PER_JOB = 100;  // cost + complexity guardrail
-const BATCH_POLL_INTERVAL_MS = 30_000;  // 30s
-const BATCH_POLL_TIMEOUT_MS = 6 * 60 * 60 * 1000;  // 6h cap (Anthropic SLA is 24h, but the route handler will exit before that — see Task 8)
+const MAX_CONCEPTS_PER_JOB = 100; // cost + complexity guardrail
+const BATCH_POLL_INTERVAL_MS = 30_000;
+const BATCH_POLL_TIMEOUT_MS = 6 * 60 * 60 * 1000;
 
 function adminClient() {
-  return createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!);
+  return createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!,
+  );
 }
 
-function slugifyConceptName(uaaCode: string, label: string): string {
-  const base = `${uaaCode}-${label}`.toLowerCase();
-  return base.replace(/[^a-z0-9]+/g, "-").replace(/-+/g, "-").replace(/^-|-$/g, "").slice(0, 150);
+function slugifyConceptName(code: string | null, label: string): string {
+  const base = `${code ?? "section"}-${label}`.toLowerCase();
+  return base
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/-+/g, "-")
+    .replace(/^-|-$/g, "")
+    .slice(0, 150);
 }
 
 /**
  * Run the ingestion pipeline for a given job_id. Drives state through
- * extracting → chunking → batching → storing → done. On any failure
- * sets status = "failed" with error_message and rethrows.
+ * extracting → chunking → batching → storing → done.
+ *
+ * Architecture (post-refactor) :
+ *   1. Download PDF from storage
+ *   2. Extract full markdown via Anthropic Files API + STORE in
+ *      ingestion_jobs.extracted_markdown (strategic asset for future
+ *      Sprint 1.5+ features : hints, tutor, revisions, search)
+ *   3. Detect pedagogical sections via Claude on the stored markdown
+ *      (adaptive — works for UAA / Période / Compétence / Thème /
+ *      whatever the FW-B program uses)
+ *   4. Upsert concepts (1 per detected section), batch theory prompts
+ *   5. Store theory_blocks with provenance enforced
  *
  * MUST be called server-side (uses service role key). Idempotent : reruns
  * upsert concepts on (school_id, program_id, slug) and theory_blocks on
  * (concept_id, paragraph_ordinal).
  */
-export async function runIngestion(jobId: string, opts: RunOptions = {}): Promise<void> {
+export async function runIngestion(
+  jobId: string,
+  opts: RunOptions = {},
+): Promise<void> {
   const admin = adminClient();
 
-  async function setStatus(status: JobStatus, errorMessage?: string, extra: Record<string, unknown> = {}) {
+  async function setStatus(
+    status: JobStatus,
+    errorMessage?: string,
+    extra: Record<string, unknown> = {},
+  ) {
     const patch: Record<string, unknown> = { status, ...extra };
     if (status === "extracting") patch.started_at = new Date().toISOString();
-    if (status === "done" || status === "failed") patch.completed_at = new Date().toISOString();
+    if (status === "done" || status === "failed")
+      patch.completed_at = new Date().toISOString();
     if (errorMessage) patch.error_message = errorMessage;
     await admin.from("ingestion_jobs").update(patch).eq("id", jobId);
   }
@@ -51,50 +94,76 @@ export async function runIngestion(jobId: string, opts: RunOptions = {}): Promis
       .select("*")
       .eq("id", jobId)
       .single();
-    if (jobErr || !job) throw new Error(`Job not found: ${jobErr?.message ?? "no rows"}`);
+    if (jobErr || !job)
+      throw new Error(`Job not found: ${jobErr?.message ?? "no rows"}`);
+
+    // Fetch the program subject — needed for the section-detection prompt
+    const { data: program } = await admin
+      .from("curriculum_programs")
+      .select("subject, display_name")
+      .eq("id", job.program_id)
+      .single();
+    const subject = (program?.subject as string | undefined) ?? "matière";
 
     // ── 1. EXTRACT ────────────────────────────────────────────────────────────
     await setStatus("extracting");
     const { data: pdfBlob, error: dlErr } = await admin.storage
       .from("syllabi")
       .download(job.pdf_storage_path);
-    if (dlErr || !pdfBlob) throw new Error(`PDF download failed: ${dlErr?.message ?? "no blob"}`);
+    if (dlErr || !pdfBlob)
+      throw new Error(`PDF download failed: ${dlErr?.message ?? "no blob"}`);
     const pdfBuffer = await pdfBlob.arrayBuffer();
-    const { markdown, pageCount, columnsDetected } = await extractMarkdownFromPdf(pdfBuffer);
+    const { markdown, pageCount, columnsDetected } =
+      await extractMarkdownFromPdf(pdfBuffer);
 
-    // ── 2. CHUNK ──────────────────────────────────────────────────────────────
+    // Store the extracted markdown as a strategic asset (used by Sprint 1.5+
+    // features : hints grounded in verbatim text, tutor passage references,
+    // revision card generation, source_quote provenance verification).
+    await admin
+      .from("ingestion_jobs")
+      .update({ extracted_markdown: markdown })
+      .eq("id", jobId);
+
+    // ── 2. CHUNK (adaptive section detection via Claude) ─────────────────────
     await setStatus("chunking");
-    const chunks = chunkByUaa(markdown);
-    if (chunks.length === 0) {
-      throw new Error("No UAA headers found in syllabus — check the PDF or the chunking regex.");
+    const detected = await detectSections(markdown, subject);
+    const sections: SectionChunk[] = chunkSections(markdown, detected);
+
+    if (sections.length === 0) {
+      throw new Error(
+        "No sections could be located in the syllabus markdown — Claude detected sections but their markers didn't match the source text. Check the extraction quality.",
+      );
     }
-    if (chunks.length > MAX_CONCEPTS_PER_JOB) {
-      throw new Error(`Syllabus produced ${chunks.length} UAAs — exceeds cap ${MAX_CONCEPTS_PER_JOB}. Split into multiple uploads.`);
+    if (sections.length > MAX_CONCEPTS_PER_JOB) {
+      throw new Error(
+        `Syllabus produced ${sections.length} sections — exceeds cap ${MAX_CONCEPTS_PER_JOB}. Use Sprint 2 curation to merge before re-running.`,
+      );
     }
 
-    // Upsert concepts (Sprint 1 simplification : 1 concept per UAA chunk;
-    // Sprint 2 curation will let the prof split a UAA into multiple finer concepts).
-    const conceptInserts = chunks.map((c) => ({
+    // Upsert concepts (1 per detected section).
+    const conceptInserts = sections.map((s) => ({
       program_id: job.program_id,
       school_id: job.school_id,
-      name: c.label,
-      slug: slugifyConceptName(c.code, c.label),
-      source_concept_path: `${c.code} > ${c.label}`,
+      name: s.label,
+      slug: slugifyConceptName(s.code, s.label),
+      source_concept_path: s.code
+        ? `${s.code} > ${s.label}`
+        : `Section ${s.ordinal} > ${s.label}`,
     }));
     const { data: conceptRows, error: cErr } = await admin
       .from("concepts")
       .upsert(conceptInserts, { onConflict: "school_id,program_id,slug" })
       .select("id, slug, name");
-    if (cErr || !conceptRows) throw new Error(`Concept upsert failed: ${cErr?.message ?? "no rows"}`);
+    if (cErr || !conceptRows)
+      throw new Error(`Concept upsert failed: ${cErr?.message ?? "no rows"}`);
 
-    // Map concepts back to their chunks by slug (so we can build the prompt per concept).
     const conceptsBySlug = new Map(conceptRows.map((c) => [c.slug, c]));
 
-    // ── 3. BATCH ──────────────────────────────────────────────────────────────
+    // ── 3. BATCH (theory generation per section) ─────────────────────────────
     await setStatus("batching");
-    const batchRequests = chunks
-      .map((chunk) => {
-        const slug = slugifyConceptName(chunk.code, chunk.label);
+    const batchRequests = sections
+      .map((section) => {
+        const slug = slugifyConceptName(section.code, section.label);
         const concept = conceptsBySlug.get(slug);
         if (!concept) return null;
         return {
@@ -104,20 +173,25 @@ export async function runIngestion(jobId: string, opts: RunOptions = {}): Promis
             programId: job.program_id,
             conceptName: concept.name,
             conceptSlug: concept.slug,
-            uaaCode: chunk.code,
-            uaaLabel: chunk.label,
-            syllabusContent: chunk.content,
+            uaaCode: section.code ?? `Section${section.ordinal}`,
+            uaaLabel: section.label,
+            syllabusContent: section.content,
           }),
         };
       })
       .filter((r): r is NonNullable<typeof r> => r !== null);
 
-    type RawResult = { custom_id: string; result: { type: string; message?: Anthropic.Messages.Message; error?: { type: string; message: string } } };
+    type RawResult = {
+      custom_id: string;
+      result: {
+        type: string;
+        message?: Anthropic.Messages.Message;
+        error?: { type: string; message: string };
+      };
+    };
     let results: RawResult[];
 
     if (opts.fast) {
-      // Synchronous mode — call Anthropic messages.create one by one.
-      // Slow but immediate ; only used for dogfood iteration on small syllabi.
       const AnthropicSDK = (await import("@anthropic-ai/sdk")).default;
       const client = new AnthropicSDK();
       results = [];
@@ -131,19 +205,19 @@ export async function runIngestion(jobId: string, opts: RunOptions = {}): Promis
         } catch (err) {
           results.push({
             custom_id: req.custom_id,
-            result: { type: "errored", error: { type: "api_error", message: (err as Error).message } },
+            result: {
+              type: "errored",
+              error: { type: "api_error", message: (err as Error).message },
+            },
           });
         }
       }
     } else {
       const batchId = await createBatch(batchRequests);
-      await admin.from("ingestion_jobs").update({ batch_id: batchId }).eq("id", jobId);
-
-      // Poll until status === "ended" or timeout (6h). Note : the route
-      // handler that called runIngestion has a 60s timeout on Vercel Hobby ;
-      // this loop will exit when the route handler is killed, but the batch
-      // continues on Anthropic's side. The status page polls /api/ingestion
-      // separately and re-triggers runIngestion to resume.
+      await admin
+        .from("ingestion_jobs")
+        .update({ batch_id: batchId })
+        .eq("id", jobId);
       const start = Date.now();
       while (Date.now() - start < BATCH_POLL_TIMEOUT_MS) {
         const status = await getBatchStatus(batchId);
@@ -162,10 +236,15 @@ export async function runIngestion(jobId: string, opts: RunOptions = {}): Promis
       if (r.result.type !== "succeeded" || !r.result.message) continue;
       const firstContent = r.result.message.content[0];
       if (firstContent.type !== "text") continue;
-      const fullJson = "{" + firstContent.text;  // re-prepend the assistant pre-fill
+      const fullJson = "{" + firstContent.text;
       try {
         const parsed = JSON.parse(fullJson) as {
-          paragraphs?: { ordinal: number; content: string; source_quote: string | null; source_concept_path: string | null }[];
+          paragraphs?: {
+            ordinal: number;
+            content: string;
+            source_quote: string | null;
+            source_concept_path: string | null;
+          }[];
         };
         for (const p of parsed.paragraphs ?? []) {
           allBlocks.push({
@@ -183,16 +262,21 @@ export async function runIngestion(jobId: string, opts: RunOptions = {}): Promis
       }
     }
 
-    const { inserted, rejected, rejections } = await storeTheoryBlocks(allBlocks);
+    const { inserted, rejected, rejections } =
+      await storeTheoryBlocks(allBlocks);
 
     await setStatus("done", undefined, {
       metadata: {
         page_count: pageCount,
         columns_detected: columnsDetected,
-        chunks: chunks.length,
+        markdown_chars: markdown.length,
+        sections_detected: detected.length,
+        sections_chunked: sections.length,
         concepts: conceptRows.length,
-        succeeded_results: results.filter((r) => r.result.type === "succeeded").length,
-        errored_results: results.filter((r) => r.result.type === "errored").length,
+        succeeded_results: results.filter((r) => r.result.type === "succeeded")
+          .length,
+        errored_results: results.filter((r) => r.result.type === "errored")
+          .length,
         parse_failures: parseFailures,
         theory_blocks_inserted: inserted,
         theory_blocks_rejected: rejected,
