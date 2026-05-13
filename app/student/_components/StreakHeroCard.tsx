@@ -19,7 +19,7 @@ export default function StreakHeroCard({ displayName, streak, classCount, identi
     <div className="flex items-start justify-between gap-4">
       <div>
         <div className="flex items-center gap-3">
-          <h1 className="serif text-3xl font-black text-[rgb(var(--ink))]">🎒 Bonjour, {displayName} !</h1>
+          <h1 className="serif text-3xl font-black text-[rgb(var(--ink))]">Bonjour, {displayName} !</h1>
           {streak > 0 && (
             <span className="flex items-center gap-1 rounded-full bg-[rgb(var(--accent-soft))]/30 px-3 py-1 text-sm font-black text-[rgb(var(--accent))]">
               <Flame className="h-4 w-4" aria-hidden />

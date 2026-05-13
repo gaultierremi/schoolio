@@ -2,22 +2,22 @@
 // Compatible avec l'ancienne API (SUBJECTS as array, SubjectId) ET la nouvelle (typed Record, niveaux scolaires).
 
 export const SUBJECTS = [
-  { id: "histoire",       label: "Histoire",            emoji: "🏛️", color: "amber",  category: "humanites" as const, description: "Périodes, événements, civilisations" },
-  { id: "chimie",         label: "Chimie",              emoji: "⚗️", color: "blue",   category: "sciences" as const,   description: "Atomes, molécules, réactions" },
-  { id: "physique",       label: "Physique",            emoji: "🔬", color: "cyan",   category: "sciences" as const,   description: "Forces, énergie, mécanique, électricité" },
-  { id: "biologie",       label: "Biologie",            emoji: "🧬", color: "green",  category: "sciences" as const,   description: "Cellules, organismes, écosystèmes" },
-  { id: "sciences",       label: "Sciences (général)",  emoji: "🧪", color: "blue",   category: "sciences" as const,   description: "Sciences sans discipline précise" },
-  { id: "mathematiques",  label: "Mathématiques",       emoji: "📐", color: "green",  category: "sciences" as const,   description: "Algèbre, géométrie, analyse" },
-  { id: "geographie",     label: "Géographie",          emoji: "🌍", color: "teal",   category: "humanites" as const,  description: "Pays, climats, populations" },
-  { id: "litterature",    label: "Littérature",         emoji: "📚", color: "purple", category: "langues" as const,    description: "Œuvres, auteurs, analyses" },
-  { id: "francais",       label: "Français",            emoji: "🇫🇷", color: "red",    category: "langues" as const,    description: "Grammaire, expression, littérature" },
-  { id: "anglais",        label: "Anglais",             emoji: "🇬🇧", color: "blue",   category: "langues" as const,    description: "Vocabulaire, grammaire, compréhension" },
-  { id: "neerlandais",    label: "Néerlandais",         emoji: "🇳🇱", color: "orange", category: "langues" as const,    description: "Vocabulaire, grammaire, compréhension" },
-  { id: "droit",          label: "Droit",               emoji: "⚖️", color: "red",    category: "autre" as const,      description: "Lois, jurisprudence, institutions" },
-  { id: "medecine",       label: "Médecine & Anatomie", emoji: "🩺", color: "pink",   category: "autre" as const,      description: "Anatomie, physiologie, pathologies" },
-  { id: "permis",         label: "Code de la route",    emoji: "🚗", color: "orange", category: "autre" as const,      description: "Règles, signalisation, sécurité" },
-  { id: "langues",        label: "Langues (autre)",     emoji: "💬", color: "indigo", category: "langues" as const,    description: "Autre langue non listée" },
-  { id: "autre",          label: "Autre",               emoji: "✨", color: "gray",   category: "autre" as const,      description: "Toute autre matière" },
+  { id: "histoire",       label: "Histoire",            emoji: "🏛️", iconName: "Landmark",      color: "amber",  category: "humanites" as const, description: "Périodes, événements, civilisations" },
+  { id: "chimie",         label: "Chimie",              emoji: "⚗️", iconName: "FlaskConical",  color: "blue",   category: "sciences" as const,   description: "Atomes, molécules, réactions" },
+  { id: "physique",       label: "Physique",            emoji: "🔬", iconName: "Zap",           color: "cyan",   category: "sciences" as const,   description: "Forces, énergie, mécanique, électricité" },
+  { id: "biologie",       label: "Biologie",            emoji: "🧬", iconName: "Leaf",          color: "green",  category: "sciences" as const,   description: "Cellules, organismes, écosystèmes" },
+  { id: "sciences",       label: "Sciences (général)",  emoji: "🧪", iconName: "FlaskConical",  color: "blue",   category: "sciences" as const,   description: "Sciences sans discipline précise" },
+  { id: "mathematiques",  label: "Mathématiques",       emoji: "📐", iconName: "Calculator",    color: "green",  category: "sciences" as const,   description: "Algèbre, géométrie, analyse" },
+  { id: "geographie",     label: "Géographie",          emoji: "🌍", iconName: "Globe",         color: "teal",   category: "humanites" as const,  description: "Pays, climats, populations" },
+  { id: "litterature",    label: "Littérature",         emoji: "📚", iconName: "BookOpen",      color: "purple", category: "langues" as const,    description: "Œuvres, auteurs, analyses" },
+  { id: "francais",       label: "Français",            emoji: "🇫🇷", iconName: "BookOpenText",  color: "red",    category: "langues" as const,    description: "Grammaire, expression, littérature" },
+  { id: "anglais",        label: "Anglais",             emoji: "🇬🇧", iconName: "BookOpen",      color: "blue",   category: "langues" as const,    description: "Vocabulaire, grammaire, compréhension" },
+  { id: "neerlandais",    label: "Néerlandais",         emoji: "🇳🇱", iconName: "BookOpen",      color: "orange", category: "langues" as const,    description: "Vocabulaire, grammaire, compréhension" },
+  { id: "droit",          label: "Droit",               emoji: "⚖️", iconName: "Scale",         color: "red",    category: "autre" as const,      description: "Lois, jurisprudence, institutions" },
+  { id: "medecine",       label: "Médecine & Anatomie", emoji: "🩺", iconName: "Stethoscope",   color: "pink",   category: "autre" as const,      description: "Anatomie, physiologie, pathologies" },
+  { id: "permis",         label: "Code de la route",    emoji: "🚗", iconName: "Car",           color: "orange", category: "autre" as const,      description: "Règles, signalisation, sécurité" },
+  { id: "langues",        label: "Langues (autre)",     emoji: "💬", iconName: "MessageSquare", color: "indigo", category: "langues" as const,    description: "Autre langue non listée" },
+  { id: "autre",          label: "Autre",               emoji: "✨", iconName: "Sparkles",      color: "gray",   category: "autre" as const,      description: "Toute autre matière" },
 ] as const;
 
 export type SubjectId = (typeof SUBJECTS)[number]["id"];

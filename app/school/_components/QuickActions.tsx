@@ -1,55 +1,73 @@
 "use client";
 import Link from "next/link";
+import {
+  Upload, School, Play, PencilLine, Zap, Calendar, type LucideIcon,
+} from "lucide-react";
 
-const ACTIONS = [
+type Action = {
+  label: string;
+  Icon: LucideIcon;
+  href: string;
+  containerClass: string;
+  iconClass: string;
+  textClass: string;
+};
+
+const ACTIONS: Action[] = [
   {
     label: "Importer un PDF",
-    icon: "📄",
+    Icon: Upload,
     href: "/school/import",
-    colorClass: "border-purple-500/20 bg-purple-500/10 hover:bg-purple-500/20",
-    textClass: "text-purple-300",
+    containerClass: "border-[rgb(var(--accent))]/20 bg-[rgb(var(--accent-soft))]/20 hover:bg-[rgb(var(--accent-soft))]/40",
+    iconClass: "text-[rgb(var(--accent))]",
+    textClass: "text-[rgb(var(--accent))]",
   },
   {
     label: "Créer une classe",
-    icon: "🏫",
+    Icon: School,
     href: "/school/classes/new",
-    colorClass: "border-blue-500/20 bg-blue-500/10 hover:bg-blue-500/20",
-    textClass: "text-blue-300",
+    containerClass: "border-blue-400/20 bg-blue-50 hover:bg-blue-100",
+    iconClass: "text-blue-600",
+    textClass: "text-blue-700",
   },
   {
     label: "Lancer une session",
-    icon: "🎮",
+    Icon: Play,
     href: "/school/session/new",
-    colorClass: "border-green-500/20 bg-green-500/10 hover:bg-green-500/20",
-    textClass: "text-green-300",
+    containerClass: "border-[rgb(var(--green))]/20 bg-[rgb(var(--green))]/5 hover:bg-[rgb(var(--green))]/10",
+    iconClass: "text-[rgb(var(--green))]",
+    textClass: "text-[rgb(var(--green))]",
   },
   {
     label: "Gérer les devoirs",
-    icon: "📝",
+    Icon: PencilLine,
     href: "/school/classes",
-    colorClass: "border-amber-500/20 bg-amber-500/10 hover:bg-amber-500/20",
-    textClass: "text-amber-300",
+    containerClass: "border-[rgb(var(--warm))]/20 bg-[rgb(var(--warm))]/5 hover:bg-[rgb(var(--warm))]/10",
+    iconClass: "text-[rgb(var(--warm))]",
+    textClass: "text-[rgb(var(--warm))]",
   },
   {
     label: "Générer des exercices",
-    icon: "⚡",
+    Icon: Zap,
     href: "/school/courses",
-    colorClass: "border-cyan-500/20 bg-cyan-500/10 hover:bg-cyan-500/20",
-    textClass: "text-cyan-300",
+    containerClass: "border-cyan-400/20 bg-cyan-50 hover:bg-cyan-100",
+    iconClass: "text-cyan-700",
+    textClass: "text-cyan-700",
   },
   {
     label: "Mon emploi du temps",
-    icon: "🗓️",
+    Icon: Calendar,
     href: "/school/schedule",
-    colorClass: "border-indigo-500/20 bg-indigo-500/10 hover:bg-indigo-500/20",
-    textClass: "text-indigo-300",
+    containerClass: "border-indigo-400/20 bg-indigo-50 hover:bg-indigo-100",
+    iconClass: "text-indigo-700",
+    textClass: "text-indigo-700",
   },
 ] as const;
 
 export default function QuickActions() {
   return (
     <section>
-      <h2 className="mb-3 text-xs font-black uppercase tracking-widest text-gray-500">
+      <h2 className="mb-3 text-xs font-black uppercase tracking-widest text-[rgb(var(--ink-3))]">
         Actions rapides
       </h2>
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
@@ -57,9 +75,9 @@ export default function QuickActions() {
           <Link
             key={action.label}
             href={action.href}
-            className={`flex flex-col items-center justify-center gap-2 rounded-2xl border p-5 text-center transition ${action.colorClass}`}
+            className={`flex flex-col items-center justify-center gap-2 rounded-2xl border p-5 text-center transition ${action.containerClass}`}
           >
-            <span className="text-2xl">{action.icon}</span>
+            <action.Icon className={`h-6 w-6 ${action.iconClass}`} aria-hidden />
             <span className={`text-sm font-bold ${action.textClass}`}>
               {action.label}
             </span>

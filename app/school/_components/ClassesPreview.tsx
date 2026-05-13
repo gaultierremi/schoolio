@@ -23,12 +23,12 @@ export default function ClassesPreview({
   return (
     <section>
       <div className="mb-3 flex items-center justify-between">
-        <h2 className="text-xs font-black uppercase tracking-widest text-gray-500">
+        <h2 className="text-xs font-black uppercase tracking-widest text-[rgb(var(--ink-3))]">
           Classes récentes
         </h2>
         <Link
           href="/school/classes"
-          className="text-xs font-bold text-gray-500 transition hover:text-purple-400"
+          className="text-xs font-bold text-[rgb(var(--ink-3))] transition hover:text-[rgb(var(--accent))]"
         >
           Voir tout →
         </Link>
@@ -37,15 +37,15 @@ export default function ClassesPreview({
       {loading ? (
         <div className="space-y-2">
           {[...Array(3)].map((_, i) => (
-            <div key={i} className="h-16 animate-pulse rounded-2xl bg-gray-800" />
+            <div key={i} className="h-16 animate-pulse rounded-2xl bg-[rgb(var(--surface-3))]" />
           ))}
         </div>
       ) : !classes || classes.length === 0 ? (
-        <div className="rounded-2xl border border-dashed border-gray-800 p-8 text-center text-sm text-gray-600">
+        <div className="rounded-2xl border border-dashed border-[rgb(var(--border))] p-8 text-center text-sm text-[rgb(var(--ink-3))]">
           Aucune classe créée.{" "}
           <Link
             href="/school/classes/new"
-            className="text-purple-400 hover:text-purple-300"
+            className="text-[rgb(var(--accent))] hover:opacity-80"
           >
             Créer une classe →
           </Link>
@@ -56,11 +56,11 @@ export default function ClassesPreview({
             <Link
               key={cls.id}
               href={`/school/classes/${cls.id}`}
-              className="flex items-center justify-between rounded-2xl border border-gray-800 bg-gray-900 px-4 py-3 transition-all hover:border-purple-500/50 hover:bg-gray-800/80"
+              className="flex items-center justify-between rounded-2xl border border-[rgb(var(--border))] bg-[rgb(var(--surface))] px-4 py-3 transition-all hover:border-[rgb(var(--accent))]/50 hover:bg-[rgb(var(--surface-3))]"
             >
               <div>
-                <p className="font-bold text-white">{cls.name}</p>
-                <p className="mt-0.5 text-xs text-gray-500">
+                <p className="font-bold text-[rgb(var(--ink))]">{cls.name}</p>
+                <p className="mt-0.5 text-xs text-[rgb(var(--ink-3))]">
                   {cls.level !== null
                     ? (LEVEL_SHORT[cls.level] ?? `${cls.level}ème`)
                     : null}
@@ -69,8 +69,8 @@ export default function ClassesPreview({
                 </p>
               </div>
               <div className="ml-4 shrink-0 text-right">
-                <p className="text-sm font-bold text-white">{cls.member_count}</p>
-                <p className="text-xs text-gray-600">
+                <p className="serif text-sm font-bold text-[rgb(var(--ink))]">{cls.member_count}</p>
+                <p className="text-xs text-[rgb(var(--ink-3))]">
                   élève{cls.member_count !== 1 ? "s" : ""}
                 </p>
               </div>

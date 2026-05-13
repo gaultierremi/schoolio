@@ -1,4 +1,4 @@
-import { CheckCircle2, Trophy } from "lucide-react";
+import { CheckCircle2, Trophy, Brain } from "lucide-react";
 import { GRADE_LABEL } from "@/lib/grading";
 import type { WeeklyStats } from "@/lib/types/student-dashboard";
 
@@ -19,8 +19,7 @@ export default function WeeklyStatsBanner({ stats }: Props) {
         </div>
 
         <div className="flex flex-col gap-1 rounded-xl border border-[rgb(var(--border))] bg-[rgb(var(--surface))] px-4 py-3">
-          {/* 🧠 kept — no equivalent icon in lucide for "brain / memorization" */}
-          <span className="text-xl leading-none">🧠</span>
+          <Brain className="h-5 w-5 text-[rgb(var(--accent))]" aria-hidden />
           <span className="serif text-2xl font-black text-[rgb(var(--ink))]">{stats.questions_practiced}</span>
           <span className="text-xs text-[rgb(var(--ink-3))]">Questions</span>
         </div>

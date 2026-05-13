@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Calendar, School } from "lucide-react";
+import { Calendar, School, FileText, Brain } from "lucide-react";
 import { SUBJECTS_BY_ID } from "@/lib/subjects";
 import type { SubjectId } from "@/lib/subjects";
 type AssignmentEntry = {
@@ -69,8 +69,10 @@ function AssignmentCard({ a }: { a: AssignmentEntry }) {
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0">
           <div className="flex items-center gap-2">
-            <span className="shrink-0 text-xs text-[rgb(var(--ink-3))]">
-              {a.resource_type === "pdf" ? "📄" : "🧠"}
+            <span className="shrink-0 text-[rgb(var(--ink-3))]">
+              {a.resource_type === "pdf"
+                ? <FileText className="h-3.5 w-3.5" aria-hidden />
+                : <Brain className="h-3.5 w-3.5" aria-hidden />}
             </span>
             <p className="truncate font-bold text-[rgb(var(--ink))]">{a.title}</p>
           </div>
@@ -115,7 +117,7 @@ function ClassCard({
           <p className="font-black text-[rgb(var(--ink))]">{entry.className}</p>
           <p className="mt-0.5 text-xs text-[rgb(var(--ink-3))]">
             Prof : {entry.teacherName}
-            {subj && <> · {subj.emoji} {subj.label}</>}
+            {subj && <> · {subj.label}</>}
           </p>
         </div>
         <div className="flex items-center justify-between">

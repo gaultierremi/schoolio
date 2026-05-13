@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { CheckCircle2 } from "lucide-react";
 import { EmptyState } from "@/components/ui/EmptyState";
 import type { UpcomingAssignment, RecentCompletion } from "@/lib/types/student-dashboard";
 import { GRADE_LABEL, GRADE_STYLE, computeLetterGrade } from "@/lib/grading";
@@ -50,7 +51,7 @@ export default function AssignmentList({ upcoming, recent }: Props) {
         {upcoming.length === 0 ? (
           <EmptyState
             variant="compact"
-            icon="🎉"
+            icon={<CheckCircle2 className="h-8 w-8 text-[rgb(var(--green))]" />}
             title="Tout est à jour !"
             description="Aucun devoir en attente pour le moment."
           />

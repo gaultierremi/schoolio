@@ -1,3 +1,4 @@
+import { SunDim } from "lucide-react";
 import { EmptyState } from "@/components/ui/EmptyState";
 import type { ScheduleSlot } from "@/lib/types/student-dashboard";
 
@@ -13,7 +14,7 @@ export default function TodaySchedule({ slots }: Props) {
       {slots.length === 0 ? (
         <EmptyState
           variant="compact"
-          icon="🌴"
+          icon={<SunDim className="h-8 w-8 text-[rgb(var(--warm))]" />}
           title="Pas de cours aujourd'hui"
           description="Profites-en pour réviser !"
         />

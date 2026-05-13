@@ -1,24 +1,33 @@
 "use client";
 
 import { useState } from "react";
+import {
+  FlaskConical, Zap, Leaf, Calculator, Landmark, Globe,
+  BookOpenText, BookOpen, type LucideIcon,
+} from "lucide-react";
 import { EmptyState } from "@/components/ui/EmptyState";
 import type { AvailableCourse } from "@/lib/types/student-dashboard";
 
 // TODO: swap card for <CourseProgressCard variant="student" /> when codex/course-progress-card merges
 // Expected props: title, subjectEnum, level, pdfPages, progressPercent?, lastActivityDate?, variant, onClick
 
-const SUBJECT_EMOJI: Record<string, string> = {
-  chimie: "⚗️",
-  physique: "⚡",
-  biologie: "🧬",
-  mathematiques: "📐",
-  histoire: "📜",
-  geographie: "🌍",
-  francais: "📝",
-  anglais: "🇬🇧",
-  neerlandais: "🇳🇱",
-  autre: "📚",
+const SUBJECT_ICON: Record<string, LucideIcon> = {
+  chimie:        FlaskConical,
+  physique:      Zap,
+  biologie:      Leaf,
+  mathematiques: Calculator,
+  histoire:      Landmark,
+  geographie:    Globe,
+  francais:      BookOpenText,
+  anglais:       BookOpen,
+  neerlandais:   BookOpen,
+  autre:         BookOpen,
 };
+
+function SubjectIcon({ subject }: { subject: string | null }) {
+  const Icon = SUBJECT_ICON[subject ?? "autre"] ?? BookOpen;
+  return <Icon className="h-5 w-5 text-[rgb(var(--accent))]" aria-hidden />;
+}
 
 type Props = { courses: AvailableCourse[] };
 
@@ -44,7 +53,7 @@ export default function CourseList({ courses }: Props) {
     return (
       <EmptyState
         variant="compact"
-        icon="📚"
+        icon={<BookOpen className="h-8 w-8 text-[rgb(var(--ink-3))]" />}
         title="Aucun cours disponible"
         description="Tes professeurs n'ont pas encore partagé de cours PDF."
       />
@@ -54,7 +63,6 @@ export default function CourseList({ courses }: Props) {
   return (
     <ul className="grid grid-cols-1 gap-3 sm:grid-cols-2">
       {courses.map((c) => {
-        const emoji = SUBJECT_EMOJI[c.subject_enum ?? "autre"] ?? "📚";
         const isLoading = loadingId === c.id;
         return (
           <li key={c.id}>
@@ -64,7 +72,7 @@ export default function CourseList({ courses }: Props) {
               className="w-full rounded-xl border border-[rgb(var(--border))] bg-[rgb(var(--surface))] px-4 py-3 text-left transition-colors hover:bg-[rgb(var(--surface-3))] disabled:opacity-60"
             >
               <div className="flex items-start gap-3">
-                <span className="text-2xl leading-none">{emoji}</span>
+                <SubjectIcon subject={c.subject_enum ?? null} />
                 <div className="min-w-0 flex-1">
                   <p className="truncate font-semibold text-[rgb(var(--ink))]">{c.title}</p>
                   <p className="mt-0.5 text-xs text-[rgb(var(--ink-3))]">

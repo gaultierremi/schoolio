@@ -12,7 +12,7 @@ export default function DashboardHeader({ displayName, className, streak }: Prop
     <div className="flex items-start justify-between gap-3">
       <div className="min-w-0">
         <h1 className="serif truncate text-2xl font-black text-[rgb(var(--ink))]">
-          Bonjour {displayName} 👋
+          Bonjour, {displayName} !
         </h1>
         <div className="mt-1 flex flex-wrap items-center gap-2 text-sm text-[rgb(var(--ink-2))]">
           {className && <span className="truncate">{className}</span>}
