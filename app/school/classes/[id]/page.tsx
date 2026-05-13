@@ -13,7 +13,6 @@ type ClassDetail = {
   name: string;
   level: string | null;
   subject: string | null;
-  auth_mode: "full" | "light";
   invite_code: string;
   invite_link_token: string;
   archived_at: string | null;
@@ -116,7 +115,6 @@ function EditForm({
   const [name, setName] = useState(cls.name);
   const [level, setLevel] = useState(cls.level ?? "");
   const [subject, setSubject] = useState(cls.subject ?? "");
-  const [authMode, setAuthMode] = useState<"full" | "light">(cls.auth_mode);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -135,7 +133,6 @@ function EditForm({
         name: trimmed,
         level: level || null,
         subject: subject || null,
-        auth_mode: authMode,
       }),
     });
     const json = await res.json() as { class?: ClassDetail; error?: string };
@@ -188,26 +185,6 @@ function EditForm({
               <option key={s.id} value={s.id}>{s.emoji} {s.label}</option>
             ))}
           </select>
-        </div>
-      </div>
-
-      <div>
-        <label className="text-xs font-bold text-gray-400">Auth. élèves</label>
-        <div className="mt-2 flex gap-2">
-          {(["full", "light"] as const).map((m) => (
-            <button
-              key={m}
-              type="button"
-              onClick={() => setAuthMode(m)}
-              className={`flex-1 rounded-xl border py-2 text-xs font-bold transition ${
-                authMode === m
-                  ? "border-purple-500 bg-purple-500/20 text-purple-300"
-                  : "border-gray-700 text-gray-500 hover:border-gray-600 hover:text-gray-300"
-              }`}
-            >
-              {m === "full" ? "🔐 Compte" : "🔓 Pseudo"}
-            </button>
-          ))}
         </div>
       </div>
 
@@ -538,8 +515,6 @@ export default function ClassDetailPage() {
             </div>
             <p className="mt-1 text-sm text-gray-500">
               {levelLabel(cls.level)} · {subjectLabel(cls.subject)}
-              <span className="mx-2 text-gray-700">·</span>
-              {cls.auth_mode === "light" ? "🔓 Pseudo" : "🔐 Compte complet"}
             </p>
             <p className="text-xs text-gray-600">Créée le {formatDate(cls.created_at)}</p>
           </div>

@@ -92,7 +92,6 @@ export async function POST(req: NextRequest) {
       name?: string;
       level?: string | null;
       subject?: string | null;
-      auth_mode?: string;
     };
 
     const name = (body.name ?? "").trim();
@@ -110,7 +109,7 @@ export async function POST(req: NextRequest) {
         name,
         level: body.level ?? null,
         subject: body.subject ?? null,
-        auth_mode: body.auth_mode === "light" ? "light" : "full",
+        auth_mode: "full",
         invite_code,
       })
       .select("id, name, level, subject, auth_mode, invite_code, invite_link_token, archived_at, created_at")

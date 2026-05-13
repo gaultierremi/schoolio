@@ -2,18 +2,15 @@
 
 import { useId, useState } from "react";
 
-type JoinClassFormSubmitData =
-  | {
-      mode: "full";
-      email: string;
-      password: string;
-      firstName: string;
-      lastName: string;
-    }
-  | { mode: "light"; pseudo: string; firstName: string; lastName?: string };
+type JoinClassFormSubmitData = {
+  mode: "full";
+  email: string;
+  password: string;
+  firstName: string;
+  lastName: string;
+};
 
 type JoinClassFormProps = {
-  authMode: "full" | "light";
   className: string;
   teacherName?: string;
   loading?: boolean;
@@ -22,15 +19,13 @@ type JoinClassFormProps = {
 };
 
 type FieldErrors = Partial<
-  Record<"pseudo" | "firstName" | "lastName" | "email" | "password", string>
+  Record<"firstName" | "lastName" | "email" | "password", string>
 >;
 
 const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const namePattern = /^[\p{L} -]+$/u;
-const pseudoPattern = /^[\p{L}\p{N} _-]+$/u;
 
 export default function JoinClassForm({
-  authMode,
   className,
   teacherName,
   loading = false,
@@ -38,7 +33,6 @@ export default function JoinClassForm({
   onSubmit,
 }: JoinClassFormProps) {
   const formId = useId();
-  const [pseudo, setPseudo] = useState("");
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
@@ -54,37 +48,7 @@ export default function JoinClassForm({
     });
   }
 
-  function validateLight() {
-    const nextErrors: FieldErrors = {};
-    const value = pseudo.trim();
-
-    if (value.length < 2 || value.length > 20) {
-      nextErrors.pseudo = "Le pseudo doit contenir entre 2 et 20 caractères.";
-    } else if (!pseudoPattern.test(value)) {
-      nextErrors.pseudo =
-        "Utilise seulement des lettres, chiffres, espaces, tirets ou underscores.";
-    }
-
-    const trimmedFirst = firstName.trim();
-    if (trimmedFirst.length < 2) {
-      nextErrors.firstName = "Le prénom doit contenir au moins 2 caractères.";
-    } else if (!namePattern.test(trimmedFirst)) {
-      nextErrors.firstName = "Utilise seulement des lettres, espaces ou tirets.";
-    }
-
-    const trimmedLast = lastName.trim();
-    if (trimmedLast.length > 0) {
-      if (trimmedLast.length < 2) {
-        nextErrors.lastName = "Le nom doit contenir au moins 2 caractères.";
-      } else if (!namePattern.test(trimmedLast)) {
-        nextErrors.lastName = "Utilise seulement des lettres, espaces ou tirets.";
-      }
-    }
-
-    return nextErrors;
-  }
-
-  function validateFull() {
+  function validate(): FieldErrors {
     const nextErrors: FieldErrors = {};
     const trimmedFirstName = firstName.trim();
     const trimmedLastName = lastName.trim();
@@ -116,21 +80,10 @@ export default function JoinClassForm({
   function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
-    const nextErrors = authMode === "light" ? validateLight() : validateFull();
+    const nextErrors = validate();
     setErrors(nextErrors);
 
     if (Object.keys(nextErrors).length > 0) return;
-
-    if (authMode === "light") {
-      const trimmedLast = lastName.trim();
-      onSubmit({
-        mode: "light",
-        pseudo: pseudo.trim(),
-        firstName: firstName.trim(),
-        lastName: trimmedLast || undefined,
-      });
-      return;
-    }
 
     onSubmit({
       mode: "full",
@@ -140,9 +93,6 @@ export default function JoinClassForm({
       lastName: lastName.trim(),
     });
   }
-
-  const submitLabel =
-    authMode === "light" ? "Rejoindre la classe" : "Créer mon compte et rejoindre";
 
   return (
     <section className="mx-auto w-full max-w-[480px] rounded-3xl border border-gray-800 bg-gray-900 p-6 shadow-xl shadow-black/20 sm:p-8">
@@ -156,108 +106,61 @@ export default function JoinClassForm({
       </header>
 
       <form className="space-y-5" noValidate onSubmit={handleSubmit}>
-        {authMode === "light" ? (
-          <>
-            <Field
-              id={`${formId}-pseudo`}
-              label="Choisis ton pseudo"
-              value={pseudo}
-              error={errors.pseudo}
-              helperText="Ton prof verra ce pseudo dans la classe"
-              autoComplete="nickname"
-              disabled={loading}
-              onChange={(value) => {
-                setPseudo(value);
-                clearError("pseudo");
-              }}
-            />
-            <div className="grid gap-5 sm:grid-cols-2">
-              <Field
-                id={`${formId}-first-name`}
-                label="Prénom"
-                value={firstName}
-                error={errors.firstName}
-                helperText="Pour que ton prof te reconnaisse"
-                autoComplete="given-name"
-                disabled={loading}
-                onChange={(value) => {
-                  setFirstName(value);
-                  clearError("firstName");
-                }}
-              />
-              <Field
-                id={`${formId}-last-name`}
-                label="Nom (optionnel)"
-                value={lastName}
-                error={errors.lastName}
-                autoComplete="family-name"
-                disabled={loading}
-                onChange={(value) => {
-                  setLastName(value);
-                  clearError("lastName");
-                }}
-              />
-            </div>
-          </>
-        ) : (
-          <>
-            <div className="grid gap-5 sm:grid-cols-2">
-              <Field
-                id={`${formId}-first-name`}
-                label="Prénom"
-                value={firstName}
-                error={errors.firstName}
-                autoComplete="given-name"
-                disabled={loading}
-                onChange={(value) => {
-                  setFirstName(value);
-                  clearError("firstName");
-                }}
-              />
-              <Field
-                id={`${formId}-last-name`}
-                label="Nom"
-                value={lastName}
-                error={errors.lastName}
-                autoComplete="family-name"
-                disabled={loading}
-                onChange={(value) => {
-                  setLastName(value);
-                  clearError("lastName");
-                }}
-              />
-            </div>
+        <div className="grid gap-5 sm:grid-cols-2">
+          <Field
+            id={`${formId}-first-name`}
+            label="Prénom"
+            value={firstName}
+            error={errors.firstName}
+            autoComplete="given-name"
+            disabled={loading}
+            onChange={(value) => {
+              setFirstName(value);
+              clearError("firstName");
+            }}
+          />
+          <Field
+            id={`${formId}-last-name`}
+            label="Nom"
+            value={lastName}
+            error={errors.lastName}
+            autoComplete="family-name"
+            disabled={loading}
+            onChange={(value) => {
+              setLastName(value);
+              clearError("lastName");
+            }}
+          />
+        </div>
 
-            <Field
-              id={`${formId}-email`}
-              label="Email"
-              type="email"
-              value={email}
-              error={errors.email}
-              autoComplete="email"
-              disabled={loading}
-              onChange={(value) => {
-                setEmail(value);
-                clearError("email");
-              }}
-            />
+        <Field
+          id={`${formId}-email`}
+          label="Email"
+          type="email"
+          value={email}
+          error={errors.email}
+          autoComplete="email"
+          disabled={loading}
+          onChange={(value) => {
+            setEmail(value);
+            clearError("email");
+          }}
+        />
 
-            <Field
-              id={`${formId}-password`}
-              label="Mot de passe"
-              type="password"
-              value={password}
-              error={errors.password}
-              helperText="Au moins 8 caractères"
-              autoComplete="new-password"
-              disabled={loading}
-              onChange={(value) => {
-                setPassword(value);
-                clearError("password");
-              }}
-            />
-          </>
-        )}
+        <Field
+          id={`${formId}-password`}
+          label="Mot de passe"
+          type="password"
+          value={password}
+          error={errors.password}
+          helperText="Au moins 8 caractères"
+          autoComplete="new-password"
+          disabled={loading}
+          onChange={(value) => {
+            setPassword(value);
+            clearError("password");
+          }}
+        />
 
         {errorMessage ? (
           <div className="rounded-2xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm font-bold text-red-300">
@@ -276,7 +179,7 @@ export default function JoinClassForm({
               Connexion...
             </>
           ) : (
-            submitLabel
+            "Créer mon compte et rejoindre"
           )}
         </button>
       </form>
