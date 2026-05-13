@@ -13,6 +13,7 @@ import {
 import { buildTheoryPrompt } from "@/lib/ingestion/prompts/theory";
 import {
   storeTheoryBlocks,
+  syncSnippetsFromTheoryBlocks,
   type TheoryBlockInput,
 } from "@/lib/ingestion/store-outputs";
 import { logError } from "@/lib/observability/log-error";
@@ -266,6 +267,25 @@ export async function runIngestion(
     const { inserted, rejected, rejections } =
       await storeTheoryBlocks(allBlocks);
 
+    // Mirror theory_blocks.source_quote into content_snippets pour que A.3+ (tuteur
+    // socratique, indices, remédiation) puissent retrieve via une table unifiée.
+    // Best-effort : si ça échoue on log + continue (les snippets sont une couche
+    // dérivée, pas critique pour l'ingestion elle-même qui a déjà sauvé les
+    // theory_blocks).
+    let snippetsInserted = 0;
+    let snippetsSkipped = 0;
+    try {
+      const syncResult = await syncSnippetsFromTheoryBlocks(jobId);
+      snippetsInserted = syncResult.inserted;
+      snippetsSkipped = syncResult.skipped;
+    } catch (syncErr) {
+      await logError(syncErr, {
+        source: "orchestrator.syncSnippets",
+        context: { jobId },
+      });
+      // Continue — don't fail the job over a snippet sync issue.
+    }
+
     await setStatus("done", undefined, {
       metadata: {
         page_count: pageCount,
@@ -282,6 +302,8 @@ export async function runIngestion(
         theory_blocks_inserted: inserted,
         theory_blocks_rejected: rejected,
         rejection_reasons: rejections.slice(0, 5).map((rej) => rej.reason),
+        snippets_inserted: snippetsInserted,
+        snippets_skipped: snippetsSkipped,
       },
     });
   } catch (err) {
