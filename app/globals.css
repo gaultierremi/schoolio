@@ -169,3 +169,153 @@ html, body {
   padding: 0.5em 0;
 }
 .katex { font-size: 1em; }
+
+/* ── Maïa marketing utility classes (from landing-page-mockup.html) ────── */
+
+/* Text colour shorthands */
+.ink  { color: rgb(var(--ink)); }
+.ink2 { color: rgb(var(--ink-2)); }
+.ink3 { color: rgb(var(--ink-3)); }
+.accent-text { color: rgb(var(--accent)); }
+
+/* Background shorthands */
+.accent-bg       { background: rgb(var(--accent)); }
+.surface-2-bg    { background: rgb(var(--surface-2)); }
+.surface-3-bg    { background: rgb(var(--surface-3)); }
+
+/* Border shorthand */
+.border1 { border-color: rgb(var(--border)); }
+
+/* Eyebrow pill */
+.eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: rgb(var(--accent) / 0.10);
+  color: rgb(var(--accent));
+  font-size: 0.75rem;
+  font-weight: 500;
+  padding: 0.35rem 0.75rem;
+  border-radius: 999px;
+  letter-spacing: 0.02em;
+}
+
+/* Hero gradient background */
+.hero-bg {
+  background:
+    radial-gradient(circle at 80% 20%, rgb(var(--accent) / 0.08) 0%, transparent 50%),
+    radial-gradient(circle at 20% 60%, rgb(var(--warm) / 0.05) 0%, transparent 50%),
+    rgb(var(--surface));
+}
+
+/* Primary / secondary CTA buttons */
+.btn-primary {
+  background: linear-gradient(135deg, rgb(var(--accent)) 0%, rgb(var(--accent-2)) 100%);
+  color: white;
+  transition: transform 120ms ease, box-shadow 120ms ease;
+}
+.btn-primary:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 12px 32px rgb(var(--accent) / 0.35);
+}
+.btn-secondary {
+  border: 1px solid rgb(var(--border));
+  background: rgb(var(--surface));
+  color: rgb(var(--ink));
+}
+.btn-secondary:hover { border-color: rgb(var(--accent)); color: rgb(var(--accent)); }
+
+/* Cards */
+.card {
+  background: rgb(var(--surface));
+  border: 1px solid rgb(var(--border));
+  border-radius: 18px;
+}
+.card-feature {
+  background: rgb(var(--surface));
+  border: 1px solid rgb(var(--border));
+  border-radius: 18px;
+  transition: transform 180ms ease, box-shadow 180ms ease, border-color 180ms ease;
+}
+.card-feature:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 14px 40px rgb(11 18 32 / 0.06);
+  border-color: rgb(var(--accent) / 0.4);
+}
+
+/* Step number badges */
+.step-num {
+  background: rgb(var(--accent) / 0.10);
+  color: rgb(var(--accent));
+  border-radius: 999px;
+  width: 2rem;
+  height: 2rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-serif), ui-serif, Georgia, serif;
+  font-weight: 600;
+  font-size: 1rem;
+}
+
+/* Mastery preview cells */
+.pm-cell {
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: 0.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.7rem;
+  font-weight: 600;
+}
+.pm-1 { background: rgb(239 68 68); color: white; }
+.pm-2 { background: rgb(251 146 60); color: rgb(17 24 39); }
+.pm-3 { background: rgb(250 204 21); color: rgb(17 24 39); }
+.pm-4 { background: rgb(132 204 22); color: rgb(17 24 39); }
+.pm-5 { background: rgb(34 197 94); color: white; }
+.pm-0 { background: rgb(226 232 240); color: rgb(138 146 162); }
+
+/* Quote decorators */
+.quote::before {
+  content: "\00AB\0020";
+  font-family: var(--font-serif), ui-serif, Georgia, serif;
+  color: rgb(var(--accent));
+  font-size: 1.5rem;
+}
+.quote::after {
+  content: "\0020\00BB";
+  font-family: var(--font-serif), ui-serif, Georgia, serif;
+  color: rgb(var(--accent));
+  font-size: 1.5rem;
+}
+
+/* Subtle divider */
+.divider {
+  height: 1px;
+  background: rgb(var(--border));
+}
+
+/* Curriculum tag */
+.curr-tag {
+  background: rgb(var(--surface-3));
+  color: rgb(var(--ink));
+  border: 1px solid rgb(var(--border));
+  border-radius: 999px;
+  padding: 0.35rem 0.8rem;
+  font-size: 0.8rem;
+  font-weight: 500;
+}
+
+/* FAQ chevron */
+details summary { cursor: pointer; list-style: none; }
+details summary::-webkit-details-marker { display: none; }
+details[open] .chevron { transform: rotate(180deg); }
+.chevron { transition: transform 200ms ease; }
+
+/* Focus ring */
+*:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px rgb(var(--surface)), 0 0 0 4px rgb(var(--accent));
+  border-radius: 12px;
+}
