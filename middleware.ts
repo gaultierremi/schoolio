@@ -1,5 +1,6 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextRequest, NextResponse } from "next/server";
+import { SUPER_ADMIN_EMAILS } from "@/lib/admin-config";
 
 // Paths accessible to anyone (auth or not)
 const PUBLIC_PATHS = new Set(["/", "/login", "/signup", "/join"]);
@@ -59,6 +60,16 @@ export async function middleware(request: NextRequest) {
   // Rule 3: role must come from app_metadata (server-trusted), NOT user_metadata (client-mutable).
   const appMeta = (user.app_metadata ?? {}) as Record<string, unknown>;
   const isStudent = appMeta.role === "student";
+
+  // SUPER_ADMIN bypass for /admin/* — solves the founder_teachers chicken-and-egg :
+  // Alex/Gaultier must be able to reach /admin/founders to seed the whitelist
+  // even though their initial role is "student" (until they add themselves).
+  const isSuperAdmin =
+    !!user.email && (SUPER_ADMIN_EMAILS as readonly string[]).includes(user.email.toLowerCase());
+
+  if (isSuperAdmin && pathname.startsWith("/admin")) {
+    return supabaseResponse;
+  }
 
   // Role-based redirects
   if (isStudent && (pathname.startsWith("/school") || pathname.startsWith("/admin"))) {
