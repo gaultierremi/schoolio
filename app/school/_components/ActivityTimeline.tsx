@@ -1,5 +1,7 @@
 "use client";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { GraduationCap, BookOpen, Cpu, MapPin, ChevronDown, ChevronRight } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 
 type ActivityEvent = {
   id: string;
@@ -19,10 +21,10 @@ const FILTERS: { key: Filter; label: string }[] = [
   { key: "system",   label: "Système"    },
 ];
 
-const ACTOR_ICON: Record<string, string> = {
-  student: "👩‍🎓",
-  teacher: "👩‍🏫",
-  system:  "🤖",
+const ACTOR_ICON: Record<string, LucideIcon> = {
+  student: GraduationCap,
+  teacher: BookOpen,
+  system:  Cpu,
 };
 
 function timeAgo(dateStr: string): string {
@@ -68,9 +70,11 @@ export default function ActivityTimeline({
     <section className="pb-8">
       <button
         onClick={() => setOpen((o) => !o)}
-        className="mb-3 flex items-center gap-2 text-xs font-black uppercase tracking-widest text-gray-500 transition hover:text-gray-300"
+        className="mb-3 flex items-center gap-2 text-xs font-black uppercase tracking-widest text-[rgb(var(--ink-3))] transition hover:text-[rgb(var(--ink))]"
       >
-        <span className="text-[10px]">{open ? "▼" : "▶"}</span>
+        {open
+          ? <ChevronDown className="h-3 w-3" aria-hidden />
+          : <ChevronRight className="h-3 w-3" aria-hidden />}
         Activité récente
       </button>
 
@@ -83,8 +87,8 @@ export default function ActivityTimeline({
                 onClick={() => setFilter(f.key)}
                 className={`rounded-xl px-3 py-1 text-xs font-bold transition ${
                   filter === f.key
-                    ? "border border-purple-500/30 bg-purple-500/20 text-purple-300"
-                    : "border border-gray-700 text-gray-500 hover:text-white"
+                    ? "border border-[rgb(var(--accent))]/30 bg-[rgb(var(--accent-soft))]/30 text-[rgb(var(--accent))]"
+                    : "border border-[rgb(var(--border))] text-[rgb(var(--ink-3))] hover:text-[rgb(var(--ink))]"
                 }`}
               >
                 {f.label}
@@ -95,31 +99,32 @@ export default function ActivityTimeline({
           {eventsLoading ? (
             <div className="space-y-2">
               {[...Array(5)].map((_, i) => (
-                <div key={i} className="h-12 animate-pulse rounded-xl bg-gray-800" />
+                <div key={i} className="h-12 animate-pulse rounded-xl bg-[rgb(var(--surface-3))]" />
               ))}
             </div>
           ) : events.length === 0 ? (
-            <p className="py-4 text-center text-sm text-gray-600">
+            <p className="py-4 text-center text-sm text-[rgb(var(--ink-3))]">
               Aucune activité enregistrée.
             </p>
           ) : (
             <div className="space-y-2">
-              {events.map((event) => (
-                <div
-                  key={event.id}
-                  className="flex items-center gap-3 rounded-xl border border-gray-800 bg-gray-900 px-4 py-3"
-                >
-                  <span className="shrink-0 text-base">
-                    {ACTOR_ICON[event.actor_type] ?? "📍"}
-                  </span>
-                  <p className="min-w-0 flex-1 truncate text-sm font-bold text-white">
-                    {event.label}
-                  </p>
-                  <p className="shrink-0 whitespace-nowrap text-xs text-gray-600">
-                    {timeAgo(event.created_at)}
-                  </p>
-                </div>
-              ))}
+              {events.map((event) => {
+                const Icon = ACTOR_ICON[event.actor_type] ?? MapPin;
+                return (
+                  <div
+                    key={event.id}
+                    className="flex items-center gap-3 rounded-xl border border-[rgb(var(--border))] bg-[rgb(var(--surface))] px-4 py-3"
+                  >
+                    <Icon className="h-4 w-4 shrink-0 text-[rgb(var(--ink-3))]" aria-hidden />
+                    <p className="min-w-0 flex-1 truncate text-sm font-bold text-[rgb(var(--ink))]">
+                      {event.label}
+                    </p>
+                    <p className="shrink-0 whitespace-nowrap text-xs text-[rgb(var(--ink-3))]">
+                      {timeAgo(event.created_at)}
+                    </p>
+                  </div>
+                );
+              })}
             </div>
           )}
         </div>

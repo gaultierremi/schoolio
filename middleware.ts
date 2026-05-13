@@ -67,7 +67,15 @@ export async function middleware(request: NextRequest) {
   const isSuperAdmin =
     !!user.email && (SUPER_ADMIN_EMAILS as readonly string[]).includes(user.email.toLowerCase());
 
-  if (isSuperAdmin && pathname.startsWith("/admin")) {
+  // SUPER_ADMIN bypass for all role-gated areas — see everything as a founder,
+  // independent of the role assigned in the whitelist (which determines the
+  // DEFAULT landing page, not the access).
+  if (
+    isSuperAdmin &&
+    (pathname.startsWith("/admin") ||
+      pathname.startsWith("/student") ||
+      pathname.startsWith("/school"))
+  ) {
     return supabaseResponse;
   }
 

@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { Calendar, School, FileText, Brain } from "lucide-react";
 import { SUBJECTS_BY_ID } from "@/lib/subjects";
 import type { SubjectId } from "@/lib/subjects";
 type AssignmentEntry = {
@@ -51,9 +52,9 @@ const STATUS_LABEL: Record<string, string> = {
 };
 
 const STATUS_STYLE: Record<string, string> = {
-  pending: "border-gray-700 text-gray-500",
-  in_progress: "border-amber-600/40 text-amber-400 bg-amber-500/5",
-  completed: "border-green-600/40 text-green-400 bg-green-500/5",
+  pending: "border-[rgb(var(--border))] text-[rgb(var(--ink-3))]",
+  in_progress: "border-[rgb(var(--warm))]/40 text-[rgb(var(--warm))] bg-[rgb(var(--warm))]/5",
+  completed: "border-[rgb(var(--green))]/40 text-[rgb(var(--green))] bg-[rgb(var(--green))]/5",
 };
 
 function AssignmentCard({ a }: { a: AssignmentEntry }) {
@@ -63,31 +64,34 @@ function AssignmentCard({ a }: { a: AssignmentEntry }) {
   return (
     <div
       onClick={() => router.push(`/student/assignments/${a.id}`)}
-      className="flex cursor-pointer flex-col gap-2 rounded-2xl border border-gray-800 bg-gray-900 p-4 transition hover:border-purple-500/40"
+      className="flex cursor-pointer flex-col gap-2 rounded-2xl border border-[rgb(var(--border))] bg-[rgb(var(--surface))] p-4 transition hover:border-[rgb(var(--accent))]/40 hover:bg-[rgb(var(--surface-3))]"
     >
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0">
           <div className="flex items-center gap-2">
-            <span className="shrink-0 text-xs text-gray-600">
-              {a.resource_type === "pdf" ? "📄" : "🧠"}
+            <span className="shrink-0 text-[rgb(var(--ink-3))]">
+              {a.resource_type === "pdf"
+                ? <FileText className="h-3.5 w-3.5" aria-hidden />
+                : <Brain className="h-3.5 w-3.5" aria-hidden />}
             </span>
-            <p className="truncate font-bold text-white">{a.title}</p>
+            <p className="truncate font-bold text-[rgb(var(--ink))]">{a.title}</p>
           </div>
-          <p className="mt-0.5 truncate text-xs text-gray-500">{a.class_name}</p>
+          <p className="mt-0.5 truncate text-xs text-[rgb(var(--ink-3))]">{a.class_name}</p>
         </div>
         <span className={`shrink-0 rounded-full border px-2 py-0.5 text-[11px] font-bold ${STATUS_STYLE[a.status] ?? ""}`}>
           {STATUS_LABEL[a.status] ?? a.status}
         </span>
       </div>
 
-      <div className="flex items-center gap-3 text-xs text-gray-600">
+      <div className="flex items-center gap-3 text-xs text-[rgb(var(--ink-3))]">
         {a.due_date && (
-          <span className={overdue ? "text-red-400 font-bold" : "text-gray-500"}>
-            📅 {overdue ? "En retard · " : ""}{formatDate(a.due_date)}
+          <span className={overdue ? "font-bold text-[rgb(var(--red))]" : "text-[rgb(var(--ink-2))]"}>
+            <Calendar className="mr-1 inline h-3 w-3" aria-hidden />
+            {overdue ? "En retard · " : ""}{formatDate(a.due_date)}
           </span>
         )}
         {a.status === "completed" && a.score !== null && (
-          <span className="text-purple-400 font-bold">{Math.round(Number(a.score))}%</span>
+          <span className="font-bold text-[rgb(var(--accent))]">{Math.round(Number(a.score))}%</span>
         )}
       </div>
     </div>
@@ -108,20 +112,20 @@ function ClassCard({
 
   return (
     <>
-      <div className="flex flex-col gap-3 rounded-2xl border border-gray-800 bg-gray-900 p-5">
+      <div className="flex flex-col gap-3 rounded-2xl border border-[rgb(var(--border))] bg-[rgb(var(--surface))] p-5">
         <div>
-          <p className="font-black text-white">{entry.className}</p>
-          <p className="mt-0.5 text-xs text-gray-500">
+          <p className="font-black text-[rgb(var(--ink))]">{entry.className}</p>
+          <p className="mt-0.5 text-xs text-[rgb(var(--ink-3))]">
             Prof : {entry.teacherName}
-            {subj && <> · {subj.emoji} {subj.label}</>}
+            {subj && <> · {subj.label}</>}
           </p>
         </div>
         <div className="flex items-center justify-between">
-          <p className="text-xs text-gray-600">Rejoint le {formatDate(entry.joinedAt)}</p>
+          <p className="text-xs text-[rgb(var(--ink-3))]">Rejoint le {formatDate(entry.joinedAt)}</p>
           <button
             onClick={() => setConfirmOpen(true)}
             disabled={leaving}
-            className="rounded-lg border border-gray-700 px-2 py-1 text-xs text-gray-500 transition hover:border-red-700/60 hover:text-red-400 disabled:cursor-not-allowed disabled:opacity-50"
+            className="rounded-lg border border-[rgb(var(--border))] px-2 py-1 text-xs text-[rgb(var(--ink-2))] transition hover:border-[rgb(var(--red))]/60 hover:text-[rgb(var(--red))] disabled:cursor-not-allowed disabled:opacity-50"
           >
             Quitter
           </button>
@@ -129,22 +133,22 @@ function ClassCard({
       </div>
 
       {confirmOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-4">
-          <div className="w-full max-w-sm rounded-3xl border border-gray-800 bg-gray-900 p-6 shadow-xl">
-            <h2 className="text-lg font-black text-white">Quitter cette classe ?</h2>
-            <p className="mt-2 text-sm text-gray-400">
-              Tu seras retiré de <span className="font-bold text-white">{entry.className}</span>.
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
+          <div className="w-full max-w-sm rounded-3xl border border-[rgb(var(--border))] bg-[rgb(var(--surface))] p-6 shadow-xl">
+            <h2 className="serif text-lg font-black text-[rgb(var(--ink))]">Quitter cette classe ?</h2>
+            <p className="mt-2 text-sm text-[rgb(var(--ink-2))]">
+              Tu seras retiré de <span className="font-bold text-[rgb(var(--ink))]">{entry.className}</span>.
             </p>
             <div className="mt-6 flex gap-3">
               <button
                 onClick={() => setConfirmOpen(false)}
-                className="flex-1 rounded-2xl border border-gray-700 py-2.5 text-sm font-bold text-gray-300 transition hover:text-white"
+                className="flex-1 rounded-2xl border border-[rgb(var(--border))] py-2.5 text-sm font-bold text-[rgb(var(--ink-2))] transition hover:text-[rgb(var(--ink))]"
               >
                 Annuler
               </button>
               <button
                 onClick={() => { setConfirmOpen(false); onLeave(entry.classId); }}
-                className="flex-1 rounded-2xl bg-red-600 py-2.5 text-sm font-bold text-white transition hover:bg-red-500"
+                className="flex-1 rounded-2xl bg-[rgb(var(--red))] py-2.5 text-sm font-bold text-white transition hover:opacity-90"
               >
                 Quitter
               </button>
@@ -180,14 +184,17 @@ export default function StudentDashboardClient({ classes: initialClasses, assign
       {/* Assignments */}
       {assignments.length > 0 && (
         <div>
-          <h2 className="text-xl font-black text-white">📋 Mes devoirs</h2>
+          <h2 className="serif text-xl font-black text-[rgb(var(--ink))]">
+            <Calendar className="mr-2 inline h-5 w-5 text-[rgb(var(--accent))]" aria-hidden />
+            Mes devoirs
+          </h2>
           <div className="mt-3 flex gap-2">
             <button
               onClick={() => setAssignTab("todo")}
               className={`rounded-full px-4 py-1.5 text-sm font-bold transition ${
                 assignTab === "todo"
-                  ? "bg-purple-500 text-gray-950"
-                  : "border border-gray-700 text-gray-500 hover:border-gray-600 hover:text-gray-300"
+                  ? "bg-[rgb(var(--accent))] text-white"
+                  : "border border-[rgb(var(--border))] text-[rgb(var(--ink-3))] hover:border-[rgb(var(--ink-3))] hover:text-[rgb(var(--ink-2))]"
               }`}
             >
               À faire ({todoAssignments.length})
@@ -196,8 +203,8 @@ export default function StudentDashboardClient({ classes: initialClasses, assign
               onClick={() => setAssignTab("done")}
               className={`rounded-full px-4 py-1.5 text-sm font-bold transition ${
                 assignTab === "done"
-                  ? "bg-purple-500 text-gray-950"
-                  : "border border-gray-700 text-gray-500 hover:border-gray-600 hover:text-gray-300"
+                  ? "bg-[rgb(var(--accent))] text-white"
+                  : "border border-[rgb(var(--border))] text-[rgb(var(--ink-3))] hover:border-[rgb(var(--ink-3))] hover:text-[rgb(var(--ink-2))]"
               }`}
             >
               Fait ({doneAssignments.length})
@@ -205,7 +212,7 @@ export default function StudentDashboardClient({ classes: initialClasses, assign
           </div>
           <div className="mt-3 grid gap-3 sm:grid-cols-2">
             {visibleAssignments.length === 0 ? (
-              <p className="col-span-2 py-6 text-center text-sm text-gray-600">
+              <p className="col-span-2 py-6 text-center text-sm text-[rgb(var(--ink-3))]">
                 {assignTab === "todo" ? "Aucun devoir en attente. Bien joué !" : "Aucun devoir complété pour l'instant."}
               </p>
             ) : (
@@ -217,15 +224,18 @@ export default function StudentDashboardClient({ classes: initialClasses, assign
 
       {/* Classes */}
       <div>
-        <h2 className="text-xl font-black text-white">🏫 Mes classes</h2>
+        <h2 className="serif text-xl font-black text-[rgb(var(--ink))]">
+          <School className="mr-2 inline h-5 w-5 text-[rgb(var(--accent))]" aria-hidden />
+          Mes classes
+        </h2>
         <div className="mt-3">
           {classes.length === 0 ? (
             <div className="mt-4 text-center">
-              <p className="text-4xl">🏫</p>
-              <p className="mt-4 text-lg font-black text-white">Tu n&apos;es inscrit dans aucune classe</p>
+              <School className="mx-auto h-12 w-12 text-[rgb(var(--ink-3))]" aria-hidden />
+              <p className="mt-4 text-lg font-black text-[rgb(var(--ink))]">Tu n&apos;es inscrit dans aucune classe</p>
               <a
                 href="/join"
-                className="mt-4 inline-block rounded-2xl bg-purple-500 px-6 py-2.5 font-black text-gray-950 transition hover:bg-purple-400"
+                className="mt-4 inline-block rounded-2xl bg-[rgb(var(--accent))] px-6 py-2.5 font-black text-white transition hover:opacity-90"
               >
                 Rejoindre une classe
               </a>

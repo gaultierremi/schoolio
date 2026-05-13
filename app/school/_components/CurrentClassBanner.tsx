@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
+import { Clock } from "lucide-react";
 
 type Slot = {
   id: string;
@@ -110,22 +111,25 @@ export function CurrentClassBanner({ slots, weekPatternOverride }: Props) {
     const classHref = slot.class_id ? `/school/classes/${slot.class_id}` : "/school/schedule";
 
     return (
-      <div className="rounded-xl px-5 py-4 bg-gradient-to-r from-purple-900 to-purple-950 border border-purple-700 flex items-center gap-4">
+      <div className="flex items-center gap-4 rounded-xl border border-[rgb(var(--green))]/30 bg-[rgb(var(--green))]/5 px-5 py-4">
         <span className="relative flex h-3 w-3 flex-shrink-0">
-          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75" />
-          <span className="relative inline-flex rounded-full h-3 w-3 bg-green-500" />
+          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[rgb(var(--green))] opacity-75" />
+          <span className="relative inline-flex rounded-full h-3 w-3 bg-[rgb(var(--green))]" />
         </span>
         <div className="flex-1 min-w-0">
-          <p className="text-white font-semibold text-sm truncate">
-            📍 Cours en cours · {label}{subject ? ` · ${subject}` : ""}
+          <p className="truncate text-sm font-semibold text-[rgb(var(--ink))]">
+            Cours en cours · {label}{subject ? ` · ${subject}` : ""}
           </p>
           {ctx.remainingMin !== undefined && (
-            <p className="text-purple-300 text-xs mt-0.5">⏱️ Reste {ctx.remainingMin} min</p>
+            <p className="mt-0.5 flex items-center gap-1 text-xs text-[rgb(var(--ink-3))]">
+              <Clock className="h-3 w-3" aria-hidden />
+              Reste {ctx.remainingMin} min
+            </p>
           )}
         </div>
         <Link
           href={classHref}
-          className="flex-shrink-0 px-3 py-1.5 bg-white/10 hover:bg-white/20 text-white text-xs font-medium rounded-lg transition-colors"
+          className="flex-shrink-0 rounded-lg border border-[rgb(var(--border))] px-3 py-1.5 text-xs font-medium text-[rgb(var(--ink-2))] transition-colors hover:border-[rgb(var(--green))]/40 hover:text-[rgb(var(--ink))]"
         >
           Accéder à la classe →
         </Link>
@@ -139,20 +143,20 @@ export function CurrentClassBanner({ slots, weekPatternOverride }: Props) {
     const classHref = next.class_id ? `/school/classes/${next.class_id}` : "/school/schedule";
 
     return (
-      <div className="rounded-xl px-5 py-4 bg-gradient-to-r from-amber-900 to-amber-950 border border-amber-700 flex items-center gap-4">
+      <div className="flex items-center gap-4 rounded-xl border border-[rgb(var(--warm))]/30 bg-[rgb(var(--warm))]/5 px-5 py-4">
         <span className="relative flex h-3 w-3 flex-shrink-0">
-          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75" />
-          <span className="relative inline-flex rounded-full h-3 w-3 bg-amber-500" />
+          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[rgb(var(--warm))] opacity-75" />
+          <span className="relative inline-flex rounded-full h-3 w-3 bg-[rgb(var(--warm))]" />
         </span>
         <div className="flex-1 min-w-0">
-          <p className="text-white font-semibold text-sm truncate">
-            ⏰ Cours dans {ctx.gapMin} min — {label}
+          <p className="truncate text-sm font-semibold text-[rgb(var(--ink))]">
+            Cours dans {ctx.gapMin} min — {label}
           </p>
-          <p className="text-amber-300 text-xs mt-0.5">{next.start_time.slice(0, 5)}</p>
+          <p className="mt-0.5 text-xs text-[rgb(var(--ink-3))]">{next.start_time.slice(0, 5)}</p>
         </div>
         <Link
           href={classHref}
-          className="flex-shrink-0 px-3 py-1.5 bg-white/10 hover:bg-white/20 text-white text-xs font-medium rounded-lg transition-colors"
+          className="flex-shrink-0 rounded-lg border border-[rgb(var(--border))] px-3 py-1.5 text-xs font-medium text-[rgb(var(--ink-2))] transition-colors hover:border-[rgb(var(--warm))]/40 hover:text-[rgb(var(--ink))]"
         >
           Préparer la classe →
         </Link>

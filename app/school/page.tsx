@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import type { User } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase-browser";
+import { SUPER_ADMIN_EMAILS } from "@/lib/admin-config";
 import DashboardHeader from "./_components/DashboardHeader";
 import ToHandleSection from "./_components/ToHandleSection";
 import KpiGrid from "./_components/KpiGrid";
@@ -75,14 +76,14 @@ type DashboardData = {
 
 function SkeletonPage() {
   return (
-    <main className="min-h-screen bg-gray-950 px-4 py-8">
+    <main className="min-h-screen bg-[rgb(var(--surface-2))] px-4 py-8">
       <div className="mx-auto w-full max-w-4xl space-y-8">
-        <div className="h-5 w-32 animate-pulse rounded-lg bg-gray-800" />
-        <div className="h-10 w-64 animate-pulse rounded-lg bg-gray-800" />
-        <div className="h-10 animate-pulse rounded-xl bg-gray-800" />
+        <div className="h-5 w-32 animate-pulse rounded-lg bg-[rgb(var(--surface-3))]" />
+        <div className="h-10 w-64 animate-pulse rounded-lg bg-[rgb(var(--surface-3))]" />
+        <div className="h-10 animate-pulse rounded-xl bg-[rgb(var(--surface-3))]" />
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
           {[...Array(5)].map((_, i) => (
-            <div key={i} className="h-28 animate-pulse rounded-2xl bg-gray-800" />
+            <div key={i} className="h-28 animate-pulse rounded-2xl bg-[rgb(var(--surface))]" />
           ))}
         </div>
       </div>
@@ -113,7 +114,12 @@ export default function SchoolDashboardPage() {
           supabase.rpc("is_current_user_school_teacher"),
         ]);
 
-      const teacher = rpcData === true && !rpcError;
+      // SUPER_ADMIN bypass — Alex/Gaultier voient TOUS les dashboards
+      // indépendamment de leur role assigné (cf. middleware.ts + /student).
+      const userEmail = userData.user?.email?.toLowerCase();
+      const isSuperAdmin =
+        !!userEmail && (SUPER_ADMIN_EMAILS as readonly string[]).includes(userEmail);
+      const teacher = (rpcData === true && !rpcError) || isSuperAdmin;
       setUser(userData.user);
       setIsTeacher(teacher);
       setAuthLoading(false);
@@ -169,10 +175,10 @@ export default function SchoolDashboardPage() {
 
   if (!isTeacher) {
     return (
-      <main className="min-h-screen bg-gray-950 px-4 py-8 text-white">
-        <div className="mx-auto max-w-xl rounded-3xl border border-red-500/30 bg-red-500/10 p-6">
-          <h1 className="text-2xl font-black text-red-300">Accès refusé</h1>
-          <p className="mt-2 text-gray-300">
+      <main className="min-h-screen bg-[rgb(var(--surface-2))] px-4 py-8 text-[rgb(var(--ink))]">
+        <div className="mx-auto max-w-xl rounded-3xl border border-[rgb(var(--red))]/30 bg-[rgb(var(--red))]/5 p-6">
+          <h1 className="serif text-2xl font-black text-[rgb(var(--red))]">Accès refusé</h1>
+          <p className="mt-2 text-[rgb(var(--ink-2))]">
             Cet espace est réservé aux professeurs autorisés.
           </p>
         </div>
@@ -188,11 +194,11 @@ export default function SchoolDashboardPage() {
   const firstName = (user?.user_metadata?.full_name as string | undefined)?.split(" ")[0] ?? "";
 
   return (
-    <main className="min-h-screen bg-gray-950 px-4 py-8 text-white">
+    <main className="min-h-screen bg-[rgb(var(--surface-2))] px-4 py-8 text-[rgb(var(--ink))]">
       <div className="mx-auto w-full max-w-4xl">
         <Link
           href="/"
-          className="mb-6 inline-block text-sm font-bold text-gray-500 transition-colors hover:text-purple-400"
+          className="mb-6 inline-block text-sm font-bold text-[rgb(var(--ink-3))] transition-colors hover:text-[rgb(var(--accent))]"
         >
           ← Retour à l&apos;accueil
         </Link>

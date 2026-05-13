@@ -1,6 +1,7 @@
 import { createClient as createSupabaseAdminClient } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase-server";
 import { redirect } from "next/navigation";
+import { SUPER_ADMIN_EMAILS } from "@/lib/admin-config";
 import ExplorerFooter from "./_components/ExplorerFooter";
 import DashboardHeader from "./_components/DashboardHeader";
 import AssignmentList from "./_components/AssignmentList";
@@ -43,8 +44,11 @@ export default async function StudentPage() {
 
   // Rule 3: role lives in app_metadata (server-trusted), not user_metadata
   // (which is client-mutable and would let anyone self-promote).
+  // SUPER_ADMIN bypass : founders see every dashboard regardless of role.
   const role = (user.app_metadata as Record<string, unknown>)?.role;
-  if (role !== "student") redirect("/school");
+  const isSuperAdmin =
+    !!user.email && (SUPER_ADMIN_EMAILS as readonly string[]).includes(user.email.toLowerCase());
+  if (role !== "student" && !isSuperAdmin) redirect("/school");
 
   const admin = createAdminClient();
   const now = new Date();
@@ -277,7 +281,7 @@ export default async function StudentPage() {
   }
 
   return (
-    <main className="min-h-screen bg-zinc-950 px-4 py-8 text-white">
+    <main className="min-h-screen bg-[rgb(var(--surface-2))] px-4 py-8 text-[rgb(var(--ink))]">
       <div className="mx-auto flex w-full max-w-2xl flex-col gap-6">
 
         <DashboardHeader
@@ -296,8 +300,8 @@ export default async function StudentPage() {
         <TodaySchedule slots={dashboardData.today_schedule} />
 
         {/* Sprint 0 placeholder — mastery heatmaps rebuilt in Sprint 4 */}
-        <div className="rounded-2xl border border-zinc-800 bg-zinc-900/50 px-5 py-4 text-center">
-          <p className="text-sm font-bold text-zinc-400">
+        <div className="rounded-2xl border border-[rgb(var(--border))] bg-[rgb(var(--surface))] px-5 py-4 text-center">
+          <p className="text-sm font-bold text-[rgb(var(--ink-2))]">
             Tableau de bord en cours de construction (Sprint 4)
           </p>
         </div>
