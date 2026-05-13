@@ -22,7 +22,11 @@ export function buildTheoryPrompt(
   input: TheoryPromptInput
 ): Anthropic.Messages.MessageCreateParamsNonStreaming {
   return {
-    model: "claude-sonnet-4-6",
+    // claude-sonnet-4-5 (not 4-6) — 4-6 rejects assistant message prefill (HTTP 400
+    // "This model does not support assistant message prefill"), which we rely on
+    // to force JSON-pure output without markdown fences. Validated empirically
+    // 13 mai 2026 on jury-histoire E2E.
+    model: "claude-sonnet-4-5",
     max_tokens: 4000,
     messages: [
       {
