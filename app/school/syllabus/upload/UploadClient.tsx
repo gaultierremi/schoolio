@@ -22,7 +22,11 @@ export default function UploadClient({
     programs[0]?.id ?? "",
   );
   const [file, setFile] = useState<File | null>(null);
-  const [fast, setFast] = useState(false);
+  // Fast mode defaults to true : it skips Anthropic batch (24h SLA) and uses
+  // sync calls. Batch mode requires queue infrastructure that doesn't exist
+  // yet (Sprint 2+). Until then fast is the only path that actually
+  // completes — leave it enabled by default.
+  const [fast, setFast] = useState(true);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
