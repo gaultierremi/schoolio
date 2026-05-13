@@ -2,16 +2,19 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, FileUp, Loader2, Plus } from "lucide-react";
-import type { Program } from "./page";
+import Link from "next/link";
+import { ArrowLeft, CheckCircle2, Clock, FileUp, Loader2, Plus, XCircle } from "lucide-react";
+import type { Program, SyllabusRow } from "./page";
 
 type Props = {
   programs: Program[];
   schoolId: string;
+  syllabi: SyllabusRow[];
 };
 
 export default function UploadClient({
   programs: initialPrograms,
+  syllabi,
 }: Props) {
   const router = useRouter();
   const [programs] = useState(initialPrograms);
@@ -241,7 +244,116 @@ export default function UploadClient({
             </>
           )}
         </form>
+
+        {/* Historique des syllabi uploadés */}
+        <section className="mt-12">
+          <h2 className="serif text-xl font-bold text-[rgb(var(--ink))]">
+            Syllabi de l&apos;école
+          </h2>
+          <p className="mt-1 text-xs text-[rgb(var(--ink-3))]">
+            {syllabi.length === 0
+              ? "Aucun upload pour l&apos;instant."
+              : `${syllabi.length} upload${syllabi.length > 1 ? "s" : ""}, du plus récent au plus ancien.`}
+          </p>
+
+          {syllabi.length > 0 && (
+            <div className="mt-4 overflow-hidden rounded-2xl border border-[rgb(var(--border))] bg-[rgb(var(--surface))]">
+              <table className="w-full text-left text-sm">
+                <thead className="border-b border-[rgb(var(--border))] bg-[rgb(var(--surface-2))]">
+                  <tr className="text-[10px] font-bold uppercase tracking-wider text-[rgb(var(--ink-3))]">
+                    <th className="px-4 py-2.5">Fichier</th>
+                    <th className="px-4 py-2.5">Programme</th>
+                    <th className="px-4 py-2.5 text-right">Pages</th>
+                    <th className="px-4 py-2.5 text-right">Concepts</th>
+                    <th className="px-4 py-2.5">Status</th>
+                    <th className="px-4 py-2.5">Date</th>
+                    <th className="px-4 py-2.5"></th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-[rgb(var(--border))]">
+                  {syllabi.map((s) => (
+                    <SyllabusTableRow key={s.jobId} row={s} />
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </section>
       </div>
     </main>
+  );
+}
+
+function SyllabusTableRow({ row }: { row: SyllabusRow }) {
+  const dt = new Date(row.triggeredAt);
+  const dateStr = dt.toLocaleDateString("fr-BE", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  });
+
+  return (
+    <tr className="text-[rgb(var(--ink))]">
+      <td className="px-4 py-3">
+        <p className="truncate font-bold" title={row.filename}>
+          {row.filename}
+        </p>
+      </td>
+      <td className="px-4 py-3 text-[rgb(var(--ink-2))]">
+        <p className="truncate" title={row.programName}>
+          {row.programName}
+        </p>
+      </td>
+      <td className="px-4 py-3 text-right tabular-nums text-[rgb(var(--ink-2))]">
+        {row.pageCount ?? "—"}
+      </td>
+      <td className="px-4 py-3 text-right tabular-nums text-[rgb(var(--ink-2))]">
+        {row.theoryBlocksCount > 0 ? row.theoryBlocksCount : "—"}
+      </td>
+      <td className="px-4 py-3">
+        <StatusBadge status={row.status} />
+      </td>
+      <td className="px-4 py-3 whitespace-nowrap text-xs text-[rgb(var(--ink-3))]">
+        {dateStr}
+      </td>
+      <td className="px-4 py-3">
+        <Link
+          href={`/school/ingestion/${row.jobId}`}
+          className="text-xs font-bold text-[rgb(var(--accent))] hover:underline"
+        >
+          Détail →
+        </Link>
+      </td>
+    </tr>
+  );
+}
+
+function StatusBadge({ status }: { status: SyllabusRow["status"] }) {
+  if (status === "done") {
+    return (
+      <span className="inline-flex items-center gap-1 rounded-full bg-[rgb(var(--green))]/10 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-[rgb(var(--green))]">
+        <CheckCircle2 className="h-3 w-3" /> Intégré
+      </span>
+    );
+  }
+  if (status === "failed") {
+    return (
+      <span className="inline-flex items-center gap-1 rounded-full bg-[rgb(var(--red))]/10 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-[rgb(var(--red))]">
+        <XCircle className="h-3 w-3" /> Échec
+      </span>
+    );
+  }
+  if (status === "pending") {
+    return (
+      <span className="inline-flex items-center gap-1 rounded-full bg-[rgb(var(--surface-3))] px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-[rgb(var(--ink-3))]">
+        <Clock className="h-3 w-3" /> En attente
+      </span>
+    );
+  }
+  // extracting / chunking / batching / storing
+  return (
+    <span className="inline-flex items-center gap-1 rounded-full bg-[rgb(var(--accent))]/10 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-[rgb(var(--accent))]">
+      <Loader2 className="h-3 w-3 animate-spin" /> En cours
+    </span>
   );
 }

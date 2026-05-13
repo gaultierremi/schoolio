@@ -7,7 +7,10 @@ import { createClient as createSupabaseAdminClient } from "@supabase/supabase-js
 import { runIngestion } from "@/lib/ingestion/orchestrator";
 
 export const dynamic = "force-dynamic";
-export const maxDuration = 60;
+// 300s = 5 min, the max for Vercel Pro. In fast mode (sync Anthropic calls),
+// a small syllabus (~5 UAAs) finishes in 30-60s comfortably. Batch mode needs
+// a proper queue (Inngest, Supabase Edge cron) — Sprint 2+.
+export const maxDuration = 300;
 
 const UUID_RE = /^[0-9a-f-]{36}$/i;
 const SHA256_RE = /^[0-9a-f]{64}$/i;
@@ -75,13 +78,34 @@ export async function POST(req: NextRequest) {
       return apiError(`Création du job échouée : ${insErr?.message ?? "no rows"}`, 500);
     }
 
-    // Kick off the orchestrator — DON'T await. The route handler returns immediately
-    // with the jobId; the status page polls /api/ingestion/[jobId] for progress.
-    // The orchestrator's batch-polling loop will be killed when the Vercel function
-    // times out at 60s; the batch continues on Anthropic's side.
-    void runIngestion(job.id, { fast }).catch((err) => {
-      console.error(`[/api/ingestion/trigger] runIngestion ${job.id} failed:`, err);
-    });
+    // In fast mode : await the orchestrator. Vercel kills any background promise
+    // when the response is returned, so a `void runIngestion(...)` would never
+    // actually run. Awaiting blocks the route up to maxDuration (300s) — plenty
+    // for a small syllabus in sync mode.
+    //
+    // In batch (non-fast) mode : the orchestrator's 6h polling loop is still
+    // killed at 300s. The batch continues on Anthropic's side, but we have no
+    // queue today to pick up the results. Until Sprint 2+ ships a queue,
+    // recommend fast=true for all dogfood uploads.
+    if (fast) {
+      try {
+        await runIngestion(job.id, { fast: true });
+      } catch (err) {
+        // Orchestrator already set status=failed via setStatus. Surface the
+        // error to the caller so the upload UI can react ; the status page
+        // also displays the error_message in DB.
+        const message = (err as Error).message || "Erreur durant l'ingestion";
+        return apiError(`Ingestion échouée : ${message}`, 500);
+      }
+    } else {
+      // Fire-and-forget — known limitation, batch mode won't actually progress
+      // until queue infrastructure lands. Surface the limitation via 202 with a
+      // clear flag so the UI can warn.
+      void runIngestion(job.id, { fast: false }).catch((err) => {
+        console.error(`[/api/ingestion/trigger] runIngestion ${job.id} failed:`, err);
+      });
+      return apiOk({ jobId: job.id, warning: "batch mode requires queue infrastructure (not yet built) — use fast mode for dogfood" }, 202);
+    }
 
     return apiOk({ jobId: job.id });
   } catch (err) {
