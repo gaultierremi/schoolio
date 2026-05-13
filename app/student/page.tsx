@@ -41,7 +41,9 @@ export default async function StudentPage() {
 
   if (!user) redirect("/");
 
-  const role = (user.user_metadata as Record<string, unknown>)?.role;
+  // Rule 3: role lives in app_metadata (server-trusted), not user_metadata
+  // (which is client-mutable and would let anyone self-promote).
+  const role = (user.app_metadata as Record<string, unknown>)?.role;
   if (role !== "student") redirect("/school");
 
   const admin = createAdminClient();

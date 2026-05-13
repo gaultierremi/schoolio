@@ -64,11 +64,14 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ ok: true, already_member: true, class_name: cls.name });
     }
 
-    // Ensure user is set as student (Google OAuth users may have no role yet)
+    // Ensure user is set as student in app_metadata (server-trusted; rule 3).
+    // Writing to user_metadata.role is a self-promotion vector — only the auth
+    // callback's role-resolver and this server-side admin path may set roles.
     const meta = (user.user_metadata ?? {}) as Record<string, unknown>;
-    if (!meta.role) {
+    const appMeta = (user.app_metadata ?? {}) as Record<string, unknown>;
+    if (!appMeta.role) {
       await admin.auth.admin.updateUserById(user.id, {
-        user_metadata: { role: "student" },
+        app_metadata: { ...appMeta, role: "student" },
       });
     }
 
