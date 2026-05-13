@@ -1,7 +1,7 @@
 "use client";
 import Link from "next/link";
 import {
-  Upload, School, Play, PencilLine, Zap, Calendar, type LucideIcon,
+  Upload, School, Play, PencilLine, Zap, CalendarDays, type LucideIcon,
 } from "lucide-react";
 
 type Action = {
@@ -55,14 +55,14 @@ const ACTIONS: Action[] = [
     textClass: "text-cyan-700",
   },
   {
-    label: "Mon emploi du temps",
-    Icon: Calendar,
+    label: "Mon horaire",
+    Icon: CalendarDays,
     href: "/school/schedule",
     containerClass: "border-indigo-400/20 bg-indigo-50 hover:bg-indigo-100",
     iconClass: "text-indigo-700",
     textClass: "text-indigo-700",
   },
-] as const;
+];
 
 export default function QuickActions() {
   return (

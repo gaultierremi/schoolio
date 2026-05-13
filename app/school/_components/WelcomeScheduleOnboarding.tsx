@@ -2,7 +2,7 @@
 
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { Calendar } from "lucide-react";
+import { CalendarDays } from "lucide-react";
 
 type Props = {
   firstName: string;
@@ -36,12 +36,12 @@ export function WelcomeScheduleOnboarding({ firstName, onDismiss }: Props) {
       onClick={(e) => { if (e.target === e.currentTarget) void handleLater(); }}
     >
       <div className="mx-4 w-full max-w-sm rounded-2xl border border-[rgb(var(--border))] bg-[rgb(var(--surface))] p-7 text-center shadow-xl">
-        <Calendar className="mx-auto mb-3 h-10 w-10 text-[rgb(var(--accent))]" aria-hidden />
+        <CalendarDays className="mx-auto mb-3 h-10 w-10 text-[rgb(var(--accent))]" aria-hidden />
         <h2 className="serif mb-2 text-xl font-bold text-[rgb(var(--ink))]">
           Bienvenue{firstName ? `, ${firstName}` : ""} !
         </h2>
         <p className="mb-6 text-sm text-[rgb(var(--ink-2))]">
-          Configure ton emploi du temps pour que Maïa affiche tes cours du moment et t&apos;aide à mieux t&apos;organiser.
+          Configure ton horaire pour que Maïa affiche tes cours du moment et t&apos;aide à mieux t&apos;organiser.
         </p>
         <div className="flex flex-col gap-2">
           <button

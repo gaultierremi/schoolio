@@ -2,8 +2,10 @@
 
 import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
+import { CalendarDays } from "lucide-react";
 import { ScheduleGrid } from "./_components/ScheduleGrid";
 import { SlotModal } from "./_components/SlotModal";
+import { ClassHoursSummary } from "./_components/ClassHoursSummary";
 
 type Slot = {
   id: string;
@@ -95,7 +97,10 @@ export default function SchedulePage() {
 
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
           <div>
-            <h1 className="text-2xl font-bold text-white">Mon emploi du temps 🗓️</h1>
+            <h1 className="flex items-center gap-2 text-2xl font-bold text-white">
+              <CalendarDays className="h-6 w-6 shrink-0" aria-hidden="true" />
+              Mon horaire
+            </h1>
             <p className="text-gray-400 text-sm mt-1">Clique sur une case pour ajouter un créneau</p>
           </div>
           <button
@@ -137,6 +142,11 @@ export default function SchedulePage() {
             </div>
           </div>
         </div>
+
+        {/* Class hours summary */}
+        {!loading && slots.length > 0 && (
+          <ClassHoursSummary slots={slots} />
+        )}
 
         {/* Grid */}
         {loading ? (
