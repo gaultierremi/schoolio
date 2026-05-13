@@ -117,11 +117,12 @@ export async function GET(request: NextRequest) {
     destination = "/student";
   }
 
-  // Build the final response, preserving the auth cookies set by Supabase
-  // during exchangeCodeForSession.
-  const finalResponse = NextResponse.redirect(origin + destination);
-  response.cookies.getAll().forEach((cookie) => {
-    finalResponse.cookies.set(cookie);
-  });
-  return finalResponse;
+  // Mutate the existing response's Location header instead of building a new
+  // response + copying cookies. Copying ResponseCookies via getAll()+set() was
+  // dropping the auth cookies (Supabase chunks large session payloads across
+  // sb-*-auth-token.0, .1, .2 cookies — the copy was lossy). Mutating the
+  // existing response preserves ALL Set-Cookie headers exactly as Supabase
+  // wrote them.
+  response.headers.set("location", origin + destination);
+  return response;
 }
