@@ -4,6 +4,7 @@ import { apiError, apiOk, safeError } from "@/lib/api/respond";
 import { createClient } from "@/lib/supabase-server";
 import { requireSchoolMembership } from "@/lib/tenant";
 import { createClient as createSupabaseAdminClient } from "@supabase/supabase-js";
+import { logError } from "@/lib/observability/log-error";
 
 export const dynamic = "force-dynamic";
 
@@ -67,6 +68,10 @@ export async function GET(
       theoryBlocksCount: count ?? 0,
     });
   } catch (err) {
+    await logError(err, {
+      source: "api.ingestion.status.GET",
+      context: { route: `/api/ingestion/${params.jobId}` },
+    });
     return safeError(err, "ingestion:status");
   }
 }

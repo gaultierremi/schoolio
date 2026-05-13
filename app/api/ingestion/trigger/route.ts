@@ -6,6 +6,7 @@ import { createClient } from "@/lib/supabase-server";
 import { requireSchoolMembership } from "@/lib/tenant";
 import { createClient as createSupabaseAdminClient } from "@supabase/supabase-js";
 import { runIngestion } from "@/lib/ingestion/orchestrator";
+import { logError } from "@/lib/observability/log-error";
 
 export const dynamic = "force-dynamic";
 // 300s = 5 min, the max for Vercel Pro. In fast mode (sync Anthropic calls),
@@ -91,12 +92,19 @@ export async function POST(req: NextRequest) {
     // dogfood uploads until Sprint 2+ ships queue infrastructure.
     waitUntil(
       runIngestion(job.id, { fast }).catch((err) => {
+        // Inside waitUntil — orchestrator already calls logError on its own
+        // catch path, this is just the final fence in case something synchronous
+        // throws between waitUntil scheduling and the orchestrator's try block.
         console.error(`[/api/ingestion/trigger] runIngestion ${job.id} failed:`, err);
-      })
+      }),
     );
 
     return apiOk({ jobId: job.id });
   } catch (err) {
+    await logError(err, {
+      source: "api.ingestion.trigger.POST",
+      context: { route: "/api/ingestion/trigger" },
+    });
     return safeError(err, "ingestion:trigger");
   }
 }
