@@ -49,17 +49,26 @@ type Props = {
 export function SlotModal({ slot, defaultDay, defaultTime, classes, onClose, onSaved }: Props) {
   const isEdit = slot !== null;
 
-  const [dayOfWeek, setDayOfWeek] = useState(slot?.day_of_week ?? defaultDay ?? 1);
-  const [startTime, setStartTime] = useState(slot?.start_time?.slice(0, 5) ?? defaultTime ?? "08:00");
-  const [endTime, setEndTime] = useState(() => {
-    if (slot?.end_time) return slot.end_time.slice(0, 5);
-    if (defaultTime) {
-      const [h, m] = defaultTime.split(":").map(Number);
-      const endMin = h * 60 + m + 60;
-      return `${String(Math.floor(endMin / 60)).padStart(2, "0")}:${String(endMin % 60).padStart(2, "0")}`;
-    }
-    return "09:00";
-  });
+  // Une "séance" = un triplet (day_of_week, start_time, end_time).
+  // En mode création, on supporte 1-N séances pour la même classe, créées
+  // d'un seul submit. En mode édition, toujours 1 (la séance courante).
+  type SessionRow = { day_of_week: number; start_time: string; end_time: string };
+
+  const defaultEndTime = (st: string) => {
+    const [h, m] = st.split(":").map(Number);
+    const endMin = h * 60 + m + 60;
+    return `${String(Math.floor(endMin / 60)).padStart(2, "0")}:${String(endMin % 60).padStart(2, "0")}`;
+  };
+
+  const initialStart = slot?.start_time?.slice(0, 5) ?? defaultTime ?? "08:00";
+  const initialEnd = slot?.end_time?.slice(0, 5) ?? defaultEndTime(initialStart);
+
+  const [sessions, setSessions] = useState<SessionRow[]>([{
+    day_of_week: slot?.day_of_week ?? defaultDay ?? 1,
+    start_time: initialStart,
+    end_time: initialEnd,
+  }]);
+
   const [weekPattern, setWeekPattern] = useState<"all" | "A" | "B">(
     (slot?.week_pattern as "all" | "A" | "B") ?? "all"
   );
@@ -71,6 +80,21 @@ export function SlotModal({ slot, defaultDay, defaultTime, classes, onClose, onS
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [results, setResults] = useState<{ ok: number; conflicts: number; errors: number } | null>(null);
+
+  function updateSession(idx: number, patch: Partial<SessionRow>) {
+    setSessions((prev) => prev.map((s, i) => (i === idx ? { ...s, ...patch } : s)));
+  }
+  function addSession() {
+    setSessions((prev) => {
+      const last = prev[prev.length - 1];
+      // Auto-pick "lendemain" pour éviter conflit avec le précédent
+      return [...prev, { day_of_week: (last.day_of_week + 1) % 7, start_time: last.start_time, end_time: last.end_time }];
+    });
+  }
+  function removeSession(idx: number) {
+    setSessions((prev) => (prev.length > 1 ? prev.filter((_, i) => i !== idx) : prev));
+  }
 
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
@@ -83,27 +107,66 @@ export function SlotModal({ slot, defaultDay, defaultTime, classes, onClose, onS
   async function handleSave() {
     setSaving(true);
     setError(null);
-    const body = {
-      day_of_week: dayOfWeek,
-      start_time: startTime,
-      end_time: endTime,
+    setResults(null);
+
+    const sharedBody = {
       week_pattern: weekPattern,
       class_id: useClass && classId ? classId : null,
       subject_label: !useClass && subjectLabel.trim() ? subjectLabel.trim() : null,
       custom_color: color,
       notes: notes.trim() || null,
     };
+
     try {
-      const url = isEdit ? `/api/school/schedule/${slot.id}` : "/api/school/schedule";
-      const method = isEdit ? "PATCH" : "POST";
-      const res = await fetch(url, {
-        method,
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body),
-      });
-      const data = await res.json() as { error?: string };
-      if (!res.ok) throw new Error(data.error ?? "Erreur");
-      onSaved();
+      if (isEdit) {
+        // Mode édition : on n'édite qu'une seule séance (la 1ère).
+        const s = sessions[0];
+        const res = await fetch(`/api/school/schedule/${slot.id}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ ...sharedBody, day_of_week: s.day_of_week, start_time: s.start_time, end_time: s.end_time }),
+        });
+        const data = await res.json() as { error?: string };
+        if (!res.ok) throw new Error(data.error ?? "Erreur");
+        onSaved();
+        return;
+      }
+
+      // Mode création : on POST chaque séance, agrégat des résultats.
+      let ok = 0;
+      let conflicts = 0;
+      let errors = 0;
+      const errMsgs: string[] = [];
+      for (const s of sessions) {
+        const res = await fetch("/api/school/schedule", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ ...sharedBody, day_of_week: s.day_of_week, start_time: s.start_time, end_time: s.end_time }),
+        });
+        if (res.ok) {
+          ok++;
+        } else if (res.status === 409) {
+          conflicts++;
+        } else {
+          errors++;
+          const data = await res.json().catch(() => ({} as { error?: string }));
+          if (data.error && !errMsgs.includes(data.error)) errMsgs.push(data.error);
+        }
+      }
+
+      setResults({ ok, conflicts, errors });
+
+      if (ok === sessions.length) {
+        // Tout passe → ferme + refresh
+        onSaved();
+      } else if (ok > 0) {
+        // Partial → garde le modal ouvert pour montrer les résultats, refresh la grille
+        onSaved();
+        if (errMsgs.length > 0) setError(errMsgs[0]);
+      } else {
+        // Aucun succès
+        setError(errMsgs[0] ?? (conflicts === sessions.length ? "Tous les créneaux chevauchent l'existant" : "Erreur"));
+      }
     } catch (e) {
       setError(e instanceof Error ? e.message : "Erreur");
     } finally {
@@ -140,40 +203,66 @@ export function SlotModal({ slot, defaultDay, defaultTime, classes, onClose, onS
         </h2>
 
         <div className="space-y-4">
-          {/* Day */}
-          <div>
-            <label className="block text-xs text-gray-400 mb-1">Jour</label>
-            <select
-              value={dayOfWeek}
-              onChange={(e) => setDayOfWeek(Number(e.target.value))}
-              className="w-full bg-gray-800 border border-gray-600 rounded-lg px-3 py-2 text-white text-sm"
-            >
-              {DAYS.map((d) => (
-                <option key={d.value} value={d.value}>{d.label}</option>
-              ))}
-            </select>
-          </div>
-
-          {/* Times */}
-          <div className="flex gap-3">
-            <div className="flex-1">
-              <label className="block text-xs text-gray-400 mb-1">Début</label>
-              <input
-                type="time"
-                value={startTime}
-                onChange={(e) => setStartTime(e.target.value)}
-                className="w-full bg-gray-800 border border-gray-600 rounded-lg px-3 py-2 text-white text-sm"
-              />
+          {/* Sessions : 1 ou plusieurs (uniquement en création) */}
+          <div className="space-y-2">
+            <div className="flex items-baseline justify-between">
+              <label className="text-xs text-gray-400">
+                {isEdit ? "Créneau" : sessions.length > 1 ? `Séances (${sessions.length})` : "Séance"}
+              </label>
+              {!isEdit && (
+                <button
+                  type="button"
+                  onClick={addSession}
+                  className="text-xs font-bold text-indigo-400 transition hover:text-indigo-300"
+                >
+                  + Ajouter une séance
+                </button>
+              )}
             </div>
-            <div className="flex-1">
-              <label className="block text-xs text-gray-400 mb-1">Fin</label>
-              <input
-                type="time"
-                value={endTime}
-                onChange={(e) => setEndTime(e.target.value)}
-                className="w-full bg-gray-800 border border-gray-600 rounded-lg px-3 py-2 text-white text-sm"
-              />
-            </div>
+            {sessions.map((s, idx) => (
+              <div key={idx} className="flex items-end gap-2">
+                <div className="flex-1">
+                  {idx === 0 && <label className="block text-[10px] text-gray-500 mb-0.5">Jour</label>}
+                  <select
+                    value={s.day_of_week}
+                    onChange={(e) => updateSession(idx, { day_of_week: Number(e.target.value) })}
+                    className="w-full bg-gray-800 border border-gray-600 rounded-lg px-2 py-1.5 text-white text-sm"
+                  >
+                    {DAYS.map((d) => (
+                      <option key={d.value} value={d.value}>{d.label}</option>
+                    ))}
+                  </select>
+                </div>
+                <div className="w-24">
+                  {idx === 0 && <label className="block text-[10px] text-gray-500 mb-0.5">Début</label>}
+                  <input
+                    type="time"
+                    value={s.start_time}
+                    onChange={(e) => updateSession(idx, { start_time: e.target.value })}
+                    className="w-full bg-gray-800 border border-gray-600 rounded-lg px-2 py-1.5 text-white text-sm"
+                  />
+                </div>
+                <div className="w-24">
+                  {idx === 0 && <label className="block text-[10px] text-gray-500 mb-0.5">Fin</label>}
+                  <input
+                    type="time"
+                    value={s.end_time}
+                    onChange={(e) => updateSession(idx, { end_time: e.target.value })}
+                    className="w-full bg-gray-800 border border-gray-600 rounded-lg px-2 py-1.5 text-white text-sm"
+                  />
+                </div>
+                {!isEdit && sessions.length > 1 && (
+                  <button
+                    type="button"
+                    onClick={() => removeSession(idx)}
+                    aria-label="Retirer cette séance"
+                    className="h-[34px] w-7 flex items-center justify-center rounded-lg text-gray-500 transition hover:bg-red-900/30 hover:text-red-400"
+                  >
+                    ×
+                  </button>
+                )}
+              </div>
+            ))}
           </div>
 
           {/* Week pattern */}
@@ -260,6 +349,13 @@ export function SlotModal({ slot, defaultDay, defaultTime, classes, onClose, onS
           </div>
         </div>
 
+        {results && (results.conflicts > 0 || results.errors > 0) && (
+          <div className="mt-3 rounded-lg border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-xs text-amber-200">
+            {results.ok} créée{results.ok !== 1 ? "s" : ""}
+            {results.conflicts > 0 && ` · ${results.conflicts} en conflit avec l'existant`}
+            {results.errors > 0 && ` · ${results.errors} erreur${results.errors !== 1 ? "s" : ""}`}
+          </div>
+        )}
         {error && (
           <p className="mt-3 text-sm text-red-400">{error}</p>
         )}

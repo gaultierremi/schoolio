@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient as createSupabaseAdminClient } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase-server";
+import { requireSchoolMembership } from "@/lib/tenant";
 import { logActivity } from "@/lib/activity/log";
 
 export const dynamic = "force-dynamic";
@@ -90,6 +91,11 @@ export async function POST(req: NextRequest) {
     const { data: isTeacher } = await supabase.rpc("is_current_user_school_teacher");
     if (isTeacher !== true) return NextResponse.json({ error: "Accès refusé" }, { status: 403 });
 
+    // teacher_schedule_slots.school_id devenu NOT NULL via migration multi-tenant
+    // (20260513140100_add_school_id_to_tables + 20260513160000_seed_foundertestground).
+    // L'insert plantait avec contrainte NOT NULL — bug corrigé ici.
+    const schoolId = await requireSchoolMembership(supabase);
+
     const body = (await req.json()) as CreateBody;
 
     const day_of_week = typeof body.day_of_week === "number" && Number.isInteger(body.day_of_week) && body.day_of_week >= 0 && body.day_of_week <= 6
@@ -133,7 +139,7 @@ export async function POST(req: NextRequest) {
 
     const { data: slot, error: insertError } = await admin
       .from("teacher_schedule_slots")
-      .insert({ teacher_id: user.id, day_of_week, start_time, end_time, week_pattern, class_id, subject_label, custom_color, notes })
+      .insert({ teacher_id: user.id, school_id: schoolId, day_of_week, start_time, end_time, week_pattern, class_id, subject_label, custom_color, notes })
       .select("*")
       .single();
 
