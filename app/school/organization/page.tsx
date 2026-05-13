@@ -982,7 +982,7 @@ function EmptyState({ onCreateClick, onBatchCreate, batchCreating }: EmptyStateP
           Ton organisation, tes règles.
         </h2>
         <p className="mt-3 text-gray-400 leading-relaxed">
-          ✨ Crée ta propre organisation. Schoolio s&apos;adapte à comment{" "}
+          ✨ Crée ta propre organisation. Maïa s&apos;adapte à comment{" "}
           <span className="font-bold text-purple-300">TU</span> enseignes, pas l&apos;inverse.
         </p>
 
@@ -1251,7 +1251,7 @@ export default function OrganizationPage() {
           {/* ── Baseline ── */}
           <div className="mb-6">
             <p className="text-xs font-bold uppercase tracking-widest text-purple-300">
-              ✨ Schoolio — Organisation
+              ✨ Maïa — Organisation
             </p>
           </div>
 

@@ -28,7 +28,7 @@ export default async function JoinPage({
         {/* Logo */}
         <div className="text-center">
           <div className="inline-flex items-center gap-2 rounded-full border border-purple-500/20 bg-purple-500/10 px-4 py-1.5 text-xs font-black uppercase tracking-widest text-purple-400">
-            🎓 Schoolio
+            🎓 Maïa
           </div>
           <h1 className="mt-4 text-3xl font-black text-white">
             Rejoindre une classe
@@ -60,7 +60,7 @@ export default async function JoinPage({
         <p className="text-center text-xs text-zinc-700">
           Tu as déjà un compte ?{" "}
           <a href="/" className="text-zinc-500 hover:text-zinc-300">
-            Accéder à Schoolio
+            Accéder à Maïa
           </a>
         </p>
 

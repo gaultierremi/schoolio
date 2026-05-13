@@ -111,7 +111,7 @@ export default function LandingPage() {
         </p>
 
         <p className="mx-auto mt-4 max-w-xl text-base text-gray-500">
-          Schoolio combine intelligence artificielle et pédagogie adaptative
+          Maïa combine intelligence artificielle et pédagogie adaptative
           pour transformer chaque session d&apos;étude en progrès mesurable.
         </p>
 
@@ -130,7 +130,7 @@ export default function LandingPage() {
       <section className="mx-auto max-w-6xl px-4 py-20">
         <motion.div {...fadeUpProps(0, reduced)}>
           <p className="text-xs font-bold uppercase tracking-widest text-purple-400">
-            Schoolio s&apos;adapte à toi
+            Maïa s&apos;adapte à toi
           </p>
           <h2 className="mt-3 text-3xl font-black text-white md:text-4xl">
             Pour les curieux, les enseignants,
@@ -142,20 +142,20 @@ export default function LandingPage() {
           <AudienceCard
             emoji="🎒"
             title="Élèves & étudiants"
-            description="Ne révise plus au hasard. Schoolio identifie tes lacunes et te propose les questions qui te feront vraiment progresser. Concept par concept."
+            description="Ne révise plus au hasard. Maïa identifie tes lacunes et te propose les questions qui te feront vraiment progresser. Concept par concept."
             delay={0}
           />
           <AudienceCard
             emoji="🎓"
             title="Enseignants"
-            description="Uploade un PDF de cours. Schoolio génère 25 questions calibrées en 60 secondes. Suis la progression de chaque élève sans corriger une seule copie."
+            description="Uploade un PDF de cours. Maïa génère 25 questions calibrées en 60 secondes. Suis la progression de chaque élève sans corriger une seule copie."
             featured
             delay={0.1}
           />
           <AudienceCard
             emoji="🚀"
             title="Autodidactes"
-            description="Apprends ce que tu veux, à ton rythme. Permis, droit, médecine, langues — Schoolio s'adapte à n'importe quelle matière."
+            description="Apprends ce que tu veux, à ton rythme. Permis, droit, médecine, langues — Maïa s'adapte à n'importe quelle matière."
             delay={0.2}
           />
         </div>
@@ -180,7 +180,7 @@ export default function LandingPage() {
           <StepCard
             number="02"
             title="L'IA personnalise"
-            description="Schoolio comprend tes points forts et tes lacunes. Chaque question que tu vois est choisie pour toi."
+            description="Maïa comprend tes points forts et tes lacunes. Chaque question que tu vois est choisie pour toi."
             delay={0.1}
           />
           <StepCard
@@ -207,12 +207,12 @@ export default function LandingPage() {
           </h2>
           <p className="mt-6 text-lg leading-relaxed text-gray-400">
             Beaucoup utilisent aujourd&apos;hui l&apos;intelligence artificielle pour éviter
-            d&apos;apprendre. Schoolio fait l&apos;inverse. Nous croyons que l&apos;IA, bien
+            d&apos;apprendre. Maïa fait l&apos;inverse. Nous croyons que l&apos;IA, bien
             utilisée, est l&apos;outil le plus puissant jamais inventé pour révéler le
             potentiel de chacun. Pas pour penser à ta place. Pour te muscler le cerveau.
           </p>
           <p className="mt-6 text-sm italic text-gray-600">
-            — L&apos;équipe Schoolio
+            — L&apos;équipe Maïa
           </p>
         </motion.div>
       </section>
@@ -234,7 +234,7 @@ export default function LandingPage() {
       {/* §6 — FOOTER */}
       <footer className="border-t border-gray-900 py-8 text-center">
         <p className="text-sm text-gray-600">
-          © 2026 Schoolio · Beta active · Construit par Gaultier en Belgique 🇧🇪
+          © 2026 Maïa · Beta active · Construit par Gaultier en Belgique 🇧🇪
         </p>
       </footer>
 

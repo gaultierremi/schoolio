@@ -7,8 +7,8 @@ import "katex/dist/katex.min.css";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "Schoolio · Apprends avec l'IA. Pas à sa place.",
-  description: "La plateforme qui révèle ton potentiel.",
+  title: "Maïa — Apprentissage augmenté",
+  description: "Plateforme de renforcement adaptive pour le secondaire FW-B. Le prof reste l'autorité pédagogique.",
 };
 
 export default function RootLayout({

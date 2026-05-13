@@ -9,13 +9,13 @@ type Props = {
 const STEPS = [
   {
     emoji: "🎒",
-    title: "Bienvenue sur Schoolio !",
+    title: "Bienvenue sur Maïa !",
     body: "Ton espace élève centralise tes devoirs, tes classes et ton entraînement. Tout est ici.",
   },
   {
     emoji: "🔁",
     title: "La révision quotidienne",
-    body: "Chaque jour, Schoolio te propose des questions sur tes points faibles. Quelques minutes suffisent pour progresser.",
+    body: "Chaque jour, Maïa te propose des questions sur tes points faibles. Quelques minutes suffisent pour progresser.",
   },
   {
     emoji: "🏫",

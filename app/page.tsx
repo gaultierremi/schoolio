@@ -95,7 +95,7 @@ export default async function SchoolioHomePage() {
         {/* Hero */}
         <div className="mb-10 text-center">
           <div className="inline-flex items-center gap-2 rounded-full border border-purple-500/20 bg-purple-500/10 px-4 py-1.5 text-xs font-black uppercase tracking-widest text-purple-400">
-            🎓 Schoolio
+            🎓 Maïa
           </div>
           <h1 className="mt-4 text-4xl font-black tracking-tight text-white sm:text-5xl">
             Ta plateforme
