@@ -6,18 +6,14 @@ import { useQuestionsPage } from "./_hooks/useQuestionsPage";
 import { FilterBar } from "./_components/FilterBar";
 import { QuestionForm } from "./_components/QuestionForm";
 import { SubjectLevelSelector } from "./_components/SubjectLevelSelector";
-import { PdfUploadZone } from "./_components/PdfUploadZone";
-import { DraftCard } from "./_components/DraftCard";
 import { PendingCard } from "./_components/PendingCard";
 import { ValidatedCard } from "./_components/ValidatedCard";
 import { RejectedCard } from "./_components/RejectedCard";
-import { TypeBadge } from "./_components/TypeBadge";
 import { SubjectSidebar, type QuestionType } from "./_components/SubjectSidebar";
 
 export default function SchoolQuestionsPage() {
   const {
     isTeacher, pageLoading,
-    tab, setTab,
     valTab, setValTab,
     showForm, setShowForm,
     form, setForm,
@@ -33,22 +29,12 @@ export default function SchoolQuestionsPage() {
     fadingIds, validatingId, rejectingId,
     valToast, isBusy,
     proposeStatuses,
-    pdfLoading, pdfError, pdfWarning, pdfProgress, pdfStats,
-    drafts, setDrafts,
-    savingDrafts,
-    pdfSubject, setPdfSubject,
-    pdfLevel, setPdfLevel,
     generatingExplanation,
-    pubFilterType, setPubFilterType,
-    pubFilterPeriod, setPubFilterPeriod,
-    pubFilterText, setPubFilterText,
-    addingId,
     pendingQuestions, rejectedQuestions, validatedQuestionsBase,
-    hasValidatedFilter, filteredValidated, sortedValidated, filteredPublic,
+    hasValidatedFilter, filteredValidated, sortedValidated,
     resetForm, startEdit, saveQuestion, deleteQuestion,
     togglePublic, duplicateQuestion, generateExplanation,
     validateQuestion, rejectQuestion, callUnvalidate, updateQuestionDifficulty, proposeQuestion,
-    handlePdfUpload, saveDrafts, addPublicQuestion,
   } = useQuestionsPage();
 
   // Filtre sidebar matière + thème + type, scoped à l'onglet "à valider".
@@ -114,38 +100,24 @@ export default function SchoolQuestionsPage() {
           ← Espace professeur
         </a>
 
-        <h1 className="mt-4 text-4xl font-black">Mes questions</h1>
+        <h1 className="mt-4 text-4xl font-black">
+          Mes questions ({myQuestions.length})
+        </h1>
         <p className="mt-2 text-[rgb(var(--ink-2))]">
-          Crée, importe depuis un PDF et gère tes questions de quiz.
+          Crée et gère tes questions de quiz. L&apos;import PDF se fait depuis l&apos;onglet
+          {" "}
+          <a
+            href="/school/import"
+            className="font-bold text-[rgb(var(--accent))] hover:underline"
+          >
+            Importer
+          </a>
+          .
         </p>
-
-        {/* Outer tabs */}
-        <div className="mt-6 flex gap-1 border-b border-[rgb(var(--border))]">
-          {(
-            [
-              { key: "my", label: `Mes questions (${myQuestions.length})` },
-              { key: "pdf", label: "Importer PDF" },
-              { key: "public", label: "Bibliothèque HistoGuess" },
-            ] as const
-          ).map(({ key, label }) => (
-            <button
-              key={key}
-              onClick={() => setTab(key)}
-              className={`rounded-t-xl px-4 py-3 text-sm font-black transition ${
-                tab === key
-                  ? "bg-[rgb(var(--surface))] text-[rgb(var(--accent))]"
-                  : "text-[rgb(var(--ink-3))] hover:text-[rgb(var(--ink))]"
-              }`}
-            >
-              {label}
-            </button>
-          ))}
-        </div>
 
         <div className="mt-6">
           {/* ── My questions ── */}
-          {tab === "my" && (
-            <div>
+          <div>
               {showForm ? (
                 <QuestionForm
                   form={form}
@@ -404,146 +376,6 @@ export default function SchoolQuestionsPage() {
                 </div>
               )}
             </div>
-          )}
-
-          {/* ── PDF import ── */}
-          {tab === "pdf" && (
-            <div>
-              {drafts.length === 0 ? (
-                <div className="space-y-4">
-                  <SubjectLevelSelector
-                    subjectId={pdfSubject}
-                    level={pdfLevel}
-                    onSubjectChange={(id) => {
-                      if (id) setPdfSubject(id);
-                    }}
-                    onLevelChange={setPdfLevel}
-                  />
-                  <PdfUploadZone
-                    loading={pdfLoading}
-                    error={pdfError}
-                    warning={pdfWarning}
-                    progress={pdfProgress}
-                    pdfStats={pdfStats}
-                    onFile={handlePdfUpload}
-                  />
-                </div>
-              ) : (
-                <div>
-                  <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
-                    <p className="font-black text-[rgb(var(--ink))]">
-                      {drafts.filter((d) => d.kept).length} /{" "}
-                      {drafts.length} question(s) sélectionnée(s)
-                    </p>
-                    <div className="flex gap-2">
-                      <button
-                        onClick={() => {
-                          setDrafts([]);
-                        }}
-                        className="rounded-xl border border-[rgb(var(--border))] px-4 py-2 text-sm font-bold text-[rgb(var(--ink-2))] hover:text-[rgb(var(--ink))]"
-                      >
-                        Recommencer
-                      </button>
-                      <button
-                        onClick={saveDrafts}
-                        disabled={
-                          savingDrafts || drafts.filter((d) => d.kept).length === 0
-                        }
-                        className="rounded-xl bg-[rgb(var(--green))] px-5 py-2 text-sm font-black text-white hover:opacity-90 disabled:opacity-40"
-                      >
-                        {savingDrafts ? "Sauvegarde..." : "Tout valider →"}
-                      </button>
-                    </div>
-                  </div>
-
-                  {pdfStats && (
-                    <div className="mb-4 flex flex-wrap items-center gap-3 rounded-2xl border border-[rgb(var(--border))] bg-[rgb(var(--surface))] px-4 py-3">
-                      {pdfStats.fromCache && (
-                        <span className="rounded-full bg-[rgb(var(--green))]/10 px-3 py-1 text-xs font-black text-[rgb(var(--green))]">
-                          ✓ Questions récupérées depuis le cache
-                        </span>
-                      )}
-                      {pdfStats.pageCount !== null && (
-                        <span className="text-sm text-[rgb(var(--ink-2))]">
-                          {pdfStats.pageCount} page(s) analysée(s)
-                        </span>
-                      )}
-                    </div>
-                  )}
-
-                  <div className="space-y-4">
-                    {drafts.map((draft, idx) => (
-                      <DraftCard
-                        key={draft.key}
-                        draft={draft}
-                        onChange={(updated) =>
-                          setDrafts((prev) =>
-                            prev.map((d, i) => (i === idx ? updated : d))
-                          )
-                        }
-                      />
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* ── Public library ── */}
-          {tab === "public" && (
-            <div>
-              <div className="mb-5">
-                <FilterBar
-                  filterType={pubFilterType}
-                  setFilterType={setPubFilterType}
-                  filterPeriod={pubFilterPeriod}
-                  setFilterPeriod={setPubFilterPeriod}
-                  filterText={pubFilterText}
-                  setFilterText={setPubFilterText}
-                  showText
-                />
-              </div>
-
-              <p className="mb-4 text-sm text-[rgb(var(--ink-3))]">
-                {filteredPublic.length} question(s) approuvée(s) HistoGuess
-              </p>
-
-              <div className="space-y-2">
-                {filteredPublic.map((q) => (
-                  <div
-                    key={q.id}
-                    className="flex items-start gap-3 rounded-2xl border border-[rgb(var(--border))] bg-[rgb(var(--surface))] p-4"
-                  >
-                    <div className="flex-1 min-w-0">
-                      <div className="flex flex-wrap items-center gap-2">
-                        <TypeBadge type={q.type} />
-                        {q.period && (
-                          <span className="rounded-full bg-[rgb(var(--surface-3))] px-2 py-0.5 text-xs text-[rgb(var(--ink-2))]">
-                            {q.period}
-                          </span>
-                        )}
-                        {q.difficulty && (
-                          <span className="text-xs text-[rgb(var(--ink-3))]">
-                            Difficulté {q.difficulty}
-                          </span>
-                        )}
-                      </div>
-                      <p className="mt-1 text-sm font-bold text-[rgb(var(--ink))]">
-                        {q.question}
-                      </p>
-                    </div>
-                    <button
-                      onClick={() => addPublicQuestion(q)}
-                      disabled={addingId === q.id}
-                      className="shrink-0 rounded-xl bg-[rgb(var(--accent))]/15 px-3 py-2 text-xs font-black text-[rgb(var(--accent))] transition hover:bg-[rgb(var(--accent))]/25 disabled:opacity-40"
-                    >
-                      {addingId === q.id ? "..." : "+ Ajouter"}
-                    </button>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
         </div>
       </div>
 
