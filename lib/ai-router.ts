@@ -36,6 +36,8 @@ export interface RouteOptions {
   requireEuCompliant?: boolean;
   /** Cache TTL in ms. Default 24h. Set to 0 to disable cache. Vision tasks are never cached. */
   cacheTtlMs?: number;
+  /** Force a specific provider by its id. Bypass automatic selection. */
+  model?: string;
 }
 
 const ALL_PROVIDERS: AIProvider[] = [
@@ -130,10 +132,21 @@ export async function routeAIRequest(
     candidates = [forced];
   } else {
     candidates = ALL_PROVIDERS.filter((p) => {
+      if (options.model && p.id !== options.model) return false;
       if (options.requireVision && !p.supportsVision) return false;
       if (options.requireEuCompliant && !p.euCompliant) return false;
       return true;
     });
+
+    if (candidates.length === 0) {
+      throw new GracefulAIError(
+        options.model
+          ? `Provider '${options.model}' indisponible ou ne match pas les critères`
+          : "Aucun provider compatible",
+        taskType,
+        [],
+      );
+    }
   }
 
   // Load quota/cooldown state from DB
