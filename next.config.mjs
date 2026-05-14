@@ -25,11 +25,45 @@ const SECURITY_HEADERS = [
   { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=()" },
 ];
 
+// CSP relâchée pour les mockups HTML statiques (public/mockups/*.html) — ils
+// utilisent Tailwind CDN + Google Fonts + Lucide unpkg, bloqués par la CSP globale.
+// Pas de risque sécurité réel : les mockups sont du HTML statique sans data
+// utilisateur, isolés de l'app principale.
+const MOCKUPS_HEADERS = [
+  {
+    key: "Content-Security-Policy",
+    value: [
+      "default-src 'self'",
+      "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.tailwindcss.com https://unpkg.com",
+      "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
+      "img-src 'self' data: blob: https:",
+      "font-src 'self' data: https://fonts.gstatic.com",
+      "connect-src 'self'",
+      "frame-ancestors 'none'",
+      "object-src 'none'",
+      "base-uri 'self'",
+      "form-action 'self'",
+    ].join("; "),
+  },
+  { key: "X-Frame-Options", value: "DENY" },
+  { key: "X-Content-Type-Options", value: "nosniff" },
+  { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
+  { key: "Strict-Transport-Security", value: "max-age=63072000; includeSubDomains; preload" },
+  { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=()" },
+];
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   poweredByHeader: false,
   async headers() {
-    return [{ source: "/(.*)", headers: SECURITY_HEADERS }];
+    return [
+      // CSP permissive pour mockups HTML statiques (CDN externes Tailwind/Fonts/Lucide).
+      // `:path+` = 1+ segments, donc matche /mockups/foo.html mais pas /mockups (l'index Next.js).
+      { source: "/mockups/:path+", headers: MOCKUPS_HEADERS },
+      // Règle globale — négative lookahead pour exclure les fichiers sous /mockups/.
+      // /mockups (index page) reste sous CSP stricte.
+      { source: "/((?!mockups/).*)", headers: SECURITY_HEADERS },
+    ];
   },
   // Prevent webpack from bundling pdfjs-dist for server execution — it is ESM-only
   // (5.x) and triggers Object.defineProperty errors when evaluated in Node context
