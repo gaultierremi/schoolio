@@ -1,9 +1,19 @@
 import type { SubjectId, SchoolLevel } from "@/lib/subjects";
 
+// Types acceptés en DB (cf. supabase/migrations/20260514230000_question_types_diversification.sql).
+// truefalse + multi_step sont supportés pour la rétrocompatibilité avec d'éventuelles
+// questions legacy ; le pipeline AI ne produit plus que mcq / numeric / short_text.
+export type QuestionType =
+  | "mcq"
+  | "truefalse"
+  | "numeric"
+  | "short_text"
+  | "multi_step";
+
 export type TeacherQuestion = {
   id: string;
   teacher_id: string;
-  type: "mcq" | "truefalse";
+  type: QuestionType;
   question: string;
   options: string[];
   answer_index: number;
@@ -21,13 +31,18 @@ export type TeacherQuestion = {
   rejected_at: string | null;
   difficulty_stars: 1 | 2 | 3 | null;
   origin: "ai_generated" | "extracted_from_pdf" | null;
+  // Champs spécifiques par type (NULL si non-applicable).
+  expected_numeric_answer?: number | null;
+  numeric_tolerance?: number | null;
+  numeric_unit?: string | null;
+  expected_text_answers?: string[] | null;
 };
 
 export type ValTab = "pending" | "validated" | "rejected";
 
 export type PublicQuestion = {
   id: string;
-  type: "mcq" | "truefalse";
+  type: QuestionType;
   question: string;
   options: string[];
   answer_index: number;
@@ -38,7 +53,7 @@ export type PublicQuestion = {
 
 export type DraftQuestion = {
   key: number;
-  type: "mcq" | "truefalse";
+  type: QuestionType;
   question: string;
   options: string[];
   answer_index: number;
@@ -74,7 +89,7 @@ export const PERIODS = [
 ] as const;
 
 export const BLANK_FORM = {
-  type: "mcq" as "mcq" | "truefalse",
+  type: "mcq" as QuestionType,
   question: "",
   options: ["", "", "", ""],
   answer_index: 0,
@@ -82,4 +97,10 @@ export const BLANK_FORM = {
   subjectId: "autre" as SubjectId,
   level: null as SchoolLevel | null,
   period: "",
+  // Champs numeric (utilisés uniquement quand type='numeric').
+  expected_numeric_answer: "" as string,
+  numeric_tolerance: "" as string,
+  numeric_unit: "" as string,
+  // Champ short_text (1-5 réponses acceptables, utilisé quand type='short_text').
+  expected_text_answers: ["", "", "", "", ""] as string[],
 };

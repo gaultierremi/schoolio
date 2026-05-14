@@ -134,6 +134,12 @@ export function useQuestionsPage() {
   }
 
   function startEdit(q: TeacherQuestion) {
+    // Hydrate les 5 slots short_text à partir du tableau DB (peut être null).
+    const dbTextAnswers = Array.isArray(q.expected_text_answers)
+      ? q.expected_text_answers
+      : [];
+    const hydratedTextAnswers = [...dbTextAnswers, "", "", "", "", ""].slice(0, 5);
+
     setForm({
       type: q.type,
       question: q.question,
@@ -146,6 +152,12 @@ export function useQuestionsPage() {
       subjectId: isValidSubject(q.subject_enum) ? q.subject_enum : "autre",
       level: (q.level ?? null) as SchoolLevel | null,
       period: q.period ?? "",
+      expected_numeric_answer:
+        q.expected_numeric_answer != null ? String(q.expected_numeric_answer) : "",
+      numeric_tolerance:
+        q.numeric_tolerance != null ? String(q.numeric_tolerance) : "",
+      numeric_unit: q.numeric_unit ?? "",
+      expected_text_answers: hydratedTextAnswers,
     });
     setEditingId(q.id);
     setShowForm(true);
@@ -164,10 +176,15 @@ export function useQuestionsPage() {
       return;
     }
 
-    const options =
-      form.type === "truefalse"
-        ? ["Vrai", "Faux"]
-        : form.options.map((o) => o.trim()).filter(Boolean);
+    // Options stockées en DB : seulement pertinentes pour mcq/truefalse.
+    let options: string[];
+    if (form.type === "truefalse") {
+      options = ["Vrai", "Faux"];
+    } else if (form.type === "mcq") {
+      options = form.options.map((o) => o.trim()).filter(Boolean);
+    } else {
+      options = [];
+    }
 
     if (form.type === "mcq" && options.length < 2) {
       alert("Ajoute au moins 2 options.");
@@ -175,17 +192,56 @@ export function useQuestionsPage() {
       return;
     }
 
+    // Champs spécifiques par type — on envoie NULL quand non-applicable pour
+    // ne pas polluer la row avec des résidus d'un ancien type.
+    let expected_numeric_answer: number | null = null;
+    let numeric_tolerance: number | null = null;
+    let numeric_unit: string | null = null;
+    let expected_text_answers: string[] | null = null;
+
+    if (form.type === "numeric") {
+      const parsed = Number(form.expected_numeric_answer);
+      if (!Number.isFinite(parsed)) {
+        alert("La réponse numérique doit être un nombre valide.");
+        setSaving(false);
+        return;
+      }
+      expected_numeric_answer = parsed;
+      if (form.numeric_tolerance.trim().length > 0) {
+        const tol = Number(form.numeric_tolerance);
+        if (Number.isFinite(tol) && tol >= 0) numeric_tolerance = tol;
+      }
+      numeric_unit = form.numeric_unit.trim() || null;
+    } else if (form.type === "short_text") {
+      const cleaned = form.expected_text_answers
+        .map((a) => a.trim())
+        .filter((a) => a.length > 0);
+      if (cleaned.length < 1) {
+        alert("Ajoute au moins une réponse acceptable.");
+        setSaving(false);
+        return;
+      }
+      expected_text_answers = cleaned;
+    }
+
     const payload = {
       teacher_id: user.id,
       type: form.type,
       question: form.question.trim(),
       options,
-      answer_index: Math.min(form.answer_index, options.length - 1),
+      answer_index:
+        form.type === "mcq" || form.type === "truefalse"
+          ? Math.min(form.answer_index, Math.max(options.length - 1, 0))
+          : 0,
       explanation: form.explanation.trim() || null,
       subject: null,
       subject_enum: form.subjectId,
       level: form.level,
       period: form.period || null,
+      expected_numeric_answer,
+      numeric_tolerance,
+      numeric_unit,
+      expected_text_answers,
     };
 
     if (editingId) {
@@ -236,6 +292,12 @@ export function useQuestionsPage() {
       level: q.level ?? null,
       period: q.period,
       is_public: false,
+      // Conserver les champs spécifiques au type pour que la copie soit
+      // fonctionnellement identique.
+      expected_numeric_answer: q.expected_numeric_answer ?? null,
+      numeric_tolerance: q.numeric_tolerance ?? null,
+      numeric_unit: q.numeric_unit ?? null,
+      expected_text_answers: q.expected_text_answers ?? null,
     });
 
     await loadMyQuestions();
