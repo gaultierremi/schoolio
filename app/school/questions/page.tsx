@@ -1,5 +1,6 @@
 "use client";
 
+import { useMemo, useState } from "react";
 import { BLANK_FORM } from "./_types";
 import { useQuestionsPage } from "./_hooks/useQuestionsPage";
 import { FilterBar } from "./_components/FilterBar";
@@ -11,6 +12,7 @@ import { PendingCard } from "./_components/PendingCard";
 import { ValidatedCard } from "./_components/ValidatedCard";
 import { RejectedCard } from "./_components/RejectedCard";
 import { TypeBadge } from "./_components/TypeBadge";
+import { SubjectSidebar } from "./_components/SubjectSidebar";
 
 export default function SchoolQuestionsPage() {
   const {
@@ -49,6 +51,19 @@ export default function SchoolQuestionsPage() {
     validateQuestion, rejectQuestion, callUnvalidate, proposeQuestion,
     handlePdfUpload, saveDrafts, addPublicQuestion,
   } = useQuestionsPage();
+
+  // Filtre sidebar matière, scoped à l'onglet "à valider" pour aider à
+  // naviguer dans les centaines de questions générées sur un gros syllabus.
+  const [pendingSubjectFilter, setPendingSubjectFilter] = useState<string | null>(null);
+  const filteredPendingBySubject = useMemo(
+    () =>
+      pendingSubjectFilter === null
+        ? pendingQuestions
+        : pendingQuestions.filter(
+            (q) => ((q.subject_enum ?? q.subject ?? "autre") as string) === pendingSubjectFilter,
+          ),
+    [pendingQuestions, pendingSubjectFilter],
+  );
 
   // ── Guards ──
 
@@ -190,26 +205,39 @@ export default function SchoolQuestionsPage() {
                       Aucune question générée par Maïa en attente de validation.
                     </div>
                   ) : (
-                    <div className="space-y-4">
-                      {pendingQuestions
-                        .filter((q) => !(editingId === q.id && showForm))
-                        .map((q) => (
-                          <PendingCard
-                            key={q.id}
-                            q={q}
-                            isFading={fadingIds.has(q.id)}
-                            isValidating={validatingId === q.id}
-                            isRejecting={rejectingId === q.id}
-                            isBusy={isBusy}
-                            selectedStars={pendingStars[q.id] ?? null}
-                            onStarChange={(v) =>
-                              setPendingStars((prev) => ({ ...prev, [q.id]: v }))
-                            }
-                            onValidate={() => validateQuestion(q.id)}
-                            onReject={() => rejectQuestion(q.id)}
-                            onEdit={() => startEdit(q)}
-                          />
-                        ))}
+                    <div className="flex flex-col gap-6 lg:flex-row">
+                      <SubjectSidebar
+                        questions={pendingQuestions}
+                        selected={pendingSubjectFilter}
+                        onSelect={setPendingSubjectFilter}
+                      />
+                      <div className="flex-1 space-y-4 min-w-0">
+                        {filteredPendingBySubject.length === 0 ? (
+                          <div className="rounded-2xl border border-dashed border-gray-800 p-8 text-center text-sm text-gray-500">
+                            Aucune question pour cette matière.
+                          </div>
+                        ) : (
+                          filteredPendingBySubject
+                            .filter((q) => !(editingId === q.id && showForm))
+                            .map((q) => (
+                              <PendingCard
+                                key={q.id}
+                                q={q}
+                                isFading={fadingIds.has(q.id)}
+                                isValidating={validatingId === q.id}
+                                isRejecting={rejectingId === q.id}
+                                isBusy={isBusy}
+                                selectedStars={pendingStars[q.id] ?? null}
+                                onStarChange={(v) =>
+                                  setPendingStars((prev) => ({ ...prev, [q.id]: v }))
+                                }
+                                onValidate={() => validateQuestion(q.id)}
+                                onReject={() => rejectQuestion(q.id)}
+                                onEdit={() => startEdit(q)}
+                              />
+                            ))
+                        )}
+                      </div>
                     </div>
                   )}
                 </div>
