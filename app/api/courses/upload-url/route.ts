@@ -6,6 +6,29 @@ export const dynamic = "force-dynamic";
 
 const UUID_REGEX = /^[0-9a-f-]{36}$/i;
 
+const VALID_SUBJECT_ENUMS = [
+  "chimie",
+  "physique",
+  "biologie",
+  "mathematiques",
+  "histoire",
+  "geographie",
+  "francais",
+  "anglais",
+  "neerlandais",
+  "autre",
+] as const;
+
+type CourseSubjectEnum = (typeof VALID_SUBJECT_ENUMS)[number];
+
+function isValidSubjectEnum(value: unknown): value is CourseSubjectEnum {
+  return typeof value === "string" && (VALID_SUBJECT_ENUMS as readonly string[]).includes(value);
+}
+
+function isValidLevel(value: unknown): value is number {
+  return typeof value === "number" && Number.isInteger(value) && value >= 1 && value <= 6;
+}
+
 function createAdminClient() {
   return createSupabaseAdminClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -103,11 +126,13 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Corps de requête invalide" }, { status: 400 });
     }
 
-    const { filename, fileSize, fileHash, organization_tags } = body as {
+    const { filename, fileSize, fileHash, organization_tags, subject_enum, level } = body as {
       filename?: unknown;
       fileSize?: unknown;
       fileHash?: unknown;
       organization_tags?: unknown;
+      subject_enum?: unknown;
+      level?: unknown;
     };
 
     // ── Validation ────────────────────────────────────────────────────────────
@@ -136,6 +161,35 @@ export async function POST(req: NextRequest) {
     if (typeof fileHash !== "string" || fileHash.length !== 64) {
       return NextResponse.json(
         { error: "fileHash invalide — doit être un SHA-256 hex de 64 caractères" },
+        { status: 400 }
+      );
+    }
+
+    // ── subject_enum + level : optionnels mais privilégiés (choix utilisateur upfront).
+    //    Si fournis, ils SONT la source de vérité — l'AI inference (infer-metadata)
+    //    ne doit plus les écraser (cf. user_subject_locked / user_level_locked).
+    const userSubjectEnum: CourseSubjectEnum | null =
+      subject_enum === undefined || subject_enum === null
+        ? null
+        : isValidSubjectEnum(subject_enum)
+          ? subject_enum
+          : null;
+    if (subject_enum !== undefined && subject_enum !== null && userSubjectEnum === null) {
+      return NextResponse.json(
+        { error: "subject_enum invalide" },
+        { status: 400 }
+      );
+    }
+
+    const userLevel: number | null =
+      level === undefined || level === null
+        ? null
+        : isValidLevel(level)
+          ? level
+          : null;
+    if (level !== undefined && level !== null && userLevel === null) {
+      return NextResponse.json(
+        { error: "level invalide — doit être un entier entre 1 et 6" },
         { status: 400 }
       );
     }
@@ -186,9 +240,13 @@ export async function POST(req: NextRequest) {
     if (existingCourse) {
       const found = existingCourse as CachedCourseRow;
 
+      // User upfront choice wins over cached values (le prof sait mieux).
+      const effectiveSubject = userSubjectEnum ?? found.subject_enum ?? "autre";
+      const effectiveLevel = userLevel ?? found.level ?? null;
+
       const inference = {
-        subject: found.subject_enum ?? "autre",
-        level: found.level ?? null,
+        subject: effectiveSubject,
+        level: effectiveLevel,
         title: found.title ?? "Cours sans titre",
         confidence: 100,
       };
@@ -200,13 +258,26 @@ export async function POST(req: NextRequest) {
           ownedOrganizationTags
         );
 
+        const courseUpdate: Record<string, unknown> = {};
         if (mergedOrganizationTags.length !== (found.organization_tags ?? []).length) {
-          const { error: tagUpdateError } = await admin
+          courseUpdate.organization_tags = mergedOrganizationTags;
+        }
+        // Si le prof change explicitement son choix (subject ou level) en re-déposant
+        // le même PDF, on met à jour le course existant. User choice wins.
+        if (userSubjectEnum && userSubjectEnum !== found.subject_enum) {
+          courseUpdate.subject_enum = userSubjectEnum;
+        }
+        if (userLevel !== null && userLevel !== found.level) {
+          courseUpdate.level = userLevel;
+        }
+
+        if (Object.keys(courseUpdate).length > 0) {
+          const { error: courseUpdateError } = await admin
             .from("courses")
-            .update({ organization_tags: mergedOrganizationTags })
+            .update(courseUpdate)
             .eq("id", found.id);
 
-          if (tagUpdateError) throw tagUpdateError;
+          if (courseUpdateError) throw courseUpdateError;
         }
 
         return NextResponse.json({
@@ -228,8 +299,9 @@ export async function POST(req: NextRequest) {
         pdf_storage_path: found.pdf_storage_path,
         pdf_size_bytes: found.pdf_size_bytes,
         pages_count: found.pages_count,
-        subject_enum: found.subject_enum,
-        level: found.level,
+        // User upfront choice wins (sinon : valeurs du cache communautaire).
+        subject_enum: userSubjectEnum ?? found.subject_enum,
+        level: userLevel ?? found.level,
         organization_tags: ownedOrganizationTags,
       });
 
@@ -291,6 +363,10 @@ export async function POST(req: NextRequest) {
         pdf_size_bytes: fileSize,
         pdf_storage_path: storagePath,
         organization_tags: ownedOrganizationTags,
+        // ── User-selected upfront ⇒ stocké d'office. infer-metadata ne doit pas
+        //    écraser ces valeurs (cf. /api/courses/infer-metadata).
+        ...(userSubjectEnum ? { subject_enum: userSubjectEnum } : {}),
+        ...(userLevel !== null ? { level: userLevel } : {}),
       });
 
     if (insertError) {

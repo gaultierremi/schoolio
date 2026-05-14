@@ -43,6 +43,8 @@ type CourseRow = {
   id: string;
   teacher_id: string;
   pdf_storage_path: string | null;
+  subject_enum: string | null;
+  level: number | null;
 };
 
 type GeminiInference = {
@@ -253,7 +255,7 @@ export async function POST(request: NextRequest) {
 
     const { data: course, error: courseError } = await admin
       .from("courses")
-      .select("id, teacher_id, pdf_storage_path")
+      .select("id, teacher_id, pdf_storage_path, subject_enum, level")
       .eq("id", courseId)
       .limit(1)
       .maybeSingle();
@@ -297,17 +299,44 @@ export async function POST(request: NextRequest) {
       getPdfPagesCount(pdfBuffer),
       generateInferenceJson(pdfBase64, INFERENCE_PROMPT),
     ]);
-    const inference = normalizeInference(parseGeminiJson(rawText, getFilenameFromPath(typedCourse.pdf_storage_path)));
+    const rawInference = normalizeInference(parseGeminiJson(rawText, getFilenameFromPath(typedCourse.pdf_storage_path)));
+
+    // ── User choice wins ──────────────────────────────────────────────────────
+    // Si l'utilisateur a choisi subject/level upfront à l'upload, on NE les écrase
+    // pas avec l'inférence AI. Le prof sait mieux que l'IA — l'AI confirme/complète
+    // seulement les champs manquants. Le `inference` retourné au client reflète
+    // les valeurs finales du course (pas les valeurs AI brutes).
+    const userPickedSubject = isCourseSubject(typedCourse.subject_enum)
+      ? (typedCourse.subject_enum as CourseSubject)
+      : null;
+    const userPickedLevel = normalizeLevel(typedCourse.level);
+
+    const finalSubject: CourseSubject = userPickedSubject ?? rawInference.subject;
+    const finalLevel: SchoolLevel | null = userPickedLevel ?? rawInference.level;
+
+    const inference: Inference = {
+      subject: finalSubject,
+      level: finalLevel,
+      title: rawInference.title,
+      confidence: rawInference.confidence,
+    };
+
+    // Update only the fields that the user did NOT lock upfront.
+    const updatePayload: Record<string, unknown> = {
+      title: rawInference.title,
+      pages_count: pagesCount > 0 ? pagesCount : null,
+      updated_at: new Date().toISOString(),
+    };
+    if (userPickedSubject === null) {
+      updatePayload.subject_enum = rawInference.subject;
+    }
+    if (userPickedLevel === null) {
+      updatePayload.level = rawInference.level;
+    }
 
     const { error: updateError } = await admin
       .from("courses")
-      .update({
-        subject_enum: inference.subject,
-        level: inference.level,
-        title: inference.title,
-        pages_count: pagesCount > 0 ? pagesCount : null,
-        updated_at: new Date().toISOString(),
-      })
+      .update(updatePayload)
       .eq("id", courseId);
 
     if (updateError) throw updateError;
