@@ -34,6 +34,11 @@ const MAX_PDF_BYTES = 52428800;
 const WORKER_COUNT = 3;
 const QUESTIONS_PER_WORKER = 10;
 
+// Cap du nombre total de questions par cours.
+// Raison : limiter les couts Anthropic a l'echelle et encourager la curation
+// qualitative du prof plutot que l'accumulation brute de questions IA.
+const MAX_QUESTIONS_PER_COURSE = 600;
+
 function createAdminClient() {
   return createSupabaseAdminClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -51,6 +56,42 @@ const THEME_INSTRUCTIONS: Partial<Record<SubjectId, string>> = {
   biologie:
     "Pour le champ period, utilise l'un de ces themes : Cellule, Genetique, Evolution, Ecosystemes, Anatomie humaine, Physiologie, Autre.",
 };
+
+// Distribution des types de questions par categorie de matiere.
+// Adapte la diversification au contexte pedagogique de chaque discipline.
+const TYPE_DISTRIBUTION_BY_SUBJECT: Record<string, string> = {
+  mathematiques:
+    "Distribue les questions : ~50% numeric (reponse numerique precise), ~30% mcq, ~20% short_text.",
+  chimie:
+    "Distribue les questions : ~50% numeric (valeurs, masses molaires, concentrations), ~30% mcq, ~20% short_text.",
+  physique:
+    "Distribue les questions : ~50% numeric (calculs de forces, energies, vitesses), ~30% mcq, ~20% short_text.",
+  histoire:
+    "Distribue les questions : ~70% mcq, ~30% short_text (dates, personnages, lieux).",
+  geographie:
+    "Distribue les questions : ~70% mcq, ~30% short_text (pays, capitales, fleuves).",
+  francais:
+    "Distribue les questions : ~50% short_text (definitions, completions de phrases), ~50% mcq.",
+  anglais:
+    "Distribue les questions : ~50% short_text (traductions courtes, completions), ~50% mcq.",
+  neerlandais:
+    "Distribue les questions : ~50% short_text (traductions courtes, completions), ~50% mcq.",
+  langues:
+    "Distribue les questions : ~50% short_text (traductions courtes, completions), ~50% mcq.",
+  litterature:
+    "Distribue les questions : ~50% short_text (titres, auteurs, personnages), ~50% mcq.",
+  biologie:
+    "Distribue les questions : ~60% mcq, ~30% short_text (noms de structures, processus), ~10% numeric.",
+  sciences:
+    "Distribue les questions : ~60% mcq, ~30% short_text, ~10% numeric.",
+};
+
+function getTypeDistributionInstruction(subject: SubjectId): string {
+  return (
+    TYPE_DISTRIBUTION_BY_SUBJECT[subject] ??
+    "Distribue les questions : ~60% mcq, ~25% short_text, ~15% numeric."
+  );
+}
 
 function getLevelInstruction(level: SchoolLevel | null): string {
   if (!level) return "";
@@ -70,12 +111,21 @@ function buildSystemPrompt(subject: SubjectId, level: SchoolLevel | null): strin
     THEME_INSTRUCTIONS[subject] ??
     "Pour le champ period, identifie le theme principal de chaque question dans le document.";
   const levelClause = levelInstruction ? ` ${levelInstruction}` : "";
+  const typeDistribution = getTypeDistributionInstruction(subject);
 
   return (
     `Tu es un assistant pedagogique. Analyse ce document et genere des questions de quiz pertinentes pour un cours de ${subjectLabel}.${levelClause}` +
     ` Reponds UNIQUEMENT en JSON valide avec ce format exact :` +
-    ` {"page_count": 12, "questions": [{"type": "mcq", "question": "...", "options": ["A", "B", "C", "D"], "answer_index": 0, "explanation": "...", "period": "...", "difficulty": 2, "concept_page_hint": 3}]}.` +
-    ` Genere uniquement des QCM avec exactement 4 choix. answer_index doit etre entre 0 et 3. difficulty doit etre 1, 2 ou 3.` +
+    ` {"page_count": 12, "questions": [...]}.` +
+    ` Trois types de questions sont possibles :` +
+    ` 1) mcq : {"type":"mcq","question":"...","options":["A","B","C","D"],"answer_index":0,"explanation":"...","period":"...","difficulty":2,"concept_page_hint":3}` +
+    ` 2) numeric : {"type":"numeric","question":"...","expected_numeric_answer":42.5,"numeric_tolerance":0.5,"numeric_unit":"m/s","explanation":"...","period":"...","difficulty":2,"concept_page_hint":3}` +
+    ` 3) short_text : {"type":"short_text","question":"...","expected_text_answers":["reponse1","reponse2"],"explanation":"...","period":"...","difficulty":2,"concept_page_hint":3}` +
+    ` Regles : mcq doit avoir exactement 4 choix, answer_index entre 0 et 3.` +
+    ` numeric : expected_numeric_answer est obligatoire (nombre), numeric_tolerance optionnel (defaut 0.01), numeric_unit optionnel (string).` +
+    ` short_text : expected_text_answers est obligatoire (tableau de 1 a 5 reponses acceptables, inclure variantes orthographiques/synonymes).` +
+    ` difficulty doit etre 1, 2 ou 3.` +
+    ` ${typeDistribution}` +
     ` Les questions doivent etre claires, pedagogiques, variees et directement liees au contenu du document.` +
     ` ${themeInstruction}` +
     ` Dans le champ page_count, indique le nombre total de pages du document.` +
@@ -83,11 +133,21 @@ function buildSystemPrompt(subject: SubjectId, level: SchoolLevel | null): strin
   );
 }
 
+type QuestionType = "mcq" | "numeric" | "short_text";
+
 type ExtractedQuestion = {
-  type: "mcq" | "truefalse";
+  type: QuestionType;
   question: string;
-  options: string[];
-  answer_index: number;
+  // mcq fields
+  options?: string[];
+  answer_index?: number;
+  // numeric fields
+  expected_numeric_answer?: number;
+  numeric_tolerance?: number;
+  numeric_unit?: string;
+  // short_text fields
+  expected_text_answers?: string[];
+  // common
   explanation: string;
   period: string;
   difficulty?: number;
@@ -116,19 +176,34 @@ const QUESTIONS_SCHEMA: ResponseSchema = {
       items: {
         type: SchemaType.OBJECT,
         properties: {
-          type: { type: SchemaType.STRING, format: "enum", enum: ["mcq"] },
+          type: {
+            type: SchemaType.STRING,
+            format: "enum",
+            enum: ["mcq", "numeric", "short_text"],
+          },
           question: { type: SchemaType.STRING },
+          // mcq
           options: {
             type: SchemaType.ARRAY,
             items: { type: SchemaType.STRING },
           },
           answer_index: { type: SchemaType.INTEGER },
+          // numeric
+          expected_numeric_answer: { type: SchemaType.NUMBER },
+          numeric_tolerance: { type: SchemaType.NUMBER },
+          numeric_unit: { type: SchemaType.STRING },
+          // short_text
+          expected_text_answers: {
+            type: SchemaType.ARRAY,
+            items: { type: SchemaType.STRING },
+          },
+          // common
           explanation: { type: SchemaType.STRING },
           period: { type: SchemaType.STRING },
           difficulty: { type: SchemaType.INTEGER },
           concept_page_hint: { type: SchemaType.INTEGER },
         },
-        required: ["type", "question", "options", "answer_index", "explanation", "period", "difficulty"],
+        required: ["type", "question", "explanation", "period", "difficulty"],
       },
     },
   },
@@ -164,7 +239,7 @@ async function generateQuestionsWithFallback(
 ): Promise<string> {
   const fullPrompt =
     `${systemPrompt}\n\n` +
-    `Worker ${workerIndex + 1}/${WORKER_COUNT}: genere ${QUESTIONS_PER_WORKER} QCM distincts. ` +
+    `Worker ${workerIndex + 1}/${WORKER_COUNT}: genere ${QUESTIONS_PER_WORKER} questions distinctes (mcq, numeric et/ou short_text selon la matiere). ` +
     `Evite les doublons et couvre une partie differente du document.`;
 
   const response = await routeAIRequest("generate_questions", fullPrompt, {
@@ -177,14 +252,90 @@ async function generateQuestionsWithFallback(
   return response.text;
 }
 
-function normalizeQuestion(question: ExtractedQuestion): ExtractedQuestion {
+function normalizeMcqQuestion(question: ExtractedQuestion): ExtractedQuestion | null {
   const options = Array.isArray(question.options) ? question.options.slice(0, 4) : [];
   while (options.length < 4) options.push("");
+  if (!options.every(Boolean)) return null;
 
   const answerIndex =
-    Number.isInteger(question.answer_index) && question.answer_index >= 0 && question.answer_index <= 3
-      ? question.answer_index
+    Number.isInteger(question.answer_index) &&
+    question.answer_index! >= 0 &&
+    question.answer_index! <= 3
+      ? question.answer_index!
       : 0;
+
+  return {
+    type: "mcq",
+    question: question.question,
+    options,
+    answer_index: answerIndex,
+    explanation: question.explanation,
+    period: question.period,
+    difficulty: question.difficulty,
+    concept_page_hint: question.concept_page_hint,
+  };
+}
+
+function normalizeNumericQuestion(question: ExtractedQuestion): ExtractedQuestion | null {
+  if (
+    typeof question.expected_numeric_answer !== "number" ||
+    !Number.isFinite(question.expected_numeric_answer)
+  ) {
+    console.warn(
+      `[generate-questions] numeric question skipped — expected_numeric_answer manquant ou invalide: "${question.question}"`
+    );
+    return null;
+  }
+
+  const tolerance =
+    typeof question.numeric_tolerance === "number" && Number.isFinite(question.numeric_tolerance)
+      ? question.numeric_tolerance
+      : 0.01;
+
+  const unit =
+    typeof question.numeric_unit === "string" && question.numeric_unit.length > 0
+      ? question.numeric_unit
+      : undefined;
+
+  return {
+    type: "numeric",
+    question: question.question,
+    expected_numeric_answer: question.expected_numeric_answer,
+    numeric_tolerance: tolerance,
+    numeric_unit: unit,
+    explanation: question.explanation,
+    period: question.period,
+    difficulty: question.difficulty,
+    concept_page_hint: question.concept_page_hint,
+  };
+}
+
+function normalizeShortTextQuestion(question: ExtractedQuestion): ExtractedQuestion | null {
+  const answers = Array.isArray(question.expected_text_answers)
+    ? question.expected_text_answers.filter((a) => typeof a === "string" && a.trim().length > 0).slice(0, 5)
+    : [];
+
+  if (answers.length === 0) {
+    console.warn(
+      `[generate-questions] short_text question skipped — expected_text_answers vide ou absent: "${question.question}"`
+    );
+    return null;
+  }
+
+  return {
+    type: "short_text",
+    question: question.question,
+    expected_text_answers: answers,
+    explanation: question.explanation,
+    period: question.period,
+    difficulty: question.difficulty,
+    concept_page_hint: question.concept_page_hint,
+  };
+}
+
+function normalizeQuestion(question: ExtractedQuestion): ExtractedQuestion | null {
+  if (typeof question.question !== "string" || !question.question.trim()) return null;
+
   const rawDifficulty = question.difficulty;
   const difficulty =
     typeof rawDifficulty === "number" &&
@@ -194,15 +345,28 @@ function normalizeQuestion(question: ExtractedQuestion): ExtractedQuestion {
       ? rawDifficulty
       : undefined;
 
-  return {
-    type: "mcq",
-    question: typeof question.question === "string" ? question.question : "",
-    options,
-    answer_index: answerIndex,
+  const base = {
+    ...question,
+    question: question.question.trim(),
     explanation: typeof question.explanation === "string" ? question.explanation : "",
     period: typeof question.period === "string" ? question.period : "",
     difficulty,
   };
+
+  switch (question.type) {
+    case "mcq":
+      return normalizeMcqQuestion(base);
+    case "numeric":
+      return normalizeNumericQuestion(base);
+    case "short_text":
+      return normalizeShortTextQuestion(base);
+    default:
+      // Unknown type from AI — treat as mcq if options are present, else skip
+      if (Array.isArray((question as ExtractedQuestion).options)) {
+        return normalizeMcqQuestion({ ...base, type: "mcq" });
+      }
+      return null;
+  }
 }
 
 export async function POST(request: NextRequest) {
@@ -278,6 +442,31 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Aucun PDF associe a ce cours" }, { status: 400 });
     }
 
+    // Cap 600 questions par cours — verifier le compteur avant de generer
+    const { count: currentCount, error: countError } = await admin
+      .from("teacher_questions")
+      .select("id", { count: "exact", head: true })
+      .eq("course_id", courseId);
+
+    if (countError) {
+      console.error("[courses/generate-questions] count error:", countError);
+      return NextResponse.json({ error: "Erreur lors de la verification du plafond" }, { status: 500 });
+    }
+
+    const existing = currentCount ?? 0;
+    if (existing >= MAX_QUESTIONS_PER_COURSE) {
+      return NextResponse.json(
+        {
+          error:
+            "Plafond 600 questions/cours atteint. Archive ou supprime des questions pour liberer de la place.",
+        },
+        { status: 400 }
+      );
+    }
+
+    // Ajuster le nombre a generer pour ne pas depasser le plafond
+    const cappedQuestionsCount = Math.min(questionsCount, MAX_QUESTIONS_PER_COURSE - existing);
+
     const { data: pdfBlob, error: downloadError } = await admin.storage
       .from("course-pdfs")
       .download(typedCourse.pdf_storage_path);
@@ -299,7 +488,7 @@ export async function POST(request: NextRequest) {
       }
       if (typedCourse.pages_count && pageRange.end > typedCourse.pages_count) {
         return NextResponse.json(
-          { error: `La plage dépasse le nombre de pages du PDF (${typedCourse.pages_count})` },
+          { error: `La plage depasse le nombre de pages du PDF (${typedCourse.pages_count})` },
           { status: 400 }
         );
       }
@@ -316,7 +505,7 @@ export async function POST(request: NextRequest) {
         });
         pdfBuffer = Buffer.from(extracted);
       } catch (err) {
-        console.warn("[generate-questions] Extraction pages échouée, fallback PDF entier:", err);
+        console.warn("[generate-questions] Extraction pages echouee, fallback PDF entier:", err);
         pageRange = null;
       }
     }
@@ -332,7 +521,7 @@ export async function POST(request: NextRequest) {
     const systemPrompt = buildSystemPrompt(subject, level);
 
     const pageRangePromptSuffix = pageRange !== null
-      ? ` Le contenu fourni correspond aux pages ${pageRange.start} à ${pageRange.end} du document original.`
+      ? ` Le contenu fourni correspond aux pages ${pageRange.start} a ${pageRange.end} du document original.`
       : "";
     const promptWithRange = systemPrompt + pageRangePromptSuffix;
 
@@ -348,8 +537,8 @@ export async function POST(request: NextRequest) {
     const questions = parsedOutputs
       .flatMap((output) => (Array.isArray(output.questions) ? output.questions : []))
       .map(normalizeQuestion)
-      .filter((question) => question.question && question.options.every(Boolean))
-      .slice(0, questionsCount);
+      .filter((q): q is ExtractedQuestion => q !== null)
+      .slice(0, cappedQuestionsCount);
 
     if (questions.length === 0) {
       return NextResponse.json({ error: "Aucune question generee" }, { status: 500 });
@@ -359,13 +548,22 @@ export async function POST(request: NextRequest) {
       teacher_id: user.id,
       school_id: typedCourse.school_id,
       course_id: courseId,
+      school_id: typedCourse.school_id ?? null,
       subject: null,
       subject_enum: typedCourse.subject_enum ?? null,
       level: typedCourse.level ?? null,
       type: q.type,
       question: q.question,
-      options: q.options,
-      answer_index: q.answer_index,
+      // mcq fields
+      options: q.type === "mcq" ? (q.options ?? null) : null,
+      answer_index: q.type === "mcq" ? (q.answer_index ?? null) : null,
+      // numeric fields
+      expected_numeric_answer: q.type === "numeric" ? (q.expected_numeric_answer ?? null) : null,
+      numeric_tolerance: q.type === "numeric" ? (q.numeric_tolerance ?? 0.01) : null,
+      numeric_unit: q.type === "numeric" ? (q.numeric_unit ?? null) : null,
+      // short_text fields
+      expected_text_answers: q.type === "short_text" ? (q.expected_text_answers ?? null) : null,
+      // common
       explanation: q.explanation || null,
       period: q.period || null,
       difficulty_stars: q.difficulty ?? null,
@@ -374,9 +572,10 @@ export async function POST(request: NextRequest) {
       is_public: false,
       page_range_start: pageRange?.start ?? null,
       page_range_end: pageRange?.end ?? null,
-      concept_page_hint: typeof q.concept_page_hint === "number" && q.concept_page_hint >= 1
-        ? q.concept_page_hint
-        : null,
+      concept_page_hint:
+        typeof q.concept_page_hint === "number" && q.concept_page_hint >= 1
+          ? q.concept_page_hint
+          : null,
     }));
 
     const { error: insertError } = await admin.from("teacher_questions").insert(rows);
