@@ -38,6 +38,13 @@ export function makeAnthropicProvider(modelName: string, id: string): AIProvider
             media_type: req.mimeType ?? "application/pdf",
             data: req.pdfBase64,
           },
+          // Anthropic prompt caching : le PDF est mis en cache 5min côté Anthropic.
+          // Les appels suivants (ex: 1 par chapter dans extract-content.ts) réutilisent
+          // le cache → ~5x plus rapide, -90% read tokens cost.
+          // Le minimum cache size pour Sonnet est ~1024 tokens, largement dépassé par
+          // un PDF Vision typique (100K+ tokens). Pas de surcoût si le cache n'est pas
+          // utilisé (ex: 1er appel TOC Haiku ne réutilise rien, c'est OK).
+          cache_control: { type: "ephemeral" },
         });
       }
 
