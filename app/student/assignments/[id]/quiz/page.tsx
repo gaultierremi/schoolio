@@ -50,6 +50,8 @@ export default function AssignmentQuizPage() {
   const [current, setCurrent] = useState(0);
   const [selected, setSelected] = useState<number | null>(null);
   const [answered, setAnswered] = useState(false);
+  const [grading, setGrading] = useState(false);
+  const [gradingError, setGradingError] = useState<string | null>(null);
   const [correctCount, setCorrectCount] = useState(0);
   const [elapsed, setElapsed] = useState(0);
   const [finalScore, setFinalScore] = useState(0);
@@ -96,22 +98,78 @@ export default function AssignmentQuizPage() {
     questionResultsRef.current = { ...prev, [qId]: { ...base, ...update } };
   }
 
-  function handleSelect(optionIdx: number) {
-    if (answered) return;
-    const isCorrect = optionIdx === questions[current].answer_index;
-    setSelected(optionIdx);
-    setAnswered(true);
-    setWrongPhase(isCorrect ? null : "choosing");
-    if (isCorrect) setCorrectCount((c) => c + 1);
-    updateResult(questions[current].id, { is_correct: isCorrect });
+  /**
+   * Server-side grading — anti-cheat. The truth comes from
+   * POST /api/student/check-answer. Client never decides correctness.
+   *
+   * NEVER fall back to a client-side decision: leaking the expected
+   * answer through the bootstrap payload + a client check would
+   * defeat the whole purpose. If the API is down the student sees
+   * an error and can retry.
+   */
+  async function gradeOnServer(
+    questionId: string,
+    studentAnswer: string | number,
+  ): Promise<boolean> {
+    const res = await fetch("/api/student/check-answer", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        question_id: questionId,
+        student_answer: studentAnswer,
+      }),
+    });
+    if (!res.ok) {
+      throw new Error(`grading_failed_${res.status}`);
+    }
+    const json = (await res.json()) as { is_correct?: boolean };
+    if (typeof json.is_correct !== "boolean") {
+      throw new Error("grading_failed_invalid_payload");
+    }
+    return json.is_correct;
   }
 
-  function handleSubmitFreeform(isCorrect: boolean) {
-    if (answered) return;
+  function applyGradingResult(qId: string, isCorrect: boolean) {
     setAnswered(true);
     setWrongPhase(isCorrect ? null : "choosing");
     if (isCorrect) setCorrectCount((c) => c + 1);
-    updateResult(questions[current].id, { is_correct: isCorrect });
+    updateResult(qId, { is_correct: isCorrect });
+  }
+
+  async function handleSelect(optionIdx: number) {
+    if (answered || grading) return;
+    const q = questions[current];
+    setSelected(optionIdx);
+    setGradingError(null);
+    setGrading(true);
+    try {
+      const isCorrect = await gradeOnServer(q.id, optionIdx);
+      applyGradingResult(q.id, isCorrect);
+    } catch {
+      setGradingError(
+        "Connexion interrompue, vérification impossible — réessaye.",
+      );
+      setSelected(null);
+    } finally {
+      setGrading(false);
+    }
+  }
+
+  async function handleSubmitFreeform(value: string | number) {
+    if (answered || grading) return;
+    const q = questions[current];
+    setGradingError(null);
+    setGrading(true);
+    try {
+      const isCorrect = await gradeOnServer(q.id, value);
+      applyGradingResult(q.id, isCorrect);
+    } catch {
+      setGradingError(
+        "Connexion interrompue, vérification impossible — réessaye.",
+      );
+    } finally {
+      setGrading(false);
+    }
   }
 
   function handleViewResult() {
@@ -142,6 +200,7 @@ export default function AssignmentQuizPage() {
     setSelected(null);
     setAnswered(false);
     setWrongPhase(null);
+    setGradingError(null);
   }
 
   function handleNext() {
@@ -150,6 +209,7 @@ export default function AssignmentQuizPage() {
       setSelected(null);
       setAnswered(false);
       setWrongPhase(null);
+      setGradingError(null);
     } else {
       if (timerRef.current) clearInterval(timerRef.current);
       const score = Math.round((correctCount / questions.length) * 100);
@@ -239,10 +299,9 @@ export default function AssignmentQuizPage() {
 
   const q = questions[current];
   const progress = (current / questions.length) * 100;
-  // For MCQ/truefalse: correct when selected matches answer_index.
-  // For freeform types: correct when wrongPhase is null (set by handleSubmitFreeform).
-  const isMCQType = q.type === "mcq" || q.type === "truefalse";
-  const isCorrectAnswer = answered && (isMCQType ? selected === q.answer_index : wrongPhase === null);
+  // Server-side grading is the single source of truth: `wrongPhase` is null
+  // when the API returned is_correct=true, and set otherwise.
+  const isCorrectAnswer = answered && wrongPhase === null;
   const theoryPage = q.concept_page_hint ?? q.page_range_start;
 
   return (
@@ -273,6 +332,7 @@ export default function AssignmentQuizPage() {
             <MCQOptions
               options={q.options ?? []}
               answered={answered}
+              grading={grading}
               selected={selected}
               answerIndex={q.answer_index}
               wrongPhase={wrongPhase}
@@ -281,19 +341,27 @@ export default function AssignmentQuizPage() {
           ) : q.type === "numeric" ? (
             <NumericInput
               answered={answered}
-              expectedAnswer={q.expected_numeric_answer}
-              tolerance={q.numeric_tolerance}
+              grading={grading}
               unit={q.numeric_unit}
               onSubmit={handleSubmitFreeform}
             />
           ) : q.type === "short_text" ? (
             <ShortTextInput
               answered={answered}
-              expectedAnswers={q.expected_text_answers}
+              grading={grading}
               onSubmit={handleSubmitFreeform}
             />
           ) : (
             <p className="mt-6 text-sm text-gray-500">Type {q.type} non supporté</p>
+          )}
+
+          {gradingError && !answered && (
+            <p
+              role="alert"
+              className="mt-4 rounded-xl border border-red-500/40 bg-red-500/10 px-4 py-2 text-center text-sm text-red-300"
+            >
+              {gradingError}
+            </p>
           )}
 
           {/* Actions after answer */}
