@@ -12,25 +12,27 @@ type Question = {
 
 // Types de question stockés en DB (cf. lib/generate-questions/extract-content.ts).
 // "truefalse" est legacy mais on l'agrège dans "mcq" pour l'UI (un truefalse = un QCM 2 options).
-export type QuestionTypeFilter = "all" | "mcq" | "numeric" | "short_text";
+export type QuestionType = "mcq" | "numeric" | "short_text";
 
-const TYPE_LABELS: Record<Exclude<QuestionTypeFilter, "all">, string> = {
+const TYPE_LABELS: Record<QuestionType, string> = {
   mcq: "QCM",
   numeric: "Numérique",
   short_text: "Réponse libre",
 };
 
+const ALL_TYPES: QuestionType[] = ["mcq", "numeric", "short_text"];
+
 type Props<T extends Question> = {
   questions: T[];
   selectedSubject: string | null;
   selectedTheme: string | null;
-  selectedType?: QuestionTypeFilter;
+  selectedTypes?: Set<QuestionType>;
   onSelectSubject: (subject: string | null) => void;
   onSelectTheme: (theme: string | null) => void;
-  onSelectType?: (type: QuestionTypeFilter) => void;
+  onSelectTypes?: (types: Set<QuestionType>) => void;
 };
 
-function normalizeType(raw: unknown): Exclude<QuestionTypeFilter, "all"> | null {
+function normalizeType(raw: unknown): QuestionType | null {
   if (raw === "mcq" || raw === "truefalse") return "mcq";
   if (raw === "numeric") return "numeric";
   if (raw === "short_text") return "short_text";
@@ -39,21 +41,21 @@ function normalizeType(raw: unknown): Exclude<QuestionTypeFilter, "all"> | null 
 
 /**
  * Menu latéral gauche : trois niveaux de filtrage indépendants.
- * - Matière (subject_enum)
- * - Thème / chapitre (period)
- * - Type de question (mcq / numeric / short_text)
+ * - Matière (subject_enum) — single-select
+ * - Thème / chapitre (period) — single-select
+ * - Type de question (mcq / numeric / short_text) — multi-select checkbox
  *
- * Largeur élargie (~320px) + wrap 2 lignes sur les chapitres pour gérer les
- * titres longs (ex: "Chapitre 14 – Conservation de la masse...").
+ * Pour le filtre type, le Set vide = "Tous" implicite (aucun filtre actif).
+ * Cliquer "Tous" vide le Set ; cocher un type l'ajoute au Set.
  */
 export function SubjectSidebar<T extends Question>({
   questions,
   selectedSubject,
   selectedTheme,
-  selectedType = "all",
+  selectedTypes,
   onSelectSubject,
   onSelectTheme,
-  onSelectType,
+  onSelectTypes,
 }: Props<T>) {
   const matiereFilteredQuestions = useMemo(() => {
     if (selectedSubject === null) return questions;
@@ -95,7 +97,7 @@ export function SubjectSidebar<T extends Question>({
       if (selectedTheme === null) return true;
       return (q.period ?? "").trim() === selectedTheme;
     });
-    const m: Record<Exclude<QuestionTypeFilter, "all">, number> = {
+    const m: Record<QuestionType, number> = {
       mcq: 0,
       numeric: 0,
       short_text: 0,
@@ -109,6 +111,18 @@ export function SubjectSidebar<T extends Question>({
 
   const total = questions.length;
   const totalInMatiere = matiereFilteredQuestions.length;
+  const noTypeSelected = !selectedTypes || selectedTypes.size === 0;
+
+  function toggleType(type: QuestionType) {
+    if (!onSelectTypes) return;
+    const next = new Set(selectedTypes ?? []);
+    if (next.has(type)) {
+      next.delete(type);
+    } else {
+      next.add(type);
+    }
+    onSelectTypes(next);
+  }
 
   return (
     <aside className="w-full shrink-0 space-y-6 lg:w-80">
@@ -164,7 +178,7 @@ export function SubjectSidebar<T extends Question>({
         </div>
       )}
 
-      {onSelectType && (
+      {onSelectTypes && (
         <div>
           <p className="mb-3 text-xs font-semibold uppercase tracking-widest text-[rgb(var(--ink-3))]">
             Type
@@ -173,16 +187,16 @@ export function SubjectSidebar<T extends Question>({
             <SidebarButton
               label="Tous"
               count={typeCounts.all}
-              selected={selectedType === "all"}
-              onClick={() => onSelectType("all")}
+              selected={noTypeSelected}
+              onClick={() => onSelectTypes(new Set())}
             />
-            {(Object.keys(TYPE_LABELS) as (keyof typeof TYPE_LABELS)[]).map((t) => (
-              <SidebarButton
+            {ALL_TYPES.map((t) => (
+              <CheckboxButton
                 key={t}
                 label={TYPE_LABELS[t]}
                 count={typeCounts[t]}
-                selected={selectedType === t}
-                onClick={() => onSelectType(selectedType === t ? "all" : t)}
+                checked={selectedTypes?.has(t) ?? false}
+                onClick={() => toggleType(t)}
               />
             ))}
           </div>
@@ -227,6 +241,67 @@ function SidebarButton({
       <span
         className={`shrink-0 rounded-full px-2 py-0.5 text-xs ${
           selected ? "bg-[rgb(var(--accent))]/20 text-[rgb(var(--accent))]" : "bg-[rgb(var(--surface-3))] text-[rgb(var(--ink-3))]"
+        }`}
+      >
+        {count}
+      </span>
+    </button>
+  );
+}
+
+/**
+ * Variante checkbox-style pour le filtre TYPE (multi-select).
+ * Cocher = ajoute le type au Set des filtres actifs. Décocher = le retire.
+ * Set vide = "Tous" (équivalent à aucun filtre).
+ */
+function CheckboxButton({
+  label,
+  count,
+  checked,
+  onClick,
+}: {
+  label: string;
+  count: number;
+  checked: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-pressed={checked}
+      className={`flex w-full items-center gap-2 rounded-xl px-3 py-2 text-sm font-bold transition ${
+        checked
+          ? "border border-[rgb(var(--accent))]/40 bg-[rgb(var(--accent))]/10 text-[rgb(var(--accent))]"
+          : "border border-[rgb(var(--border))] bg-[rgb(var(--surface))] text-[rgb(var(--ink-2))] hover:border-[rgb(var(--ink-3))] hover:text-[rgb(var(--ink))]"
+      }`}
+    >
+      <span
+        className={`flex h-4 w-4 shrink-0 items-center justify-center rounded border ${
+          checked
+            ? "border-[rgb(var(--accent))] bg-[rgb(var(--accent))]"
+            : "border-[rgb(var(--ink-3))] bg-transparent"
+        }`}
+        aria-hidden="true"
+      >
+        {checked && (
+          <svg
+            viewBox="0 0 16 16"
+            className="h-3 w-3 text-white"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="3"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <polyline points="3 8 7 12 13 4" />
+          </svg>
+        )}
+      </span>
+      <span className="truncate flex-1 text-left">{label}</span>
+      <span
+        className={`shrink-0 rounded-full px-2 py-0.5 text-xs ${
+          checked ? "bg-[rgb(var(--accent))]/20 text-[rgb(var(--accent))]" : "bg-[rgb(var(--surface-3))] text-[rgb(var(--ink-3))]"
         }`}
       >
         {count}
