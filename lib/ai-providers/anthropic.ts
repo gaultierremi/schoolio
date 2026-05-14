@@ -5,7 +5,7 @@ import type { AIProvider, AIRequest, AIResponse } from "./types";
  * source.type: 'base64'). Utilisé en fallback quand Gemini Free Tier hit
  * son quota daily (429 too many requests).
  *
- * Modèle par défaut : claude-sonnet-4-5 (latest, vision native, structured
+ * Modèle par défaut : claude-sonnet-4-6 (latest, vision native, structured
  * output via JSON mode). Pay-as-you-go — pas de quota par défaut, le budget
  * est géré côté billing Anthropic Console (€20 actuel).
  *
@@ -77,4 +77,4 @@ function makeAnthropicProvider(modelName: string, id: string): AIProvider {
 }
 
 export const AnthropicClaudeProvider = (): AIProvider =>
-  makeAnthropicProvider("claude-sonnet-4-5", "anthropic_claude");
+  makeAnthropicProvider("claude-sonnet-4-6", "anthropic_claude");
