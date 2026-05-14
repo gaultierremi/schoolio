@@ -13,7 +13,7 @@ import type { AIProvider, AIRequest, AIResponse } from "./types";
  * mixtes (document PDF + text) — c'est l'API "Files API direct base64".
  * Limite native : ~32MB en base64 pour les PDFs.
  */
-function makeAnthropicProvider(modelName: string, id: string): AIProvider {
+export function makeAnthropicProvider(modelName: string, id: string): AIProvider {
   return {
     id,
     supportsVision: true,

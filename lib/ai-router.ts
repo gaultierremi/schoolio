@@ -10,6 +10,7 @@ import { SambanovaProvider } from "./ai-providers/sambanova";
 import { OpenRouterProvider } from "./ai-providers/openrouter";
 import { CloudflareProvider } from "./ai-providers/cloudflare";
 import { AnthropicClaudeProvider } from "./ai-providers/anthropic";
+import { AnthropicHaikuProvider } from "./ai-providers/anthropic-haiku";
 
 export type { AIResponse } from "./ai-providers/types";
 
@@ -42,6 +43,7 @@ export interface RouteOptions {
 
 const ALL_PROVIDERS: AIProvider[] = [
   AnthropicClaudeProvider(),
+  AnthropicHaikuProvider(),
   GeminiProProvider(),
   GeminiFlashProvider(),
   MistralProvider(),
