@@ -1,9 +1,15 @@
-// Local PDF text extraction via pdfjs-dist (Mozilla's PDF.js).
+// Local PDF text extraction.
 //
 // Pivot architectural 2026-05-14 : on délaisse Anthropic Vision (re-processe
 // le PDF à chaque appel, lent : ~200s sur 176p) au profit d'une extraction
 // LOCALE rapide (~1s sur le même PDF). Le texte extrait est ensuite envoyé
 // à Sonnet text-only, qui est ~10x plus rapide que Vision sur le même contenu.
+//
+// Implémentation v2 : on utilise `pdf-parse` plutôt que pdfjs-dist direct.
+// Raison : pdfjs-dist 4.x essaie de charger un worker file (pdf.worker.mjs)
+// même en mode disableWorker, ce qui plante sur Trigger.dev cloud
+// ("Cannot find module '/app/pdf.worker.mjs'"). pdf-parse encapsule pdfjs
+// proprement pour Node serverless sans cette dépendance.
 //
 // Trade-off : on perd les images / diagrammes / structures moléculaires 2D.
 // Pour le cours typique de secondaire (chimie, histoire, etc.), ~95% du
@@ -21,53 +27,51 @@ export type PdfTextExtraction = {
 };
 
 /**
- * Extract text content from a PDF buffer using pdfjs-dist (Node-compatible,
- * works without DOM canvas).
+ * Extract text content from a PDF buffer using `pdf-parse`.
  *
- * Warnings TT.undefined* fonts qui s'affichent en stderr sont normaux :
- * certains glyphes décoratifs ne sont pas mappés, sans impact sur le texte
- * extractable. pdfjs-dist 4.x les log mais continue.
+ * pdf-parse retourne le texte intégral du PDF avec des `\n` entre les pages
+ * et un `\f` (form feed) en délimiteur de page. On split sur `\f` pour
+ * récupérer le texte par page.
  *
- * Notes :
- * - On désactive worker (pas applicable en Node serverless).
- * - On désactive isEvalSupported (sécurité : pas de eval de PDF).
- * - useSystemFonts=true permet une meilleure couverture polices sans bundle.
+ * Returns pages 1-indexed dans pagesText (page N = pagesText[N-1]).
  */
 export async function extractTextFromPdf(
   pdfBuffer: Buffer | Uint8Array,
 ): Promise<PdfTextExtraction> {
   const t0 = Date.now();
-  // Dynamic import : pdfjs-dist est lourd (~3MB), on ne le charge que
-  // quand on l'utilise réellement (extraction PDF).
-  const pdfjs = await import("pdfjs-dist/legacy/build/pdf.mjs");
 
-  const loadingTask = pdfjs.getDocument({
-    data: new Uint8Array(pdfBuffer),
-    // Trigger.dev cloud bundle ne contient pas pdf.worker.mjs → "fake worker
-    // setup failed" si on laisse pdfjs essayer de le charger. Disable worker
-    // entirely (Node serverless parse en main thread sans souci).
-    disableWorker: true,
-    useWorkerFetch: false,
-    isEvalSupported: false,
-    useSystemFonts: true,
-  });
-  const doc = await loadingTask.promise;
+  // Dynamic import : pdf-parse charge pdfjs-dist en interne mais sans dépendance
+  // au worker file en runtime.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const pdfParseMod: any = await import("pdf-parse");
+  const pdfParse = pdfParseMod.default ?? pdfParseMod;
 
+  const buf = Buffer.isBuffer(pdfBuffer) ? pdfBuffer : Buffer.from(pdfBuffer);
+  const result = await pdfParse(buf);
+
+  // pdf-parse insère un form-feed (\f, U+000C) entre les pages dans `.text`.
+  // On split là-dessus pour reconstituer les pages individuellement.
+  const rawText: string = result.text ?? "";
+  const parts = rawText.split("\f");
+
+  // Filtrer les pages vides en queue (parfois pdf-parse ajoute un \f final).
+  while (parts.length > 0 && parts[parts.length - 1].trim() === "") {
+    parts.pop();
+  }
+
+  // Si on a moins de pages que result.numpages (peut arriver si certaines
+  // pages ont 0 contenu textuel), on pad avec strings vides pour préserver
+  // l'index par page.
+  const numPages = result.numpages ?? parts.length;
   const pagesText: string[] = [];
-  for (let i = 1; i <= doc.numPages; i++) {
-    const page = await doc.getPage(i);
-    const content = await page.getTextContent();
-    const text = content.items
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      .map((item: any) => ("str" in item ? item.str : ""))
-      .join(" ");
-    pagesText.push(text);
+  for (let i = 0; i < numPages; i++) {
+    pagesText.push((parts[i] ?? "").trim());
   }
 
   const totalChars = pagesText.reduce((sum, t) => sum + t.length, 0);
   return {
     pagesText,
-    pageCount: doc.numPages,
+    pageCount: numPages,
     totalChars,
     durationMs: Date.now() - t0,
   };
