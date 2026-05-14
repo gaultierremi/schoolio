@@ -18,7 +18,7 @@ import { createClient as createSupabaseAdminClient } from "@supabase/supabase-js
 import { createClient } from "@/lib/supabase-server";
 import { logError } from "@/lib/observability/log-error";
 import { tasks } from "@trigger.dev/sdk/v3";
-import { MAX_QUESTIONS_PER_COURSE, autoTargetQuestions } from "@/lib/generate-questions/runner";
+import { MAX_QUESTIONS_PER_COURSE, autoTargetQuestions } from "@/lib/generate-questions/extract-content";
 import type { generateQuestionsTask } from "@/trigger/generate-questions";
 
 export const dynamic = "force-dynamic";

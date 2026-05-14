@@ -13,7 +13,7 @@
 // jusqu'à 5min en free / 1h en pro, sans kill mid-execution.
 
 import { task } from "@trigger.dev/sdk/v3";
-import { runGenerationForJob } from "@/lib/generate-questions/runner";
+import { runExtractionForJob } from "@/lib/generate-questions/extract-content";
 
 const UUID_REGEX = /^[0-9a-f-]{36}$/i;
 
@@ -35,7 +35,7 @@ export const generateQuestionsTask = task({
       throw new Error("Invalid payload: jobId UUID requis");
     }
 
-    await runGenerationForJob(payload.jobId);
+    await runExtractionForJob(payload.jobId);
 
     // Le runner update lui-même la row jobs avec status final.
     // Cette valeur n'est pas consommée par la route (le client poll la table)
