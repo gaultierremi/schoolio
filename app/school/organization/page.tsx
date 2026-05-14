@@ -74,108 +74,108 @@ const COLOR_STYLES: Record<
   }
 > = {
   purple: {
-    cardBg: "bg-purple-900/20",
-    cardBorder: "border-purple-500/30",
-    text: "text-purple-300",
+    cardBg: "bg-purple-50",
+    cardBorder: "border-purple-200",
+    text: "text-purple-700",
     dot: "bg-purple-500",
     ring: "ring-purple-400",
-    shadowHover: "hover:shadow-purple-500/20",
+    shadowHover: "hover:shadow-purple-200",
     barFrom: "from-purple-500",
     barTo: "to-purple-300",
-    toastBg: "bg-purple-900/90",
-    toastBorder: "border-purple-500/50",
-    toastText: "text-purple-100",
+    toastBg: "bg-purple-600",
+    toastBorder: "border-purple-700",
+    toastText: "text-[rgb(var(--ink))]",
   },
   blue: {
-    cardBg: "bg-blue-900/20",
-    cardBorder: "border-blue-500/30",
-    text: "text-blue-300",
+    cardBg: "bg-blue-50",
+    cardBorder: "border-blue-200",
+    text: "text-blue-700",
     dot: "bg-blue-500",
     ring: "ring-blue-400",
-    shadowHover: "hover:shadow-blue-500/20",
+    shadowHover: "hover:shadow-blue-200",
     barFrom: "from-blue-500",
     barTo: "to-blue-300",
-    toastBg: "bg-blue-900/90",
-    toastBorder: "border-blue-500/50",
-    toastText: "text-blue-100",
+    toastBg: "bg-blue-600",
+    toastBorder: "border-blue-700",
+    toastText: "text-[rgb(var(--ink))]",
   },
   red: {
-    cardBg: "bg-red-900/20",
-    cardBorder: "border-red-500/30",
-    text: "text-red-300",
+    cardBg: "bg-red-50",
+    cardBorder: "border-red-200",
+    text: "text-red-700",
     dot: "bg-red-500",
     ring: "ring-red-400",
-    shadowHover: "hover:shadow-red-500/20",
+    shadowHover: "hover:shadow-red-200",
     barFrom: "from-red-500",
     barTo: "to-red-300",
-    toastBg: "bg-red-900/90",
-    toastBorder: "border-red-500/50",
-    toastText: "text-red-100",
+    toastBg: "bg-red-600",
+    toastBorder: "border-red-700",
+    toastText: "text-[rgb(var(--ink))]",
   },
   orange: {
-    cardBg: "bg-orange-900/20",
-    cardBorder: "border-orange-500/30",
-    text: "text-orange-300",
+    cardBg: "bg-orange-50",
+    cardBorder: "border-orange-200",
+    text: "text-orange-700",
     dot: "bg-orange-500",
     ring: "ring-orange-400",
-    shadowHover: "hover:shadow-orange-500/20",
+    shadowHover: "hover:shadow-orange-200",
     barFrom: "from-orange-500",
     barTo: "to-orange-300",
-    toastBg: "bg-orange-900/90",
-    toastBorder: "border-orange-500/50",
-    toastText: "text-orange-100",
+    toastBg: "bg-orange-600",
+    toastBorder: "border-orange-700",
+    toastText: "text-[rgb(var(--ink))]",
   },
   green: {
-    cardBg: "bg-green-900/20",
-    cardBorder: "border-green-500/30",
-    text: "text-green-300",
+    cardBg: "bg-green-50",
+    cardBorder: "border-green-200",
+    text: "text-green-700",
     dot: "bg-green-500",
     ring: "ring-green-400",
-    shadowHover: "hover:shadow-green-500/20",
+    shadowHover: "hover:shadow-green-200",
     barFrom: "from-green-500",
     barTo: "to-green-300",
-    toastBg: "bg-green-900/90",
-    toastBorder: "border-green-500/50",
-    toastText: "text-green-100",
+    toastBg: "bg-green-600",
+    toastBorder: "border-green-700",
+    toastText: "text-[rgb(var(--ink))]",
   },
   yellow: {
-    cardBg: "bg-yellow-900/20",
-    cardBorder: "border-yellow-500/30",
-    text: "text-yellow-300",
+    cardBg: "bg-yellow-50",
+    cardBorder: "border-yellow-200",
+    text: "text-yellow-800",
     dot: "bg-yellow-500",
     ring: "ring-yellow-400",
-    shadowHover: "hover:shadow-yellow-500/20",
+    shadowHover: "hover:shadow-yellow-200",
     barFrom: "from-yellow-500",
     barTo: "to-yellow-300",
-    toastBg: "bg-yellow-900/90",
-    toastBorder: "border-yellow-500/50",
-    toastText: "text-yellow-100",
+    toastBg: "bg-yellow-500",
+    toastBorder: "border-yellow-600",
+    toastText: "text-[rgb(var(--ink))]",
   },
   pink: {
-    cardBg: "bg-pink-900/20",
-    cardBorder: "border-pink-500/30",
-    text: "text-pink-300",
+    cardBg: "bg-pink-50",
+    cardBorder: "border-pink-200",
+    text: "text-pink-700",
     dot: "bg-pink-500",
     ring: "ring-pink-400",
-    shadowHover: "hover:shadow-pink-500/20",
+    shadowHover: "hover:shadow-pink-200",
     barFrom: "from-pink-500",
     barTo: "to-pink-300",
-    toastBg: "bg-pink-900/90",
-    toastBorder: "border-pink-500/50",
-    toastText: "text-pink-100",
+    toastBg: "bg-pink-600",
+    toastBorder: "border-pink-700",
+    toastText: "text-[rgb(var(--ink))]",
   },
   gray: {
-    cardBg: "bg-gray-800/40",
-    cardBorder: "border-gray-500/30",
-    text: "text-gray-300",
-    dot: "bg-gray-500",
-    ring: "ring-gray-400",
-    shadowHover: "hover:shadow-gray-500/20",
-    barFrom: "from-gray-500",
-    barTo: "to-gray-300",
-    toastBg: "bg-gray-800/90",
-    toastBorder: "border-gray-500/50",
-    toastText: "text-gray-100",
+    cardBg: "bg-[rgb(var(--surface-3))]",
+    cardBorder: "border-[rgb(var(--border))]",
+    text: "text-[rgb(var(--ink-2))]",
+    dot: "bg-[rgb(var(--ink-3))]",
+    ring: "ring-[rgb(var(--ink-3))]",
+    shadowHover: "hover:shadow-[rgb(var(--border))]",
+    barFrom: "from-[rgb(var(--ink-3))]",
+    barTo: "to-[rgb(var(--ink-2))]",
+    toastBg: "bg-[rgb(var(--ink))]",
+    toastBorder: "border-[rgb(var(--ink-2))]",
+    toastText: "text-[rgb(var(--ink))]",
   },
 };
 
@@ -281,7 +281,7 @@ function profileSubtitle(profiles: ProfileId[]): string {
 // ── SkeletonBlock ─────────────────────────────────────────────────────────────
 
 function SkeletonBlock({ className }: { className?: string }) {
-  return <div className={`animate-pulse rounded-xl bg-gray-800 ${className ?? ""}`} />;
+  return <div className={`animate-pulse rounded-xl bg-[rgb(var(--surface-3))] ${className ?? ""}`} />;
 }
 
 // ── TagCard ───────────────────────────────────────────────────────────────────
@@ -317,7 +317,7 @@ function TagCard({ tag, maxUsage = 0, onEdit, onDelete, isPreview = false }: Tag
       <div className="flex items-start justify-between gap-3">
         <div className="flex items-center gap-2 min-w-0">
           <span className="text-2xl leading-none shrink-0">{displayEmoji}</span>
-          <span className={`font-black text-lg leading-tight truncate ${tag.name.trim() ? "text-white" : "italic text-gray-500"}`}>
+          <span className={`truncate text-lg font-black leading-tight ${tag.name.trim() ? "text-[rgb(var(--ink))]" : "italic text-[rgb(var(--ink-3))]"}`}>
             {displayName}
           </span>
         </div>
@@ -328,7 +328,7 @@ function TagCard({ tag, maxUsage = 0, onEdit, onDelete, isPreview = false }: Tag
             {onEdit && (
               <button
                 onClick={onEdit}
-                className="rounded-xl border border-gray-700 px-2.5 py-1.5 text-xs font-bold text-gray-300 hover:border-purple-500/50 hover:text-purple-300 transition-colors"
+                className="rounded-xl border border-[rgb(var(--border))] bg-[rgb(var(--surface))] px-2.5 py-1.5 text-xs font-bold text-[rgb(var(--ink-2))] transition-colors hover:border-[rgb(var(--accent))]/50 hover:text-[rgb(var(--accent))]"
                 aria-label="Modifier"
               >
                 ✏️
@@ -337,7 +337,7 @@ function TagCard({ tag, maxUsage = 0, onEdit, onDelete, isPreview = false }: Tag
             {onDelete && (
               <button
                 onClick={onDelete}
-                className="rounded-xl border border-red-500/20 px-2.5 py-1.5 text-xs font-bold text-red-400 hover:bg-red-500/10 transition-colors"
+                className="rounded-xl border border-[rgb(var(--red))]/30 bg-[rgb(var(--surface))] px-2.5 py-1.5 text-xs font-bold text-[rgb(var(--red))] transition-colors hover:bg-[rgb(var(--red))]/10"
                 aria-label="Supprimer"
               >
                 🗑️
@@ -348,9 +348,9 @@ function TagCard({ tag, maxUsage = 0, onEdit, onDelete, isPreview = false }: Tag
       </div>
 
       {/* Stats */}
-      <p className="mt-2 text-sm text-gray-400">
+      <p className="mt-2 text-sm text-[rgb(var(--ink-2))]">
         {isPreview ? (
-          <span className="italic text-gray-600">Aperçu — stats disponibles après création</span>
+          <span className="italic text-[rgb(var(--ink-3))]">Aperçu — stats disponibles après création</span>
         ) : (
           usageLabel(usage)
         )}
@@ -358,7 +358,7 @@ function TagCard({ tag, maxUsage = 0, onEdit, onDelete, isPreview = false }: Tag
 
       {/* Progress bar */}
       {!isPreview && (
-        <div className="mt-3 h-1.5 w-full rounded-full bg-gray-800 overflow-hidden">
+        <div className="mt-3 h-1.5 w-full overflow-hidden rounded-full bg-[rgb(var(--border))]">
           <div
             className={`h-full rounded-full bg-gradient-to-r ${s.barFrom} ${s.barTo} transition-all duration-500 group-hover:animate-pulse`}
             style={{ width: `${Math.max(pct, total > 0 ? 8 : 0)}%` }}
@@ -368,7 +368,7 @@ function TagCard({ tag, maxUsage = 0, onEdit, onDelete, isPreview = false }: Tag
 
       {/* Description */}
       {tag.description && (
-        <p className="mt-3 text-xs text-gray-500 leading-relaxed">
+        <p className="mt-3 text-xs leading-relaxed text-[rgb(var(--ink-2))]">
           {tag.description}
         </p>
       )}
@@ -377,7 +377,7 @@ function TagCard({ tag, maxUsage = 0, onEdit, onDelete, isPreview = false }: Tag
       {isPreview && (
         <div className="mt-3 flex items-center gap-1.5">
           <span className={`inline-block h-2.5 w-2.5 rounded-full ${s.dot}`} />
-          <span className="text-xs text-gray-600">Couleur : {tag.color}</span>
+          <span className="text-xs text-[rgb(var(--ink-3))]">Couleur : {tag.color}</span>
         </div>
       )}
     </div>
@@ -461,19 +461,19 @@ function TagModal({ mode, initialTag, onClose, onSaved }: TagModalProps) {
       onClick={(e) => { if (!saving && e.target === e.currentTarget) onClose(); }}
     >
       {/* Backdrop */}
-      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
+      <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" />
 
       {/* Panel */}
-      <div className="relative z-10 w-full max-w-2xl rounded-3xl border border-gray-800 bg-gray-950 shadow-2xl max-h-[90vh] overflow-y-auto">
+      <div className="relative z-10 w-full max-w-2xl rounded-3xl border border-[rgb(var(--border))] bg-[rgb(var(--surface))] shadow-2xl max-h-[90vh] overflow-y-auto">
         {/* Modal header */}
-        <div className="sticky top-0 z-10 flex items-center justify-between border-b border-gray-800 bg-gray-950/95 px-6 py-4">
-          <h2 className="text-lg font-black text-white">
+        <div className="sticky top-0 z-10 flex items-center justify-between border-b border-[rgb(var(--border))] bg-[rgb(var(--surface))]/95 px-6 py-4">
+          <h2 className="text-lg font-black text-[rgb(var(--ink))]">
             {mode === "create" ? "✨ Créer un tag" : "Modifier le tag"}
           </h2>
           <button
             onClick={onClose}
             disabled={saving}
-            className="rounded-xl border border-gray-700 px-3 py-1.5 text-sm text-gray-400 hover:text-white transition-colors disabled:opacity-40"
+            className="rounded-xl border border-[rgb(var(--border))] px-3 py-1.5 text-sm text-[rgb(var(--ink-2))] hover:text-[rgb(var(--ink))] transition-colors disabled:opacity-40"
           >
             ✕
           </button>
@@ -487,10 +487,10 @@ function TagModal({ mode, initialTag, onClose, onSaved }: TagModalProps) {
               {/* Nom */}
               <div>
                 <div className="flex items-center justify-between mb-1.5">
-                  <label className="text-xs font-black uppercase tracking-widest text-gray-500">
+                  <label className="text-xs font-black uppercase tracking-widest text-[rgb(var(--ink-3))]">
                     Nom du tag *
                   </label>
-                  <span className={`text-xs ${form.name.length > 40 ? "text-orange-400" : "text-gray-600"}`}>
+                  <span className={`text-xs ${form.name.length > 40 ? "text-[rgb(var(--warm))]" : "text-[rgb(var(--ink-3))]"}`}>
                     {form.name.length}/50
                   </span>
                 </div>
@@ -503,21 +503,21 @@ function TagModal({ mode, initialTag, onClose, onSaved }: TagModalProps) {
                   }}
                   placeholder="Ex. Sciences fortes, Cours communs…"
                   className={[
-                    "w-full rounded-xl border bg-gray-900 px-4 py-2.5 text-white outline-none placeholder:text-gray-600 transition-colors",
+                    "w-full rounded-xl border bg-[rgb(var(--surface))] px-4 py-2.5 text-[rgb(var(--ink))] outline-none placeholder:text-[rgb(var(--ink-3))] transition-colors",
                     formError
-                      ? "border-red-500/60 focus:border-red-500"
-                      : "border-gray-700 focus:border-purple-500",
+                      ? "border-[rgb(var(--red))]/60 focus:border-[rgb(var(--red))]"
+                      : "border-[rgb(var(--border))] focus:border-purple-500",
                   ].join(" ")}
                   autoFocus
                 />
                 {formError && (
-                  <p className="mt-1.5 text-xs font-bold text-red-400">{formError}</p>
+                  <p className="mt-1.5 text-xs font-bold text-[rgb(var(--red))]">{formError}</p>
                 )}
               </div>
 
               {/* Emoji */}
               <div>
-                <label className="mb-2 block text-xs font-black uppercase tracking-widest text-gray-500">
+                <label className="mb-2 block text-xs font-black uppercase tracking-widest text-[rgb(var(--ink-3))]">
                   Emoji
                 </label>
                 <div className="grid grid-cols-8 gap-1.5 mb-2">
@@ -529,8 +529,8 @@ function TagModal({ mode, initialTag, onClose, onSaved }: TagModalProps) {
                       className={[
                         "flex h-9 w-full items-center justify-center rounded-xl border text-lg transition-all duration-150",
                         form.emoji === em
-                          ? "border-purple-500 bg-purple-500/20 ring-1 ring-purple-400"
-                          : "border-gray-700 bg-gray-900 hover:border-gray-500",
+                          ? "border-[rgb(var(--accent))] bg-[rgb(var(--accent))]/15 ring-1 ring-[rgb(var(--accent))]"
+                          : "border-[rgb(var(--border))] bg-[rgb(var(--surface))] hover:border-[rgb(var(--ink-3))]",
                       ].join(" ")}
                     >
                       {em}
@@ -542,13 +542,13 @@ function TagModal({ mode, initialTag, onClose, onSaved }: TagModalProps) {
                   value={form.emoji}
                   onChange={(e) => setForm({ ...form, emoji: e.target.value.trim().slice(0, 8) })}
                   placeholder="Ou colle un emoji ici…"
-                  className="w-full rounded-xl border border-gray-700 bg-gray-900 px-3 py-2 text-sm text-white outline-none placeholder:text-gray-600 focus:border-purple-500"
+                  className="w-full rounded-xl border border-[rgb(var(--border))] bg-[rgb(var(--surface))] px-3 py-2 text-sm text-[rgb(var(--ink))] outline-none placeholder:text-[rgb(var(--ink-3))] focus:border-purple-500"
                 />
               </div>
 
               {/* Couleur */}
               <div>
-                <label className="mb-2 block text-xs font-black uppercase tracking-widest text-gray-500">
+                <label className="mb-2 block text-xs font-black uppercase tracking-widest text-[rgb(var(--ink-3))]">
                   Couleur
                 </label>
                 <div className="flex flex-wrap gap-2">
@@ -565,7 +565,7 @@ function TagModal({ mode, initialTag, onClose, onSaved }: TagModalProps) {
                           "h-8 w-8 rounded-full transition-all duration-150",
                           cs.dot,
                           isSelected
-                            ? `ring-2 ring-offset-2 ring-offset-gray-950 ${cs.ring} scale-110`
+                            ? `ring-2 ring-offset-2 ring-offset-[rgb(var(--surface))] ${cs.ring} scale-110`
                             : "hover:scale-105 opacity-70 hover:opacity-100",
                         ].join(" ")}
                       />
@@ -577,10 +577,10 @@ function TagModal({ mode, initialTag, onClose, onSaved }: TagModalProps) {
               {/* Description */}
               <div>
                 <div className="flex items-center justify-between mb-1.5">
-                  <label className="text-xs font-black uppercase tracking-widest text-gray-500">
-                    Description <span className="normal-case font-normal text-gray-600">(optionnel)</span>
+                  <label className="text-xs font-black uppercase tracking-widest text-[rgb(var(--ink-3))]">
+                    Description <span className="normal-case font-normal text-[rgb(var(--ink-3))]">(optionnel)</span>
                   </label>
-                  <span className={`text-xs ${form.description.length > 160 ? "text-orange-400" : "text-gray-600"}`}>
+                  <span className={`text-xs ${form.description.length > 160 ? "text-[rgb(var(--warm))]" : "text-[rgb(var(--ink-3))]"}`}>
                     {form.description.length}/200
                   </span>
                 </div>
@@ -589,36 +589,36 @@ function TagModal({ mode, initialTag, onClose, onSaved }: TagModalProps) {
                   onChange={(e) => setForm({ ...form, description: e.target.value.slice(0, 200) })}
                   placeholder="À quoi sert ce tag ? Ex. Pour les classes en filière approfondie…"
                   rows={3}
-                  className="w-full rounded-xl border border-gray-700 bg-gray-900 px-4 py-2.5 text-sm text-white outline-none placeholder:text-gray-600 focus:border-purple-500 resize-none"
+                  className="w-full rounded-xl border border-[rgb(var(--border))] bg-[rgb(var(--surface))] px-4 py-2.5 text-sm text-[rgb(var(--ink))] outline-none placeholder:text-[rgb(var(--ink-3))] focus:border-purple-500 resize-none"
                 />
               </div>
             </div>
 
             {/* ── Droite : aperçu live ── */}
             <div className="lg:w-64 lg:shrink-0">
-              <p className="mb-2 text-xs font-black uppercase tracking-widest text-gray-500">
+              <p className="mb-2 text-xs font-black uppercase tracking-widest text-[rgb(var(--ink-3))]">
                 Aperçu live
               </p>
               <TagCard tag={previewTag} isPreview />
-              <p className="mt-2 text-[11px] text-gray-600 text-center leading-relaxed">
+              <p className="mt-2 text-[11px] text-[rgb(var(--ink-3))] text-center leading-relaxed">
                 Voici à quoi ressemblera ton tag dans la liste.
               </p>
             </div>
           </div>
 
           {/* Footer */}
-          <div className="mt-6 flex items-center justify-between border-t border-gray-800 pt-5">
+          <div className="mt-6 flex items-center justify-between border-t border-[rgb(var(--border))] pt-5">
             <button
               onClick={onClose}
               disabled={saving}
-              className="rounded-2xl border border-gray-700 px-5 py-2.5 font-bold text-gray-300 hover:text-white transition-colors disabled:opacity-40"
+              className="rounded-2xl border border-[rgb(var(--border))] px-5 py-2.5 font-bold text-[rgb(var(--ink-2))] hover:text-[rgb(var(--ink))] transition-colors disabled:opacity-40"
             >
               Annuler
             </button>
             <button
               onClick={handleSave}
               disabled={saving || !form.name.trim()}
-              className="rounded-2xl bg-purple-500 px-6 py-2.5 font-black text-gray-950 hover:bg-purple-400 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+              className="rounded-2xl bg-[rgb(var(--accent))] px-6 py-2.5 font-black text-white hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
             >
               {saving ? "Sauvegarde…" : mode === "create" ? "Créer ✨" : "Enregistrer"}
             </button>
@@ -648,30 +648,30 @@ function DeleteModal({ state, deleting, onCancel, onConfirm }: DeleteModalProps)
       className="fixed inset-0 z-50 flex items-center justify-center p-4"
       onClick={(e) => { if (!deleting && e.target === e.currentTarget) onCancel(); }}
     >
-      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
+      <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" />
 
-      <div className="relative z-10 w-full max-w-md rounded-3xl border border-gray-800 bg-gray-950 p-6 shadow-2xl">
+      <div className="relative z-10 w-full max-w-md rounded-3xl border border-[rgb(var(--border))] bg-[rgb(var(--surface))] p-6 shadow-2xl">
         {/* Tag identity */}
         <div className={`mb-5 flex items-center gap-3 rounded-2xl border p-4 ${s.cardBg} ${s.cardBorder}`}>
           <span className="text-2xl">{tag.emoji ?? "🏷️"}</span>
           <div>
             <p className={`font-black ${s.text}`}>{tag.name}</p>
             {tag.description && (
-              <p className="text-xs text-gray-500 mt-0.5">{tag.description}</p>
+              <p className="text-xs text-[rgb(var(--ink-3))] mt-0.5">{tag.description}</p>
             )}
           </div>
         </div>
 
         {isForce ? (
           <>
-            <h3 className="text-base font-black text-white">Ce tag est utilisé</h3>
-            <div className="mt-3 space-y-1.5 rounded-xl bg-gray-900 p-3">
-              {tag.usage!.courses   > 0 && <p className="text-sm text-gray-300">📄 {tag.usage!.courses} cours</p>}
-              {tag.usage!.questions > 0 && <p className="text-sm text-gray-300">❓ {tag.usage!.questions} question{tag.usage!.questions > 1 ? "s" : ""}</p>}
-              {tag.usage!.classes   > 0 && <p className="text-sm text-gray-300">👥 {tag.usage!.classes} classe{tag.usage!.classes > 1 ? "s" : ""}</p>}
+            <h3 className="text-base font-black text-[rgb(var(--ink))]">Ce tag est utilisé</h3>
+            <div className="mt-3 space-y-1.5 rounded-xl bg-[rgb(var(--surface))] p-3">
+              {tag.usage!.courses   > 0 && <p className="text-sm text-[rgb(var(--ink-2))]">📄 {tag.usage!.courses} cours</p>}
+              {tag.usage!.questions > 0 && <p className="text-sm text-[rgb(var(--ink-2))]">❓ {tag.usage!.questions} question{tag.usage!.questions > 1 ? "s" : ""}</p>}
+              {tag.usage!.classes   > 0 && <p className="text-sm text-[rgb(var(--ink-2))]">👥 {tag.usage!.classes} classe{tag.usage!.classes > 1 ? "s" : ""}</p>}
             </div>
-            <div className="mt-3 rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3">
-              <p className="text-xs font-bold text-amber-300">
+            <div className="mt-3 rounded-xl border border-[rgb(var(--warm))]/30 bg-[rgb(var(--warm))]/10 px-4 py-3">
+              <p className="text-xs font-bold text-[rgb(var(--warm))]">
                 ⚠️ La suppression retirera ce tag de toutes ces entités.
               </p>
             </div>
@@ -679,14 +679,14 @@ function DeleteModal({ state, deleting, onCancel, onConfirm }: DeleteModalProps)
               <button
                 onClick={onCancel}
                 disabled={deleting}
-                className="flex-1 rounded-2xl border border-gray-700 py-2.5 font-bold text-gray-300 hover:text-white transition-colors disabled:opacity-40"
+                className="flex-1 rounded-2xl border border-[rgb(var(--border))] py-2.5 font-bold text-[rgb(var(--ink-2))] hover:text-[rgb(var(--ink))] transition-colors disabled:opacity-40"
               >
                 Annuler
               </button>
               <button
                 onClick={() => onConfirm(true)}
                 disabled={deleting}
-                className="flex-1 rounded-2xl bg-red-500 py-2.5 font-black text-white hover:bg-red-400 transition-colors disabled:opacity-40"
+                className="flex-1 rounded-2xl bg-[rgb(var(--red))] py-2.5 font-black text-white hover:opacity-90 transition-colors disabled:opacity-40"
               >
                 {deleting ? "Suppression…" : "Supprimer quand même"}
               </button>
@@ -694,22 +694,22 @@ function DeleteModal({ state, deleting, onCancel, onConfirm }: DeleteModalProps)
           </>
         ) : (
           <>
-            <h3 className="text-base font-black text-white">Supprimer ce tag ?</h3>
-            <p className="mt-1.5 text-sm text-gray-400">
+            <h3 className="text-base font-black text-[rgb(var(--ink))]">Supprimer ce tag ?</h3>
+            <p className="mt-1.5 text-sm text-[rgb(var(--ink-2))]">
               Ce tag n&apos;est pas utilisé. Cette action est irréversible.
             </p>
             <div className="mt-5 flex gap-3">
               <button
                 onClick={onCancel}
                 disabled={deleting}
-                className="flex-1 rounded-2xl border border-gray-700 py-2.5 font-bold text-gray-300 hover:text-white transition-colors disabled:opacity-40"
+                className="flex-1 rounded-2xl border border-[rgb(var(--border))] py-2.5 font-bold text-[rgb(var(--ink-2))] hover:text-[rgb(var(--ink))] transition-colors disabled:opacity-40"
               >
                 Annuler
               </button>
               <button
                 onClick={() => onConfirm(false)}
                 disabled={deleting}
-                className="flex-1 rounded-2xl bg-red-500 py-2.5 font-black text-white hover:bg-red-400 transition-colors disabled:opacity-40"
+                className="flex-1 rounded-2xl bg-[rgb(var(--red))] py-2.5 font-black text-white hover:opacity-90 transition-colors disabled:opacity-40"
               >
                 {deleting ? "Suppression…" : "Supprimer"}
               </button>
@@ -750,15 +750,15 @@ function OnboardingStep1({ onContinue, onSkip }: OnboardingStep1Props) {
     <div className="py-8">
       {/* Hero */}
       <div className="mx-auto max-w-xl text-center">
-        <p className="text-xs font-bold uppercase tracking-widest text-purple-300">
+        <p className="text-xs font-bold uppercase tracking-widest text-[rgb(var(--accent))]">
           Étape 1 sur 2
         </p>
-        <h2 className="mt-3 text-2xl font-black text-white">
+        <h2 className="mt-3 text-2xl font-black text-[rgb(var(--ink))]">
           Tu enseignes principalement quoi ?
         </h2>
-        <p className="mt-3 text-gray-400 leading-relaxed">
+        <p className="mt-3 text-[rgb(var(--ink-2))] leading-relaxed">
           On va te proposer une organisation qui te correspond.{" "}
-          <span className="text-gray-600">Jusqu&apos;à {MAX} choix.</span>
+          <span className="text-[rgb(var(--ink-3))]">Jusqu&apos;à {MAX} choix.</span>
         </p>
       </div>
 
@@ -779,21 +779,21 @@ function OnboardingStep1({ onContinue, onSkip }: OnboardingStep1Props) {
                 "flex flex-col items-center gap-2 rounded-2xl border p-5 text-center transition-all duration-200",
                 isLastOdd ? "col-span-2 sm:col-span-1 sm:col-start-2" : "",
                 isSelected
-                  ? "border-purple-500 bg-purple-500/10 ring-1 ring-purple-500/50 -translate-y-0.5 shadow-lg shadow-purple-500/10"
+                  ? "border-[rgb(var(--accent))] bg-[rgb(var(--accent))]/10 ring-1 ring-[rgb(var(--accent))]/40 -translate-y-0.5 shadow-lg shadow-[rgb(var(--accent))]/10"
                   : isDisabled
-                  ? "border-gray-800 bg-gray-900/50 opacity-40 cursor-not-allowed"
-                  : "border-gray-700 bg-gray-900 hover:border-purple-500/50 hover:-translate-y-0.5 hover:shadow-md",
+                  ? "border-[rgb(var(--border))] bg-[rgb(var(--surface))]/50 opacity-40 cursor-not-allowed"
+                  : "border-[rgb(var(--border))] bg-[rgb(var(--surface))] hover:border-purple-500/50 hover:-translate-y-0.5 hover:shadow-md",
               ].join(" ")}
             >
               <span className="text-3xl leading-none">{p.emoji}</span>
-              <span className={`font-black text-sm leading-tight ${isSelected ? "text-purple-200" : "text-white"}`}>
+              <span className={`font-black text-sm leading-tight ${isSelected ? "text-purple-200" : "text-[rgb(var(--ink))]"}`}>
                 {p.label}
               </span>
               {p.sublabel && (
-                <span className="text-xs text-gray-500 leading-tight">{p.sublabel}</span>
+                <span className="text-xs text-[rgb(var(--ink-3))] leading-tight">{p.sublabel}</span>
               )}
               {isSelected && (
-                <span className="mt-0.5 flex h-5 w-5 items-center justify-center rounded-full bg-purple-500 text-[10px] font-black text-white">
+                <span className="mt-0.5 flex h-5 w-5 items-center justify-center rounded-full bg-[rgb(var(--accent))] text-[10px] font-black text-white">
                   ✓
                 </span>
               )}
@@ -807,13 +807,13 @@ function OnboardingStep1({ onContinue, onSkip }: OnboardingStep1Props) {
         <button
           onClick={() => onContinue(Array.from(selected))}
           disabled={count === 0}
-          className="w-full rounded-2xl bg-purple-500 px-7 py-3.5 font-black text-gray-950 hover:bg-purple-400 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+          className="w-full rounded-2xl bg-[rgb(var(--accent))] px-7 py-3.5 font-black text-white hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
         >
           {count === 0 ? "Sélectionne au moins un profil" : `Continuer → (${count} choix)`}
         </button>
         <button
           onClick={onSkip}
-          className="text-sm text-gray-500 hover:text-gray-300 transition-colors"
+          className="text-sm text-[rgb(var(--ink-3))] hover:text-[rgb(var(--ink-2))] transition-colors"
         >
           Je créerai mes tags plus tard
         </button>
@@ -857,14 +857,14 @@ function OnboardingStep2({ profiles, onBack, onSkip, onConfirm, creating }: Onbo
       <div className="mx-auto max-w-2xl">
         {/* Hero */}
         <div className="text-center">
-          <p className="text-xs font-bold uppercase tracking-widest text-purple-300">
+          <p className="text-xs font-bold uppercase tracking-widest text-[rgb(var(--accent))]">
             Étape 2 sur 2
           </p>
-          <h2 className="mt-3 text-2xl font-black text-white">
+          <h2 className="mt-3 text-2xl font-black text-[rgb(var(--ink))]">
             Voici une organisation qui pourrait te servir
           </h2>
-          <p className="mt-2 text-gray-400">{profileSubtitle(profiles)}</p>
-          <p className="mt-1 text-xs text-gray-600">
+          <p className="mt-2 text-[rgb(var(--ink-2))]">{profileSubtitle(profiles)}</p>
+          <p className="mt-1 text-xs text-[rgb(var(--ink-3))]">
             Coche ou décoche chaque tag selon tes besoins.
           </p>
         </div>
@@ -884,7 +884,7 @@ function OnboardingStep2({ profiles, onBack, onSkip, onConfirm, creating }: Onbo
                   "relative rounded-2xl border p-4 text-left transition-all duration-200",
                   isChecked
                     ? `${cs.cardBg} ${cs.cardBorder} hover:opacity-90 -translate-y-0 hover:-translate-y-0.5`
-                    : "bg-gray-900 border-gray-800 opacity-50 grayscale hover:opacity-60",
+                    : "bg-[rgb(var(--surface))] border-[rgb(var(--border))] opacity-50 grayscale hover:opacity-60",
                 ].join(" ")}
               >
                 {/* Checkbox indicator */}
@@ -892,8 +892,8 @@ function OnboardingStep2({ profiles, onBack, onSkip, onConfirm, creating }: Onbo
                   className={[
                     "absolute top-3 right-3 flex h-5 w-5 items-center justify-center rounded-full border-2 text-[10px] font-black transition-all duration-150",
                     isChecked
-                      ? "border-green-500 bg-green-500 text-white"
-                      : "border-gray-600 bg-transparent text-transparent",
+                      ? "border-green-500 bg-green-500 text-[rgb(var(--ink))]"
+                      : "border-[rgb(var(--border))] bg-transparent text-transparent",
                   ].join(" ")}
                 >
                   ✓
@@ -901,11 +901,11 @@ function OnboardingStep2({ profiles, onBack, onSkip, onConfirm, creating }: Onbo
 
                 <div className="flex items-center gap-2 pr-7">
                   <span className="text-xl leading-none">{s.emoji}</span>
-                  <span className={`font-black text-sm ${isChecked ? cs.text : "text-gray-400"}`}>
+                  <span className={`font-black text-sm ${isChecked ? cs.text : "text-[rgb(var(--ink-2))]"}`}>
                     {s.name}
                   </span>
                 </div>
-                <p className="mt-1.5 text-xs text-gray-500 leading-relaxed">
+                <p className="mt-1.5 text-xs text-[rgb(var(--ink-3))] leading-relaxed">
                   {s.description}
                 </p>
               </button>
@@ -919,14 +919,14 @@ function OnboardingStep2({ profiles, onBack, onSkip, onConfirm, creating }: Onbo
             <button
               onClick={onBack}
               disabled={creating}
-              className="rounded-2xl border border-gray-700 px-5 py-3 font-bold text-gray-300 hover:text-white transition-colors disabled:opacity-40"
+              className="rounded-2xl border border-[rgb(var(--border))] px-5 py-3 font-bold text-[rgb(var(--ink-2))] hover:text-[rgb(var(--ink))] transition-colors disabled:opacity-40"
             >
               ← Retour
             </button>
             <button
               onClick={() => onConfirm(selectedItems)}
               disabled={creating || count === 0}
-              className="flex-1 rounded-2xl bg-purple-500 px-5 py-3 font-black text-gray-950 hover:bg-purple-400 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+              className="flex-1 rounded-2xl bg-[rgb(var(--accent))] px-5 py-3 font-black text-white hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
             >
               {creating
                 ? "Création en cours…"
@@ -938,7 +938,7 @@ function OnboardingStep2({ profiles, onBack, onSkip, onConfirm, creating }: Onbo
           <button
             onClick={onSkip}
             disabled={creating}
-            className="text-sm text-gray-500 hover:text-gray-300 transition-colors disabled:opacity-40"
+            className="text-sm text-[rgb(var(--ink-3))] hover:text-[rgb(var(--ink-2))] transition-colors disabled:opacity-40"
           >
             Je préfère créer mes propres tags
           </button>
@@ -978,17 +978,17 @@ function EmptyState({ onCreateClick, onBatchCreate, batchCreating }: EmptyStateP
           </svg>
         </div>
 
-        <h2 className="text-2xl font-black text-white">
+        <h2 className="text-2xl font-black text-[rgb(var(--ink))]">
           Ton organisation, tes règles.
         </h2>
-        <p className="mt-3 text-gray-400 leading-relaxed">
+        <p className="mt-3 text-[rgb(var(--ink-2))] leading-relaxed">
           ✨ Crée ta propre organisation. Maïa s&apos;adapte à comment{" "}
-          <span className="font-bold text-purple-300">TU</span> enseignes, pas l&apos;inverse.
+          <span className="font-bold text-[rgb(var(--accent))]">TU</span> enseignes, pas l&apos;inverse.
         </p>
 
         <button
           onClick={onCreateClick}
-          className="mt-6 rounded-2xl bg-purple-500 px-7 py-3.5 font-black text-gray-950 hover:bg-purple-400 transition-colors"
+          className="mt-6 rounded-2xl bg-[rgb(var(--accent))] px-7 py-3.5 font-black text-white hover:opacity-90 transition-colors"
         >
           + Créer mon premier tag
         </button>
@@ -997,11 +997,11 @@ function EmptyState({ onCreateClick, onBatchCreate, batchCreating }: EmptyStateP
       {/* Séparateur */}
       <div className="mx-auto mt-10 max-w-2xl">
         <div className="flex items-center gap-3">
-          <div className="flex-1 border-t border-gray-800" />
-          <span className="text-xs font-bold text-gray-600 uppercase tracking-widest">
+          <div className="flex-1 border-t border-[rgb(var(--border))]" />
+          <span className="text-xs font-bold text-[rgb(var(--ink-3))] uppercase tracking-widest">
             Suggestions pour démarrer
           </span>
-          <div className="flex-1 border-t border-gray-800" />
+          <div className="flex-1 border-t border-[rgb(var(--border))]" />
         </div>
 
         <div className="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-2">
@@ -1016,7 +1016,7 @@ function EmptyState({ onCreateClick, onBatchCreate, batchCreating }: EmptyStateP
                   <span className="text-xl">{s.emoji}</span>
                   <span className={`font-black ${cs.text}`}>{s.name}</span>
                 </div>
-                <p className="mt-1.5 text-xs text-gray-500">{s.description}</p>
+                <p className="mt-1.5 text-xs text-[rgb(var(--ink-3))]">{s.description}</p>
               </div>
             );
           })}
@@ -1026,7 +1026,7 @@ function EmptyState({ onCreateClick, onBatchCreate, batchCreating }: EmptyStateP
           <button
             onClick={() => onBatchCreate(SUGGESTED_TAGS)}
             disabled={batchCreating}
-            className="rounded-2xl border border-purple-500/40 bg-purple-500/10 px-6 py-2.5 text-sm font-black text-purple-300 hover:bg-purple-500/20 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+            className="rounded-2xl border border-[rgb(var(--accent))]/40 bg-[rgb(var(--accent))]/10 px-6 py-2.5 text-sm font-black text-[rgb(var(--accent))] hover:bg-[rgb(var(--accent))]/15 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
           >
             {batchCreating ? "Création en cours…" : "Créer ces 4 tags d'un coup"}
           </button>
@@ -1050,7 +1050,7 @@ function Toast({ toast }: { toast: ToastState }) {
         "animate-slide-up",
         s
           ? `${s.toastBg} ${s.toastBorder} ${s.toastText}`
-          : "bg-gray-800/90 border-gray-700 text-white",
+          : "bg-[rgb(var(--surface-3))]/90 border-[rgb(var(--border))] text-[rgb(var(--ink))]",
       ].join(" ")}
     >
       <p className="text-sm font-bold whitespace-nowrap">{toast.msg}</p>
@@ -1193,7 +1193,7 @@ export default function OrganizationPage() {
 
   if (pageLoading) {
     return (
-      <main className="min-h-screen bg-gray-950 px-4 py-8">
+      <main className="min-h-screen bg-[rgb(var(--surface-2))] px-4 py-8">
         <div className="mx-auto w-full max-w-5xl space-y-4">
           <SkeletonBlock className="h-4 w-36 mb-8" />
           <SkeletonBlock className="h-8 w-56" />
@@ -1208,10 +1208,10 @@ export default function OrganizationPage() {
 
   if (!isTeacher) {
     return (
-      <main className="min-h-screen bg-gray-950 px-4 py-8 text-white">
-        <div className="mx-auto max-w-xl rounded-3xl border border-red-500/30 bg-red-500/10 p-6">
-          <h1 className="text-2xl font-black text-red-300">Accès refusé</h1>
-          <p className="mt-2 text-gray-300">Cet espace est réservé aux professeurs autorisés.</p>
+      <main className="min-h-screen bg-[rgb(var(--surface-2))] px-4 py-8 text-[rgb(var(--ink))]">
+        <div className="mx-auto max-w-xl rounded-3xl border border-[rgb(var(--red))]/30 bg-[rgb(var(--red))]/10 p-6">
+          <h1 className="text-2xl font-black text-[rgb(var(--red))]">Accès refusé</h1>
+          <p className="mt-2 text-[rgb(var(--ink-2))]">Cet espace est réservé aux professeurs autorisés.</p>
         </div>
       </main>
     );
@@ -1237,20 +1237,20 @@ export default function OrganizationPage() {
         }
       `}</style>
 
-      <main className="min-h-screen bg-gray-950 px-4 py-8 text-white">
+      <main className="min-h-screen bg-[rgb(var(--surface-2))] px-4 py-8 text-[rgb(var(--ink))]">
         <div className="mx-auto w-full max-w-5xl">
 
           {/* ── Retour ── */}
           <Link
             href="/school"
-            className="mb-6 inline-block text-sm text-gray-400 transition-colors hover:text-purple-400"
+            className="mb-6 inline-block text-sm text-[rgb(var(--ink-2))] transition-colors hover:text-[rgb(var(--accent))]"
           >
             ← Retour au dashboard
           </Link>
 
           {/* ── Baseline ── */}
           <div className="mb-6">
-            <p className="text-xs font-bold uppercase tracking-widest text-purple-300">
+            <p className="text-xs font-bold uppercase tracking-widest text-[rgb(var(--accent))]">
               ✨ Maïa — Organisation
             </p>
           </div>
@@ -1258,9 +1258,9 @@ export default function OrganizationPage() {
           {/* ── Header ── */}
           <header className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
-              <h1 className="text-3xl font-black text-white">Ton organisation</h1>
+              <h1 className="text-3xl font-black text-[rgb(var(--ink))]">Ton organisation</h1>
               {tags.length > 0 && (
-                <p className="mt-1 text-sm text-gray-500">
+                <p className="mt-1 text-sm text-[rgb(var(--ink-3))]">
                   {tags.length} tag{tags.length > 1 ? "s" : ""}
                   {totalOrganized > 0 && (
                     <> · {totalOrganized} cours organisé{totalOrganized > 1 ? "s" : ""}</>
@@ -1272,13 +1272,13 @@ export default function OrganizationPage() {
             {tags.length > 0 && (
               <div className="flex items-center gap-2">
                 {/* View toggle */}
-                <div className="flex rounded-xl border border-gray-800 overflow-hidden">
-                  <button className="px-3 py-1.5 text-xs font-bold bg-gray-900 text-purple-300 border-r border-gray-800">
+                <div className="flex rounded-xl border border-[rgb(var(--border))] overflow-hidden">
+                  <button className="px-3 py-1.5 text-xs font-bold bg-[rgb(var(--surface))] text-[rgb(var(--accent))] border-r border-[rgb(var(--border))]">
                     ☰ Liste
                   </button>
                   <button
                     title="Bientôt disponible"
-                    className="px-3 py-1.5 text-xs font-bold text-gray-600 opacity-50 cursor-not-allowed"
+                    className="px-3 py-1.5 text-xs font-bold text-[rgb(var(--ink-3))] opacity-50 cursor-not-allowed"
                   >
                     ✦ Galaxie
                   </button>
@@ -1287,7 +1287,7 @@ export default function OrganizationPage() {
                 {/* Create CTA */}
                 <button
                   onClick={() => setModal({ kind: "create" })}
-                  className="rounded-2xl bg-purple-500 px-4 py-2 text-sm font-black text-gray-950 hover:bg-purple-400 transition-colors"
+                  className="rounded-2xl bg-[rgb(var(--accent))] px-4 py-2 text-sm font-black text-white hover:opacity-90 transition-colors"
                 >
                   + Créer un tag
                 </button>

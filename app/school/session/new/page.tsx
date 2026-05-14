@@ -12,14 +12,6 @@ type QuestionRow = {
   source: "mine" | "public";
 };
 
-function makeCode() {
-  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
-  return Array.from(
-    { length: 6 },
-    () => chars[Math.floor(Math.random() * chars.length)]
-  ).join("");
-}
-
 export default function NewSchoolSessionPage() {
   const supabase = useMemo(() => createClient(), []);
 
@@ -129,35 +121,35 @@ export default function NewSchoolSessionPage() {
   );
 
   return (
-    <main className="min-h-screen bg-gray-950 px-4 py-10 text-white">
+    <main className="min-h-screen bg-[rgb(var(--surface-2))] px-4 py-10 text-[rgb(var(--ink))]">
       <div className="mx-auto w-full max-w-2xl">
         <a
           href="/school"
-          className="text-sm font-bold text-gray-500 transition hover:text-purple-400"
+          className="text-sm font-bold text-[rgb(var(--ink-3))] transition hover:text-[rgb(var(--accent))]"
         >
           ← Espace professeur
         </a>
 
-        <div className="mt-4 rounded-3xl border border-gray-800 bg-gray-900 p-6 shadow-2xl shadow-black/40">
-          <p className="text-sm font-bold uppercase tracking-widest text-purple-400">
+        <div className="mt-4 rounded-3xl border border-[rgb(var(--border))] bg-[rgb(var(--surface))] p-6 shadow-lg">
+          <p className="text-sm font-bold uppercase tracking-widest text-[rgb(var(--accent))]">
             Espace professeur
           </p>
 
-          <h1 className="mt-3 text-4xl font-black">Créer une session</h1>
+          <h1 className="serif mt-3 text-4xl font-black text-[rgb(var(--ink))]">Créer une session</h1>
 
-          <p className="mt-2 text-gray-400">
+          <p className="mt-2 text-[rgb(var(--ink-2))]">
             Choisis un titre et sélectionne tes questions.
           </p>
 
           {/* Title */}
           <div className="mt-6">
-            <label className="text-sm font-bold text-gray-300">
+            <label className="text-sm font-bold text-[rgb(var(--ink))]">
               Titre de la session
             </label>
             <input
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              className="mt-2 w-full rounded-2xl border border-gray-700 bg-gray-950 px-4 py-3 text-white outline-none placeholder:text-gray-600 focus:border-purple-500"
+              className="mt-2 w-full rounded-2xl border border-[rgb(var(--border))] bg-[rgb(var(--surface))] px-4 py-3 text-[rgb(var(--ink))] outline-none placeholder:text-[rgb(var(--ink-3))] focus:border-[rgb(var(--accent))]"
               placeholder="Ex : Révolution française"
             />
           </div>
@@ -165,24 +157,24 @@ export default function NewSchoolSessionPage() {
           {/* Question selection */}
           <div className="mt-6">
             <div className="flex items-center justify-between">
-              <label className="text-sm font-bold text-gray-300">
+              <label className="text-sm font-bold text-[rgb(var(--ink))]">
                 Questions
               </label>
               {selectedIds.length > 0 && (
-                <span className="rounded-full bg-purple-500/20 px-3 py-1 text-xs font-black text-purple-300">
+                <span className="rounded-full bg-[rgb(var(--accent))]/15 px-3 py-1 text-xs font-black text-[rgb(var(--accent))]">
                   {selectedIds.length} sélectionnée(s)
                 </span>
               )}
             </div>
 
             {/* Sub-tabs */}
-            <div className="mt-3 flex gap-1 border-b border-gray-800">
+            <div className="mt-3 flex gap-1 border-b border-[rgb(var(--border))]">
               <button
                 onClick={() => setQTab("mine")}
                 className={`rounded-t-xl px-4 py-2 text-xs font-black transition ${
                   qTab === "mine"
-                    ? "bg-gray-950 text-purple-400"
-                    : "text-gray-500 hover:text-white"
+                    ? "border-b-2 border-[rgb(var(--accent))] bg-[rgb(var(--surface-2))] text-[rgb(var(--accent))]"
+                    : "text-[rgb(var(--ink-2))] hover:text-[rgb(var(--ink))]"
                 }`}
               >
                 Mes questions ({myQuestions.length})
@@ -191,35 +183,35 @@ export default function NewSchoolSessionPage() {
                 onClick={() => setQTab("public")}
                 className={`rounded-t-xl px-4 py-2 text-xs font-black transition ${
                   qTab === "public"
-                    ? "bg-gray-950 text-purple-400"
-                    : "text-gray-500 hover:text-white"
+                    ? "border-b-2 border-[rgb(var(--accent))] bg-[rgb(var(--surface-2))] text-[rgb(var(--accent))]"
+                    : "text-[rgb(var(--ink-2))] hover:text-[rgb(var(--ink))]"
                 }`}
               >
                 HistoGuess ({publicQuestions.length})
               </button>
             </div>
 
-            <div className="rounded-b-2xl rounded-tr-2xl border border-gray-800 bg-gray-950 p-3">
+            <div className="rounded-b-2xl rounded-tr-2xl border border-[rgb(var(--border))] bg-[rgb(var(--surface-2))] p-3">
               <input
                 type="text"
                 value={filter}
                 onChange={(e) => setFilter(e.target.value)}
                 placeholder="Filtrer..."
-                className="w-full rounded-xl border border-gray-700 bg-gray-900 px-3 py-2 text-sm text-white outline-none placeholder:text-gray-600 focus:border-purple-500"
+                className="w-full rounded-xl border border-[rgb(var(--border))] bg-[rgb(var(--surface))] px-3 py-2 text-sm text-[rgb(var(--ink))] outline-none placeholder:text-[rgb(var(--ink-3))] focus:border-[rgb(var(--accent))]"
               />
 
               {questionsLoading ? (
-                <p className="mt-4 text-center text-sm text-gray-500">
+                <p className="mt-4 text-center text-sm text-[rgb(var(--ink-3))]">
                   Chargement...
                 </p>
               ) : filtered.length === 0 ? (
-                <div className="mt-4 rounded-xl border border-dashed border-gray-800 p-6 text-center text-sm text-gray-500">
+                <div className="mt-4 rounded-xl border border-dashed border-[rgb(var(--border))] p-6 text-center text-sm text-[rgb(var(--ink-3))]">
                   {qTab === "mine" ? (
                     <>
                       Aucune question.{" "}
                       <a
                         href="/school/questions"
-                        className="font-bold text-purple-400 underline"
+                        className="font-bold text-[rgb(var(--accent))] underline"
                       >
                         Crée-en depuis Mes questions
                       </a>
@@ -233,7 +225,7 @@ export default function NewSchoolSessionPage() {
                 <div className="mt-2">
                   <button
                     onClick={() => toggleAll(filtered)}
-                    className="mb-2 text-xs font-bold text-gray-500 hover:text-purple-400 transition"
+                    className="mb-2 text-xs font-bold text-[rgb(var(--ink-2))] transition hover:text-[rgb(var(--accent))]"
                   >
                     {filtered.every((q) => selectedIds.includes(q.id))
                       ? "Tout désélectionner"
@@ -250,15 +242,15 @@ export default function NewSchoolSessionPage() {
                           onClick={() => toggleQuestion(q.id)}
                           className={`flex w-full items-start gap-3 rounded-xl px-3 py-2.5 text-left transition ${
                             selected
-                              ? "bg-purple-500/15 border border-purple-500/30"
-                              : "border border-transparent hover:bg-gray-800"
+                              ? "border border-[rgb(var(--accent))]/30 bg-[rgb(var(--accent))]/10"
+                              : "border border-transparent hover:bg-[rgb(var(--surface-3))]"
                           }`}
                         >
                           <span
                             className={`mt-0.5 h-4 w-4 shrink-0 rounded border-2 transition ${
                               selected
-                                ? "border-purple-500 bg-purple-500"
-                                : "border-gray-600"
+                                ? "border-[rgb(var(--accent))] bg-[rgb(var(--accent))]"
+                                : "border-[rgb(var(--border))]"
                             }`}
                           />
                           <div className="min-w-0 flex-1">
@@ -266,19 +258,19 @@ export default function NewSchoolSessionPage() {
                               <span
                                 className={`rounded-full px-1.5 py-0.5 text-xs font-black ${
                                   q.type === "mcq"
-                                    ? "bg-blue-500/20 text-blue-300"
-                                    : "bg-purple-500/20 text-purple-300"
+                                    ? "bg-blue-100 text-blue-700"
+                                    : "bg-purple-100 text-purple-700"
                                 }`}
                               >
                                 {q.type === "mcq" ? "QCM" : "V/F"}
                               </span>
                               {(q.subject ?? q.period) && (
-                                <span className="text-xs text-gray-500">
+                                <span className="text-xs text-[rgb(var(--ink-3))]">
                                   {q.subject ?? q.period}
                                 </span>
                               )}
                             </div>
-                            <p className="mt-0.5 truncate text-sm font-bold text-white">
+                            <p className="mt-0.5 truncate text-sm font-bold text-[rgb(var(--ink))]">
                               {q.question}
                             </p>
                           </div>
@@ -293,7 +285,7 @@ export default function NewSchoolSessionPage() {
 
           {/* Errors */}
           {message && (
-            <div className="mt-4 rounded-2xl border border-purple-500/30 bg-purple-500/10 p-3 text-sm font-bold text-purple-300">
+            <div className="mt-4 rounded-2xl border border-[rgb(var(--accent))]/30 bg-[rgb(var(--accent))]/10 p-3 text-sm font-bold text-[rgb(var(--accent))]">
               {message}
             </div>
           )}
@@ -303,7 +295,7 @@ export default function NewSchoolSessionPage() {
             type="button"
             onClick={createSession}
             disabled={loading || selectedIds.length === 0}
-            className="mt-6 w-full rounded-2xl bg-purple-500 px-5 py-4 font-black text-gray-950 transition hover:bg-purple-400 disabled:cursor-not-allowed disabled:opacity-50"
+            className="mt-6 w-full rounded-2xl bg-[rgb(var(--accent))] px-5 py-4 font-black text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
           >
             {loading
               ? "Création..."
@@ -314,7 +306,7 @@ export default function NewSchoolSessionPage() {
 
           <a
             href="/join"
-            className="mt-3 block text-center text-sm font-bold text-gray-500 transition hover:text-purple-400"
+            className="mt-3 block text-center text-sm font-bold text-[rgb(var(--ink-3))] transition hover:text-[rgb(var(--accent))]"
           >
             Rejoindre une session élève
           </a>

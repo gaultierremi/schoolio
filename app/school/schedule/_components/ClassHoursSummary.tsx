@@ -100,30 +100,30 @@ export function ClassHoursSummary({ slots }: Props) {
 
   return (
     <section className="mb-6">
-      <h2 className="mb-3 text-xs font-black uppercase tracking-widest text-gray-500">
+      <h2 className="mb-3 text-xs font-black uppercase tracking-widest text-[rgb(var(--ink-3))]">
         Heures par classe
       </h2>
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
         {summaries.map((cls) => (
           <div
             key={cls.classId}
-            className="rounded-2xl border border-gray-800 bg-gray-900 px-4 py-3"
+            className="rounded-2xl border border-[rgb(var(--border))] bg-[rgb(var(--surface))] px-4 py-3"
           >
             <div className="flex items-start justify-between gap-2">
               <div className="min-w-0">
-                <p className="truncate font-bold text-white">{cls.name}</p>
+                <p className="truncate font-bold text-[rgb(var(--ink))]">{cls.name}</p>
                 {cls.subject && (
-                  <p className="mt-0.5 truncate text-xs text-gray-500">{cls.subject}</p>
+                  <p className="mt-0.5 truncate text-xs text-[rgb(var(--ink-3))]">{cls.subject}</p>
                 )}
               </div>
-              <div className="flex shrink-0 items-center gap-1 rounded-lg bg-indigo-500/10 px-2 py-0.5">
-                <Clock className="h-3 w-3 text-indigo-400" aria-hidden="true" />
-                <span className="text-xs font-semibold text-indigo-300">
+              <div className="flex shrink-0 items-center gap-1 rounded-lg bg-[rgb(var(--accent))]/10 px-2 py-0.5">
+                <Clock className="h-3 w-3 text-[rgb(var(--accent))]" aria-hidden="true" />
+                <span className="text-xs font-semibold text-[rgb(var(--accent))]">
                   {formatHours(cls.totalMinutes)}
                 </span>
               </div>
             </div>
-            <p className="mt-2 text-xs text-gray-600 leading-relaxed">
+            <p className="mt-2 text-xs leading-relaxed text-[rgb(var(--ink-3))]">
               {cls.slots
                 .map((s) => `${DAY_SHORT[s.dow] ?? "?"} ${formatTime(s.start)}-${formatTime(s.end)}`)
                 .join(", ")}
