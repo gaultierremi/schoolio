@@ -30,8 +30,8 @@ export function QuestionForm({
       form.options.filter((o) => o.trim()).length >= 2);
 
   return (
-    <div className="mb-6 rounded-3xl border border-purple-500/30 bg-gray-900 p-5">
-      <h2 className="text-lg font-black text-white">
+    <div className="mb-6 rounded-3xl border border-[rgb(var(--accent))]/30 bg-[rgb(var(--surface))] p-5">
+      <h2 className="serif text-lg font-black text-[rgb(var(--ink))]">
         {isEdit ? "Modifier la question" : "Nouvelle question"}
       </h2>
 
@@ -41,7 +41,7 @@ export function QuestionForm({
           {/* Row 1: type + period */}
           <div className="grid gap-4 sm:grid-cols-2">
             <div>
-              <label className="text-xs font-black uppercase tracking-widest text-gray-500">
+              <label className="text-xs font-black uppercase tracking-widest text-[rgb(var(--ink-3))]">
                 Type
               </label>
               <select
@@ -53,7 +53,7 @@ export function QuestionForm({
                     answer_index: 0,
                   })
                 }
-                className="mt-1 w-full rounded-xl border border-gray-700 bg-gray-950 px-3 py-2 text-white outline-none focus:border-purple-500"
+                className="mt-1 w-full rounded-xl border border-[rgb(var(--border))] bg-[rgb(var(--surface))] px-3 py-2 text-[rgb(var(--ink))] outline-none focus:border-[rgb(var(--accent))]"
               >
                 <option value="mcq">QCM — Carré (4 options)</option>
                 <option value="truefalse">Vrai / Faux — Duo (2 options)</option>
@@ -61,13 +61,13 @@ export function QuestionForm({
             </div>
 
             <div>
-              <label className="text-xs font-black uppercase tracking-widest text-gray-500">
+              <label className="text-xs font-black uppercase tracking-widest text-[rgb(var(--ink-3))]">
                 Période historique
               </label>
               <select
                 value={form.period}
                 onChange={(e) => setForm({ ...form, period: e.target.value })}
-                className="mt-1 w-full rounded-xl border border-gray-700 bg-gray-950 px-3 py-2 text-white outline-none focus:border-purple-500"
+                className="mt-1 w-full rounded-xl border border-[rgb(var(--border))] bg-[rgb(var(--surface))] px-3 py-2 text-[rgb(var(--ink))] outline-none focus:border-[rgb(var(--accent))]"
               >
                 <option value="">Sélectionner une période</option>
                 {PERIODS.map((p) => (
@@ -91,7 +91,7 @@ export function QuestionForm({
 
           {/* Question text */}
           <div>
-            <label className="text-xs font-black uppercase tracking-widest text-gray-500">
+            <label className="text-xs font-black uppercase tracking-widest text-[rgb(var(--ink-3))]">
               Question
             </label>
             <textarea
@@ -99,13 +99,13 @@ export function QuestionForm({
               onChange={(e) => setForm({ ...form, question: e.target.value })}
               rows={2}
               placeholder="Énonce ta question..."
-              className="mt-1 w-full rounded-xl border border-gray-700 bg-gray-950 px-3 py-2 text-white outline-none placeholder:text-gray-600 focus:border-purple-500"
+              className="mt-1 w-full rounded-xl border border-[rgb(var(--border))] bg-[rgb(var(--surface))] px-3 py-2 text-[rgb(var(--ink))] outline-none placeholder:text-[rgb(var(--ink-3))] focus:border-[rgb(var(--accent))]"
             />
           </div>
 
           {/* Options */}
           <div>
-            <label className="text-xs font-black uppercase tracking-widest text-gray-500">
+            <label className="text-xs font-black uppercase tracking-widest text-[rgb(var(--ink-3))]">
               {isTrueFalse
                 ? "Réponse correcte"
                 : "Options — clique sur le cercle pour marquer la bonne réponse"}
@@ -120,17 +120,17 @@ export function QuestionForm({
                   <button
                     type="button"
                     onClick={() => setForm({ ...form, answer_index: i })}
-                    className={`shrink-0 h-6 w-6 rounded-full border-2 transition ${
+                    className={`h-6 w-6 shrink-0 rounded-full border-2 transition ${
                       form.answer_index === i
-                        ? "border-green-500 bg-green-500"
-                        : "border-gray-600 hover:border-gray-400"
+                        ? "border-[rgb(var(--green))] bg-[rgb(var(--green))]"
+                        : "border-[rgb(var(--border))] hover:border-[rgb(var(--ink-3))]"
                     }`}
                     aria-label={`Marquer option ${i + 1} comme correcte`}
                   />
                   {isTrueFalse ? (
                     <span
                       className={`font-bold ${
-                        form.answer_index === i ? "text-green-300" : "text-white"
+                        form.answer_index === i ? "text-[rgb(var(--green))]" : "text-[rgb(var(--ink))]"
                       }`}
                     >
                       {opt}
@@ -144,10 +144,10 @@ export function QuestionForm({
                         setForm({ ...form, options: next });
                       }}
                       placeholder={`Option ${String.fromCharCode(65 + i)}`}
-                      className={`w-full rounded-xl border px-3 py-2 text-sm text-white outline-none placeholder:text-gray-600 focus:border-purple-500 ${
+                      className={`w-full rounded-xl border px-3 py-2 text-sm text-[rgb(var(--ink))] outline-none placeholder:text-[rgb(var(--ink-3))] focus:border-[rgb(var(--accent))] ${
                         form.answer_index === i
-                          ? "border-green-500/50 bg-green-500/10"
-                          : "border-gray-700 bg-gray-950"
+                          ? "border-[rgb(var(--green))]/50 bg-[rgb(var(--green))]/10"
+                          : "border-[rgb(var(--border))] bg-[rgb(var(--surface))]"
                       }`}
                     />
                   )}
@@ -159,14 +159,14 @@ export function QuestionForm({
           {/* Explanation + AI button */}
           <div>
             <div className="flex items-center justify-between">
-              <label className="text-xs font-black uppercase tracking-widest text-gray-500">
+              <label className="text-xs font-black uppercase tracking-widest text-[rgb(var(--ink-3))]">
                 Explication (optionnel)
               </label>
               <button
                 type="button"
                 onClick={onGenerateExpl}
                 disabled={generatingExpl || !form.question.trim()}
-                className="rounded-lg bg-purple-500/20 px-3 py-1 text-xs font-black text-purple-300 transition hover:bg-purple-500/30 disabled:opacity-40"
+                className="rounded-lg bg-[rgb(var(--accent))]/15 px-3 py-1 text-xs font-black text-[rgb(var(--accent))] transition hover:bg-[rgb(var(--accent))]/25 disabled:opacity-40"
               >
                 {generatingExpl ? "Génération…" : "Générer via Maïa"}
               </button>
@@ -175,7 +175,7 @@ export function QuestionForm({
               value={form.explanation}
               onChange={(e) => setForm({ ...form, explanation: e.target.value })}
               placeholder="Explication affichée après la réponse..."
-              className="mt-1 w-full rounded-xl border border-gray-700 bg-gray-950 px-3 py-2 text-white outline-none placeholder:text-gray-600 focus:border-purple-500"
+              className="mt-1 w-full rounded-xl border border-[rgb(var(--border))] bg-[rgb(var(--surface))] px-3 py-2 text-[rgb(var(--ink))] outline-none placeholder:text-[rgb(var(--ink-3))] focus:border-[rgb(var(--accent))]"
             />
           </div>
         </div>
@@ -201,14 +201,14 @@ export function QuestionForm({
               ? "Complète la question et sélectionne une bonne réponse"
               : undefined
           }
-          className="rounded-2xl bg-purple-500 px-5 py-3 font-black text-gray-950 hover:bg-purple-400 disabled:opacity-40"
+          className="rounded-2xl bg-[rgb(var(--accent))] px-5 py-3 font-black text-white hover:opacity-90 disabled:opacity-40"
         >
           {saving ? "Sauvegarde..." : isEdit ? "Enregistrer" : "Ajouter"}
         </button>
         <button
           type="button"
           onClick={onCancel}
-          className="rounded-2xl border border-gray-700 px-5 py-3 font-bold text-gray-300 hover:text-white"
+          className="rounded-2xl border border-[rgb(var(--border))] px-5 py-3 font-bold text-[rgb(var(--ink-2))] hover:text-[rgb(var(--ink))]"
         >
           Annuler
         </button>

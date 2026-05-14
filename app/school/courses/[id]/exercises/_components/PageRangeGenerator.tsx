@@ -102,33 +102,33 @@ export function PageRangeGenerator({ courseId, pagesCount, courseTitle, onSucces
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div
-        className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+        className="absolute inset-0 bg-black/40 backdrop-blur-sm"
         onClick={state === "idle" ? onClose : undefined}
       />
-      <div className="relative z-10 w-full max-w-lg rounded-2xl border border-gray-700 bg-gray-900 p-6 shadow-2xl">
+      <div className="relative z-10 w-full max-w-lg rounded-2xl border border-[rgb(var(--border))] bg-[rgb(var(--surface))] p-6 shadow-2xl">
         {state === "loading" ? (
           <div className="flex flex-col items-center gap-4 py-6 text-center">
-            <div className="h-10 w-10 animate-spin rounded-full border-4 border-gray-700 border-t-purple-500" />
-            <p className="font-black text-white">Génération en cours via Maïa…</p>
-            <p className="text-sm text-gray-400">
+            <div className="h-10 w-10 animate-spin rounded-full border-4 border-[rgb(var(--border))] border-t-[rgb(var(--accent))]" />
+            <p className="font-black text-[rgb(var(--ink))]">Génération en cours via Maïa…</p>
+            <p className="text-sm text-[rgb(var(--ink-2))]">
               Maïa analyse les pages {range[0]}–{range[1]} de «{courseTitle}» et génère ton contenu.
             </p>
           </div>
         ) : (
           <>
-            <h2 className="text-lg font-black text-white">🎯 Générer sur une sélection de pages</h2>
-            <p className="mt-1 text-sm text-gray-400 truncate">{courseTitle}</p>
+            <h2 className="serif text-lg font-black text-[rgb(var(--ink))]">🎯 Générer sur une sélection de pages</h2>
+            <p className="mt-1 truncate text-sm text-[rgb(var(--ink-2))]">{courseTitle}</p>
 
             {/* Page range */}
             <div className="mt-5">
-              <div className="flex items-center justify-between mb-2">
-                <label className="text-xs font-black uppercase tracking-widest text-gray-500">
+              <div className="mb-2 flex items-center justify-between">
+                <label className="text-xs font-black uppercase tracking-widest text-[rgb(var(--ink-3))]">
                   Plage de pages
                 </label>
-                <span className="text-sm font-bold text-white">
+                <span className="text-sm font-bold text-[rgb(var(--ink))]">
                   Pages {range[0]} → {range[1]}
                   {pagesCount !== null && (
-                    <span className="text-gray-500 font-normal"> sur {pagesCount}</span>
+                    <span className="font-normal text-[rgb(var(--ink-3))]"> sur {pagesCount}</span>
                   )}
                 </span>
               </div>
@@ -144,7 +144,7 @@ export function PageRangeGenerator({ courseId, pagesCount, courseTitle, onSucces
                 /* Fallback: 2 number inputs when pages_count is unknown */
                 <div className="flex items-center gap-3">
                   <div className="flex-1">
-                    <label className="text-xs text-gray-500 mb-1 block">Page de début</label>
+                    <label className="mb-1 block text-xs text-[rgb(var(--ink-3))]">Page de début</label>
                     <input
                       type="number"
                       min={1}
@@ -153,12 +153,12 @@ export function PageRangeGenerator({ courseId, pagesCount, courseTitle, onSucces
                         const v = Math.max(1, parseInt(e.target.value) || 1);
                         setRange([v, Math.max(v, range[1])]);
                       }}
-                      className="w-full bg-gray-800 border border-gray-600 rounded-lg px-3 py-2 text-white text-sm"
+                      className="w-full rounded-lg border border-[rgb(var(--border))] bg-[rgb(var(--surface))] px-3 py-2 text-sm text-[rgb(var(--ink))]"
                     />
                   </div>
-                  <span className="text-gray-500 mt-5">→</span>
+                  <span className="mt-5 text-[rgb(var(--ink-3))]">→</span>
                   <div className="flex-1">
-                    <label className="text-xs text-gray-500 mb-1 block">Page de fin</label>
+                    <label className="mb-1 block text-xs text-[rgb(var(--ink-3))]">Page de fin</label>
                     <input
                       type="number"
                       min={range[0]}
@@ -167,7 +167,7 @@ export function PageRangeGenerator({ courseId, pagesCount, courseTitle, onSucces
                         const v = Math.max(range[0], parseInt(e.target.value) || range[0]);
                         setRange([range[0], v]);
                       }}
-                      className="w-full bg-gray-800 border border-gray-600 rounded-lg px-3 py-2 text-white text-sm"
+                      className="w-full rounded-lg border border-[rgb(var(--border))] bg-[rgb(var(--surface))] px-3 py-2 text-sm text-[rgb(var(--ink))]"
                     />
                   </div>
                 </div>
@@ -176,7 +176,7 @@ export function PageRangeGenerator({ courseId, pagesCount, courseTitle, onSucces
 
             {/* Type toggles */}
             <div className="mt-5">
-              <label className="text-xs font-black uppercase tracking-widest text-gray-500">
+              <label className="text-xs font-black uppercase tracking-widest text-[rgb(var(--ink-3))]">
                 Générer
               </label>
               <div className="mt-2 flex gap-3">
@@ -186,13 +186,13 @@ export function PageRangeGenerator({ courseId, pagesCount, courseTitle, onSucces
                     <button
                       key={t}
                       onClick={() => toggleType(t)}
-                      className={`flex-1 flex items-center justify-center gap-2 rounded-xl border py-2.5 text-sm font-bold transition-all ${
+                      className={`flex flex-1 items-center justify-center gap-2 rounded-xl border py-2.5 text-sm font-bold transition-all ${
                         active
-                          ? "border-purple-500/50 bg-purple-500/15 text-purple-300"
-                          : "border-gray-700 bg-gray-800 text-gray-500 hover:text-gray-300"
+                          ? "border-[rgb(var(--accent))]/50 bg-[rgb(var(--accent))]/10 text-[rgb(var(--accent))]"
+                          : "border-[rgb(var(--border))] bg-[rgb(var(--surface))] text-[rgb(var(--ink-2))] hover:text-[rgb(var(--ink))]"
                       }`}
                     >
-                      <span className={`h-4 w-4 rounded border-2 flex items-center justify-center shrink-0 ${active ? "border-purple-400 bg-purple-500" : "border-gray-600"}`}>
+                      <span className={`flex h-4 w-4 shrink-0 items-center justify-center rounded border-2 ${active ? "border-[rgb(var(--accent))] bg-[rgb(var(--accent))]" : "border-[rgb(var(--border))]"}`}>
                         {active && (
                           <svg className="h-2.5 w-2.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
@@ -210,7 +210,7 @@ export function PageRangeGenerator({ courseId, pagesCount, courseTitle, onSucces
             <div className="mt-4 flex gap-4">
               {genTypes.has("questions") && (
                 <div className="flex-1">
-                  <label className="text-xs font-black uppercase tracking-widest text-gray-500">
+                  <label className="text-xs font-black uppercase tracking-widest text-[rgb(var(--ink-3))]">
                     Nb de questions
                   </label>
                   <div className="mt-2 flex items-center gap-3">
@@ -221,17 +221,17 @@ export function PageRangeGenerator({ courseId, pagesCount, courseTitle, onSucces
                       step={5}
                       value={questionCount}
                       onChange={(e) => setQuestionCount(Number(e.target.value))}
-                      className="flex-1 accent-purple-500"
+                      className="flex-1 accent-[rgb(var(--accent))]"
                     />
-                    <span className="w-8 text-center font-black text-white">{questionCount}</span>
+                    <span className="w-8 text-center font-black text-[rgb(var(--ink))]">{questionCount}</span>
                   </div>
-                  <p className="text-xs text-gray-600 mt-0.5">entre 5 et 50</p>
+                  <p className="mt-0.5 text-xs text-[rgb(var(--ink-3))]">entre 5 et 50</p>
                 </div>
               )}
               {genTypes.has("exercises") && (
                 <div className="flex-1">
-                  <label className="text-xs font-black uppercase tracking-widest text-gray-500">
-                    Nb d'exercices
+                  <label className="text-xs font-black uppercase tracking-widest text-[rgb(var(--ink-3))]">
+                    Nb d&apos;exercices
                   </label>
                   <div className="mt-2 flex items-center gap-3">
                     <input
@@ -240,31 +240,31 @@ export function PageRangeGenerator({ courseId, pagesCount, courseTitle, onSucces
                       max={10}
                       value={exerciseCount}
                       onChange={(e) => setExerciseCount(Number(e.target.value))}
-                      className="flex-1 accent-purple-500"
+                      className="flex-1 accent-[rgb(var(--accent))]"
                     />
-                    <span className="w-8 text-center font-black text-white">{exerciseCount}</span>
+                    <span className="w-8 text-center font-black text-[rgb(var(--ink))]">{exerciseCount}</span>
                   </div>
-                  <p className="text-xs text-gray-600 mt-0.5">entre 3 et 10</p>
+                  <p className="mt-0.5 text-xs text-[rgb(var(--ink-3))]">entre 3 et 10</p>
                 </div>
               )}
             </div>
 
             {state === "error" && (
-              <div className="mt-4 rounded-xl border border-red-500/30 bg-red-500/10 p-3 text-sm font-bold text-red-300">
+              <div className="mt-4 rounded-xl border border-[rgb(var(--red))]/30 bg-[rgb(var(--red))]/10 p-3 text-sm font-bold text-[rgb(var(--red))]">
                 {errorMsg}
               </div>
             )}
 
-            <div className="mt-6 flex gap-3 justify-end">
+            <div className="mt-6 flex justify-end gap-3">
               <button
                 onClick={onClose}
-                className="rounded-xl border border-gray-700 px-4 py-2 text-sm font-bold text-gray-300 hover:text-white"
+                className="rounded-xl border border-[rgb(var(--border))] px-4 py-2 text-sm font-bold text-[rgb(var(--ink-2))] hover:border-[rgb(var(--ink-3))] hover:text-[rgb(var(--ink))]"
               >
                 Annuler
               </button>
               <button
                 onClick={launch}
-                className="rounded-xl bg-purple-500 px-5 py-2 text-sm font-black text-gray-950 hover:bg-purple-400"
+                className="rounded-xl bg-[rgb(var(--accent))] px-5 py-2 text-sm font-black text-white hover:opacity-90"
               >
                 Lancer la génération
               </button>

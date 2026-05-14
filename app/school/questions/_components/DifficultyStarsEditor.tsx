@@ -74,8 +74,8 @@ export function DifficultyStarsEditor({
             aria-label={`${star} étoile${star > 1 ? "s" : ""}`}
             className={`transition disabled:opacity-40 ${
               filled
-                ? "text-yellow-400 hover:text-yellow-300"
-                : "text-gray-600 hover:text-gray-400"
+                ? "text-yellow-500 hover:text-yellow-400"
+                : "text-[rgb(var(--ink-3))]/50 hover:text-[rgb(var(--ink-3))]"
             }`}
           >
             <Star

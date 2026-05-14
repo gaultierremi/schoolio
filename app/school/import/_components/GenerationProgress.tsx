@@ -132,18 +132,18 @@ function IconCircle({ className }: { className?: string }) {
 
 function StepIcon({ state }: { state: StepState }) {
   if (state === "done") {
-    return <IconCheckCircle className="h-4 w-4 text-green-400 shrink-0" />;
+    return <IconCheckCircle className="h-4 w-4 shrink-0 text-[rgb(var(--green))]" />;
   }
   if (state === "active") {
-    return <IconSpinner className="h-4 w-4 text-violet-400 shrink-0 animate-spin" />;
+    return <IconSpinner className="h-4 w-4 shrink-0 animate-spin text-[rgb(var(--accent))]" />;
   }
-  return <IconCircle className="h-4 w-4 text-white/25 shrink-0" />;
+  return <IconCircle className="h-4 w-4 shrink-0 text-[rgb(var(--ink-3))]/50" />;
 }
 
 function stepTextClass(state: StepState): string {
-  if (state === "done") return "text-green-400 text-xs";
-  if (state === "active") return "text-violet-300 text-xs";
-  return "text-white/35 text-xs";
+  if (state === "done") return "text-xs text-[rgb(var(--green))]";
+  if (state === "active") return "text-xs text-[rgb(var(--accent))]";
+  return "text-xs text-[rgb(var(--ink-3))]";
 }
 
 // ── Main component ────────────────────────────────────────────────────────────
@@ -220,7 +220,7 @@ export default function GenerationProgress({ jobId, onComplete, onError }: Props
       })}
 
       {eta && (
-        <p className="text-xs text-white/40 mt-1">{eta}</p>
+        <p className="mt-1 text-xs text-[rgb(var(--ink-3))]">{eta}</p>
       )}
     </div>
   );

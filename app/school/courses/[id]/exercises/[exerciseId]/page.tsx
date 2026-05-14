@@ -40,17 +40,11 @@ const TYPE_LABELS: Record<string, string> = {
   redaction: "Rédaction", application: "Application", autre: "Autre",
 };
 
-const TYPE_BADGE: Record<string, string> = {
-  calcul: "bg-blue-500/20 text-blue-300", demonstration: "bg-purple-500/20 text-purple-300",
-  analyse: "bg-cyan-500/20 text-cyan-300", redaction: "bg-amber-500/20 text-amber-300",
-  application: "bg-green-500/20 text-green-300", autre: "bg-gray-500/20 text-gray-400",
-};
-
 const STATUS_BADGE: Record<ExerciseStatus, string> = {
-  pending:   "bg-amber-500/20 text-amber-300 border-amber-500/30",
-  validated: "bg-green-500/20 text-green-300 border-green-500/30",
-  rejected:  "bg-red-500/20 text-red-300 border-red-500/30",
-  archived:  "bg-gray-500/20 text-gray-400 border-gray-500/30",
+  pending:   "bg-[rgb(var(--warm))]/10 text-[rgb(var(--warm))] border-[rgb(var(--warm))]/30",
+  validated: "bg-[rgb(var(--green))]/10 text-[rgb(var(--green))] border-[rgb(var(--green))]/30",
+  rejected:  "bg-[rgb(var(--red))]/10 text-[rgb(var(--red))] border-[rgb(var(--red))]/30",
+  archived:  "bg-[rgb(var(--surface-3))] text-[rgb(var(--ink-2))] border-[rgb(var(--border))]",
 };
 
 const STATUS_LABELS: Record<ExerciseStatus, string> = {
@@ -76,9 +70,9 @@ function Stars({
           disabled={!onChange}
           className={`text-2xl leading-none transition ${
             value !== null && star <= value
-              ? "text-yellow-400"
-              : "text-gray-600"
-          } ${onChange ? "hover:text-yellow-300 cursor-pointer" : "cursor-default"}`}
+              ? "text-yellow-500"
+              : "text-[rgb(var(--ink-3))]/40"
+          } ${onChange ? "cursor-pointer hover:text-yellow-400" : "cursor-default"}`}
         >
           ★
         </button>
@@ -118,7 +112,7 @@ function EditableTitle({
 
   if (editing) {
     return (
-      <div className="flex items-center gap-2 flex-1">
+      <div className="flex flex-1 items-center gap-2">
         <input
           autoFocus
           value={draft}
@@ -128,12 +122,12 @@ function EditableTitle({
             if (e.key === "Escape") { setDraft(value); setEditing(false); }
           }}
           maxLength={80}
-          className="flex-1 rounded-xl border border-purple-500/50 bg-gray-800 px-3 py-1.5 text-xl font-black text-white outline-none"
+          className="flex-1 rounded-xl border border-[rgb(var(--accent))]/50 bg-[rgb(var(--surface))] px-3 py-1.5 text-xl font-black text-[rgb(var(--ink))] outline-none"
         />
-        <button onClick={confirm} disabled={saving} className="rounded-lg bg-purple-500 px-3 py-1.5 text-sm font-black text-gray-950 disabled:opacity-40">
+        <button onClick={confirm} disabled={saving} className="rounded-lg bg-[rgb(var(--accent))] px-3 py-1.5 text-sm font-black text-white disabled:opacity-40">
           {saving ? "…" : "✓"}
         </button>
-        <button onClick={() => { setDraft(value); setEditing(false); }} className="rounded-lg border border-gray-700 px-3 py-1.5 text-sm font-bold text-gray-400">
+        <button onClick={() => { setDraft(value); setEditing(false); }} className="rounded-lg border border-[rgb(var(--border))] px-3 py-1.5 text-sm font-bold text-[rgb(var(--ink-2))]">
           ✕
         </button>
       </div>
@@ -142,7 +136,7 @@ function EditableTitle({
 
   return (
     <h1
-      className="text-2xl font-black text-white cursor-pointer hover:text-purple-300 transition flex-1"
+      className="serif flex-1 cursor-pointer text-2xl font-black text-[rgb(var(--ink))] transition hover:text-[rgb(var(--accent))]"
       onClick={() => { setDraft(value); setEditing(true); }}
       title="Cliquer pour modifier"
     >
@@ -168,28 +162,28 @@ function StatementEditor({
   if (!editing) {
     return (
       <div
-        className="cursor-pointer rounded-xl border border-transparent p-3 hover:border-gray-700 hover:bg-gray-800/40 transition"
+        className="cursor-pointer rounded-xl border border-transparent p-3 transition hover:border-[rgb(var(--border))] hover:bg-[rgb(var(--surface-3))]"
         onClick={() => { setDraft(value); setEditing(true); }}
         title="Cliquer pour modifier l'énoncé"
       >
         <MarkdownLatex content={value} />
-        <p className="mt-2 text-xs text-gray-600">✎ Cliquer pour modifier</p>
+        <p className="mt-2 text-xs text-[rgb(var(--ink-3))]">✎ Cliquer pour modifier</p>
       </div>
     );
   }
 
   return (
-    <div className="rounded-xl border border-purple-500/40 bg-gray-800/60 p-4">
-      <div className="flex gap-2 mb-3">
+    <div className="rounded-xl border border-[rgb(var(--accent))]/40 bg-[rgb(var(--surface-2))] p-4">
+      <div className="mb-3 flex gap-2">
         <button
           onClick={() => setTab("edit")}
-          className={`rounded-lg px-3 py-1.5 text-xs font-black transition ${tab === "edit" ? "bg-purple-500/20 text-purple-300" : "text-gray-500 hover:text-white"}`}
+          className={`rounded-lg px-3 py-1.5 text-xs font-black transition ${tab === "edit" ? "bg-[rgb(var(--accent))]/15 text-[rgb(var(--accent))]" : "text-[rgb(var(--ink-2))] hover:text-[rgb(var(--ink))]"}`}
         >
           Éditer
         </button>
         <button
           onClick={() => setTab("preview")}
-          className={`rounded-lg px-3 py-1.5 text-xs font-black transition ${tab === "preview" ? "bg-purple-500/20 text-purple-300" : "text-gray-500 hover:text-white"}`}
+          className={`rounded-lg px-3 py-1.5 text-xs font-black transition ${tab === "preview" ? "bg-[rgb(var(--accent))]/15 text-[rgb(var(--accent))]" : "text-[rgb(var(--ink-2))] hover:text-[rgb(var(--ink))]"}`}
         >
           Aperçu
         </button>
@@ -200,17 +194,17 @@ function StatementEditor({
           value={draft}
           onChange={(e) => setDraft(e.target.value)}
           rows={8}
-          className="w-full rounded-xl border border-gray-700 bg-gray-900 px-3 py-2 text-sm text-white outline-none font-mono resize-y focus:border-purple-500"
+          className="w-full resize-y rounded-xl border border-[rgb(var(--border))] bg-[rgb(var(--surface))] px-3 py-2 font-mono text-sm text-[rgb(var(--ink))] outline-none focus:border-[rgb(var(--accent))]"
         />
       ) : (
-        <div className="min-h-[100px] rounded-xl border border-gray-700 bg-gray-900 p-3">
+        <div className="min-h-[100px] rounded-xl border border-[rgb(var(--border))] bg-[rgb(var(--surface))] p-3">
           <MarkdownLatex content={draft} />
         </div>
       )}
-      <div className="mt-3 flex gap-2 justify-end">
+      <div className="mt-3 flex justify-end gap-2">
         <button
           onClick={() => setEditing(false)}
-          className="rounded-xl border border-gray-700 px-4 py-2 text-sm font-bold text-gray-300 hover:text-white"
+          className="rounded-xl border border-[rgb(var(--border))] px-4 py-2 text-sm font-bold text-[rgb(var(--ink-2))] hover:text-[rgb(var(--ink))]"
         >
           Annuler
         </button>
@@ -223,7 +217,7 @@ function StatementEditor({
             setEditing(false);
           }}
           disabled={saving}
-          className="rounded-xl bg-purple-500 px-4 py-2 text-sm font-black text-gray-950 hover:bg-purple-400 disabled:opacity-40"
+          className="rounded-xl bg-[rgb(var(--accent))] px-4 py-2 text-sm font-black text-white hover:opacity-90 disabled:opacity-40"
         >
           {saving ? "Sauvegarde…" : "Enregistrer"}
         </button>
@@ -258,10 +252,10 @@ function StepCard({
   const [methodDraft, setMethodDraft] = useState(step.method_or_concept ?? "");
 
   return (
-    <div className={`rounded-2xl border p-4 ${step.is_final_answer ? "border-green-500/30 bg-green-500/5" : "border-gray-700 bg-gray-900"}`}>
+    <div className={`rounded-2xl border p-4 ${step.is_final_answer ? "border-[rgb(var(--green))]/40 bg-[rgb(var(--green))]/5" : "border-[rgb(var(--border))] bg-[rgb(var(--surface))]"}`}>
       {/* Step header */}
-      <div className="flex items-center gap-2 mb-3">
-        <span className="flex h-7 w-7 items-center justify-center rounded-full bg-purple-500/20 text-xs font-black text-purple-300 shrink-0">
+      <div className="mb-3 flex items-center gap-2">
+        <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[rgb(var(--accent))]/15 text-xs font-black text-[rgb(var(--accent))]">
           {step.step_number}
         </span>
 
@@ -277,34 +271,34 @@ function StepCard({
               }
             }}
             onBlur={() => { onUpdate({ ...step, title: titleDraft.trim() || null }); setEditingTitle(false); }}
-            className="flex-1 rounded-lg border border-purple-500/50 bg-gray-800 px-2 py-1 text-sm font-black text-white outline-none"
+            className="flex-1 rounded-lg border border-[rgb(var(--accent))]/50 bg-[rgb(var(--surface))] px-2 py-1 text-sm font-black text-[rgb(var(--ink))] outline-none"
           />
         ) : (
           <span
-            className="flex-1 text-sm font-black text-white cursor-pointer hover:text-purple-300"
+            className="flex-1 cursor-pointer text-sm font-black text-[rgb(var(--ink))] hover:text-[rgb(var(--accent))]"
             onClick={() => { setTitleDraft(step.title ?? ""); setEditingTitle(true); }}
           >
-            {step.title || <span className="text-gray-600 italic font-normal">Cliquer pour nommer l&apos;étape</span>}
+            {step.title || <span className="font-normal italic text-[rgb(var(--ink-3))]">Cliquer pour nommer l&apos;étape</span>}
           </span>
         )}
 
         {/* Reorder + controls */}
-        <div className="flex items-center gap-1 ml-auto shrink-0">
+        <div className="ml-auto flex shrink-0 items-center gap-1">
           <button
             onClick={() => onMove("up")}
             disabled={index === 0}
-            className="rounded-lg p-1 text-gray-500 hover:text-white disabled:opacity-20 transition"
+            className="rounded-lg p-1 text-[rgb(var(--ink-3))] transition hover:text-[rgb(var(--ink))] disabled:opacity-20"
             title="Monter"
           >▲</button>
           <button
             onClick={() => onMove("down")}
             disabled={index === total - 1}
-            className="rounded-lg p-1 text-gray-500 hover:text-white disabled:opacity-20 transition"
+            className="rounded-lg p-1 text-[rgb(var(--ink-3))] transition hover:text-[rgb(var(--ink))] disabled:opacity-20"
             title="Descendre"
           >▼</button>
           <button
             onClick={() => { if (confirm("Supprimer cette étape ?")) onDelete(); }}
-            className="rounded-lg p-1 text-red-500/60 hover:text-red-400 transition"
+            className="rounded-lg p-1 text-[rgb(var(--red))]/70 transition hover:text-[rgb(var(--red))]"
             title="Supprimer"
           >✕</button>
         </div>
@@ -313,10 +307,10 @@ function StepCard({
       {/* Content */}
       <div className="mb-3">
         {editingContent ? (
-          <div className="rounded-xl border border-purple-500/40 bg-gray-800/60 p-3">
-            <div className="flex gap-2 mb-2">
-              <button onClick={() => setContentTab("edit")} className={`rounded-md px-2 py-1 text-xs font-black ${contentTab === "edit" ? "bg-purple-500/20 text-purple-300" : "text-gray-500"}`}>Éditer</button>
-              <button onClick={() => setContentTab("preview")} className={`rounded-md px-2 py-1 text-xs font-black ${contentTab === "preview" ? "bg-purple-500/20 text-purple-300" : "text-gray-500"}`}>Aperçu</button>
+          <div className="rounded-xl border border-[rgb(var(--accent))]/40 bg-[rgb(var(--surface-2))] p-3">
+            <div className="mb-2 flex gap-2">
+              <button onClick={() => setContentTab("edit")} className={`rounded-md px-2 py-1 text-xs font-black ${contentTab === "edit" ? "bg-[rgb(var(--accent))]/15 text-[rgb(var(--accent))]" : "text-[rgb(var(--ink-2))]"}`}>Éditer</button>
+              <button onClick={() => setContentTab("preview")} className={`rounded-md px-2 py-1 text-xs font-black ${contentTab === "preview" ? "bg-[rgb(var(--accent))]/15 text-[rgb(var(--accent))]" : "text-[rgb(var(--ink-2))]"}`}>Aperçu</button>
             </div>
             {contentTab === "edit" ? (
               <textarea
@@ -324,21 +318,21 @@ function StepCard({
                 value={contentDraft}
                 onChange={(e) => setContentDraft(e.target.value)}
                 rows={5}
-                className="w-full rounded-lg border border-gray-700 bg-gray-900 px-3 py-2 text-sm text-white outline-none font-mono resize-y focus:border-purple-500"
+                className="w-full resize-y rounded-lg border border-[rgb(var(--border))] bg-[rgb(var(--surface))] px-3 py-2 font-mono text-sm text-[rgb(var(--ink))] outline-none focus:border-[rgb(var(--accent))]"
               />
             ) : (
-              <div className="rounded-lg border border-gray-700 bg-gray-900 p-3 min-h-[80px]">
+              <div className="min-h-[80px] rounded-lg border border-[rgb(var(--border))] bg-[rgb(var(--surface))] p-3">
                 <MarkdownLatex content={contentDraft} />
               </div>
             )}
-            <div className="mt-2 flex gap-2 justify-end">
-              <button onClick={() => { setContentDraft(step.content); setEditingContent(false); }} className="rounded-lg border border-gray-700 px-3 py-1.5 text-xs font-bold text-gray-300">Annuler</button>
-              <button onClick={() => { onUpdate({ ...step, content: contentDraft }); setEditingContent(false); }} className="rounded-lg bg-purple-500 px-3 py-1.5 text-xs font-black text-gray-950">Enregistrer</button>
+            <div className="mt-2 flex justify-end gap-2">
+              <button onClick={() => { setContentDraft(step.content); setEditingContent(false); }} className="rounded-lg border border-[rgb(var(--border))] px-3 py-1.5 text-xs font-bold text-[rgb(var(--ink-2))]">Annuler</button>
+              <button onClick={() => { onUpdate({ ...step, content: contentDraft }); setEditingContent(false); }} className="rounded-lg bg-[rgb(var(--accent))] px-3 py-1.5 text-xs font-black text-white">Enregistrer</button>
             </div>
           </div>
         ) : (
           <div
-            className="cursor-pointer rounded-lg border border-transparent p-2 hover:border-gray-700 hover:bg-gray-800/40 transition"
+            className="cursor-pointer rounded-lg border border-transparent p-2 transition hover:border-[rgb(var(--border))] hover:bg-[rgb(var(--surface-3))]"
             onClick={() => { setContentDraft(step.content); setEditingContent(true); }}
           >
             <MarkdownLatex content={step.content} />
@@ -347,8 +341,8 @@ function StepCard({
       </div>
 
       {/* Method/concept + final answer toggle */}
-      <div className="flex flex-wrap items-center gap-3 border-t border-gray-800 pt-3">
-        <div className="flex-1 min-w-0">
+      <div className="flex flex-wrap items-center gap-3 border-t border-[rgb(var(--border))] pt-3">
+        <div className="min-w-0 flex-1">
           {editingMethod ? (
             <input
               autoFocus
@@ -362,11 +356,11 @@ function StepCard({
                 }
               }}
               placeholder="Concept ou règle appliquée…"
-              className="w-full rounded-lg border border-purple-500/50 bg-gray-800 px-2 py-1 text-xs text-purple-300 outline-none"
+              className="w-full rounded-lg border border-[rgb(var(--accent))]/50 bg-[rgb(var(--surface))] px-2 py-1 text-xs text-[rgb(var(--accent))] outline-none"
             />
           ) : (
             <span
-              className={`text-xs cursor-pointer hover:text-purple-300 transition ${step.method_or_concept ? "text-purple-400" : "text-gray-600 italic"}`}
+              className={`cursor-pointer text-xs transition hover:text-[rgb(var(--accent))] ${step.method_or_concept ? "text-[rgb(var(--accent))]" : "italic text-[rgb(var(--ink-3))]"}`}
               onClick={() => { setMethodDraft(step.method_or_concept ?? ""); setEditingMethod(true); }}
             >
               {step.method_or_concept ?? "Concept / règle (cliquer pour modifier)"}
@@ -377,8 +371,8 @@ function StepCard({
           onClick={() => onUpdate({ ...step, is_final_answer: !step.is_final_answer })}
           className={`shrink-0 rounded-lg border px-2 py-1 text-xs font-black transition ${
             step.is_final_answer
-              ? "border-green-500/50 bg-green-500/10 text-green-300"
-              : "border-gray-700 text-gray-500 hover:border-gray-500"
+              ? "border-[rgb(var(--green))]/50 bg-[rgb(var(--green))]/10 text-[rgb(var(--green))]"
+              : "border-[rgb(var(--border))] text-[rgb(var(--ink-2))] hover:border-[rgb(var(--ink-3))]"
           }`}
         >
           {step.is_final_answer ? "✓ Réponse finale" : "Réponse finale"}
@@ -510,12 +504,12 @@ export default function ExerciseDetailPage() {
 
   if (loading) {
     return (
-      <main className="min-h-screen bg-gray-950 px-4 py-8 text-white">
+      <main className="min-h-screen bg-[rgb(var(--surface-2))] px-4 py-8 text-[rgb(var(--ink))]">
         <div className="mx-auto max-w-3xl space-y-4">
-          <div className="h-5 w-32 animate-pulse rounded-lg bg-gray-800" />
-          <div className="h-8 w-2/3 animate-pulse rounded-lg bg-gray-800" />
-          <div className="h-40 animate-pulse rounded-2xl bg-gray-800" />
-          {[...Array(4)].map((_, i) => <div key={i} className="h-32 animate-pulse rounded-2xl bg-gray-800" />)}
+          <div className="h-5 w-32 animate-pulse rounded-lg bg-[rgb(var(--surface-3))]" />
+          <div className="h-8 w-2/3 animate-pulse rounded-lg bg-[rgb(var(--surface-3))]" />
+          <div className="h-40 animate-pulse rounded-2xl bg-[rgb(var(--surface-3))]" />
+          {[...Array(4)].map((_, i) => <div key={i} className="h-32 animate-pulse rounded-2xl bg-[rgb(var(--surface-3))]" />)}
         </div>
       </main>
     );
@@ -523,10 +517,10 @@ export default function ExerciseDetailPage() {
 
   if (!exercise) {
     return (
-      <main className="min-h-screen bg-gray-950 px-4 py-8 text-white">
-        <div className="mx-auto max-w-3xl rounded-2xl border border-red-500/30 bg-red-500/10 p-6">
-          <p className="font-black text-red-300">Exercice introuvable.</p>
-          <Link href={`/school/courses/${courseId}/exercises`} className="mt-3 inline-block text-sm text-gray-400 hover:text-purple-300">
+      <main className="min-h-screen bg-[rgb(var(--surface-2))] px-4 py-8 text-[rgb(var(--ink))]">
+        <div className="mx-auto max-w-3xl rounded-2xl border border-[rgb(var(--red))]/30 bg-[rgb(var(--red))]/10 p-6">
+          <p className="font-black text-[rgb(var(--red))]">Exercice introuvable.</p>
+          <Link href={`/school/courses/${courseId}/exercises`} className="mt-3 inline-block text-sm text-[rgb(var(--ink-2))] hover:text-[rgb(var(--accent))]">
             ← Retour à la liste
           </Link>
         </div>
@@ -535,13 +529,13 @@ export default function ExerciseDetailPage() {
   }
 
   return (
-    <main className="min-h-screen bg-gray-950 px-4 py-8 text-white">
+    <main className="min-h-screen bg-[rgb(var(--surface-2))] px-4 py-8 text-[rgb(var(--ink))]">
       <div className="mx-auto w-full max-w-3xl">
 
         {/* Breadcrumb */}
         <Link
           href={`/school/courses/${courseId}/exercises`}
-          className="text-sm font-bold text-gray-500 transition hover:text-purple-400"
+          className="text-sm font-bold text-[rgb(var(--ink-3))] transition hover:text-[rgb(var(--accent))]"
         >
           ← Retour à la liste
         </Link>
@@ -562,7 +556,7 @@ export default function ExerciseDetailPage() {
               await patchField({ exercise_type: e.target.value });
               showToast("Type modifié ✓");
             }}
-            className="rounded-xl border border-gray-700 bg-gray-900 px-3 py-1.5 text-sm text-white outline-none focus:border-purple-500"
+            className="rounded-xl border border-[rgb(var(--border))] bg-[rgb(var(--surface))] px-3 py-1.5 text-sm text-[rgb(var(--ink))] outline-none focus:border-[rgb(var(--accent))]"
           >
             <option value="">Type…</option>
             {EXERCISE_TYPES.map((t) => (
@@ -574,7 +568,7 @@ export default function ExerciseDetailPage() {
           <StatusBadge status={exercise.status} />
 
           {exercise.generated_by_model && (
-            <span className="text-xs text-gray-600 ml-auto">
+            <span className="ml-auto text-xs text-[rgb(var(--ink-3))]">
               Généré par Maïa
             </span>
           )}
@@ -582,8 +576,8 @@ export default function ExerciseDetailPage() {
 
         {/* Statement */}
         <div className="mt-6">
-          <p className="mb-2 text-xs font-black uppercase tracking-widest text-gray-500">Énoncé</p>
-          <div className="rounded-2xl border border-gray-700 bg-gray-900 p-4">
+          <p className="mb-2 text-xs font-black uppercase tracking-widest text-[rgb(var(--ink-3))]">Énoncé</p>
+          <div className="rounded-2xl border border-[rgb(var(--border))] bg-[rgb(var(--surface))] p-4">
             <StatementEditor
               value={exercise.statement}
               onSave={async (v) => { await patchField({ statement: v }); showToast("Énoncé modifié ✓"); }}
@@ -594,14 +588,14 @@ export default function ExerciseDetailPage() {
         {/* Steps */}
         <div className="mt-8">
           <div className="mb-3 flex items-center justify-between">
-            <p className="text-xs font-black uppercase tracking-widest text-gray-500">
+            <p className="text-xs font-black uppercase tracking-widest text-[rgb(var(--ink-3))]">
               Résolution étape par étape
             </p>
             {stepsDirty && (
               <button
                 onClick={saveSteps}
                 disabled={savingSteps}
-                className="rounded-xl bg-purple-500 px-4 py-2 text-xs font-black text-gray-950 hover:bg-purple-400 disabled:opacity-40"
+                className="rounded-xl bg-[rgb(var(--accent))] px-4 py-2 text-xs font-black text-white hover:opacity-90 disabled:opacity-40"
               >
                 {savingSteps ? "Sauvegarde…" : "Sauvegarder les étapes"}
               </button>
@@ -624,34 +618,34 @@ export default function ExerciseDetailPage() {
 
           <button
             onClick={addStep}
-            className="mt-3 w-full rounded-2xl border border-dashed border-gray-700 py-3 text-sm font-bold text-gray-500 hover:border-purple-500/50 hover:text-purple-400 transition"
+            className="mt-3 w-full rounded-2xl border border-dashed border-[rgb(var(--border))] bg-[rgb(var(--surface))] py-3 text-sm font-bold text-[rgb(var(--ink-2))] transition hover:border-[rgb(var(--accent))]/50 hover:text-[rgb(var(--accent))]"
           >
             + Ajouter une étape
           </button>
         </div>
 
         {/* Footer actions */}
-        <div className="mt-10 rounded-2xl border border-gray-700 bg-gray-900 p-5">
-          <p className="mb-4 text-xs font-black uppercase tracking-widest text-gray-500">Actions</p>
+        <div className="mt-10 rounded-2xl border border-[rgb(var(--border))] bg-[rgb(var(--surface))] p-5">
+          <p className="mb-4 text-xs font-black uppercase tracking-widest text-[rgb(var(--ink-3))]">Actions</p>
 
           {exercise.status === "pending" && (
             <div className="flex flex-wrap items-center gap-3">
               <button
                 onClick={() => doAction("reject").then((ok) => ok && showToast("Exercice rejeté"))}
                 disabled={actionBusy}
-                className="rounded-xl border border-red-500/30 px-4 py-2.5 text-sm font-black text-red-400 hover:bg-red-500/10 disabled:opacity-40"
+                className="rounded-xl border border-[rgb(var(--red))]/30 px-4 py-2.5 text-sm font-black text-[rgb(var(--red))] hover:bg-[rgb(var(--red))]/10 disabled:opacity-40"
               >
                 Rejeter
               </button>
-              <div className="flex items-center gap-3 ml-auto flex-wrap">
+              <div className="ml-auto flex flex-wrap items-center gap-3">
                 <div className="flex items-center gap-2">
-                  <span className="text-xs text-gray-500">Difficulté :</span>
+                  <span className="text-xs text-[rgb(var(--ink-3))]">Difficulté :</span>
                   <Stars value={pendingStars} onChange={setPendingStars} />
                 </div>
                 <button
                   onClick={() => doAction("validate", { difficulty: pendingStars ?? 1 }).then((ok) => ok && showToast("Exercice validé ✓"))}
                   disabled={actionBusy}
-                  className="rounded-xl bg-green-500 px-5 py-2.5 text-sm font-black text-gray-950 hover:bg-green-400 disabled:opacity-40"
+                  className="rounded-xl bg-[rgb(var(--green))] px-5 py-2.5 text-sm font-black text-white hover:opacity-90 disabled:opacity-40"
                 >
                   {actionBusy ? "…" : "Valider"}
                 </button>
@@ -661,12 +655,12 @@ export default function ExerciseDetailPage() {
 
           {exercise.status === "validated" && (
             <div className="flex flex-wrap items-center gap-3">
-              <span className="inline-flex items-center gap-2 rounded-xl bg-green-500/10 px-3 py-2 text-sm font-black text-green-300">
+              <span className="inline-flex items-center gap-2 rounded-xl bg-[rgb(var(--green))]/10 px-3 py-2 text-sm font-black text-[rgb(var(--green))]">
                 ✓ Validé
                 <Stars value={exercise.difficulty} />
               </span>
               <div className="flex items-center gap-2">
-                <span className="text-xs text-gray-500">Modifier :</span>
+                <span className="text-xs text-[rgb(var(--ink-3))]">Modifier :</span>
                 <Stars value={pendingStars} onChange={setPendingStars} />
                 <button
                   onClick={async () => {
@@ -675,7 +669,7 @@ export default function ExerciseDetailPage() {
                     showToast("Difficulté modifiée ✓");
                   }}
                   disabled={actionBusy || !pendingStars || pendingStars === exercise.difficulty}
-                  className="rounded-xl border border-gray-700 px-3 py-1.5 text-xs font-bold text-gray-300 hover:text-white disabled:opacity-40"
+                  className="rounded-xl border border-[rgb(var(--border))] px-3 py-1.5 text-xs font-bold text-[rgb(var(--ink-2))] hover:text-[rgb(var(--ink))] disabled:opacity-40"
                 >
                   Appliquer
                 </button>
@@ -683,7 +677,7 @@ export default function ExerciseDetailPage() {
               <button
                 onClick={() => doAction("archive").then((ok) => ok && showToast("Exercice archivé"))}
                 disabled={actionBusy}
-                className="rounded-xl border border-gray-700 px-4 py-2 text-sm font-bold text-gray-400 hover:text-white ml-auto disabled:opacity-40"
+                className="ml-auto rounded-xl border border-[rgb(var(--border))] px-4 py-2 text-sm font-bold text-[rgb(var(--ink-2))] hover:text-[rgb(var(--ink))] disabled:opacity-40"
               >
                 Archiver
               </button>
@@ -692,11 +686,11 @@ export default function ExerciseDetailPage() {
 
           {exercise.status === "rejected" && (
             <div className="flex flex-wrap items-center gap-3">
-              <span className="rounded-xl bg-red-500/10 px-3 py-2 text-sm font-black text-red-300">Rejeté</span>
+              <span className="rounded-xl bg-[rgb(var(--red))]/10 px-3 py-2 text-sm font-black text-[rgb(var(--red))]">Rejeté</span>
               <button
                 onClick={() => doAction("restore").then((ok) => ok && showToast("Exercice restauré en À valider ✓"))}
                 disabled={actionBusy}
-                className="rounded-xl bg-amber-500/20 px-4 py-2 text-sm font-black text-amber-300 hover:bg-amber-500/30 disabled:opacity-40"
+                className="rounded-xl bg-[rgb(var(--warm))]/20 px-4 py-2 text-sm font-black text-[rgb(var(--warm))] hover:bg-[rgb(var(--warm))]/30 disabled:opacity-40"
               >
                 Restaurer en À valider
               </button>
@@ -705,11 +699,11 @@ export default function ExerciseDetailPage() {
 
           {exercise.status === "archived" && (
             <div className="flex flex-wrap items-center gap-3">
-              <span className="rounded-xl bg-gray-500/10 px-3 py-2 text-sm font-black text-gray-400">Archivé</span>
+              <span className="rounded-xl bg-[rgb(var(--surface-3))] px-3 py-2 text-sm font-black text-[rgb(var(--ink-2))]">Archivé</span>
               <button
                 onClick={() => doAction("restore").then((ok) => ok && showToast("Exercice restauré ✓"))}
                 disabled={actionBusy}
-                className="rounded-xl bg-amber-500/20 px-4 py-2 text-sm font-black text-amber-300 hover:bg-amber-500/30 disabled:opacity-40"
+                className="rounded-xl bg-[rgb(var(--warm))]/20 px-4 py-2 text-sm font-black text-[rgb(var(--warm))] hover:bg-[rgb(var(--warm))]/30 disabled:opacity-40"
               >
                 Restaurer
               </button>
@@ -719,7 +713,7 @@ export default function ExerciseDetailPage() {
       </div>
 
       {toast && (
-        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 rounded-2xl bg-green-500 px-6 py-3 font-black text-gray-950 shadow-lg">
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 rounded-2xl bg-[rgb(var(--green))] px-6 py-3 font-black text-white shadow-lg">
           {toast}
         </div>
       )}

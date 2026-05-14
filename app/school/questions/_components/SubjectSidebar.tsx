@@ -19,15 +19,6 @@ type Props<T extends Question> = {
 
 /**
  * Menu latéral gauche : deux niveaux de filtrage indépendants.
- *
- *  1. Matière (subject_enum) — quelle discipline (Histoire, Maths, etc.)
- *  2. Thème (period) — chapitre/UAA/section du syllabus dont la question
- *     est tirée. Maïa remplit ce champ à la génération avec le nom du
- *     chapitre identifié dans le PDF.
- *
- * Les 2 filtres se combinent (AND). Permet de naviguer rapidement 1000
- * questions sur un syllabus de 300 pages → en cliquant matière puis
- * thème, on isole 30-50 questions à valider d'un coup.
  */
 export function SubjectSidebar<T extends Question>({
   questions,
@@ -36,8 +27,6 @@ export function SubjectSidebar<T extends Question>({
   onSelectSubject,
   onSelectTheme,
 }: Props<T>) {
-  // Questions filtrées par la matière sélectionnée (pour calculer les thèmes
-  // visibles uniquement dans le scope courant)
   const matiereFilteredQuestions = useMemo(() => {
     if (selectedSubject === null) return questions;
     return questions.filter(
@@ -75,9 +64,9 @@ export function SubjectSidebar<T extends Question>({
   const totalInMatiere = matiereFilteredQuestions.length;
 
   return (
-    <aside className="w-full lg:w-60 shrink-0 space-y-6">
+    <aside className="w-full shrink-0 space-y-6 lg:w-60">
       <div>
-        <p className="mb-3 text-xs font-semibold uppercase tracking-widest text-gray-500">
+        <p className="mb-3 text-xs font-semibold uppercase tracking-widest text-[rgb(var(--ink-3))]">
           Matière
         </p>
         <div className="flex flex-row flex-wrap gap-2 lg:flex-col lg:flex-nowrap">
@@ -101,7 +90,7 @@ export function SubjectSidebar<T extends Question>({
 
       {themeCounts.length > 0 && (
         <div>
-          <p className="mb-3 text-xs font-semibold uppercase tracking-widest text-gray-500">
+          <p className="mb-3 text-xs font-semibold uppercase tracking-widest text-[rgb(var(--ink-3))]">
             Thème / chapitre
           </p>
           <div className="flex flex-row flex-wrap gap-2 lg:flex-col lg:flex-nowrap">
@@ -121,7 +110,7 @@ export function SubjectSidebar<T extends Question>({
               />
             ))}
             {themeCounts.length > 30 && (
-              <p className="text-xs text-gray-600">+ {themeCounts.length - 30} thèmes (filtre matière pour réduire)</p>
+              <p className="text-xs text-[rgb(var(--ink-3))]">+ {themeCounts.length - 30} thèmes (filtre matière pour réduire)</p>
             )}
           </div>
         </div>
@@ -147,14 +136,14 @@ function SidebarButton({
       onClick={onClick}
       className={`flex w-full items-center justify-between gap-2 rounded-xl px-3 py-2 text-sm font-bold transition ${
         selected
-          ? "bg-purple-500/15 text-purple-200 border border-purple-500/40"
-          : "border border-gray-800 text-gray-400 hover:border-gray-700 hover:text-gray-200"
+          ? "border border-[rgb(var(--accent))]/40 bg-[rgb(var(--accent))]/10 text-[rgb(var(--accent))]"
+          : "border border-[rgb(var(--border))] bg-[rgb(var(--surface))] text-[rgb(var(--ink-2))] hover:border-[rgb(var(--ink-3))] hover:text-[rgb(var(--ink))]"
       }`}
     >
       <span className="truncate text-left">{label}</span>
       <span
         className={`shrink-0 rounded-full px-2 py-0.5 text-xs ${
-          selected ? "bg-purple-500/30 text-purple-100" : "bg-gray-800 text-gray-500"
+          selected ? "bg-[rgb(var(--accent))]/20 text-[rgb(var(--accent))]" : "bg-[rgb(var(--surface-3))] text-[rgb(var(--ink-3))]"
         }`}
       >
         {count}

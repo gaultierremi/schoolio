@@ -40,7 +40,7 @@ function formatDate(iso: string): string {
 // ── Sub-components ────────────────────────────────────────────────────────────
 
 function SkeletonCard() {
-  return <div className="h-40 animate-pulse rounded-2xl bg-gray-800" />;
+  return <div className="h-40 animate-pulse rounded-2xl bg-[rgb(var(--surface-3))]" />;
 }
 
 function ClassCard({ cls, onArchiveToggle }: { cls: ClassItem; onArchiveToggle: (id: string, archive: boolean) => void }) {
@@ -50,50 +50,50 @@ function ClassCard({ cls, onArchiveToggle }: { cls: ClassItem; onArchiveToggle: 
 
   return (
     <div
-      className={`relative flex flex-col gap-3 rounded-2xl border p-5 transition hover:border-purple-500/50 ${
+      className={`relative flex flex-col gap-3 rounded-2xl border p-5 transition ${
         isArchived
-          ? "border-gray-800 bg-gray-900/50 opacity-70"
-          : "border-gray-800 bg-gray-900 cursor-pointer hover:bg-gray-800/60"
+          ? "border-[rgb(var(--border))] bg-[rgb(var(--surface-2))] opacity-70"
+          : "cursor-pointer border-[rgb(var(--border))] bg-[rgb(var(--surface))] hover:border-[rgb(var(--accent))]/40 hover:bg-[rgb(var(--surface-3))]"
       }`}
       onClick={() => !isArchived && router.push(`/school/classes/${cls.id}`)}
     >
       {/* Header */}
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0">
-          <p className="truncate font-black text-white">{cls.name}</p>
-          <p className="mt-0.5 text-xs text-gray-500">
+          <p className="truncate font-black text-[rgb(var(--ink))]">{cls.name}</p>
+          <p className="mt-0.5 text-xs text-[rgb(var(--ink-3))]">
             {levelLabel(cls.level)}
             {subj && <> · <span>{subj.emoji} {subj.label}</span></>}
           </p>
         </div>
         {isArchived && (
-          <span className="shrink-0 rounded-full bg-gray-700 px-2 py-0.5 text-[10px] font-bold uppercase tracking-widest text-gray-400">
+          <span className="shrink-0 rounded-full bg-[rgb(var(--surface-3))] px-2 py-0.5 text-[10px] font-bold uppercase tracking-widest text-[rgb(var(--ink-3))]">
             Archivée
           </span>
         )}
       </div>
 
       {/* Stats */}
-      <div className="flex items-center gap-4 text-sm text-gray-400">
+      <div className="flex items-center gap-4 text-sm text-[rgb(var(--ink-2))]">
         <span>👥 {cls.member_count} élève{cls.member_count !== 1 ? "s" : ""}</span>
       </div>
 
       {/* Invite code */}
-      <div className="flex items-center gap-2 rounded-xl bg-gray-950 px-3 py-2 font-mono text-sm">
-        <span className="text-gray-500">Code :</span>
-        <span className="font-black tracking-widest text-purple-300">{cls.invite_code}</span>
+      <div className="flex items-center gap-2 rounded-xl bg-[rgb(var(--surface-3))] px-3 py-2 font-mono text-sm">
+        <span className="text-[rgb(var(--ink-3))]">Code :</span>
+        <span className="font-black tracking-widest text-[rgb(var(--accent))]">{cls.invite_code}</span>
       </div>
 
       {/* Footer */}
       <div className="flex items-center justify-between">
-        <p className="text-xs text-gray-600">Créée le {formatDate(cls.created_at)}</p>
+        <p className="text-xs text-[rgb(var(--ink-3))]">Créée le {formatDate(cls.created_at)}</p>
         <div className="flex gap-2">
           <button
             onClick={(e) => {
               e.stopPropagation();
               onArchiveToggle(cls.id, !isArchived);
             }}
-            className="rounded-lg border border-gray-700 px-2 py-1 text-xs text-gray-500 transition hover:border-gray-600 hover:text-gray-300"
+            className="rounded-lg border border-[rgb(var(--border))] bg-[rgb(var(--surface))] px-2 py-1 text-xs text-[rgb(var(--ink-2))] transition hover:border-[rgb(var(--ink-3))] hover:text-[rgb(var(--ink))]"
           >
             {isArchived ? "Restaurer" : "Archiver"}
           </button>
@@ -103,7 +103,7 @@ function ClassCard({ cls, onArchiveToggle }: { cls: ClassItem; onArchiveToggle: 
                 e.stopPropagation();
                 router.push(`/school/classes/${cls.id}`);
               }}
-              className="rounded-lg border border-purple-700/50 px-2 py-1 text-xs text-purple-400 transition hover:border-purple-500 hover:text-purple-300"
+              className="rounded-lg border border-[rgb(var(--accent))]/30 bg-[rgb(var(--accent))]/5 px-2 py-1 text-xs font-bold text-[rgb(var(--accent))] transition hover:border-[rgb(var(--accent))]/60 hover:bg-[rgb(var(--accent))]/10"
             >
               Détail →
             </button>
@@ -163,18 +163,18 @@ export default function ClassesPage() {
   const archivedCount = classes.filter((c) => c.archived_at !== null).length;
 
   return (
-    <main className="min-h-screen bg-gray-950 px-4 py-8 text-white">
+    <main className="min-h-screen bg-[rgb(var(--surface-2))] px-4 py-8 text-[rgb(var(--ink))]">
       <div className="mx-auto w-full max-w-5xl">
 
         {/* Header */}
         <div className="flex items-center justify-between gap-4">
           <div>
-            <a href="/school" className="text-xs text-gray-500 hover:text-gray-400">← Espace enseignant</a>
-            <h1 className="mt-1 text-3xl font-black text-white">🏫 Mes classes</h1>
+            <a href="/school" className="text-xs text-[rgb(var(--ink-3))] hover:text-[rgb(var(--ink-2))]">← Espace enseignant</a>
+            <h1 className="serif mt-1 text-3xl font-black text-[rgb(var(--ink))]">🏫 Mes classes</h1>
           </div>
           <a
             href="/school/classes/new"
-            className="shrink-0 rounded-2xl bg-purple-500 px-5 py-2.5 font-black text-gray-950 transition hover:bg-purple-400"
+            className="shrink-0 rounded-2xl bg-[rgb(var(--accent))] px-5 py-2.5 font-black text-white transition hover:opacity-90"
           >
             + Nouvelle classe
           </a>
@@ -188,8 +188,8 @@ export default function ClassesPage() {
               onClick={() => setTab(t)}
               className={`rounded-full px-4 py-1.5 text-sm font-bold transition ${
                 tab === t
-                  ? "bg-purple-500 text-gray-950"
-                  : "border border-gray-700 text-gray-400 hover:border-gray-500 hover:text-gray-300"
+                  ? "bg-[rgb(var(--accent))] text-white"
+                  : "border border-[rgb(var(--border))] bg-[rgb(var(--surface))] text-[rgb(var(--ink-2))] hover:border-[rgb(var(--ink-3))] hover:text-[rgb(var(--ink))]"
               }`}
             >
               {t === "active" ? `Actives (${activeCount})` : `Archivées (${archivedCount})`}
@@ -206,13 +206,13 @@ export default function ClassesPage() {
           ) : visible.length === 0 ? (
             <div className="mt-16 text-center">
               <p className="text-5xl">🏫</p>
-              <p className="mt-4 text-lg font-black text-white">
+              <p className="mt-4 text-lg font-black text-[rgb(var(--ink))]">
                 {tab === "active" ? "Aucune classe active" : "Aucune classe archivée"}
               </p>
               {tab === "active" && (
                 <a
                   href="/school/classes/new"
-                  className="mt-4 inline-block rounded-2xl bg-purple-500 px-6 py-2.5 font-black text-gray-950 transition hover:bg-purple-400"
+                  className="mt-4 inline-block rounded-2xl bg-[rgb(var(--accent))] px-6 py-2.5 font-black text-white transition hover:opacity-90"
                 >
                   Créer ma première classe
                 </a>

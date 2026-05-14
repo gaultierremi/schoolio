@@ -5,7 +5,6 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase-browser";
 import { SUBJECTS } from "@/lib/subjects";
-import type { SubjectId } from "@/lib/subjects";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -44,41 +43,42 @@ type DeleteModal =
   | { kind: "open"; course: CourseRow; loading: boolean };
 
 // ── Constants ─────────────────────────────────────────────────────────────────
+// Tags conservent leurs couleurs vives mais avec fond pastel (light theme).
 
 const TAG_CHIP_STYLES: Record<TagColor, string> = {
-  purple: "bg-purple-500/15 text-purple-300 border-purple-500/25",
-  blue:   "bg-blue-500/15 text-blue-300 border-blue-500/25",
-  red:    "bg-red-500/15 text-red-300 border-red-500/25",
-  orange: "bg-orange-500/15 text-orange-300 border-orange-500/25",
-  green:  "bg-green-500/15 text-green-300 border-green-500/25",
-  yellow: "bg-yellow-500/15 text-yellow-300 border-yellow-500/25",
-  pink:   "bg-pink-500/15 text-pink-300 border-pink-500/25",
-  gray:   "bg-gray-500/15 text-gray-300 border-gray-500/25",
+  purple: "bg-purple-100 text-purple-700 border-purple-200",
+  blue:   "bg-blue-100 text-blue-700 border-blue-200",
+  red:    "bg-red-100 text-red-700 border-red-200",
+  orange: "bg-orange-100 text-orange-700 border-orange-200",
+  green:  "bg-green-100 text-green-700 border-green-200",
+  yellow: "bg-yellow-100 text-yellow-800 border-yellow-200",
+  pink:   "bg-pink-100 text-pink-700 border-pink-200",
+  gray:   "bg-[rgb(var(--surface-3))] text-[rgb(var(--ink-2))] border-[rgb(var(--border))]",
 };
 
 const TAG_CHIP_SELECTED: Record<TagColor, string> = {
-  purple: "bg-purple-500/30 text-purple-200 border-purple-400 ring-1 ring-purple-400",
-  blue:   "bg-blue-500/30 text-blue-200 border-blue-400 ring-1 ring-blue-400",
-  red:    "bg-red-500/30 text-red-200 border-red-400 ring-1 ring-red-400",
-  orange: "bg-orange-500/30 text-orange-200 border-orange-400 ring-1 ring-orange-400",
-  green:  "bg-green-500/30 text-green-200 border-green-400 ring-1 ring-green-400",
-  yellow: "bg-yellow-500/30 text-yellow-200 border-yellow-400 ring-1 ring-yellow-400",
-  pink:   "bg-pink-500/30 text-pink-200 border-pink-400 ring-1 ring-pink-400",
-  gray:   "bg-gray-500/30 text-gray-200 border-gray-400 ring-1 ring-gray-400",
+  purple: "bg-purple-200 text-purple-800 border-purple-400 ring-1 ring-purple-400",
+  blue:   "bg-blue-200 text-blue-800 border-blue-400 ring-1 ring-blue-400",
+  red:    "bg-red-200 text-red-800 border-red-400 ring-1 ring-red-400",
+  orange: "bg-orange-200 text-orange-800 border-orange-400 ring-1 ring-orange-400",
+  green:  "bg-green-200 text-green-800 border-green-400 ring-1 ring-green-400",
+  yellow: "bg-yellow-200 text-yellow-900 border-yellow-400 ring-1 ring-yellow-400",
+  pink:   "bg-pink-200 text-pink-800 border-pink-400 ring-1 ring-pink-400",
+  gray:   "bg-[rgb(var(--ink-3))]/20 text-[rgb(var(--ink))] border-[rgb(var(--ink-3))] ring-1 ring-[rgb(var(--ink-3))]",
 };
 
 const SUBJECT_BADGE: Record<string, string> = {
-  chimie:        "bg-blue-500/20 text-blue-300",
-  physique:      "bg-cyan-500/20 text-cyan-300",
-  biologie:      "bg-green-500/20 text-green-300",
-  mathematiques: "bg-emerald-500/20 text-emerald-300",
-  histoire:      "bg-amber-500/20 text-amber-300",
-  geographie:    "bg-teal-500/20 text-teal-300",
-  francais:      "bg-red-500/20 text-red-300",
-  anglais:       "bg-blue-500/20 text-blue-300",
-  neerlandais:   "bg-orange-500/20 text-orange-300",
-  sciences:      "bg-blue-500/20 text-blue-300",
-  autre:         "bg-gray-500/20 text-gray-300",
+  chimie:        "bg-blue-100 text-blue-700",
+  physique:      "bg-cyan-100 text-cyan-700",
+  biologie:      "bg-green-100 text-green-700",
+  mathematiques: "bg-emerald-100 text-emerald-700",
+  histoire:      "bg-amber-100 text-amber-800",
+  geographie:    "bg-teal-100 text-teal-700",
+  francais:      "bg-red-100 text-red-700",
+  anglais:       "bg-blue-100 text-blue-700",
+  neerlandais:   "bg-orange-100 text-orange-700",
+  sciences:      "bg-blue-100 text-blue-700",
+  autre:         "bg-[rgb(var(--surface-3))] text-[rgb(var(--ink-2))]",
 };
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -121,7 +121,7 @@ async function fetchSignedUrl(courseId: string): Promise<string> {
 
 function Spinner({ className = "h-4 w-4" }: { className?: string }) {
   return (
-    <svg className={`animate-spin text-purple-400 ${className}`} fill="none" viewBox="0 0 24 24">
+    <svg className={`animate-spin text-[rgb(var(--accent))] ${className}`} fill="none" viewBox="0 0 24 24">
       <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
       <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
     </svg>
@@ -129,7 +129,7 @@ function Spinner({ className = "h-4 w-4" }: { className?: string }) {
 }
 
 function SkeletonBlock({ className }: { className?: string }) {
-  return <div className={`animate-pulse rounded-xl bg-white/5 ${className ?? ""}`} />;
+  return <div className={`animate-pulse rounded-xl bg-[rgb(var(--surface-3))] ${className ?? ""}`} />;
 }
 
 type TagChipProps = { tag: TeacherTag; selected?: boolean; onClick?: () => void };
@@ -140,7 +140,7 @@ function TagChip({ tag, selected = false, onClick }: TagChipProps) {
     <button
       type="button"
       onClick={onClick}
-      className={`flex items-center gap-1 px-2 py-0.5 rounded-full border text-xs font-medium transition-all ${base} ${onClick ? "cursor-pointer" : "cursor-default"}`}
+      className={`flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs font-medium transition-all ${base} ${onClick ? "cursor-pointer" : "cursor-default"}`}
     >
       {tag.emoji && <span>{tag.emoji}</span>}
       {tag.name}
@@ -167,11 +167,11 @@ function FilterBar({ filters, tags, viewMode, onSubject, onLevel, onToggleTag, o
         <select
           value={filters.subject}
           onChange={(e) => onSubject(e.target.value)}
-          className="bg-white/10 border border-white/20 rounded-lg px-3 py-1.5 text-sm text-white focus:outline-none focus:border-purple-400 cursor-pointer"
+          className="cursor-pointer rounded-lg border border-[rgb(var(--border))] bg-[rgb(var(--surface))] px-3 py-1.5 text-sm text-[rgb(var(--ink))] focus:border-[rgb(var(--accent))] focus:outline-none"
         >
-          <option value="" className="bg-gray-900">Toutes les matières</option>
+          <option value="">Toutes les matières</option>
           {SUBJECTS.map((s) => (
-            <option key={s.id} value={s.id} className="bg-gray-900">
+            <option key={s.id} value={s.id}>
               {s.emoji} {s.label}
             </option>
           ))}
@@ -180,19 +180,19 @@ function FilterBar({ filters, tags, viewMode, onSubject, onLevel, onToggleTag, o
         <select
           value={filters.level}
           onChange={(e) => onLevel(e.target.value)}
-          className="bg-white/10 border border-white/20 rounded-lg px-3 py-1.5 text-sm text-white focus:outline-none focus:border-purple-400 cursor-pointer"
+          className="cursor-pointer rounded-lg border border-[rgb(var(--border))] bg-[rgb(var(--surface))] px-3 py-1.5 text-sm text-[rgb(var(--ink))] focus:border-[rgb(var(--accent))] focus:outline-none"
         >
-          <option value="" className="bg-gray-900">Tous les niveaux</option>
+          <option value="">Tous les niveaux</option>
           {[1, 2, 3, 4, 5, 6].map((l) => (
-            <option key={l} value={String(l)} className="bg-gray-900">{l}e année</option>
+            <option key={l} value={String(l)}>{l}e année</option>
           ))}
         </select>
 
-        <div className="ml-auto flex items-center gap-1 rounded-lg border border-white/20 p-0.5">
+        <div className="ml-auto flex items-center gap-1 rounded-lg border border-[rgb(var(--border))] bg-[rgb(var(--surface))] p-0.5">
           <button
             type="button"
             onClick={() => onViewMode("grid")}
-            className={`p-1.5 rounded-md transition-colors ${viewMode === "grid" ? "bg-purple-600 text-white" : "text-white/50 hover:text-white"}`}
+            className={`rounded-md p-1.5 transition-colors ${viewMode === "grid" ? "bg-[rgb(var(--accent))] text-white" : "text-[rgb(var(--ink-3))] hover:text-[rgb(var(--ink))]"}`}
             aria-label="Vue grille"
           >
             <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 16 16">
@@ -202,7 +202,7 @@ function FilterBar({ filters, tags, viewMode, onSubject, onLevel, onToggleTag, o
           <button
             type="button"
             onClick={() => onViewMode("list")}
-            className={`p-1.5 rounded-md transition-colors ${viewMode === "list" ? "bg-purple-600 text-white" : "text-white/50 hover:text-white"}`}
+            className={`rounded-md p-1.5 transition-colors ${viewMode === "list" ? "bg-[rgb(var(--accent))] text-white" : "text-[rgb(var(--ink-3))] hover:text-[rgb(var(--ink))]"}`}
             aria-label="Vue liste"
           >
             <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -248,35 +248,35 @@ function CourseCard({ course, tags, loadingUrl, onPreview, onDownload, onDelete 
   const badgeClass = SUBJECT_BADGE[course.subject_enum ?? ""] ?? SUBJECT_BADGE.autre;
 
   return (
-    <div className="group relative flex flex-col gap-3 rounded-2xl border border-white/10 bg-white/5 p-5 hover:border-purple-500/40 hover:bg-white/8 transition-all">
+    <div className="group relative flex flex-col gap-3 rounded-2xl border border-[rgb(var(--border))] bg-[rgb(var(--surface))] p-5 transition-all hover:border-[rgb(var(--accent))]/40 hover:bg-[rgb(var(--surface-3))]">
       {/* Header */}
       <div className="flex items-start gap-3">
-        <div className="shrink-0 flex h-10 w-10 items-center justify-center rounded-xl bg-purple-500/15 text-purple-400">
+        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[rgb(var(--accent))]/10 text-[rgb(var(--accent))]">
           <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
               d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
           </svg>
         </div>
         <div className="min-w-0 flex-1">
-          <p className="font-semibold text-white leading-snug line-clamp-2">
+          <p className="line-clamp-2 font-semibold leading-snug text-[rgb(var(--ink))]">
             {course.title ?? "Sans titre"}
           </p>
-          <p className="text-xs text-white/40 mt-0.5">{formatDate(course.created_at)}</p>
+          <p className="mt-0.5 text-xs text-[rgb(var(--ink-3))]">{formatDate(course.created_at)}</p>
         </div>
       </div>
 
       {/* Badges matière + niveau */}
       <div className="flex flex-wrap gap-1.5">
-        <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${badgeClass}`}>
+        <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${badgeClass}`}>
           {subjectEmoji(course.subject_enum)} {subjectLabel(course.subject_enum)}
         </span>
         {course.level && (
-          <span className="px-2 py-0.5 rounded-full bg-white/10 text-white/60 text-xs">
+          <span className="rounded-full bg-[rgb(var(--surface-3))] px-2 py-0.5 text-xs text-[rgb(var(--ink-2))]">
             {course.level}e année
           </span>
         )}
         {course.pdf_size_bytes && (
-          <span className="px-2 py-0.5 rounded-full bg-white/5 text-white/30 text-xs">
+          <span className="rounded-full bg-[rgb(var(--surface-3))] px-2 py-0.5 text-xs text-[rgb(var(--ink-3))]">
             {formatFileSize(course.pdf_size_bytes)}
           </span>
         )}
@@ -292,7 +292,7 @@ function CourseCard({ course, tags, loadingUrl, onPreview, onDownload, onDelete 
       )}
 
       {/* Stats */}
-      <p className="text-xs text-white/40">
+      <p className="text-xs text-[rgb(var(--ink-3))]">
         {course.questions_count > 0
           ? `${course.questions_count} question${course.questions_count > 1 ? "s" : ""} générée${course.questions_count > 1 ? "s" : ""}`
           : "Aucune question générée"}
@@ -301,7 +301,7 @@ function CourseCard({ course, tags, loadingUrl, onPreview, onDownload, onDelete 
       {/* Exercises link */}
       <Link
         href={`/school/courses/${course.id}/exercises`}
-        className="flex items-center gap-1.5 self-start rounded-xl border border-purple-500/30 bg-purple-500/10 px-3 py-1.5 text-xs font-black text-purple-300 hover:bg-purple-500/20 transition-colors"
+        className="flex items-center gap-1.5 self-start rounded-xl border border-[rgb(var(--accent))]/30 bg-[rgb(var(--accent))]/10 px-3 py-1.5 text-xs font-black text-[rgb(var(--accent))] transition-colors hover:bg-[rgb(var(--accent))]/15"
         onClick={(e) => e.stopPropagation()}
       >
         <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -311,12 +311,12 @@ function CourseCard({ course, tags, loadingUrl, onPreview, onDownload, onDelete 
       </Link>
 
       {/* Actions */}
-      <div className="flex items-center gap-2 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
+      <div className="flex items-center gap-2 opacity-100 transition-opacity sm:opacity-0 sm:group-hover:opacity-100">
         <button
           type="button"
           onClick={onPreview}
           disabled={loadingUrl || !course.pdf_storage_path}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/15 disabled:opacity-40 disabled:cursor-not-allowed text-white text-xs font-medium transition-colors"
+          className="flex items-center gap-1.5 rounded-lg bg-[rgb(var(--surface-3))] px-3 py-1.5 text-xs font-medium text-[rgb(var(--ink-2))] transition-colors hover:bg-[rgb(var(--surface-2))] hover:text-[rgb(var(--ink))] disabled:cursor-not-allowed disabled:opacity-40"
         >
           {loadingUrl ? <Spinner className="h-3 w-3" /> : (
             <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -330,7 +330,7 @@ function CourseCard({ course, tags, loadingUrl, onPreview, onDownload, onDelete 
           type="button"
           onClick={onDownload}
           disabled={loadingUrl || !course.pdf_storage_path}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/15 disabled:opacity-40 disabled:cursor-not-allowed text-white text-xs font-medium transition-colors"
+          className="flex items-center gap-1.5 rounded-lg bg-[rgb(var(--surface-3))] px-3 py-1.5 text-xs font-medium text-[rgb(var(--ink-2))] transition-colors hover:bg-[rgb(var(--surface-2))] hover:text-[rgb(var(--ink))] disabled:cursor-not-allowed disabled:opacity-40"
         >
           <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
@@ -340,7 +340,7 @@ function CourseCard({ course, tags, loadingUrl, onPreview, onDownload, onDelete 
         <button
           type="button"
           onClick={onDelete}
-          className="ml-auto flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-400 text-xs font-medium transition-colors"
+          className="ml-auto flex items-center gap-1 rounded-lg bg-[rgb(var(--red))]/10 px-2.5 py-1.5 text-xs font-medium text-[rgb(var(--red))] transition-colors hover:bg-[rgb(var(--red))]/15"
         >
           <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
@@ -371,41 +371,41 @@ function ListRow({ course, tags, loadingUrl, onPreview, onDownload, onDelete }: 
   const badgeClass = SUBJECT_BADGE[course.subject_enum ?? ""] ?? SUBJECT_BADGE.autre;
 
   return (
-    <tr className="border-t border-white/5 hover:bg-white/3 transition-colors">
-      <td className="py-3 px-4">
-        <p className="text-sm text-white font-medium line-clamp-1">{course.title ?? "Sans titre"}</p>
+    <tr className="border-t border-[rgb(var(--border))] transition-colors hover:bg-[rgb(var(--surface-3))]">
+      <td className="px-4 py-3">
+        <p className="line-clamp-1 text-sm font-medium text-[rgb(var(--ink))]">{course.title ?? "Sans titre"}</p>
       </td>
-      <td className="py-3 px-4">
-        <span className={`px-2 py-0.5 rounded-full text-xs font-medium whitespace-nowrap ${badgeClass}`}>
+      <td className="px-4 py-3">
+        <span className={`whitespace-nowrap rounded-full px-2 py-0.5 text-xs font-medium ${badgeClass}`}>
           {subjectEmoji(course.subject_enum)} {subjectLabel(course.subject_enum)}
         </span>
       </td>
-      <td className="py-3 px-4 text-sm text-white/50">
+      <td className="px-4 py-3 text-sm text-[rgb(var(--ink-2))]">
         {course.level ? `${course.level}e` : "—"}
       </td>
-      <td className="py-3 px-4">
+      <td className="px-4 py-3">
         <div className="flex flex-wrap gap-1">
           {courseTags.slice(0, 3).map((tag) => (
             <TagChip key={tag.id} tag={tag} />
           ))}
           {courseTags.length > 3 && (
-            <span className="text-xs text-white/30">+{courseTags.length - 3}</span>
+            <span className="text-xs text-[rgb(var(--ink-3))]">+{courseTags.length - 3}</span>
           )}
         </div>
       </td>
-      <td className="py-3 px-4 text-sm text-white/50 tabular-nums">
+      <td className="px-4 py-3 text-sm tabular-nums text-[rgb(var(--ink-2))]">
         {course.questions_count}
       </td>
-      <td className="py-3 px-4 text-xs text-white/40 whitespace-nowrap">
+      <td className="whitespace-nowrap px-4 py-3 text-xs text-[rgb(var(--ink-3))]">
         {formatDate(course.created_at)}
       </td>
-      <td className="py-3 px-4">
+      <td className="px-4 py-3">
         <div className="flex items-center gap-1">
           <button
             type="button"
             onClick={onPreview}
             disabled={loadingUrl || !course.pdf_storage_path}
-            className="p-1.5 rounded-lg hover:bg-white/10 disabled:opacity-40 disabled:cursor-not-allowed text-white/60 hover:text-white transition-colors"
+            className="rounded-lg p-1.5 text-[rgb(var(--ink-2))] transition-colors hover:bg-[rgb(var(--surface-3))] hover:text-[rgb(var(--ink))] disabled:cursor-not-allowed disabled:opacity-40"
             title="Prévisualiser"
           >
             {loadingUrl ? <Spinner className="h-4 w-4" /> : (
@@ -419,7 +419,7 @@ function ListRow({ course, tags, loadingUrl, onPreview, onDownload, onDelete }: 
             type="button"
             onClick={onDownload}
             disabled={loadingUrl || !course.pdf_storage_path}
-            className="p-1.5 rounded-lg hover:bg-white/10 disabled:opacity-40 disabled:cursor-not-allowed text-white/60 hover:text-white transition-colors"
+            className="rounded-lg p-1.5 text-[rgb(var(--ink-2))] transition-colors hover:bg-[rgb(var(--surface-3))] hover:text-[rgb(var(--ink))] disabled:cursor-not-allowed disabled:opacity-40"
             title="Télécharger"
           >
             <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -429,7 +429,7 @@ function ListRow({ course, tags, loadingUrl, onPreview, onDownload, onDelete }: 
           <button
             type="button"
             onClick={onDelete}
-            className="p-1.5 rounded-lg hover:bg-red-500/15 text-red-500/60 hover:text-red-400 transition-colors"
+            className="rounded-lg p-1.5 text-[rgb(var(--red))]/70 transition-colors hover:bg-[rgb(var(--red))]/10 hover:text-[rgb(var(--red))]"
             title="Supprimer"
           >
             <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -458,29 +458,29 @@ function DeleteModalOverlay({ modal, onCancel, onConfirm }: DeleteModalProps) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onCancel} />
-      <div className="relative z-10 w-full max-w-md rounded-2xl border border-white/10 bg-gray-900 p-6 shadow-2xl">
-        <h2 className="text-lg font-bold text-white">Supprimer ce cours ?</h2>
-        <p className="mt-1 text-sm text-white/60 font-medium">{course.title ?? "Sans titre"}</p>
+      <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={onCancel} />
+      <div className="relative z-10 w-full max-w-md rounded-2xl border border-[rgb(var(--border))] bg-[rgb(var(--surface))] p-6 shadow-2xl">
+        <h2 className="serif text-lg font-bold text-[rgb(var(--ink))]">Supprimer ce cours ?</h2>
+        <p className="mt-1 text-sm font-medium text-[rgb(var(--ink-2))]">{course.title ?? "Sans titre"}</p>
 
         {hasQuestions && (
-          <div className="mt-4 rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3">
-            <p className="text-sm text-amber-300">
+          <div className="mt-4 rounded-xl border border-[rgb(var(--warm))]/30 bg-[rgb(var(--warm))]/10 px-4 py-3">
+            <p className="text-sm text-[rgb(var(--warm))]">
               <span className="font-semibold">{course.questions_count} question{course.questions_count > 1 ? "s" : ""}</span> générée{course.questions_count > 1 ? "s" : ""} depuis ce cours seront conservées et détachées — elles ne seront pas supprimées.
             </p>
           </div>
         )}
 
-        <p className="mt-4 text-sm text-white/50">
+        <p className="mt-4 text-sm text-[rgb(var(--ink-2))]">
           Le fichier PDF sera définitivement supprimé. Cette action est irréversible.
         </p>
 
-        <div className="mt-6 flex gap-3 justify-end">
+        <div className="mt-6 flex justify-end gap-3">
           <button
             type="button"
             onClick={onCancel}
             disabled={loading}
-            className="px-4 py-2 rounded-xl border border-white/20 text-white text-sm font-medium hover:bg-white/5 disabled:opacity-40 transition-colors"
+            className="rounded-xl border border-[rgb(var(--border))] px-4 py-2 text-sm font-medium text-[rgb(var(--ink-2))] transition-colors hover:border-[rgb(var(--ink-3))] hover:text-[rgb(var(--ink))] disabled:opacity-40"
           >
             Annuler
           </button>
@@ -488,7 +488,7 @@ function DeleteModalOverlay({ modal, onCancel, onConfirm }: DeleteModalProps) {
             type="button"
             onClick={onConfirm}
             disabled={loading}
-            className="flex items-center gap-2 px-4 py-2 rounded-xl bg-red-600 hover:bg-red-500 disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-semibold transition-colors"
+            className="flex items-center gap-2 rounded-xl bg-[rgb(var(--red))] px-4 py-2 text-sm font-semibold text-white transition-colors hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
           >
             {loading && <Spinner className="h-4 w-4" />}
             Confirmer la suppression
@@ -504,17 +504,17 @@ function DeleteModalOverlay({ modal, onCancel, onConfirm }: DeleteModalProps) {
 function EmptyState() {
   return (
     <div className="flex flex-col items-center justify-center gap-4 py-20 text-center">
-      <svg className="h-16 w-16 text-white/10" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <svg className="h-16 w-16 text-[rgb(var(--ink-3))]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1}
           d="M9 13h6m-3-3v6m5 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
       </svg>
       <div>
-        <p className="text-white/50 font-medium">Tu n&apos;as pas encore importé de cours</p>
-        <p className="text-white/30 text-sm mt-1">Glisse des PDF pour que Maïa les analyse automatiquement</p>
+        <p className="font-medium text-[rgb(var(--ink))]">Tu n&apos;as pas encore importé de cours</p>
+        <p className="mt-1 text-sm text-[rgb(var(--ink-3))]">Glisse des PDF pour que Maïa les analyse automatiquement</p>
       </div>
       <Link
         href="/school/import"
-        className="mt-2 px-5 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white text-sm font-semibold transition-colors"
+        className="mt-2 rounded-xl bg-[rgb(var(--accent))] px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:opacity-90"
       >
         Importer des cours →
       </Link>
@@ -525,11 +525,11 @@ function EmptyState() {
 function EmptyFilterState({ onReset }: { onReset: () => void }) {
   return (
     <div className="flex flex-col items-center justify-center gap-3 py-16 text-center">
-      <p className="text-white/40 text-sm">Aucun cours ne correspond aux filtres sélectionnés.</p>
+      <p className="text-sm text-[rgb(var(--ink-2))]">Aucun cours ne correspond aux filtres sélectionnés.</p>
       <button
         type="button"
         onClick={onReset}
-        className="text-purple-400 hover:text-purple-300 text-sm underline underline-offset-2 transition-colors"
+        className="text-sm text-[rgb(var(--accent))] underline underline-offset-2 transition-colors hover:opacity-80"
       >
         Réinitialiser les filtres
       </button>
@@ -688,11 +688,11 @@ export default function CoursesPage() {
 
   if (authLoading) {
     return (
-      <main className="min-h-screen bg-gray-950 px-4 py-10">
-        <div className="max-w-5xl mx-auto flex flex-col gap-6">
+      <main className="min-h-screen bg-[rgb(var(--surface-2))] px-4 py-10">
+        <div className="mx-auto flex max-w-5xl flex-col gap-6">
           <SkeletonBlock className="h-5 w-32" />
           <SkeletonBlock className="h-8 w-48" />
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
+          <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
             {[...Array(4)].map((_, i) => <SkeletonBlock key={i} className="h-48" />)}
           </div>
         </div>
@@ -702,32 +702,30 @@ export default function CoursesPage() {
 
   if (!isTeacher) {
     return (
-      <main className="min-h-screen bg-gray-950 px-4 py-10 text-white">
-        <div className="max-w-xl mx-auto rounded-3xl border border-red-500/30 bg-red-500/10 p-6">
-          <h1 className="text-2xl font-black text-red-300">Accès refusé</h1>
-          <p className="mt-2 text-gray-300">Cet espace est réservé aux professeurs autorisés.</p>
+      <main className="min-h-screen bg-[rgb(var(--surface-2))] px-4 py-10 text-[rgb(var(--ink))]">
+        <div className="mx-auto max-w-xl rounded-3xl border border-[rgb(var(--red))]/30 bg-[rgb(var(--red))]/10 p-6">
+          <h1 className="serif text-2xl font-black text-[rgb(var(--red))]">Accès refusé</h1>
+          <p className="mt-2 text-[rgb(var(--ink-2))]">Cet espace est réservé aux professeurs autorisés.</p>
         </div>
       </main>
     );
   }
 
-  const hasActiveFilters = filters.subject !== "" || filters.level !== "" || filters.tagIds.size > 0;
-
   return (
-    <main className="min-h-screen bg-gray-950 text-white px-4 py-10">
-      <div className="max-w-5xl mx-auto flex flex-col gap-6">
+    <main className="min-h-screen bg-[rgb(var(--surface-2))] px-4 py-10 text-[rgb(var(--ink))]">
+      <div className="mx-auto flex max-w-5xl flex-col gap-6">
 
         {/* Header */}
         <div>
           <Link
             href="/school"
-            className="inline-block text-sm text-gray-400 hover:text-purple-400 transition-colors mb-4"
+            className="mb-4 inline-block text-sm text-[rgb(var(--ink-2))] transition-colors hover:text-[rgb(var(--accent))]"
           >
             ← Retour au dashboard
           </Link>
-          <h1 className="text-2xl font-bold text-white">Mes cours</h1>
+          <h1 className="serif text-2xl font-bold text-[rgb(var(--ink))]">Mes cours</h1>
           {!dataLoading && (
-            <p className="text-sm text-white/40 mt-1">
+            <p className="mt-1 text-sm text-[rgb(var(--ink-3))]">
               {courses.length} cours · {totalQuestions} question{totalQuestions > 1 ? "s" : ""} générée{totalQuestions > 1 ? "s" : ""}
             </p>
           )}
@@ -748,7 +746,7 @@ export default function CoursesPage() {
 
         {/* Content */}
         {dataLoading ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             {[...Array(4)].map((_, i) => <SkeletonBlock key={i} className="h-52" />)}
           </div>
         ) : courses.length === 0 ? (
@@ -756,7 +754,7 @@ export default function CoursesPage() {
         ) : filteredCourses.length === 0 ? (
           <EmptyFilterState onReset={resetFilters} />
         ) : viewMode === "grid" ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             {filteredCourses.map((course) => (
               <CourseCard
                 key={course.id}
@@ -770,17 +768,17 @@ export default function CoursesPage() {
             ))}
           </div>
         ) : (
-          <div className="overflow-x-auto rounded-2xl border border-white/10">
+          <div className="overflow-x-auto rounded-2xl border border-[rgb(var(--border))] bg-[rgb(var(--surface))]">
             <table className="w-full min-w-[640px]">
-              <thead>
+              <thead className="bg-[rgb(var(--surface-2))]">
                 <tr className="text-left">
-                  <th className="py-3 px-4 text-xs font-semibold text-white/40 uppercase tracking-wide">Titre</th>
-                  <th className="py-3 px-4 text-xs font-semibold text-white/40 uppercase tracking-wide">Matière</th>
-                  <th className="py-3 px-4 text-xs font-semibold text-white/40 uppercase tracking-wide">Niv.</th>
-                  <th className="py-3 px-4 text-xs font-semibold text-white/40 uppercase tracking-wide">Tags</th>
-                  <th className="py-3 px-4 text-xs font-semibold text-white/40 uppercase tracking-wide">Questions</th>
-                  <th className="py-3 px-4 text-xs font-semibold text-white/40 uppercase tracking-wide">Date</th>
-                  <th className="py-3 px-4 text-xs font-semibold text-white/40 uppercase tracking-wide">Actions</th>
+                  <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-[rgb(var(--ink-3))]">Titre</th>
+                  <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-[rgb(var(--ink-3))]">Matière</th>
+                  <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-[rgb(var(--ink-3))]">Niv.</th>
+                  <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-[rgb(var(--ink-3))]">Tags</th>
+                  <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-[rgb(var(--ink-3))]">Questions</th>
+                  <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-[rgb(var(--ink-3))]">Date</th>
+                  <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-[rgb(var(--ink-3))]">Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -808,7 +806,7 @@ export default function CoursesPage() {
       />
 
       {toast && (
-        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 px-4 py-2 rounded-xl bg-gray-800 border border-white/10 text-sm text-white shadow-xl whitespace-nowrap">
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-xl border border-[rgb(var(--border))] bg-[rgb(var(--surface))] px-4 py-2 text-sm text-[rgb(var(--ink))] shadow-xl">
           {toast}
         </div>
       )}

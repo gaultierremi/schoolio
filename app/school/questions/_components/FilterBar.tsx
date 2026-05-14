@@ -29,13 +29,13 @@ export function FilterBar({
           value={filterText ?? ""}
           onChange={(e) => setFilterText(e.target.value)}
           placeholder="Rechercher..."
-          className="flex-1 min-w-[160px] rounded-xl border border-gray-700 bg-gray-900 px-3 py-2 text-sm text-white outline-none placeholder:text-gray-600 focus:border-purple-500"
+          className="min-w-[160px] flex-1 rounded-xl border border-[rgb(var(--border))] bg-[rgb(var(--surface))] px-3 py-2 text-sm text-[rgb(var(--ink))] outline-none placeholder:text-[rgb(var(--ink-3))] focus:border-[rgb(var(--accent))]"
         />
       )}
       <select
         value={filterType}
         onChange={(e) => setFilterType(e.target.value)}
-        className="rounded-xl border border-gray-700 bg-gray-900 px-3 py-2 text-sm text-white outline-none focus:border-purple-500"
+        className="rounded-xl border border-[rgb(var(--border))] bg-[rgb(var(--surface))] px-3 py-2 text-sm text-[rgb(var(--ink))] outline-none focus:border-[rgb(var(--accent))]"
       >
         <option value="">Tous les types</option>
         <option value="mcq">QCM</option>
@@ -44,7 +44,7 @@ export function FilterBar({
       <select
         value={filterPeriod}
         onChange={(e) => setFilterPeriod(e.target.value)}
-        className="rounded-xl border border-gray-700 bg-gray-900 px-3 py-2 text-sm text-white outline-none focus:border-purple-500"
+        className="rounded-xl border border-[rgb(var(--border))] bg-[rgb(var(--surface))] px-3 py-2 text-sm text-[rgb(var(--ink))] outline-none focus:border-[rgb(var(--accent))]"
       >
         <option value="">Toutes les périodes</option>
         {PERIODS.map((p) => (
@@ -57,7 +57,7 @@ export function FilterBar({
         <select
           value={filterOrigin ?? ""}
           onChange={(e) => setFilterOrigin(e.target.value as "" | "ai_generated" | "extracted_from_pdf")}
-          className="rounded-xl border border-gray-700 bg-gray-900 px-3 py-2 text-sm text-white outline-none focus:border-purple-500"
+          className="rounded-xl border border-[rgb(var(--border))] bg-[rgb(var(--surface))] px-3 py-2 text-sm text-[rgb(var(--ink))] outline-none focus:border-[rgb(var(--accent))]"
         >
           <option value="">Toutes les origines</option>
           <option value="ai_generated">Maïa</option>

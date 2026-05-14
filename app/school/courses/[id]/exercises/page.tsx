@@ -45,19 +45,19 @@ const EXERCISE_TYPE_LABELS: Record<string, string> = {
 };
 
 const TYPE_BADGE_STYLE: Record<string, string> = {
-  calcul:        "bg-blue-500/20 text-blue-300",
-  demonstration: "bg-purple-500/20 text-purple-300",
-  analyse:       "bg-cyan-500/20 text-cyan-300",
-  redaction:     "bg-amber-500/20 text-amber-300",
-  application:   "bg-green-500/20 text-green-300",
-  autre:         "bg-gray-500/20 text-gray-400",
+  calcul:        "bg-blue-100 text-blue-700",
+  demonstration: "bg-purple-100 text-purple-700",
+  analyse:       "bg-cyan-100 text-cyan-700",
+  redaction:     "bg-amber-100 text-amber-800",
+  application:   "bg-green-100 text-green-700",
+  autre:         "bg-[rgb(var(--surface-3))] text-[rgb(var(--ink-2))]",
 };
 
 
 function Stars({ count }: { count: number | null }) {
   if (!count) return null;
   return (
-    <span className="text-yellow-400 text-sm">
+    <span className="text-sm text-yellow-500">
       {"★".repeat(count)}{"☆".repeat(3 - count)}
     </span>
   );
@@ -112,25 +112,25 @@ function GenerateModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={state === "idle" ? onClose : undefined} />
-      <div className="relative z-10 w-full max-w-md rounded-2xl border border-gray-700 bg-gray-900 p-6 shadow-2xl">
+      <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={state === "idle" ? onClose : undefined} />
+      <div className="relative z-10 w-full max-w-md rounded-2xl border border-[rgb(var(--border))] bg-[rgb(var(--surface))] p-6 shadow-2xl">
         {state === "loading" ? (
           <div className="flex flex-col items-center gap-4 py-4">
-            <div className="h-10 w-10 animate-spin rounded-full border-4 border-gray-700 border-t-purple-500" />
-            <p className="font-black text-white">Génération en cours via Maïa…</p>
-            <p className="text-sm text-gray-400 text-center">
+            <div className="h-10 w-10 animate-spin rounded-full border-4 border-[rgb(var(--border))] border-t-[rgb(var(--accent))]" />
+            <p className="font-black text-[rgb(var(--ink))]">Génération en cours via Maïa…</p>
+            <p className="text-center text-sm text-[rgb(var(--ink-2))]">
               Patience, ~60s en moyenne. Maïa analyse le PDF et génère {count} exercices avec résolutions détaillées.
             </p>
           </div>
         ) : (
           <>
-            <h2 className="text-lg font-black text-white">Générer des exercices</h2>
-            <p className="mt-1 text-sm text-gray-400">
+            <h2 className="serif text-lg font-black text-[rgb(var(--ink))]">Générer des exercices</h2>
+            <p className="mt-1 text-sm text-[rgb(var(--ink-2))]">
               Maïa va créer des exercices avec résolutions étape par étape depuis le PDF du cours.
             </p>
 
             <div className="mt-5">
-              <label className="text-xs font-black uppercase tracking-widest text-gray-500">
+              <label className="text-xs font-black uppercase tracking-widest text-[rgb(var(--ink-3))]">
                 Nombre d&apos;exercices
               </label>
               <div className="mt-2 flex items-center gap-3">
@@ -140,29 +140,29 @@ function GenerateModal({
                   max={10}
                   value={count}
                   onChange={(e) => setCount(Number(e.target.value))}
-                  className="flex-1 accent-purple-500"
+                  className="flex-1 accent-[rgb(var(--accent))]"
                 />
-                <span className="w-8 text-center font-black text-white text-lg">{count}</span>
+                <span className="w-8 text-center text-lg font-black text-[rgb(var(--ink))]">{count}</span>
               </div>
-              <p className="mt-1 text-xs text-gray-600">entre 3 et 10 exercices</p>
+              <p className="mt-1 text-xs text-[rgb(var(--ink-3))]">entre 3 et 10 exercices</p>
             </div>
 
             {state === "error" && (
-              <div className="mt-4 rounded-xl border border-red-500/30 bg-red-500/10 p-3 text-sm font-bold text-red-300">
+              <div className="mt-4 rounded-xl border border-[rgb(var(--red))]/30 bg-[rgb(var(--red))]/10 p-3 text-sm font-bold text-[rgb(var(--red))]">
                 {errorMsg}
               </div>
             )}
 
-            <div className="mt-6 flex gap-3 justify-end">
+            <div className="mt-6 flex justify-end gap-3">
               <button
                 onClick={onClose}
-                className="rounded-xl border border-gray-700 px-4 py-2 text-sm font-bold text-gray-300 hover:text-white"
+                className="rounded-xl border border-[rgb(var(--border))] px-4 py-2 text-sm font-bold text-[rgb(var(--ink-2))] hover:border-[rgb(var(--ink-3))] hover:text-[rgb(var(--ink))]"
               >
                 Annuler
               </button>
               <button
                 onClick={launch}
-                className="rounded-xl bg-purple-500 px-5 py-2 text-sm font-black text-gray-950 hover:bg-purple-400"
+                className="rounded-xl bg-[rgb(var(--accent))] px-5 py-2 text-sm font-black text-white hover:opacity-90"
               >
                 Lancer la génération
               </button>
@@ -178,7 +178,7 @@ function GenerateModal({
 
 function PageRangeBadge({ start, end }: { start: number; end: number }) {
   return (
-    <span className="inline-flex items-center gap-1 rounded-full bg-gray-700/60 px-2 py-0.5 text-xs text-gray-400">
+    <span className="inline-flex items-center gap-1 rounded-full bg-[rgb(var(--surface-3))] px-2 py-0.5 text-xs text-[rgb(var(--ink-2))]">
       📄 p.{start}–{end}
     </span>
   );
@@ -224,34 +224,34 @@ function ExerciseCard({
   }
 
   return (
-    <div className="rounded-2xl border border-gray-700 bg-gray-900 p-4 transition-all hover:border-purple-500/50 hover:bg-gray-800/80">
+    <div className="rounded-2xl border border-[rgb(var(--border))] bg-[rgb(var(--surface))] p-4 transition-all hover:border-[rgb(var(--accent))]/40 hover:bg-[rgb(var(--surface-3))]">
       <Link
         href={`/school/courses/${courseId}/exercises/${exercise.id}`}
         className="block"
       >
-        <div className="flex flex-wrap items-center gap-2 mb-2">
+        <div className="mb-2 flex flex-wrap items-center gap-2">
           {exercise.exercise_type && <TypeBadge type={exercise.exercise_type} />}
           {exercise.status === "validated" && <Stars count={exercise.difficulty} />}
           {exercise.page_range_start !== null && exercise.page_range_end !== null && (
             <PageRangeBadge start={exercise.page_range_start} end={exercise.page_range_end} />
           )}
-          <span className="ml-auto text-xs text-gray-600">
+          <span className="ml-auto text-xs text-[rgb(var(--ink-3))]">
             {exercise.exercise_steps.length} étape{exercise.exercise_steps.length > 1 ? "s" : ""}
           </span>
         </div>
-        <p className="font-bold text-white leading-snug">{exercise.title}</p>
+        <p className="font-bold leading-snug text-[rgb(var(--ink))]">{exercise.title}</p>
         {exercise.generated_by_model && (
-          <p className="mt-2 text-xs text-gray-600">Généré par Maïa</p>
+          <p className="mt-2 text-xs text-[rgb(var(--ink-3))]">Généré par Maïa</p>
         )}
       </Link>
       {(canArchive || canRestore) && (
-        <div className="mt-3 flex justify-end gap-2 border-t border-gray-800 pt-3">
+        <div className="mt-3 flex justify-end gap-2 border-t border-[rgb(var(--border))] pt-3">
           {canArchive && (
             <button
               type="button"
               onClick={handleArchive}
               disabled={busy}
-              className="rounded-full border border-gray-700 px-3 py-1 text-xs font-bold text-gray-400 transition hover:border-amber-500/60 hover:text-amber-300 disabled:opacity-50"
+              className="rounded-full border border-[rgb(var(--border))] px-3 py-1 text-xs font-bold text-[rgb(var(--ink-2))] transition hover:border-[rgb(var(--warm))]/60 hover:text-[rgb(var(--warm))] disabled:opacity-50"
             >
               {busy ? "…" : "Désactiver"}
             </button>
@@ -261,7 +261,7 @@ function ExerciseCard({
               type="button"
               onClick={handleRestore}
               disabled={busy}
-              className="rounded-full border border-gray-700 px-3 py-1 text-xs font-bold text-gray-400 transition hover:border-green-500/60 hover:text-green-300 disabled:opacity-50"
+              className="rounded-full border border-[rgb(var(--border))] px-3 py-1 text-xs font-bold text-[rgb(var(--ink-2))] transition hover:border-[rgb(var(--green))]/60 hover:text-[rgb(var(--green))] disabled:opacity-50"
             >
               {busy ? "…" : "Réactiver"}
             </button>
@@ -360,13 +360,13 @@ export default function ExercisesListPage() {
 
   if (loading) {
     return (
-      <main className="min-h-screen bg-gray-950 px-4 py-8 text-white">
+      <main className="min-h-screen bg-[rgb(var(--surface-2))] px-4 py-8 text-[rgb(var(--ink))]">
         <div className="mx-auto max-w-4xl">
-          <div className="h-5 w-32 animate-pulse rounded-lg bg-gray-800 mb-6" />
-          <div className="h-8 w-64 animate-pulse rounded-lg bg-gray-800 mb-4" />
+          <div className="mb-6 h-5 w-32 animate-pulse rounded-lg bg-[rgb(var(--surface-3))]" />
+          <div className="mb-4 h-8 w-64 animate-pulse rounded-lg bg-[rgb(var(--surface-3))]" />
           <div className="space-y-3">
             {[...Array(4)].map((_, i) => (
-              <div key={i} className="h-24 animate-pulse rounded-2xl bg-gray-800" />
+              <div key={i} className="h-24 animate-pulse rounded-2xl bg-[rgb(var(--surface-3))]" />
             ))}
           </div>
         </div>
@@ -375,47 +375,47 @@ export default function ExercisesListPage() {
   }
 
   return (
-    <main className="min-h-screen bg-gray-950 px-4 py-8 text-white">
+    <main className="min-h-screen bg-[rgb(var(--surface-2))] px-4 py-8 text-[rgb(var(--ink))]">
       <div className="mx-auto w-full max-w-4xl">
         {/* Header */}
         <Link
           href="/school/courses"
-          className="text-sm font-bold text-gray-500 transition hover:text-purple-400"
+          className="text-sm font-bold text-[rgb(var(--ink-3))] transition hover:text-[rgb(var(--accent))]"
         >
           ← Mes cours
         </Link>
 
         <div className="mt-4 flex flex-wrap items-start justify-between gap-3">
           <div>
-            <h1 className="text-3xl font-black">Gérer les exercices</h1>
+            <h1 className="serif text-3xl font-black">Gérer les exercices</h1>
             {course?.title && (
-              <p className="mt-1 text-gray-400 text-sm">{course.title}</p>
+              <p className="mt-1 text-sm text-[rgb(var(--ink-2))]">{course.title}</p>
             )}
           </div>
           <div className="flex flex-wrap gap-2">
             <button
               onClick={handleStartLive}
               disabled={startingLive}
-              className="rounded-2xl border border-red-500/40 bg-red-500/10 px-4 py-3 font-black text-red-300 hover:bg-red-500/20 transition text-sm disabled:opacity-50"
+              className="rounded-2xl border border-[rgb(var(--red))]/40 bg-[rgb(var(--red))]/10 px-4 py-3 text-sm font-black text-[rgb(var(--red))] transition hover:bg-[rgb(var(--red))]/15 disabled:opacity-50"
             >
               {startingLive ? "Chargement…" : "🎬 Cours live"}
             </button>
             <button
               onClick={handleExtractQuestions}
               disabled={extracting}
-              className="rounded-2xl border border-cyan-500/40 bg-cyan-500/10 px-4 py-3 font-black text-cyan-300 hover:bg-cyan-500/20 transition text-sm disabled:opacity-50"
+              className="rounded-2xl border border-sky-300 bg-sky-50 px-4 py-3 text-sm font-black text-sky-700 transition hover:bg-sky-100 disabled:opacity-50"
             >
               {extracting ? "Extraction…" : "📄 Extraire les questions"}
             </button>
             <button
               onClick={() => setShowRangeGenerator(true)}
-              className="rounded-2xl border border-purple-500/40 bg-purple-500/10 px-4 py-3 font-black text-purple-300 hover:bg-purple-500/20 transition text-sm"
+              className="rounded-2xl border border-[rgb(var(--accent))]/40 bg-[rgb(var(--accent))]/10 px-4 py-3 text-sm font-black text-[rgb(var(--accent))] transition hover:bg-[rgb(var(--accent))]/15"
             >
               🎯 Sélection de pages
             </button>
             <button
               onClick={() => setShowGenerate(true)}
-              className="rounded-2xl bg-purple-500 px-5 py-3 font-black text-gray-950 hover:bg-purple-400 transition"
+              className="rounded-2xl bg-[rgb(var(--accent))] px-5 py-3 font-black text-white transition hover:opacity-90"
             >
               + Générer des exercices
             </button>
@@ -423,22 +423,22 @@ export default function ExercisesListPage() {
         </div>
 
         {/* Tabs */}
-        <div className="mt-6 flex gap-1 border-b border-gray-800">
+        <div className="mt-6 flex gap-1 border-b border-[rgb(var(--border))]">
           {tabs.map(({ key, label, count, badge }) => (
             <button
               key={key}
               onClick={() => setTab(key)}
               className={`flex items-center gap-2 rounded-t-xl px-4 py-3 text-sm font-black transition ${
-                tab === key ? "bg-gray-900 text-purple-400" : "text-gray-500 hover:text-white"
+                tab === key ? "border-b-2 border-[rgb(var(--accent))] bg-[rgb(var(--surface))] text-[rgb(var(--accent))]" : "text-[rgb(var(--ink-2))] hover:text-[rgb(var(--ink))]"
               }`}
             >
               {label}
               {badge ? (
-                <span className="inline-flex h-5 min-w-[20px] items-center justify-center rounded-full bg-amber-500 px-1 text-[10px] font-black text-gray-950">
+                <span className="inline-flex h-5 min-w-[20px] items-center justify-center rounded-full bg-[rgb(var(--warm))] px-1 text-[10px] font-black text-white">
                   {count}
                 </span>
               ) : count > 0 ? (
-                <span className="text-gray-600">({count})</span>
+                <span className="text-[rgb(var(--ink-3))]">({count})</span>
               ) : null}
             </button>
           ))}
@@ -447,15 +447,15 @@ export default function ExercisesListPage() {
         {/* Validated star filter */}
         {tab === "validated" && byTab.validated.length > 0 && (
           <div className="mt-4 flex flex-wrap items-center gap-2">
-            <span className="text-xs text-gray-500">Difficulté :</span>
+            <span className="text-xs text-[rgb(var(--ink-3))]">Difficulté :</span>
             {([0, 1, 2, 3] as const).map((s) => (
               <button
                 key={s}
                 onClick={() => setFilterStars(s)}
                 className={`rounded-xl px-2.5 py-1 text-xs font-bold transition ${
                   filterStars === s
-                    ? "bg-yellow-500/20 text-yellow-300 border border-yellow-500/30"
-                    : "border border-gray-700 text-gray-500 hover:text-white"
+                    ? "border border-yellow-300 bg-yellow-100 text-yellow-800"
+                    : "border border-[rgb(var(--border))] bg-[rgb(var(--surface))] text-[rgb(var(--ink-2))] hover:text-[rgb(var(--ink))]"
                 }`}
               >
                 {s === 0 ? "Toutes" : "★".repeat(s)}
@@ -467,7 +467,7 @@ export default function ExercisesListPage() {
         {/* List */}
         <div className="mt-5">
           {currentList.length === 0 ? (
-            <div className="rounded-2xl border border-dashed border-gray-800 p-12 text-center text-gray-500">
+            <div className="rounded-2xl border border-dashed border-[rgb(var(--border))] bg-[rgb(var(--surface))] p-12 text-center text-[rgb(var(--ink-3))]">
               {tab === "pending" && "Aucun exercice en attente. Lance une génération !"}
               {tab === "validated" && (filterStars !== 0 ? "Aucun exercice à cette difficulté." : "Aucun exercice validé.")}
               {tab === "rejected" && "Aucun exercice rejeté."}
@@ -513,7 +513,7 @@ export default function ExercisesListPage() {
       )}
 
       {toast && (
-        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 rounded-2xl bg-green-500 px-6 py-3 font-black text-gray-950 shadow-lg">
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 rounded-2xl bg-[rgb(var(--green))] px-6 py-3 font-black text-white shadow-lg">
           {toast}
         </div>
       )}

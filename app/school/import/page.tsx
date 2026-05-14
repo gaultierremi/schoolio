@@ -152,22 +152,23 @@ const SUBJECT_OPTIONS: CourseSubject[] = [
   "geographie", "francais", "anglais", "neerlandais", "autre",
 ];
 
+// Tag chips : palette pastel (light theme)
 const TAG_CHIP_STYLES: Record<TagColor, { base: string; selected: string }> = {
-  purple: { base: "bg-purple-500/10 text-purple-300 border-purple-500/20", selected: "bg-purple-500/25 text-purple-200 border-purple-400 ring-1 ring-purple-400" },
-  blue:   { base: "bg-blue-500/10 text-blue-300 border-blue-500/20",       selected: "bg-blue-500/25 text-blue-200 border-blue-400 ring-1 ring-blue-400" },
-  red:    { base: "bg-red-500/10 text-red-300 border-red-500/20",           selected: "bg-red-500/25 text-red-200 border-red-400 ring-1 ring-red-400" },
-  orange: { base: "bg-orange-500/10 text-orange-300 border-orange-500/20", selected: "bg-orange-500/25 text-orange-200 border-orange-400 ring-1 ring-orange-400" },
-  green:  { base: "bg-green-500/10 text-green-300 border-green-500/20",    selected: "bg-green-500/25 text-green-200 border-green-400 ring-1 ring-green-400" },
-  yellow: { base: "bg-yellow-500/10 text-yellow-300 border-yellow-500/20", selected: "bg-yellow-500/25 text-yellow-200 border-yellow-400 ring-1 ring-yellow-400" },
-  pink:   { base: "bg-pink-500/10 text-pink-300 border-pink-500/20",       selected: "bg-pink-500/25 text-pink-200 border-pink-400 ring-1 ring-pink-400" },
-  gray:   { base: "bg-gray-500/10 text-gray-300 border-gray-500/20",       selected: "bg-gray-500/25 text-gray-200 border-gray-400 ring-1 ring-gray-400" },
+  purple: { base: "bg-purple-50 text-purple-700 border-purple-200",       selected: "bg-purple-200 text-purple-800 border-purple-400 ring-1 ring-purple-400" },
+  blue:   { base: "bg-blue-50 text-blue-700 border-blue-200",             selected: "bg-blue-200 text-blue-800 border-blue-400 ring-1 ring-blue-400" },
+  red:    { base: "bg-red-50 text-red-700 border-red-200",                 selected: "bg-red-200 text-red-800 border-red-400 ring-1 ring-red-400" },
+  orange: { base: "bg-orange-50 text-orange-700 border-orange-200",       selected: "bg-orange-200 text-orange-800 border-orange-400 ring-1 ring-orange-400" },
+  green:  { base: "bg-green-50 text-green-700 border-green-200",          selected: "bg-green-200 text-green-800 border-green-400 ring-1 ring-green-400" },
+  yellow: { base: "bg-yellow-50 text-yellow-800 border-yellow-200",       selected: "bg-yellow-200 text-yellow-900 border-yellow-400 ring-1 ring-yellow-400" },
+  pink:   { base: "bg-pink-50 text-pink-700 border-pink-200",             selected: "bg-pink-200 text-pink-800 border-pink-400 ring-1 ring-pink-400" },
+  gray:   { base: "bg-[rgb(var(--surface-3))] text-[rgb(var(--ink-2))] border-[rgb(var(--border))]", selected: "bg-[rgb(var(--ink-3))]/20 text-[rgb(var(--ink))] border-[rgb(var(--ink-3))] ring-1 ring-[rgb(var(--ink-3))]" },
 };
 
 // ── Sub-components ────────────────────────────────────────────────────────────
 
 function Spinner() {
   return (
-    <svg className="animate-spin h-4 w-4 text-purple-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+    <svg className="h-4 w-4 animate-spin text-[rgb(var(--accent))]" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
       <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
       <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
     </svg>
@@ -184,7 +185,7 @@ type TagPickerProps = {
 function TagPicker({ tags, loading, selectedIds, onToggle }: TagPickerProps) {
   if (loading) {
     return (
-      <div className="flex items-center gap-2 text-xs text-white/40">
+      <div className="flex items-center gap-2 text-xs text-[rgb(var(--ink-3))]">
         <Spinner />
         Chargement des tags…
       </div>
@@ -193,9 +194,9 @@ function TagPicker({ tags, loading, selectedIds, onToggle }: TagPickerProps) {
 
   if (tags.length === 0) {
     return (
-      <p className="text-xs text-white/50">
+      <p className="text-xs text-[rgb(var(--ink-2))]">
         Pas encore de tags —{" "}
-        <Link href="/school/organization" className="text-purple-400 hover:text-purple-300 underline underline-offset-2 transition-colors">
+        <Link href="/school/organization" className="text-[rgb(var(--accent))] underline underline-offset-2 transition-colors hover:opacity-80">
           crée tes premiers tags
         </Link>{" "}
         pour organiser tes cours.
@@ -205,7 +206,7 @@ function TagPicker({ tags, loading, selectedIds, onToggle }: TagPickerProps) {
 
   return (
     <div className="flex flex-col gap-2">
-      <p className="text-xs font-medium text-white/40 uppercase tracking-wide">Tags d&apos;organisation</p>
+      <p className="text-xs font-medium uppercase tracking-wide text-[rgb(var(--ink-3))]">Tags d&apos;organisation</p>
       <div className="flex flex-wrap gap-2">
         {tags.map((tag) => {
           const isSelected = selectedIds.has(tag.id);
@@ -215,12 +216,12 @@ function TagPicker({ tags, loading, selectedIds, onToggle }: TagPickerProps) {
               key={tag.id}
               type="button"
               onClick={() => onToggle(tag.id)}
-              className={["flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-xs font-medium transition-all", isSelected ? styles.selected : styles.base].join(" ")}
+              className={["flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium transition-all", isSelected ? styles.selected : styles.base].join(" ")}
             >
               {tag.emoji && <span>{tag.emoji}</span>}
               {tag.name}
               {isSelected && (
-                <svg className="h-3 w-3 ml-0.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <svg className="ml-0.5 h-3 w-3 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
                 </svg>
               )}
@@ -265,19 +266,19 @@ function DropZone({ onFiles, disabled }: DropZoneProps) {
       onDrop={handleDrop}
       onClick={() => !disabled && inputRef.current?.click()}
       className={[
-        "flex flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed p-10 cursor-pointer transition-colors",
-        dragging ? "border-purple-400 bg-purple-500/10" : "border-white/20 hover:border-purple-400/60 bg-white/5",
-        disabled ? "opacity-50 cursor-not-allowed" : "",
+        "flex cursor-pointer flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed p-10 transition-colors",
+        dragging ? "border-[rgb(var(--accent))] bg-[rgb(var(--accent))]/5" : "border-[rgb(var(--border))] bg-[rgb(var(--surface))] hover:border-[rgb(var(--accent))]/60",
+        disabled ? "cursor-not-allowed opacity-50" : "",
       ].join(" ")}
     >
-      <svg className="h-10 w-10 text-purple-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <svg className="h-10 w-10 text-[rgb(var(--accent))]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
           d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
       </svg>
-      <p className="text-sm text-white/70 text-center">
-        Glissez vos PDF ici ou <span className="text-purple-400 font-medium">cliquez pour parcourir</span>
+      <p className="text-center text-sm text-[rgb(var(--ink))]">
+        Glissez vos PDF ici ou <span className="font-medium text-[rgb(var(--accent))]">cliquez pour parcourir</span>
       </p>
-      <p className="text-xs text-white/40">Formats acceptés : PDF · Max 50 MB par fichier</p>
+      <p className="text-xs text-[rgb(var(--ink-3))]">Formats acceptés : PDF · Max 50 MB par fichier</p>
       <input ref={inputRef} type="file" accept=".pdf,application/pdf" multiple className="hidden" onChange={handleChange} />
     </div>
   );
@@ -293,24 +294,24 @@ type InlineEditorProps = {
 
 function InlineEditor({ item, onSubject, onLevel, onTitle, onValidate }: InlineEditorProps) {
   return (
-    <div className="flex flex-wrap items-center gap-2 mt-2">
+    <div className="mt-2 flex flex-wrap items-center gap-2">
       <select
         value={item.editSubject}
         onChange={(e) => onSubject(e.target.value as CourseSubject)}
-        className="bg-white/10 border border-white/20 rounded-lg px-2 py-1 text-xs text-white focus:outline-none focus:border-purple-400"
+        className="rounded-lg border border-[rgb(var(--border))] bg-[rgb(var(--surface))] px-2 py-1 text-xs text-[rgb(var(--ink))] focus:border-[rgb(var(--accent))] focus:outline-none"
       >
         {SUBJECT_OPTIONS.map((s) => (
-          <option key={s} value={s} className="bg-gray-900">{SUBJECT_LABELS[s]}</option>
+          <option key={s} value={s}>{SUBJECT_LABELS[s]}</option>
         ))}
       </select>
       <select
         value={item.editLevel ?? ""}
         onChange={(e) => onLevel(e.target.value ? (Number(e.target.value) as SchoolLevel) : null)}
-        className="bg-white/10 border border-white/20 rounded-lg px-2 py-1 text-xs text-white focus:outline-none focus:border-purple-400"
+        className="rounded-lg border border-[rgb(var(--border))] bg-[rgb(var(--surface))] px-2 py-1 text-xs text-[rgb(var(--ink))] focus:border-[rgb(var(--accent))] focus:outline-none"
       >
-        <option value="" className="bg-gray-900">Niveau ?</option>
+        <option value="">Niveau ?</option>
         {[1, 2, 3, 4, 5, 6].map((l) => (
-          <option key={l} value={l} className="bg-gray-900">{l}e année</option>
+          <option key={l} value={l}>{l}e année</option>
         ))}
       </select>
       <input
@@ -318,12 +319,12 @@ function InlineEditor({ item, onSubject, onLevel, onTitle, onValidate }: InlineE
         onChange={(e) => onTitle(e.target.value.slice(0, 60))}
         maxLength={60}
         placeholder="Titre du cours"
-        className="flex-1 min-w-[160px] bg-white/10 border border-white/20 rounded-lg px-2 py-1 text-xs text-white placeholder-white/30 focus:outline-none focus:border-purple-400"
+        className="min-w-[160px] flex-1 rounded-lg border border-[rgb(var(--border))] bg-[rgb(var(--surface))] px-2 py-1 text-xs text-[rgb(var(--ink))] placeholder:text-[rgb(var(--ink-3))] focus:border-[rgb(var(--accent))] focus:outline-none"
       />
       <button
         onClick={onValidate}
         disabled={!item.editTitle.trim()}
-        className="px-3 py-1 rounded-lg bg-purple-600 hover:bg-purple-500 disabled:opacity-40 disabled:cursor-not-allowed text-white text-xs font-medium transition-colors"
+        className="rounded-lg bg-[rgb(var(--accent))] px-3 py-1 text-xs font-medium text-white transition-colors hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40"
       >
         Valider
       </button>
@@ -343,22 +344,22 @@ type FileRowProps = {
 
 function FileRow({ item, onRetry, onToggleEdit, onSubject, onLevel, onTitle, onValidate }: FileRowProps) {
   const statusIcon: Record<FileStatus, React.ReactNode> = {
-    pending:   <span className="text-white/40 text-xs">En attente</span>,
-    hashing:   <span className="flex items-center gap-1 text-white/60 text-xs"><Spinner />Calcul hash…</span>,
-    uploading: <span className="flex items-center gap-1 text-white/60 text-xs"><Spinner />Upload {item.progress}%</span>,
-    inferring: <span className="flex items-center gap-1 text-white/60 text-xs"><Spinner />Analyse Maïa…</span>,
+    pending:   <span className="text-xs text-[rgb(var(--ink-3))]">En attente</span>,
+    hashing:   <span className="flex items-center gap-1 text-xs text-[rgb(var(--ink-2))]"><Spinner />Calcul hash…</span>,
+    uploading: <span className="flex items-center gap-1 text-xs text-[rgb(var(--ink-2))]"><Spinner />Upload {item.progress}%</span>,
+    inferring: <span className="flex items-center gap-1 text-xs text-[rgb(var(--ink-2))]"><Spinner />Analyse Maïa…</span>,
     ready:     null,
     validated: (
-      <span className="flex items-center gap-1 text-green-400 text-xs">
+      <span className="flex items-center gap-1 text-xs text-[rgb(var(--green))]">
         <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
         </svg>
         Validé
       </span>
     ),
-    generating: <span className="flex items-center gap-1 text-purple-300 text-xs"><Spinner />Génération…</span>,
+    generating: <span className="flex items-center gap-1 text-xs text-[rgb(var(--accent))]"><Spinner />Génération…</span>,
     generated: (
-      <span className="flex items-center gap-1 text-green-400 text-xs">
+      <span className="flex items-center gap-1 text-xs text-[rgb(var(--green))]">
         <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
         </svg>
@@ -366,7 +367,7 @@ function FileRow({ item, onRetry, onToggleEdit, onSubject, onLevel, onTitle, onV
       </span>
     ),
     error: (
-      <button onClick={() => onRetry(item.id)} className="flex items-center gap-1 text-red-400 text-xs hover:text-red-300 transition-colors">
+      <button onClick={() => onRetry(item.id)} className="flex items-center gap-1 text-xs text-[rgb(var(--red))] transition-colors hover:opacity-80">
         <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
             d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
@@ -377,28 +378,28 @@ function FileRow({ item, onRetry, onToggleEdit, onSubject, onLevel, onTitle, onV
   };
 
   return (
-    <div className="min-h-[60px] rounded-xl border border-white/10 bg-white/5 px-4 py-3 flex flex-col gap-1">
+    <div className="flex min-h-[60px] flex-col gap-1 rounded-xl border border-[rgb(var(--border))] bg-[rgb(var(--surface))] px-4 py-3">
       <div className="flex items-center justify-between gap-2">
-        <span className="text-sm text-white truncate flex-1">{item.file.name}</span>
+        <span className="flex-1 truncate text-sm text-[rgb(var(--ink))]">{item.file.name}</span>
         <div className="shrink-0">{statusIcon[item.status]}</div>
       </div>
 
       {item.status === "uploading" && (
-        <div className="w-full h-1 rounded-full bg-white/10 overflow-hidden">
-          <div className="h-full bg-purple-500 transition-all duration-200" style={{ width: `${item.progress}%` }} />
+        <div className="h-1 w-full overflow-hidden rounded-full bg-[rgb(var(--border))]">
+          <div className="h-full bg-[rgb(var(--accent))] transition-all duration-200" style={{ width: `${item.progress}%` }} />
         </div>
       )}
 
       {item.status === "error" && item.error && (
-        <p className="text-xs text-red-400/80">{item.error}</p>
+        <p className="text-xs text-[rgb(var(--red))]/80">{item.error}</p>
       )}
 
       {(item.status === "ready" || (item.status === "validated" && item.editing)) && item.inference && (
         <div className="flex flex-col gap-0.5">
-          <p className="text-xs text-white/50">
+          <p className="text-xs text-[rgb(var(--ink-2))]">
             <button
               onClick={() => onToggleEdit(item.id)}
-              className="text-purple-400 hover:text-purple-300 underline underline-offset-2 transition-colors"
+              className="text-[rgb(var(--accent))] underline underline-offset-2 transition-colors hover:opacity-80"
             >
               {item.editing ? "Annuler" : "Modifier matière/niveau/titre"}
             </button>
@@ -412,18 +413,18 @@ function FileRow({ item, onRetry, onToggleEdit, onSubject, onLevel, onTitle, onV
               onValidate={() => onValidate(item.id)}
             />
           ) : (
-            <div className="flex flex-wrap items-center gap-2 mt-1">
-              <span className="px-2 py-0.5 rounded-full bg-purple-500/20 text-purple-300 text-xs">
+            <div className="mt-1 flex flex-wrap items-center gap-2">
+              <span className="rounded-full bg-[rgb(var(--accent))]/10 px-2 py-0.5 text-xs text-[rgb(var(--accent))]">
                 {SUBJECT_LABELS[item.editSubject]}
               </span>
               {item.editLevel && (
-                <span className="px-2 py-0.5 rounded-full bg-white/10 text-white/60 text-xs">{item.editLevel}e année</span>
+                <span className="rounded-full bg-[rgb(var(--surface-3))] px-2 py-0.5 text-xs text-[rgb(var(--ink-2))]">{item.editLevel}e année</span>
               )}
-              <span className="text-xs text-white/80 font-medium">{item.editTitle}</span>
+              <span className="text-xs font-medium text-[rgb(var(--ink))]">{item.editTitle}</span>
               {item.status === "ready" && (
                 <button
                   onClick={() => onValidate(item.id)}
-                  className="ml-auto px-3 py-1 rounded-lg bg-purple-600 hover:bg-purple-500 text-white text-xs font-medium transition-colors"
+                  className="ml-auto rounded-lg bg-[rgb(var(--accent))] px-3 py-1 text-xs font-medium text-white transition-colors hover:opacity-90"
                 >
                   Valider
                 </button>
@@ -434,7 +435,7 @@ function FileRow({ item, onRetry, onToggleEdit, onSubject, onLevel, onTitle, onV
       )}
 
       {item.status === "validated" && !item.editing && (
-        <p className="text-xs text-white/50">
+        <p className="text-xs text-[rgb(var(--ink-2))]">
           {SUBJECT_LABELS[item.editSubject]}
           {item.editLevel ? ` · ${item.editLevel}e année` : ""}
           {" · "}
@@ -453,28 +454,28 @@ function GeminiQueueBanner({ state }: { state: NonNullable<GeminiQueueState> }) 
   const remaining = total - done - (countdown === 0 ? 1 : 0);
 
   return (
-    <div className="flex items-center gap-3 rounded-xl border border-purple-500/20 bg-purple-500/5 px-4 py-2.5">
-      <div className="shrink-0 w-6 flex justify-center">
+    <div className="flex items-center gap-3 rounded-xl border border-[rgb(var(--accent))]/20 bg-[rgb(var(--accent))]/5 px-4 py-2.5">
+      <div className="flex w-6 shrink-0 justify-center">
         {countdown > 0 ? (
-          <span className="text-purple-400 text-xs font-mono tabular-nums">{countdown}s</span>
+          <span className="font-mono text-xs tabular-nums text-[rgb(var(--accent))]">{countdown}s</span>
         ) : (
           <Spinner />
         )}
       </div>
-      <p className="text-xs text-white/60">
+      <p className="text-xs text-[rgb(var(--ink-2))]">
         {countdown > 0 ? (
           <>
             En attente — prochain dans{" "}
-            <span className="text-white font-medium">{countdown}s</span>
+            <span className="font-medium text-[rgb(var(--ink))]">{countdown}s</span>
           </>
         ) : (
           <>
             Analyse Maïa{" "}
-            <span className="text-white font-medium">{current}/{total}</span>
+            <span className="font-medium text-[rgb(var(--ink))]">{current}/{total}</span>
           </>
         )}
         {remaining > 0 && (
-          <span className="text-white/30 ml-2">
+          <span className="ml-2 text-[rgb(var(--ink-3))]">
             · {remaining} restant{remaining > 1 ? "s" : ""}
           </span>
         )}
@@ -558,7 +559,6 @@ export default function ImportPage() {
   }
 
   // Performs ONE Gemini infer call. Returns "success", "rate-limit", or "error".
-  // Sets item state appropriately on all outcomes except rate-limit (caller handles that).
   async function doInferAttempt(id: string, courseId: string): Promise<"success" | "rate-limit" | "error"> {
     patchItem(id, { status: "inferring" });
     try {
@@ -603,7 +603,7 @@ export default function ImportPage() {
     }
   }
 
-  // Sequential queue worker: enforces 15s gap between Gemini calls, retries 503 once after 30s.
+  // Sequential queue worker
   async function runGeminiQueue() {
     if (geminiRunningRef.current) return;
     geminiRunningRef.current = true;
@@ -612,7 +612,6 @@ export default function ImportPage() {
       const task = geminiQueueRef.current.shift()!;
       const { id, courseId } = task;
 
-      // Enforce 15s minimum gap since last Gemini call
       if (lastGeminiEndRef.current > 0) {
         const elapsed = Date.now() - lastGeminiEndRef.current;
         const waitMs = Math.max(0, 15000 - elapsed);
@@ -621,19 +620,16 @@ export default function ImportPage() {
         }
       }
 
-      // Show "processing" state
       setGeminiQueueState({
         done: geminiDoneRef.current,
         total: geminiTotalRef.current,
         countdown: 0,
       });
 
-      // First attempt
       const result1 = await doInferAttempt(id, courseId);
       lastGeminiEndRef.current = Date.now();
 
       if (result1 === "rate-limit") {
-        // Keep item in "inferring" state, wait 30s then retry
         patchItem(id, { status: "inferring" });
         await waitWithCountdown(30000);
 
@@ -643,7 +639,6 @@ export default function ImportPage() {
         lastGeminiEndRef.current = Date.now();
 
         if (result2 === "rate-limit") {
-          // Both attempts rate-limited → set error so prof can retry manually
           patchItem(id, {
             status: "error",
             error: "Limite Gemini dépassée — réessaie dans 1 minute",
@@ -654,7 +649,6 @@ export default function ImportPage() {
 
       geminiDoneRef.current += 1;
 
-      // Update done count; remaining items are still in geminiQueueRef
       setGeminiQueueState({
         done: geminiDoneRef.current,
         total: geminiTotalRef.current,
@@ -664,7 +658,6 @@ export default function ImportPage() {
 
     geminiRunningRef.current = false;
 
-    // Keep banner visible briefly so the user sees "X/X done", then hide
     setTimeout(() => {
       setGeminiQueueState(null);
       geminiDoneRef.current = 0;
@@ -672,7 +665,6 @@ export default function ImportPage() {
     }, 2000);
   }
 
-  // Enqueues a Gemini infer call and kicks the queue runner if not already running.
   function scheduleInfer(id: string, courseId: string) {
     geminiTotalRef.current += 1;
     geminiQueueRef.current.push({ id, courseId });
@@ -690,7 +682,6 @@ export default function ImportPage() {
     patchItem(id, { status: "uploading", progress: 0 });
     try {
       await xhrUpload(uploadUrl, file, (pct) => patchItem(id, { progress: pct }));
-      // Enqueue Gemini call — does NOT block here, processed sequentially by the queue
       scheduleInfer(id, courseId);
     } catch (err) {
       patchItem(id, {
@@ -733,7 +724,6 @@ export default function ImportPage() {
       };
       if (!res.ok) throw new Error(data.error ?? "Erreur lors de la préparation de l'upload");
 
-      // Cache hit: course + inference already known server-side, no Gemini needed
       if (data.reused && data.courseId && data.inference) {
         patchItem(id, {
           status: "ready",
@@ -768,7 +758,6 @@ export default function ImportPage() {
     if (!item) return;
 
     if (item.retryFrom === "infer" && item.courseId) {
-      // Goes through the sequential queue — respects rate limiting
       scheduleInfer(id, item.courseId);
     } else if (item.retryFrom === "upload" && item.courseId) {
       try {
@@ -812,9 +801,7 @@ export default function ImportPage() {
           body: JSON.stringify({ courseId: item.courseId }),
         });
         const data = (await res.json()) as {
-          // New async contract
           jobId?: string;
-          // Legacy sync contract (kept for backward compat)
           success?: boolean;
           questionsGenerated?: number;
           error?: string;
@@ -822,11 +809,8 @@ export default function ImportPage() {
         if (!res.ok) throw new Error(data.error ?? "Erreur de génération");
 
         if (data.jobId) {
-          // Async job: store jobId so the GenerationProgress component can poll
           patchItem(item.id, { jobId: data.jobId });
-          // onComplete/onError fired by the polling component will finalize this item
         } else {
-          // Legacy sync response
           if (!data.success) throw new Error(data.error ?? "Erreur de génération");
           patchItem(item.id, { status: "generated" });
           totalQ += data.questionsGenerated ?? 0;
@@ -843,14 +827,9 @@ export default function ImportPage() {
 
     await runWithPool(tasks, 3);
 
-    // If all items went through the legacy sync path (no jobId issued), we can
-    // close the banner immediately. If any item received a jobId, the
-    // handleJobComplete/handleJobError callbacks will finalize the banner once
-    // polling resolves for every item.
     setItems((prev) => {
       const anyPolling = prev.some((i) => i.status === "generating" && i.jobId !== null);
       if (!anyPolling) {
-        // All resolved synchronously
         setIsGenerating(false);
         setGenDone(true);
         setTotalQGenerated(totalQ);
@@ -870,7 +849,6 @@ export default function ImportPage() {
       );
       const anyStillPolling = next.some((i) => i.status === "generating" && i.jobId !== null);
       if (!anyStillPolling) {
-        // Use a micro-task so React can flush this setItems before the next setters
         Promise.resolve().then(() => {
           setIsGenerating(false);
           setGenDone(true);
@@ -900,7 +878,6 @@ export default function ImportPage() {
   // ── File addition ──────────────────────────────────────────────────────────
 
   function addFiles(files: File[]) {
-    // Snapshot tag selection at call time — avoids stale closure in processFile
     const orgTagIds = Array.from(selectedTagIds);
 
     const newItems: FileItem[] = files.map((file) => ({
@@ -923,7 +900,6 @@ export default function ImportPage() {
     }));
 
     setItems((prev) => [...prev, ...newItems]);
-    // Hash + upload can run in parallel; Gemini calls are queued sequentially inside processFile
     for (const item of newItems) {
       processFile(item.id, item.file, orgTagIds);
     }
@@ -946,8 +922,6 @@ export default function ImportPage() {
     });
   }
 
-  // ── Derived state ──────────────────────────────────────────────────────────
-
   const validatedCount = items.filter((i) => i.status === "validated").length;
   const hasActive = items.some((i) =>
     (["hashing", "uploading", "inferring", "generating"] as FileStatus[]).includes(i.status)
@@ -958,32 +932,31 @@ export default function ImportPage() {
   // ── Render ─────────────────────────────────────────────────────────────────
 
   return (
-    <main className="min-h-screen bg-gray-950 text-white px-4 py-10">
-      <div className="max-w-2xl mx-auto flex flex-col gap-6">
+    <main className="min-h-screen bg-[rgb(var(--surface-2))] px-4 py-10 text-[rgb(var(--ink))]">
+      <div className="mx-auto flex max-w-2xl flex-col gap-6">
         <div>
-          <Link href="/school" className="transition-colors mb-6 inline-block text-sm text-gray-400 hover:text-purple-400">
+          <Link href="/school" className="mb-6 inline-block text-sm text-[rgb(var(--ink-2))] transition-colors hover:text-[rgb(var(--accent))]">
             ← Retour au dashboard
           </Link>
-          <h1 className="text-2xl font-bold text-white">Import en masse</h1>
-          <p className="text-sm text-white/50 mt-1">
+          <h1 className="serif text-2xl font-bold text-[rgb(var(--ink))]">Import en masse</h1>
+          <p className="mt-1 text-sm text-[rgb(var(--ink-2))]">
             Choisis d&apos;abord la matière et l&apos;année, puis dépose tes PDF.
           </p>
         </div>
 
-        {/* Defaults obligatoires AVANT upload — Maïa s'en sert pour mieux
-            comprendre le contenu et économise des appels d'inférence. */}
-        <div className="rounded-2xl border border-white/10 bg-white/5 p-4 space-y-3">
-          <p className="text-xs font-semibold uppercase tracking-widest text-white/40">
+        {/* Defaults obligatoires AVANT upload */}
+        <div className="space-y-3 rounded-2xl border border-[rgb(var(--border))] bg-[rgb(var(--surface))] p-4">
+          <p className="text-xs font-semibold uppercase tracking-widest text-[rgb(var(--ink-3))]">
             Pour quels cours ?
           </p>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <label className="text-xs text-white/60 flex flex-col gap-1">
-              Matière <span className="text-red-400">*</span>
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <label className="flex flex-col gap-1 text-xs text-[rgb(var(--ink-2))]">
+              Matière <span className="text-[rgb(var(--red))]">*</span>
               <select
                 value={defaultSubject}
                 onChange={(e) => setDefaultSubject(e.target.value as CourseSubject | "")}
                 disabled={isGenerating}
-                className="bg-gray-900 border border-white/15 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-purple-400 disabled:opacity-50"
+                className="rounded-lg border border-[rgb(var(--border))] bg-[rgb(var(--surface))] px-3 py-2 text-sm text-[rgb(var(--ink))] focus:border-[rgb(var(--accent))] focus:outline-none disabled:opacity-50"
               >
                 <option value="">Choisis une matière…</option>
                 {SUBJECT_OPTIONS.map((s) => (
@@ -991,13 +964,13 @@ export default function ImportPage() {
                 ))}
               </select>
             </label>
-            <label className="text-xs text-white/60 flex flex-col gap-1">
-              Année d&apos;étude <span className="text-red-400">*</span>
+            <label className="flex flex-col gap-1 text-xs text-[rgb(var(--ink-2))]">
+              Année d&apos;étude <span className="text-[rgb(var(--red))]">*</span>
               <select
                 value={defaultLevel ?? ""}
                 onChange={(e) => setDefaultLevel(e.target.value ? (Number(e.target.value) as SchoolLevel) : null)}
                 disabled={isGenerating}
-                className="bg-gray-900 border border-white/15 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-purple-400 disabled:opacity-50"
+                className="rounded-lg border border-[rgb(var(--border))] bg-[rgb(var(--surface))] px-3 py-2 text-sm text-[rgb(var(--ink))] focus:border-[rgb(var(--accent))] focus:outline-none disabled:opacity-50"
               >
                 <option value="">Choisis une année…</option>
                 {[1, 2, 3, 4, 5, 6].map((l) => (
@@ -1007,7 +980,7 @@ export default function ImportPage() {
             </label>
           </div>
           {!upfrontReady && (
-            <p className="text-xs text-amber-300">
+            <p className="text-xs text-[rgb(var(--warm))]">
               Choisis la matière et l&apos;année pour activer le dépôt de PDF.
             </p>
           )}
@@ -1022,7 +995,6 @@ export default function ImportPage() {
 
         <DropZone onFiles={addFiles} disabled={isGenerating || !upfrontReady} />
 
-        {/* Gemini queue progress banner */}
         {geminiQueueState !== null && (
           <GeminiQueueBanner state={geminiQueueState} />
         )}
@@ -1041,7 +1013,7 @@ export default function ImportPage() {
                   onValidate={handleValidate}
                 />
                 {item.status === "generating" && item.jobId && (
-                  <div className="rounded-b-xl border border-t-0 border-white/10 bg-white/3 px-4 pb-3">
+                  <div className="rounded-b-xl border border-t-0 border-[rgb(var(--border))] bg-[rgb(var(--surface-2))] px-4 pb-3">
                     <GenerationProgress
                       jobId={item.jobId}
                       onComplete={(n) => handleJobComplete(item.id, n)}
@@ -1056,31 +1028,31 @@ export default function ImportPage() {
 
         {/* Bottom generation banner */}
         {(validatedCount > 0 || isGenerating || genDone) && (
-          <div className="rounded-2xl border border-purple-500/30 bg-purple-500/10 px-5 py-4">
+          <div className="rounded-2xl border border-[rgb(var(--accent))]/30 bg-[rgb(var(--accent))]/5 px-5 py-4">
 
             {isGenerating && (
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
                     <Spinner />
-                    <p className="text-sm text-white/80">
-                      <span className="font-semibold text-white">{genProgress.done}</span>
-                      <span className="text-white/50">/{genProgress.total}</span>
+                    <p className="text-sm text-[rgb(var(--ink))]">
+                      <span className="font-semibold text-[rgb(var(--ink))]">{genProgress.done}</span>
+                      <span className="text-[rgb(var(--ink-3))]">/{genProgress.total}</span>
                       {" "}cours traité{genProgress.done > 1 ? "s" : ""} ·{" "}
-                      <span className="text-white/60">{genProgress.total > 0 ? Math.round((genProgress.done / genProgress.total) * 100) : 0}%</span>
+                      <span className="text-[rgb(var(--ink-2))]">{genProgress.total > 0 ? Math.round((genProgress.done / genProgress.total) * 100) : 0}%</span>
                     </p>
                   </div>
-                  <button disabled className="px-5 py-2 rounded-xl bg-purple-600 opacity-40 cursor-not-allowed text-white text-sm font-semibold">
+                  <button disabled className="cursor-not-allowed rounded-xl bg-[rgb(var(--accent))] px-5 py-2 text-sm font-semibold text-white opacity-40">
                     En cours…
                   </button>
                 </div>
-                <div className="h-2 w-full rounded-full bg-white/10 overflow-hidden">
+                <div className="h-2 w-full overflow-hidden rounded-full bg-[rgb(var(--border))]">
                   <div
-                    className="h-full bg-gradient-to-r from-purple-500 to-purple-400 transition-all duration-300"
+                    className="h-full bg-gradient-to-r from-[rgb(var(--accent))] to-[rgb(var(--accent-2))] transition-all duration-300"
                     style={{ width: `${genProgress.total > 0 ? (genProgress.done / genProgress.total) * 100 : 0}%` }}
                   />
                 </div>
-                <p className="text-xs text-white/40">
+                <p className="text-xs text-[rgb(var(--ink-3))]">
                   Maïa analyse votre cours et génère jusqu&apos;à 600 questions par syllabus (~3 questions par page), catégorisées par chapitre/UAA. Formats variés : QCM, réponse libre courte, calcul. Compter ~2-4min pour un gros syllabus (10 workers Anthropic en parallèle).
                 </p>
               </div>
@@ -1089,21 +1061,21 @@ export default function ImportPage() {
             {genDone && !isGenerating && (
               <div className="flex items-center justify-between gap-4">
                 <div>
-                  <p className="text-sm font-semibold text-green-400">
+                  <p className="text-sm font-semibold text-[rgb(var(--green))]">
                     ✓ {totalQGenerated} question{totalQGenerated > 1 ? "s" : ""} générée{totalQGenerated > 1 ? "s" : ""}
                     {genProgress.failed > 0 && (
-                      <span className="ml-2 text-red-400 font-normal">
+                      <span className="ml-2 font-normal text-[rgb(var(--red))]">
                         · {genProgress.failed} échec{genProgress.failed > 1 ? "s" : ""}
                       </span>
                     )}
                   </p>
-                  <p className="text-xs text-white/40 mt-0.5">
+                  <p className="mt-0.5 text-xs text-[rgb(var(--ink-3))]">
                     {genProgress.done - genProgress.failed} cours sur {genProgress.total} traités avec succès
                   </p>
                 </div>
                 <Link
                   href="/school/questions"
-                  className="shrink-0 px-5 py-2 rounded-xl bg-purple-600 hover:bg-purple-500 text-white text-sm font-semibold transition-colors"
+                  className="shrink-0 rounded-xl bg-[rgb(var(--accent))] px-5 py-2 text-sm font-semibold text-white transition-colors hover:opacity-90"
                 >
                   Voir mes questions →
                 </Link>
@@ -1112,14 +1084,14 @@ export default function ImportPage() {
 
             {!isGenerating && !genDone && validatedCount > 0 && (
               <div className="flex items-center justify-between">
-                <p className="text-sm text-white/80">
-                  <span className="font-semibold text-white">{validatedCount}</span> cours prêt
+                <p className="text-sm text-[rgb(var(--ink))]">
+                  <span className="font-semibold text-[rgb(var(--ink))]">{validatedCount}</span> cours prêt
                   {validatedCount > 1 ? "s" : ""} à générer
                 </p>
                 <button
                   disabled={hasActive}
                   onClick={runGeneration}
-                  className="px-5 py-2 rounded-xl bg-purple-600 hover:bg-purple-500 disabled:opacity-40 disabled:cursor-not-allowed text-white text-sm font-semibold transition-colors"
+                  className="rounded-xl bg-[rgb(var(--accent))] px-5 py-2 text-sm font-semibold text-white transition-colors hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40"
                 >
                   Lancer la génération sur {validatedCount} cours
                 </button>
@@ -1130,7 +1102,7 @@ export default function ImportPage() {
       </div>
 
       {toast && (
-        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 px-4 py-2 rounded-xl bg-gray-800 border border-white/10 text-sm text-white shadow-xl">
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 rounded-xl border border-[rgb(var(--border))] bg-[rgb(var(--surface))] px-4 py-2 text-sm text-[rgb(var(--ink))] shadow-xl">
           {toast}
         </div>
       )}

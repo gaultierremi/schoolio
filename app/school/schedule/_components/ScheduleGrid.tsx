@@ -57,11 +57,11 @@ export function ScheduleGrid({ slots, weekFilter, onCellClick, onSlotClick }: Pr
   return (
     <div className="flex overflow-x-auto">
       {/* Hour labels */}
-      <div className="flex-shrink-0 w-12 relative" style={{ height: TOTAL_MINUTES * PX_PER_MIN }}>
+      <div className="relative w-12 flex-shrink-0" style={{ height: TOTAL_MINUTES * PX_PER_MIN }}>
         {hours.map((h) => (
           <div
             key={h}
-            className="absolute text-xs text-gray-500 right-1"
+            className="absolute right-1 text-xs text-[rgb(var(--ink-3))]"
             style={{ top: (h - HOUR_START) * 60 * PX_PER_MIN - 6 }}
           >
             {h}h
@@ -75,15 +75,15 @@ export function ScheduleGrid({ slots, weekFilter, onCellClick, onSlotClick }: Pr
         const daySlots = slots.filter((s) => s.day_of_week === dow && slotVisible(s, weekFilter));
 
         return (
-          <div key={dow} className="flex-1 min-w-[100px] border-l border-gray-700 relative">
+          <div key={dow} className="relative min-w-[100px] flex-1 border-l border-[rgb(var(--border))]">
             {/* Header */}
-            <div className={`sticky top-0 z-10 text-center text-xs font-semibold py-1 border-b border-gray-700 ${isWeekend ? "text-gray-500 bg-gray-900" : "text-gray-300 bg-gray-800"}`}>
+            <div className={`sticky top-0 z-10 border-b border-[rgb(var(--border))] py-1 text-center text-xs font-semibold ${isWeekend ? "bg-[rgb(var(--surface-3))] text-[rgb(var(--ink-3))]" : "bg-[rgb(var(--surface-2))] text-[rgb(var(--ink-2))]"}`}>
               {label}
             </div>
 
             {/* Grid area */}
             <div
-              className={`relative ${isWeekend ? "bg-gray-900/50" : "bg-gray-800/30"} cursor-pointer`}
+              className={`relative cursor-pointer ${isWeekend ? "bg-[rgb(var(--surface-3))]/50" : "bg-[rgb(var(--surface))]"}`}
               style={{ height: TOTAL_MINUTES * PX_PER_MIN }}
               onClick={(e) => {
                 const rect = e.currentTarget.getBoundingClientRect();
@@ -97,7 +97,7 @@ export function ScheduleGrid({ slots, weekFilter, onCellClick, onSlotClick }: Pr
               {hours.map((h) => (
                 <div
                   key={h}
-                  className="absolute w-full border-t border-gray-700/40"
+                  className="absolute w-full border-t border-[rgb(var(--border))]/60"
                   style={{ top: (h - HOUR_START) * 60 * PX_PER_MIN }}
                 />
               ))}
