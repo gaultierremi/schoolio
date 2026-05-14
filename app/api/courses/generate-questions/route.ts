@@ -18,11 +18,7 @@ import { createClient as createSupabaseAdminClient } from "@supabase/supabase-js
 import { createClient } from "@/lib/supabase-server";
 import { logError } from "@/lib/observability/log-error";
 import { tasks } from "@trigger.dev/sdk/v3";
-import {
-  MAX_QUESTIONS_PER_COURSE,
-  autoTargetQuestions,
-  computeWorkerLayout,
-} from "@/lib/generate-questions/runner";
+import { MAX_QUESTIONS_PER_COURSE, autoTargetQuestions } from "@/lib/generate-questions/runner";
 import type { generateQuestionsTask } from "@/trigger/generate-questions";
 
 export const dynamic = "force-dynamic";
@@ -150,9 +146,12 @@ export async function POST(request: NextRequest) {
     const targetQuestions =
       requestedQuestionsCount ?? autoTargetQuestions(typedCourse.pages_count ?? null);
     const cappedQuestionsCount = Math.min(targetQuestions, MAX_QUESTIONS_PER_COURSE - existing);
-    const { workerCount } = computeWorkerLayout(cappedQuestionsCount);
 
     // ── Create job row + trigger task ────────────────────────────────────────
+    // worker_count est mis à 1 par défaut (placeholder UI) — le runner met
+    // à jour cette valeur au nombre réel de chapitres dès qu'il a fini la
+    // pré-pass de structure (extract-chapters). À ce moment le client poll
+    // verra par exemple worker_count=8, workers_completed=2/8.
     const { data: jobRow, error: jobErr } = await admin
       .from("question_generation_jobs")
       .insert({
@@ -162,7 +161,7 @@ export async function POST(request: NextRequest) {
         status: "pending",
         phase: "queued",
         total_target: cappedQuestionsCount,
-        worker_count: workerCount,
+        worker_count: 1,
         pages_count: typedCourse.pages_count,
         page_range_start: pageRange?.start ?? null,
         page_range_end: pageRange?.end ?? null,
