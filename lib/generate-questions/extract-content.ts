@@ -385,8 +385,10 @@ async function processChapter(
       level: course.level ?? null,
       type: q.type,
       question: q.question,
-      options: q.type === "mcq" ? q.options ?? null : null,
-      answer_index: q.type === "mcq" ? q.answer_index ?? null : null,
+      // teacher_questions.options est NOT NULL (TEXT[]) — empty array pour
+      // les questions non-mcq.
+      options: q.type === "mcq" ? q.options ?? [] : [],
+      answer_index: q.type === "mcq" ? q.answer_index ?? 0 : 0,
       expected_numeric_answer: q.type === "numeric" ? q.expected_numeric_answer ?? null : null,
       numeric_tolerance: q.type === "numeric" ? q.numeric_tolerance ?? 0.01 : null,
       numeric_unit: q.type === "numeric" ? q.numeric_unit ?? null : null,
