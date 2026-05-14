@@ -233,23 +233,30 @@ function parseChapterResponse(raw: string): {
   return {};
 }
 
-function normalizeSnippet(s: ExtractedSnippet): ExtractedSnippet | null {
+function normalizeSnippet(s: ExtractedSnippet, chapter: Chapter): ExtractedSnippet | null {
   if (typeof s.concept_name !== "string" || !s.concept_name.trim()) return null;
   if (typeof s.text !== "string") return null;
   const text = s.text.trim();
-  if (text.length < 20 || text.length > 4000) return null;
-  const page = Number.isInteger(s.source_page) && s.source_page >= 1 ? s.source_page : 1;
-  return { concept_name: s.concept_name.trim(), text, source_page: page };
+  // Lowered from 20 to 5 chars to accept short formulas (e.g., "H₂O", "F = ma").
+  if (text.length < 5 || text.length > 4000) return null;
+  // Clamp source_page to chapter range : AI may return relative pages, we want absolute.
+  const rawPage = Number.isInteger(s.source_page) && s.source_page >= 1 ? s.source_page : chapter.pageStart;
+  const clampedPage = rawPage >= chapter.pageStart && rawPage <= chapter.pageEnd ? rawPage : chapter.pageStart;
+  return { concept_name: s.concept_name.trim(), text, source_page: clampedPage };
 }
 
-function normalizeQuestion(q: ExtractedQuestion): ExtractedQuestion | null {
+function normalizeQuestion(q: ExtractedQuestion, chapter: Chapter): ExtractedQuestion | null {
   if (typeof q.question !== "string" || !q.question.trim()) return null;
   const difficulty =
     typeof q.difficulty === "number" && Number.isInteger(q.difficulty) && q.difficulty >= 1 && q.difficulty <= 3
       ? q.difficulty
       : undefined;
   const explanation = typeof q.explanation === "string" ? q.explanation : "";
-  const base = { ...q, question: q.question.trim(), explanation, difficulty };
+  // Clamp concept_page to chapter range : AI may return relative pages, we want absolute.
+  const rawPage = typeof q.concept_page === "number" && Number.isInteger(q.concept_page) ? q.concept_page : undefined;
+  const clampedPage =
+    rawPage && rawPage >= chapter.pageStart && rawPage <= chapter.pageEnd ? rawPage : chapter.pageStart;
+  const base = { ...q, question: q.question.trim(), explanation, difficulty, concept_page: clampedPage };
 
   if (q.type === "mcq") {
     const options = Array.isArray(q.options) ? q.options.slice(0, 4) : [];
@@ -318,11 +325,11 @@ async function processChapter(
   const rawQuestions = Array.isArray(parsed.questions) ? parsed.questions : [];
 
   const validSnippets = rawSnippets
-    .map(normalizeSnippet)
+    .map((s) => normalizeSnippet(s, chapter))
     .filter((s): s is ExtractedSnippet => s !== null);
 
   const validQuestions = rawQuestions
-    .map(normalizeQuestion)
+    .map((q) => normalizeQuestion(q, chapter))
     .filter((q): q is ExtractedQuestion => q !== null);
 
   if (validSnippets.length === 0 && validQuestions.length === 0) {
@@ -419,9 +426,12 @@ async function runConcurrent<T>(
       if (i >= items.length) return;
       try {
         await worker(items[i], i);
-      } catch {
+      } catch (err) {
         // Erreurs catched DANS le worker (chaque worker fait son INSERT + log).
-        // Si throw remonte ici, c'est une erreur infra → on log + continue.
+        // Si throw remonte ici, c'est inattendu (ex: refactor casse le try/catch
+        // interne du worker). On log pour ne pas perdre silencieusement l'info.
+        // eslint-disable-next-line no-console
+        console.error("[runConcurrent] unexpected worker throw:", err);
       }
     }
   }
