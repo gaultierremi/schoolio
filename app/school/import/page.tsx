@@ -1003,7 +1003,7 @@ export default function ImportPage() {
                   />
                 </div>
                 <p className="text-xs text-white/40">
-                  Maïa analyse chaque PDF et génère ~30 questions par cours. Compter ~1-2min par PDF selon sa taille.
+                  Maïa analyse votre cours et génère jusqu&apos;à 600 questions par syllabus (~3 questions par page), catégorisées par chapitre/UAA. Formats variés : QCM, réponse libre courte, calcul. Compter ~2-4min pour un gros syllabus (10 workers Anthropic en parallèle).
                 </p>
               </div>
             )}
