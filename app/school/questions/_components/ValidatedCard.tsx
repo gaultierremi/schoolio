@@ -1,5 +1,6 @@
 import type { TeacherQuestion, ProposeState } from "../_types";
 import { TypeBadge } from "./TypeBadge";
+import { DifficultyStarsEditor } from "./DifficultyStarsEditor";
 
 export function ValidatedCard({
   q,
@@ -11,6 +12,7 @@ export function ValidatedCard({
   onUnvalidate,
   onPropose,
   onForcePropose,
+  onDifficultyChange,
 }: {
   q: TeacherQuestion;
   proposeState: ProposeState;
@@ -21,6 +23,7 @@ export function ValidatedCard({
   onUnvalidate: () => void;
   onPropose: () => void;
   onForcePropose: () => void;
+  onDifficultyChange?: (newValue: 1 | 2 | 3 | null) => void;
 }) {
   const isAiValidated = q.is_ai_generated === true && !!q.validated_at;
   const isPdfExtracted = q.origin === "extracted_from_pdf" && !!q.validated_at;
@@ -41,12 +44,11 @@ export function ValidatedCard({
                 ✓ 📄 PDF
               </span>
             )}
-            {q.difficulty_stars !== null && (
-              <span className="text-xs text-yellow-400">
-                {"★".repeat(q.difficulty_stars)}
-                {"☆".repeat(3 - q.difficulty_stars)}
-              </span>
-            )}
+            <DifficultyStarsEditor
+              questionId={q.id}
+              value={q.difficulty_stars}
+              onChange={onDifficultyChange}
+            />
             {q.period && (
               <span className="rounded-full bg-gray-800 px-2 py-0.5 text-xs text-gray-400">
                 {q.period}

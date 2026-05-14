@@ -269,14 +269,12 @@ export function useQuestionsPage() {
   async function validateQuestion(id: string) {
     setValidatingId(id);
     try {
-      const stars = pendingStars[id];
+      // difficulty_stars is already persisted via DifficultyStarsEditor PATCH
+      // before the teacher clicks Valider — no need to re-send it here.
       const res = await fetch(`/api/teacher-questions/${id}/validation`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          action: "validate",
-          ...(stars ? { difficulty_stars: stars } : {}),
-        }),
+        body: JSON.stringify({ action: "validate" }),
       });
       const json = await res.json();
       if (!res.ok) throw new Error(json.error ?? "Erreur");
@@ -345,6 +343,15 @@ export function useQuestionsPage() {
     } catch (e) {
       alert(e instanceof Error ? e.message : "Erreur");
     }
+  }
+
+  // ── Difficulty override ──
+
+  function updateQuestionDifficulty(id: string, newValue: 1 | 2 | 3 | null) {
+    // Sync local list after the optimistic update already happened in DifficultyStarsEditor
+    setMyQuestions((prev) =>
+      prev.map((q) => (q.id === id ? { ...q, difficulty_stars: newValue } : q))
+    );
   }
 
   // ── Propose ──
@@ -591,7 +598,6 @@ export function useQuestionsPage() {
     fadingIds,
     validatingId,
     rejectingId,
-    pendingStars, setPendingStars,
     valToast,
     isBusy,
     // propose
@@ -631,6 +637,7 @@ export function useQuestionsPage() {
     validateQuestion,
     rejectQuestion,
     callUnvalidate,
+    updateQuestionDifficulty,
     proposeQuestion,
     handlePdfUpload,
     saveDrafts,

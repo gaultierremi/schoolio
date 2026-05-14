@@ -31,7 +31,6 @@ export default function SchoolQuestionsPage() {
     sortBy, setSortBy,
     filterStars, setFilterStars,
     fadingIds, validatingId, rejectingId,
-    pendingStars, setPendingStars,
     valToast, isBusy,
     proposeStatuses,
     pdfLoading, pdfError, pdfWarning, pdfProgress, pdfStats,
@@ -48,7 +47,7 @@ export default function SchoolQuestionsPage() {
     hasValidatedFilter, filteredValidated, sortedValidated, filteredPublic,
     resetForm, startEdit, saveQuestion, deleteQuestion,
     togglePublic, duplicateQuestion, generateExplanation,
-    validateQuestion, rejectQuestion, callUnvalidate, proposeQuestion,
+    validateQuestion, rejectQuestion, callUnvalidate, updateQuestionDifficulty, proposeQuestion,
     handlePdfUpload, saveDrafts, addPublicQuestion,
   } = useQuestionsPage();
 
@@ -227,9 +226,8 @@ export default function SchoolQuestionsPage() {
                                 isValidating={validatingId === q.id}
                                 isRejecting={rejectingId === q.id}
                                 isBusy={isBusy}
-                                selectedStars={pendingStars[q.id] ?? null}
-                                onStarChange={(v) =>
-                                  setPendingStars((prev) => ({ ...prev, [q.id]: v }))
+                                onDifficultyChange={(v) =>
+                                  updateQuestionDifficulty(q.id, v)
                                 }
                                 onValidate={() => validateQuestion(q.id)}
                                 onReject={() => rejectQuestion(q.id)}
@@ -351,6 +349,9 @@ export default function SchoolQuestionsPage() {
                             onUnvalidate={() => callUnvalidate(q.id)}
                             onPropose={() => proposeQuestion(q.id)}
                             onForcePropose={() => proposeQuestion(q.id, true)}
+                            onDifficultyChange={(v) =>
+                              updateQuestionDifficulty(q.id, v)
+                            }
                           />
                         ))}
                     </div>
