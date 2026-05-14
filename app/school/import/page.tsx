@@ -394,12 +394,11 @@ function FileRow({ item, onRetry, onToggleEdit, onSubject, onLevel, onTitle, onV
       {(item.status === "ready" || (item.status === "validated" && item.editing)) && item.inference && (
         <div className="flex flex-col gap-0.5">
           <p className="text-xs text-white/50">
-            Confiance Maïa : {item.inference.confidence}% ·{" "}
             <button
               onClick={() => onToggleEdit(item.id)}
               className="text-purple-400 hover:text-purple-300 underline underline-offset-2 transition-colors"
             >
-              {item.editing ? "Annuler" : "Modifier"}
+              {item.editing ? "Annuler" : "Modifier matière/niveau/titre"}
             </button>
           </p>
           {item.editing ? (
@@ -982,18 +981,30 @@ export default function ImportPage() {
           <div className="rounded-2xl border border-purple-500/30 bg-purple-500/10 px-5 py-4">
 
             {isGenerating && (
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <Spinner />
-                  <p className="text-sm text-white/80">
-                    <span className="font-semibold text-white">{genProgress.done}</span>
-                    <span className="text-white/50">/{genProgress.total}</span>
-                    {" "}cours traité{genProgress.done > 1 ? "s" : ""}…
-                  </p>
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <Spinner />
+                    <p className="text-sm text-white/80">
+                      <span className="font-semibold text-white">{genProgress.done}</span>
+                      <span className="text-white/50">/{genProgress.total}</span>
+                      {" "}cours traité{genProgress.done > 1 ? "s" : ""} ·{" "}
+                      <span className="text-white/60">{genProgress.total > 0 ? Math.round((genProgress.done / genProgress.total) * 100) : 0}%</span>
+                    </p>
+                  </div>
+                  <button disabled className="px-5 py-2 rounded-xl bg-purple-600 opacity-40 cursor-not-allowed text-white text-sm font-semibold">
+                    En cours…
+                  </button>
                 </div>
-                <button disabled className="px-5 py-2 rounded-xl bg-purple-600 opacity-40 cursor-not-allowed text-white text-sm font-semibold">
-                  En cours…
-                </button>
+                <div className="h-2 w-full rounded-full bg-white/10 overflow-hidden">
+                  <div
+                    className="h-full bg-gradient-to-r from-purple-500 to-purple-400 transition-all duration-300"
+                    style={{ width: `${genProgress.total > 0 ? (genProgress.done / genProgress.total) * 100 : 0}%` }}
+                  />
+                </div>
+                <p className="text-xs text-white/40">
+                  Maïa analyse chaque PDF et génère ~30 questions par cours. Compter ~1-2min par PDF selon sa taille.
+                </p>
               </div>
             )}
 

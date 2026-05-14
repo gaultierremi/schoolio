@@ -7,6 +7,7 @@ import { isValidSubject, isValidLevel, SUBJECTS_BY_ID } from "@/lib/subjects";
 import type { SubjectId, SchoolLevel } from "@/lib/subjects";
 import { extractPagesFromPdf } from "@/lib/pdf/extract-pages";
 import { logActivity } from "@/lib/activity/log";
+import { logError } from "@/lib/observability/log-error";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 120;
@@ -30,7 +31,10 @@ const message = await anthropic.messages.create({
 */
 
 const UUID_REGEX = /^[0-9a-f-]{36}$/i;
-const MAX_PDF_BYTES = 52428800;
+// Gemini Vision (Files API direct base64) limite la taille du PDF à ~20MB.
+// Au-delà, l'inférence échoue silencieusement (réponse vide → 0 question).
+// Cap explicitement avec un message d'erreur clair pour le prof.
+const MAX_PDF_BYTES = 20 * 1024 * 1024; // 20MB Gemini Vision limit
 const WORKER_COUNT = 3;
 const QUESTIONS_PER_WORKER = 10;
 
@@ -478,7 +482,13 @@ export async function POST(request: NextRequest) {
 
     const fullPdfBuffer = Buffer.from(await pdfBlob.arrayBuffer());
     if (fullPdfBuffer.byteLength > MAX_PDF_BYTES) {
-      return NextResponse.json({ error: "PDF trop volumineux" }, { status: 400 });
+      const sizeMB = (fullPdfBuffer.byteLength / 1024 / 1024).toFixed(1);
+      return NextResponse.json(
+        {
+          error: `PDF de ${sizeMB}MB trop volumineux pour la génération (max 20MB). Split le syllabus en plusieurs PDF plus petits, ou utilise l'option "Sélection de pages" pour traiter par chapitre.`,
+        },
+        { status: 400 }
+      );
     }
 
     // Validate page range if provided
@@ -534,14 +544,47 @@ export async function POST(request: NextRequest) {
     const parsedOutputs = workerOutputs.map((rawText) =>
       parseJsonObject<{ questions: ExtractedQuestion[]; page_count?: number }>(rawText)
     );
-    const questions = parsedOutputs
-      .flatMap((output) => (Array.isArray(output.questions) ? output.questions : []))
-      .map(normalizeQuestion)
+    const rawQuestions = parsedOutputs.flatMap((output) =>
+      Array.isArray(output.questions) ? output.questions : []
+    );
+    const normalized = rawQuestions.map(normalizeQuestion);
+    const questions = normalized
       .filter((q): q is ExtractedQuestion => q !== null)
       .slice(0, cappedQuestionsCount);
 
     if (questions.length === 0) {
-      return NextResponse.json({ error: "Aucune question generee" }, { status: 500 });
+      // Observability : on log les compteurs pour comprendre POURQUOI (Gemini
+      // n'a rien renvoyé, ou tout a été filtré en normalize). Sans ça on a
+      // un 500 opaque côté UI.
+      const rawTypes = rawQuestions.reduce<Record<string, number>>((acc, q) => {
+        const t = (q?.type ?? "unknown") as string;
+        acc[t] = (acc[t] || 0) + 1;
+        return acc;
+      }, {});
+      await logError(new Error("generate-questions: 0 questions after normalize"), {
+        source: "api.courses.generate-questions.POST",
+        context: {
+          courseId,
+          subject,
+          level,
+          pageRange,
+          rawCount: rawQuestions.length,
+          rawTypeDistribution: rawTypes,
+          normalizedNullCount: normalized.filter((n) => n === null).length,
+          cappedQuestionsCount,
+          pdfSizeBytes: fullPdfBuffer.byteLength,
+        },
+        userId: user.id,
+      });
+      return NextResponse.json(
+        {
+          error:
+            rawQuestions.length > 0
+              ? "Aucune question valide générée (toutes filtrées par validation). Réessaie ou réduis la plage de pages."
+              : "Maïa n'a pas pu générer de questions sur ce PDF. Vérifie que le contenu est lisible et essaie une plage de pages plus petite.",
+        },
+        { status: 500 }
+      );
     }
 
     const rows = questions.map((q) => ({
@@ -599,6 +642,10 @@ export async function POST(request: NextRequest) {
     });
   } catch (error) {
     console.error("[courses/generate-questions]", error);
+    await logError(error, {
+      source: "api.courses.generate-questions.POST",
+      context: { route: "/api/courses/generate-questions" },
+    });
     if (error instanceof GracefulAIError) {
       return NextResponse.json({ error: "Service temporairement sature" }, { status: 503 });
     }
