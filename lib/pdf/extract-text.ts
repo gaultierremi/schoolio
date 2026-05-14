@@ -43,6 +43,10 @@ export async function extractTextFromPdf(
 
   const loadingTask = pdfjs.getDocument({
     data: new Uint8Array(pdfBuffer),
+    // Trigger.dev cloud bundle ne contient pas pdf.worker.mjs → "fake worker
+    // setup failed" si on laisse pdfjs essayer de le charger. Disable worker
+    // entirely (Node serverless parse en main thread sans souci).
+    disableWorker: true,
     useWorkerFetch: false,
     isEvalSupported: false,
     useSystemFonts: true,
