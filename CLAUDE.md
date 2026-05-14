@@ -90,6 +90,19 @@ Laisse l'utilisateur décider si la review est lancée ou pas. Une fois ton plan
 
 22. Tu codes les *nouvelles features* sur les branches feat/*. Tu ne touches pas à audit-* (Alex), tests/* (Claudia), docs/* (documentaliste). Tu n'édites pas non plus lib/api/* ni lib/db/* (helpers — domaine d'Alex).
 
+## Intégrité données longitudinales (stats direction futures)
+
+23. *Never-DELETE principle sur les tables événementielles.* Aucun code applicatif ne doit jamais faire `DELETE FROM` sur :
+- `class_memberships` (l'élève quitte ⇒ `status='removed'`, jamais DELETE)
+- `assignment_completions` (un score reste, même si l'élève quitte la classe)
+- `assignment_question_answers` (granularité quiz, irrécupérable une fois effacée)
+- `live_session_answers` (sessions live, traçabilité Kahoot)
+- `quiz_completions` (legacy mais conservé pour stats)
+- `activity_events` (audit produit)
+- `class_audit_log` (immutable par RLS, ne devrait jamais être effaçable mais le rappeler ici)
+
+Use case : la direction d'établissement voudra plus tard des stats de rétention par cours / chapitre / classe pour détecter des chutes de performance (signe de malaise pédagogique ou social). Si on efface les rows brutes, les stats deviennent menteuses ou impossibles. Pour archiver une vue : ajouter un flag `archived_at` ou `status='removed'`, jamais effacer la ligne. RLS et code Lib doivent enforcer cette règle ; les migrations qui suppriment des données historiques sont à challenger.
+
 ## Reporting Mission Control
 
 Au **début de chaque sprint** (avant de toucher au code) :

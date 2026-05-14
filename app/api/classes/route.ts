@@ -136,29 +136,36 @@ export async function POST(req: NextRequest) {
     // Validation parent_class_id : si fourni, doit être une cohorte (parent_class_id NULL)
     // de la même école, owned par le même prof (anti cross-tenant).
     let parentClassId: string | null = null;
+    let parentAcademicYear: string | null = null;
     if (body.parent_class_id !== undefined && body.parent_class_id !== null) {
       if (typeof body.parent_class_id !== "string" || !/^[0-9a-f-]{36}$/i.test(body.parent_class_id)) {
         return NextResponse.json({ error: "parent_class_id invalide" }, { status: 400 });
       }
       const { data: parent } = await admin
         .from("classes")
-        .select("id, teacher_id, school_id, parent_class_id")
+        .select("id, teacher_id, school_id, parent_class_id, academic_year")
         .eq("id", body.parent_class_id)
         .maybeSingle();
       if (!parent) {
         return NextResponse.json({ error: "Cohorte parente introuvable" }, { status: 404 });
       }
-      const p = parent as { teacher_id: string; school_id: string; parent_class_id: string | null };
+      const p = parent as { teacher_id: string; school_id: string; parent_class_id: string | null; academic_year: string | null };
       if (p.school_id !== schoolId) {
         return NextResponse.json({ error: "Cohorte parente d'une autre école" }, { status: 403 });
       }
       if (p.parent_class_id !== null) {
         return NextResponse.json({ error: "On ne peut pas créer une sous-classe sous une sous-classe (profondeur max 1)" }, { status: 400 });
       }
-      parentClassId = p.teacher_id === user.id ? body.parent_class_id : body.parent_class_id;
+      parentClassId = body.parent_class_id;
+      parentAcademicYear = p.academic_year;
       // Note : on autorise d'utiliser la cohorte d'un autre prof de la même école
       // pour permettre plusieurs profs de matières de se rattacher au même groupe-année.
     }
+
+    // Année académique : héritée du parent si présent (cohérence du modèle),
+    // sinon calculée selon la date courante (cf. lib/dates.ts).
+    const { currentAcademicYear } = await import("@/lib/dates");
+    const academicYear = parentAcademicYear ?? currentAcademicYear();
 
     const invite_code = await uniqueCode(admin);
 
@@ -174,8 +181,9 @@ export async function POST(req: NextRequest) {
         invite_code,
         invitation_expires_at: inviteExpiresAt,
         parent_class_id: parentClassId,
+        academic_year: academicYear,
       })
-      .select("id, name, level, subject, auth_mode, invite_code, invite_link_token, invitation_expires_at, parent_class_id, archived_at, created_at")
+      .select("id, name, level, subject, auth_mode, invite_code, invite_link_token, invitation_expires_at, parent_class_id, academic_year, archived_at, created_at")
       .single();
 
     if (error) throw error;
