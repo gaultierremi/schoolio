@@ -1,0 +1,30 @@
+import { defineConfig } from "@trigger.dev/sdk/v3";
+
+export default defineConfig({
+  // Project ref provenant du dashboard Trigger.dev.
+  // Source de vérité : la variable d'env TRIGGER_PROJECT_REF côté Vercel,
+  // mais on hardcode ici car ce fichier est lu au build par la CLI
+  // `npx trigger.dev deploy` qui n'a pas accès aux env Vercel.
+  project: "proj_tejhmiwoumzmncugvrhy",
+  runtime: "node",
+  dirs: ["./trigger"],
+
+  // 5min par défaut suffisent pour la plupart des syllabi. Le free tier
+  // Trigger.dev limite à 5min en gratuit, jusqu'à 1h en Pro.
+  // Si on hit le mur côté gros syllabus 600q, on bumpera + on évaluera Pro.
+  maxDuration: 300,
+
+  // Retry doux : un seul retry après 30s sur les erreurs réseau.
+  // Anthropic / Gemini ont parfois des hiccups (502, timeout), pas
+  // la peine de retry massivement (cher) ni de fail immédiat.
+  retries: {
+    enabledInDev: false,
+    default: {
+      maxAttempts: 2,
+      minTimeoutInMs: 30_000,
+      maxTimeoutInMs: 60_000,
+      factor: 2,
+      randomize: true,
+    },
+  },
+});
