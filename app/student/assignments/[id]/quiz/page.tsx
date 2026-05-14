@@ -4,19 +4,26 @@ import { useEffect, useRef, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { TutorPanel } from "./_components/TutorPanel";
 import { CorrectionPanel, type CorrectionStep } from "./_components/CorrectionPanel";
+import { MCQOptions } from "./_components/MCQOptions";
+import { NumericInput } from "./_components/NumericInput";
+import { ShortTextInput } from "./_components/ShortTextInput";
 
 type Question = {
   id: string;
   question: string;
-  type: "mcq" | "truefalse";
-  options: string[];
-  answer_index: number;
+  type: "mcq" | "truefalse" | "numeric" | "short_text" | "multi_step";
+  options: string[] | null;
+  answer_index: number | null;
   difficulty_stars: number | null;
   explanation: string | null;
   concept_page_hint: number | null;
   page_range_start: number | null;
   correction_steps: CorrectionStep[] | null;
   concept_id: string | null;
+  expected_numeric_answer: number | null;
+  numeric_tolerance: number | null;
+  numeric_unit: string | null;
+  expected_text_answers: string[] | null;
 };
 
 type QuestionResult = {
@@ -93,6 +100,14 @@ export default function AssignmentQuizPage() {
     if (answered) return;
     const isCorrect = optionIdx === questions[current].answer_index;
     setSelected(optionIdx);
+    setAnswered(true);
+    setWrongPhase(isCorrect ? null : "choosing");
+    if (isCorrect) setCorrectCount((c) => c + 1);
+    updateResult(questions[current].id, { is_correct: isCorrect });
+  }
+
+  function handleSubmitFreeform(isCorrect: boolean) {
+    if (answered) return;
     setAnswered(true);
     setWrongPhase(isCorrect ? null : "choosing");
     if (isCorrect) setCorrectCount((c) => c + 1);
@@ -224,22 +239,11 @@ export default function AssignmentQuizPage() {
 
   const q = questions[current];
   const progress = (current / questions.length) * 100;
-  const isCorrectAnswer = answered && selected === q.answer_index;
+  // For MCQ/truefalse: correct when selected matches answer_index.
+  // For freeform types: correct when wrongPhase is null (set by handleSubmitFreeform).
+  const isMCQType = q.type === "mcq" || q.type === "truefalse";
+  const isCorrectAnswer = answered && (isMCQType ? selected === q.answer_index : wrongPhase === null);
   const theoryPage = q.concept_page_hint ?? q.page_range_start;
-
-  const optionStyle = (idx: number): string => {
-    if (!answered) {
-      return "border-gray-700 text-gray-300 hover:border-purple-500/60 hover:bg-purple-500/5 cursor-pointer";
-    }
-    if (wrongPhase === "choosing" || wrongPhase === "help") {
-      if (idx === selected) return "border-red-500 bg-red-500/10 text-red-300";
-      return "border-gray-800 text-gray-600";
-    }
-    // null (correct) or "revealed" — show correct answer
-    if (idx === q.answer_index) return "border-green-500 bg-green-500/10 text-green-300 font-bold";
-    if (idx === selected && idx !== q.answer_index) return "border-red-500 bg-red-500/10 text-red-300";
-    return "border-gray-800 text-gray-600";
-  };
 
   return (
     <main className="min-h-screen bg-gray-950 px-4 py-8 text-white">
@@ -265,19 +269,32 @@ export default function AssignmentQuizPage() {
         <div className="rounded-2xl border border-gray-800 bg-gray-900 p-6">
           <p className="text-lg font-black text-white leading-snug">{q.question}</p>
 
-          <div className="mt-6 space-y-3">
-            {q.options.map((opt, idx) => (
-              <button
-                key={idx}
-                onClick={() => handleSelect(idx)}
-                disabled={answered}
-                className={`w-full rounded-xl border px-4 py-3 text-left text-sm transition ${optionStyle(idx)}`}
-              >
-                <span className="font-bold text-gray-500 mr-2">{String.fromCharCode(65 + idx)}.</span>
-                {opt}
-              </button>
-            ))}
-          </div>
+          {(q.type === "mcq" || q.type === "truefalse") ? (
+            <MCQOptions
+              options={q.options ?? []}
+              answered={answered}
+              selected={selected}
+              answerIndex={q.answer_index}
+              wrongPhase={wrongPhase}
+              onSelect={handleSelect}
+            />
+          ) : q.type === "numeric" ? (
+            <NumericInput
+              answered={answered}
+              expectedAnswer={q.expected_numeric_answer}
+              tolerance={q.numeric_tolerance}
+              unit={q.numeric_unit}
+              onSubmit={handleSubmitFreeform}
+            />
+          ) : q.type === "short_text" ? (
+            <ShortTextInput
+              answered={answered}
+              expectedAnswers={q.expected_text_answers}
+              onSubmit={handleSubmitFreeform}
+            />
+          ) : (
+            <p className="mt-6 text-sm text-gray-500">Type {q.type} non supporté</p>
+          )}
 
           {/* Actions after answer */}
           {answered && (
@@ -342,7 +359,7 @@ export default function AssignmentQuizPage() {
                   />
                   <TutorPanel
                     questionId={q.id}
-                    wrongAnswer={selected !== null ? q.options[selected] ?? "" : ""}
+                    wrongAnswer={selected !== null && q.options ? q.options[selected] ?? "" : ""}
                     theoryPage={theoryPage}
                     onOpenTheory={handleOpenTheory}
                     theoryLoading={pdfLoading}
