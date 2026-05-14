@@ -131,6 +131,22 @@ export async function GET(request: NextRequest) {
       .maybeSingle();
     if (!profile?.first_name || !profile?.last_name) {
       destination = `/onboarding/name?next=${encodeURIComponent(destination)}`;
+    } else if (finalRole === "teacher") {
+      // Teacher annual onboarding gate : si pas de teacher_teaching_years row
+      // pour l'année académique courante, on force la déclaration des niveaux
+      // enseignés. Reset automatique chaque rentrée (nouvelle academic_year
+      // = nouvelle ligne nécessaire).
+      const { currentAcademicYear } = await import("@/lib/dates");
+      const ay = currentAcademicYear();
+      const { data: tty } = await admin
+        .from("teacher_teaching_years")
+        .select("id")
+        .eq("teacher_id", user.id)
+        .eq("academic_year", ay)
+        .maybeSingle();
+      if (!tty) {
+        destination = `/onboarding/teaching-levels?next=${encodeURIComponent(destination)}`;
+      }
     }
   }
 

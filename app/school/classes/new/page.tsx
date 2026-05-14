@@ -30,16 +30,32 @@ export default function NewClassPage() {
     return d.toISOString().slice(0, 10);
   }, []);
 
-  // Charge les cohortes existantes quand l'utilisateur switch sur "sous-classe matière"
+  // Charge cohortes + niveaux enseignés (filtre) quand on switch sur "sous-classe matière"
   useEffect(() => {
     if (type !== "subject_class") return;
     async function load() {
       setLoadingCohortes(true);
       try {
-        const res = await fetch("/api/classes");
-        if (!res.ok) return;
-        const data = (await res.json()) as { classes?: Array<Cohorte & { parent_class_id: string | null; archived_at: string | null }> };
-        const onlyCohortes = (data.classes ?? []).filter((c) => !c.parent_class_id && !c.archived_at);
+        const [classesRes, levelsRes] = await Promise.all([
+          fetch("/api/classes"),
+          fetch("/api/profile/teaching-levels"),
+        ]);
+        if (!classesRes.ok) return;
+        const classesData = (await classesRes.json()) as { classes?: Array<Cohorte & { parent_class_id: string | null; archived_at: string | null }> };
+        let taughtLevels: number[] = [];
+        if (levelsRes.ok) {
+          const lv = (await levelsRes.json()) as { taught_levels?: number[] | null };
+          taughtLevels = lv.taught_levels ?? [];
+        }
+        // Filtre : cohortes (parent_class_id null) + non archivées + level dans
+        // les niveaux enseignés du prof (si taughtLevels vide, on montre tout
+        // pour ne pas bloquer un prof pas encore onboardé)
+        const onlyCohortes = (classesData.classes ?? []).filter((c) => {
+          if (c.parent_class_id || c.archived_at) return false;
+          if (taughtLevels.length === 0) return true;
+          const lvlNum = c.level ? parseInt(c.level, 10) : null;
+          return lvlNum !== null && taughtLevels.includes(lvlNum);
+        });
         setCohortes(onlyCohortes.map((c) => ({ id: c.id, name: c.name, level: c.level })));
       } finally {
         setLoadingCohortes(false);
