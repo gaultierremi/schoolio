@@ -44,15 +44,15 @@ export default async function ClassInvitePage({
   // If no invitation_code yet (migration not run), show placeholder
   if (!cls.invitation_code) {
     return (
-      <main className="min-h-screen bg-gray-950 px-4 py-10 text-white">
+      <main className="min-h-screen bg-[rgb(var(--surface-2))] px-4 py-10 text-[rgb(var(--ink))]">
         <div className="mx-auto max-w-2xl">
-          <a href={`/school/classes/${params.id}`} className="text-xs text-gray-500 hover:text-gray-400">
+          <a href={`/school/classes/${params.id}`} className="text-xs text-[rgb(var(--ink-3))] hover:text-[rgb(var(--ink-2))]">
             ← {cls.name}
           </a>
-          <div className="mt-8 rounded-2xl border border-amber-800/40 bg-amber-950/20 px-5 py-6 text-center">
+          <div className="mt-8 rounded-2xl border border-[rgb(var(--warm))]/30 bg-[rgb(var(--warm))]/10 px-5 py-6 text-center">
             <p className="text-2xl">⚠️</p>
-            <p className="mt-3 font-bold text-amber-300">Migration requise</p>
-            <p className="mt-1 text-sm text-zinc-400">
+            <p className="mt-3 font-bold text-[rgb(var(--warm))]">Migration requise</p>
+            <p className="mt-1 text-sm text-[rgb(var(--ink-2))]">
               Exécute la migration <code>20260512000000_class_invitation_code.sql</code> dans Supabase pour activer les codes d&apos;invitation.
             </p>
           </div>
@@ -70,7 +70,7 @@ export default async function ClassInvitePage({
   const joinUrl = `${SITE_URL}/join?code=${cls.invitation_code}`;
 
   return (
-    <main className="min-h-screen bg-gray-950 px-4 py-10 text-white">
+    <main className="min-h-screen bg-[rgb(var(--surface-2))] px-4 py-10 text-[rgb(var(--ink))]">
       <div className="mx-auto max-w-2xl">
         <InvitePageClient
           classId={cls.id}

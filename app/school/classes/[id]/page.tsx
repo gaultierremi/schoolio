@@ -58,7 +58,7 @@ async function copyToClipboard(text: string): Promise<void> {
 // ── Sub-components ────────────────────────────────────────────────────────────
 
 function Skeleton({ className }: { className?: string }) {
-  return <div className={`animate-pulse rounded-xl bg-gray-800 ${className ?? ""}`} />;
+  return <div className={`animate-pulse rounded-xl bg-[rgb(var(--surface-3))] ${className ?? ""}`} />;
 }
 
 function DeleteModal({
@@ -73,25 +73,25 @@ function DeleteModal({
   deleting: boolean;
 }) {
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4">
-      <div className="w-full max-w-sm rounded-3xl border border-red-500/30 bg-gray-900 p-6 shadow-2xl">
-        <h2 className="text-lg font-black text-white">Supprimer la classe ?</h2>
-        <p className="mt-2 text-sm text-gray-400">
-          <span className="font-bold text-white">"{name}"</span> et tous ses membres seront supprimés.
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
+      <div className="w-full max-w-sm rounded-3xl border border-[rgb(var(--red))]/30 bg-[rgb(var(--surface))] p-6 shadow-2xl">
+        <h2 className="serif text-lg font-black text-[rgb(var(--ink))]">Supprimer la classe ?</h2>
+        <p className="mt-2 text-sm text-[rgb(var(--ink-2))]">
+          <span className="font-bold text-[rgb(var(--ink))]">&quot;{name}&quot;</span> et tous ses membres seront supprimés.
           Cette action est irréversible.
         </p>
         <div className="mt-6 flex gap-3">
           <button
             onClick={onCancel}
             disabled={deleting}
-            className="flex-1 rounded-2xl border border-gray-700 py-2.5 text-sm font-bold text-gray-400 transition hover:border-gray-500 hover:text-white disabled:opacity-50"
+            className="flex-1 rounded-2xl border border-[rgb(var(--border))] py-2.5 text-sm font-bold text-[rgb(var(--ink-2))] transition hover:border-[rgb(var(--ink-3))] hover:text-[rgb(var(--ink))] disabled:opacity-50"
           >
             Annuler
           </button>
           <button
             onClick={onConfirm}
             disabled={deleting}
-            className="flex-1 rounded-2xl bg-red-500 py-2.5 text-sm font-black text-white transition hover:bg-red-400 disabled:opacity-50"
+            className="flex-1 rounded-2xl bg-[rgb(var(--red))] py-2.5 text-sm font-black text-white transition hover:opacity-90 disabled:opacity-50"
           >
             {deleting ? "Suppression..." : "Supprimer"}
           </button>
@@ -145,27 +145,27 @@ function EditForm({
   }
 
   return (
-    <div className="rounded-2xl border border-purple-500/30 bg-gray-900 p-5 space-y-4">
-      <h3 className="font-black text-white">Modifier la classe</h3>
+    <div className="space-y-4 rounded-2xl border border-[rgb(var(--accent))]/30 bg-[rgb(var(--surface))] p-5">
+      <h3 className="font-black text-[rgb(var(--ink))]">Modifier la classe</h3>
 
       <div>
-        <label className="text-xs font-bold text-gray-400">Nom</label>
+        <label className="text-xs font-bold text-[rgb(var(--ink-2))]">Nom</label>
         <input
           type="text"
           value={name}
           onChange={(e) => setName(e.target.value)}
           maxLength={80}
-          className="mt-1 w-full rounded-xl border border-gray-700 bg-gray-950 px-3 py-2.5 text-sm text-white outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500/40"
+          className="mt-1 w-full rounded-xl border border-[rgb(var(--border))] bg-[rgb(var(--surface))] px-3 py-2.5 text-sm text-[rgb(var(--ink))] outline-none focus:border-[rgb(var(--accent))] focus:ring-2 focus:ring-[rgb(var(--accent))]/30"
         />
       </div>
 
       <div className="grid grid-cols-2 gap-3">
         <div>
-          <label className="text-xs font-bold text-gray-400">Niveau</label>
+          <label className="text-xs font-bold text-[rgb(var(--ink-2))]">Niveau</label>
           <select
             value={level}
             onChange={(e) => setLevel(e.target.value)}
-            className="mt-1 w-full rounded-xl border border-gray-700 bg-gray-950 px-3 py-2.5 text-sm text-white outline-none focus:border-purple-500"
+            className="mt-1 w-full rounded-xl border border-[rgb(var(--border))] bg-[rgb(var(--surface))] px-3 py-2.5 text-sm text-[rgb(var(--ink))] outline-none focus:border-[rgb(var(--accent))]"
           >
             <option value="">Tous niveaux</option>
             {LEVELS.map((l) => (
@@ -174,11 +174,11 @@ function EditForm({
           </select>
         </div>
         <div>
-          <label className="text-xs font-bold text-gray-400">Matière</label>
+          <label className="text-xs font-bold text-[rgb(var(--ink-2))]">Matière</label>
           <select
             value={subject}
             onChange={(e) => setSubject(e.target.value)}
-            className="mt-1 w-full rounded-xl border border-gray-700 bg-gray-950 px-3 py-2.5 text-sm text-white outline-none focus:border-purple-500"
+            className="mt-1 w-full rounded-xl border border-[rgb(var(--border))] bg-[rgb(var(--surface))] px-3 py-2.5 text-sm text-[rgb(var(--ink))] outline-none focus:border-[rgb(var(--accent))]"
           >
             <option value="">Toutes</option>
             {SUBJECTS.map((s) => (
@@ -189,21 +189,21 @@ function EditForm({
       </div>
 
       {error && (
-        <p className="text-xs font-bold text-red-400">{error}</p>
+        <p className="text-xs font-bold text-[rgb(var(--red))]">{error}</p>
       )}
 
       <div className="flex gap-3">
         <button
           onClick={onCancel}
           disabled={saving}
-          className="flex-1 rounded-2xl border border-gray-700 py-2.5 text-sm font-bold text-gray-400 transition hover:text-white disabled:opacity-50"
+          className="flex-1 rounded-2xl border border-[rgb(var(--border))] py-2.5 text-sm font-bold text-[rgb(var(--ink-2))] transition hover:border-[rgb(var(--ink-3))] hover:text-[rgb(var(--ink))] disabled:opacity-50"
         >
           Annuler
         </button>
         <button
           onClick={handleSave}
           disabled={saving}
-          className="flex-1 rounded-2xl bg-purple-500 py-2.5 text-sm font-black text-gray-950 transition hover:bg-purple-400 disabled:opacity-50"
+          className="flex-1 rounded-2xl bg-[rgb(var(--accent))] py-2.5 text-sm font-black text-white transition hover:opacity-90 disabled:opacity-50"
         >
           {saving ? "Enregistrement..." : "Enregistrer"}
         </button>
@@ -271,9 +271,9 @@ function AssignmentsTab({ classId }: { classId: string }) {
 
   if (loading) {
     return (
-      <div className="space-y-3 mt-4">
+      <div className="mt-4 space-y-3">
         {[1, 2].map((i) => (
-          <div key={i} className="h-20 animate-pulse rounded-2xl bg-gray-800" />
+          <div key={i} className="h-20 animate-pulse rounded-2xl bg-[rgb(var(--surface-3))]" />
         ))}
       </div>
     );
@@ -281,19 +281,19 @@ function AssignmentsTab({ classId }: { classId: string }) {
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-4">
-        <p className="text-sm text-gray-500">{assignments.length} devoir{assignments.length !== 1 ? "s" : ""}</p>
+      <div className="mb-4 flex items-center justify-between">
+        <p className="text-sm text-[rgb(var(--ink-3))]">{assignments.length} devoir{assignments.length !== 1 ? "s" : ""}</p>
         <div className="flex gap-2">
           <button
             onClick={handleExportClass}
             disabled={exporting || assignments.length === 0}
-            className="rounded-2xl border border-gray-700 px-4 py-2 text-sm font-bold text-gray-400 transition hover:border-gray-500 hover:text-white disabled:opacity-40"
+            className="rounded-2xl border border-[rgb(var(--border))] bg-[rgb(var(--surface))] px-4 py-2 text-sm font-bold text-[rgb(var(--ink-2))] transition hover:border-[rgb(var(--ink-3))] hover:text-[rgb(var(--ink))] disabled:opacity-40"
           >
             {exporting ? "Export..." : "📥 Exporter CSV"}
           </button>
           <a
             href={`/school/classes/${classId}/assignments/new`}
-            className="rounded-2xl bg-purple-500 px-4 py-2 text-sm font-black text-gray-950 transition hover:bg-purple-400"
+            className="rounded-2xl bg-[rgb(var(--accent))] px-4 py-2 text-sm font-black text-white transition hover:opacity-90"
           >
             + Créer un devoir
           </a>
@@ -303,8 +303,8 @@ function AssignmentsTab({ classId }: { classId: string }) {
       {assignments.length === 0 ? (
         <div className="mt-8 text-center">
           <p className="text-4xl">📋</p>
-          <p className="mt-3 font-black text-white">Aucun devoir</p>
-          <p className="mt-1 text-sm text-gray-500">Crée le premier devoir pour cette classe.</p>
+          <p className="mt-3 font-black text-[rgb(var(--ink))]">Aucun devoir</p>
+          <p className="mt-1 text-sm text-[rgb(var(--ink-3))]">Crée le premier devoir pour cette classe.</p>
         </div>
       ) : (
         <div className="space-y-3">
@@ -313,33 +313,33 @@ function AssignmentsTab({ classId }: { classId: string }) {
             return (
               <div
                 key={a.id}
-                className="group flex flex-col gap-3 rounded-2xl border border-gray-800 bg-gray-900 p-4 transition hover:border-purple-500/40 cursor-pointer"
+                className="group flex cursor-pointer flex-col gap-3 rounded-2xl border border-[rgb(var(--border))] bg-[rgb(var(--surface))] p-4 transition hover:border-[rgb(var(--accent))]/40 hover:bg-[rgb(var(--surface-3))]"
                 onClick={() => router.push(`/school/classes/${classId}/assignments/${a.id}`)}
               >
                 <div className="flex items-start justify-between gap-2">
                   <div className="min-w-0">
                     <div className="flex items-center gap-2">
-                      <span className="shrink-0 rounded-full border border-gray-700 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-gray-400">
+                      <span className="shrink-0 rounded-full border border-[rgb(var(--border))] bg-[rgb(var(--surface-2))] px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-[rgb(var(--ink-2))]">
                         {a.resource_type === "pdf" ? "📄 PDF" : "🧠 Quiz"}
                       </span>
-                      <p className="truncate font-black text-white">{a.title}</p>
+                      <p className="truncate font-black text-[rgb(var(--ink))]">{a.title}</p>
                     </div>
-                    <p className="mt-0.5 text-xs text-gray-500 truncate">{a.course_title}</p>
+                    <p className="mt-0.5 truncate text-xs text-[rgb(var(--ink-3))]">{a.course_title}</p>
                   </div>
                   <button
                     onClick={(e) => { e.stopPropagation(); handleArchive(a.id); }}
                     disabled={archiving === a.id}
-                    className="shrink-0 rounded-lg border border-gray-700 px-2 py-1 text-xs text-gray-600 opacity-0 transition group-hover:opacity-100 hover:border-red-700/50 hover:text-red-400 disabled:opacity-50"
+                    className="shrink-0 rounded-lg border border-[rgb(var(--border))] px-2 py-1 text-xs text-[rgb(var(--ink-3))] opacity-0 transition group-hover:opacity-100 hover:border-[rgb(var(--red))]/60 hover:text-[rgb(var(--red))] disabled:opacity-50"
                   >
                     Archiver
                   </button>
                 </div>
 
-                <div className="flex items-center gap-4 text-xs text-gray-500">
+                <div className="flex items-center gap-4 text-xs text-[rgb(var(--ink-2))]">
                   <span>
                     {a.nb_completed}/{a.nb_total} élèves
                     {a.resource_type === "quiz" && a.avg_score !== null && (
-                      <> · moy. <span className="text-purple-400 font-bold">{a.avg_score}%</span></>
+                      <> · moy. <span className="font-bold text-[rgb(var(--accent))]">{a.avg_score}%</span></>
                     )}
                   </span>
                   {a.due_date && (
@@ -347,9 +347,9 @@ function AssignmentsTab({ classId }: { classId: string }) {
                   )}
                 </div>
 
-                <div className="h-1.5 rounded-full bg-gray-800">
+                <div className="h-1.5 rounded-full bg-[rgb(var(--border))]">
                   <div
-                    className="h-1.5 rounded-full bg-purple-500 transition-all"
+                    className="h-1.5 rounded-full bg-[rgb(var(--accent))] transition-all"
                     style={{ width: `${pct}%` }}
                   />
                 </div>
@@ -477,7 +477,7 @@ export default function ClassDetailPage() {
 
   if (loading) {
     return (
-      <main className="min-h-screen bg-gray-950 px-4 py-8">
+      <main className="min-h-screen bg-[rgb(var(--surface-2))] px-4 py-8">
         <div className="mx-auto max-w-3xl space-y-4">
           <Skeleton className="h-4 w-24" />
           <Skeleton className="h-10 w-64" />
@@ -494,11 +494,11 @@ export default function ClassDetailPage() {
   const inviteLink = `${baseUrl}/join/${cls.invite_link_token}`;
 
   return (
-    <main className="min-h-screen bg-gray-950 px-4 py-8 text-white">
+    <main className="min-h-screen bg-[rgb(var(--surface-2))] px-4 py-8 text-[rgb(var(--ink))]">
       <div className="mx-auto w-full max-w-3xl space-y-6">
 
         {/* Nav */}
-        <a href="/school/classes" className="text-xs text-gray-500 hover:text-gray-400">
+        <a href="/school/classes" className="text-xs text-[rgb(var(--ink-3))] hover:text-[rgb(var(--ink-2))]">
           ← Mes classes
         </a>
 
@@ -506,36 +506,36 @@ export default function ClassDetailPage() {
         <div className="flex items-start justify-between gap-4">
           <div>
             <div className="flex items-center gap-2">
-              <h1 className="text-3xl font-black text-white">{cls.name}</h1>
+              <h1 className="serif text-3xl font-black text-[rgb(var(--ink))]">{cls.name}</h1>
               {isArchived && (
-                <span className="rounded-full bg-gray-700 px-2 py-0.5 text-[10px] font-bold uppercase tracking-widest text-gray-400">
+                <span className="rounded-full bg-[rgb(var(--surface-3))] px-2 py-0.5 text-[10px] font-bold uppercase tracking-widest text-[rgb(var(--ink-3))]">
                   Archivée
                 </span>
               )}
             </div>
-            <p className="mt-1 text-sm text-gray-500">
+            <p className="mt-1 text-sm text-[rgb(var(--ink-2))]">
               {levelLabel(cls.level)} · {subjectLabel(cls.subject)}
             </p>
-            <p className="text-xs text-gray-600">Créée le {formatDate(cls.created_at)}</p>
+            <p className="text-xs text-[rgb(var(--ink-3))]">Créée le {formatDate(cls.created_at)}</p>
           </div>
           <div className="flex shrink-0 gap-2">
             {!isArchived && !editing && (
               <button
                 onClick={() => setEditing(true)}
-                className="rounded-xl border border-gray-700 px-3 py-1.5 text-xs font-bold text-gray-400 transition hover:border-gray-500 hover:text-white"
+                className="rounded-xl border border-[rgb(var(--border))] bg-[rgb(var(--surface))] px-3 py-1.5 text-xs font-bold text-[rgb(var(--ink-2))] transition hover:border-[rgb(var(--ink-3))] hover:text-[rgb(var(--ink))]"
               >
                 Modifier
               </button>
             )}
             <button
               onClick={handleArchiveToggle}
-              className="rounded-xl border border-gray-700 px-3 py-1.5 text-xs font-bold text-gray-400 transition hover:border-gray-500 hover:text-white"
+              className="rounded-xl border border-[rgb(var(--border))] bg-[rgb(var(--surface))] px-3 py-1.5 text-xs font-bold text-[rgb(var(--ink-2))] transition hover:border-[rgb(var(--ink-3))] hover:text-[rgb(var(--ink))]"
             >
               {isArchived ? "Restaurer" : "Archiver"}
             </button>
             <button
               onClick={() => setShowDelete(true)}
-              className="rounded-xl border border-red-800/50 px-3 py-1.5 text-xs font-bold text-red-500 transition hover:border-red-600 hover:text-red-400"
+              className="rounded-xl border border-[rgb(var(--red))]/40 bg-[rgb(var(--surface))] px-3 py-1.5 text-xs font-bold text-[rgb(var(--red))] transition hover:border-[rgb(var(--red))]/70"
             >
               Supprimer
             </button>
@@ -552,12 +552,12 @@ export default function ClassDetailPage() {
         )}
 
         {/* Invite section */}
-        <div className="rounded-2xl border border-gray-800 bg-gray-900 p-5 space-y-4">
+        <div className="space-y-4 rounded-2xl border border-[rgb(var(--border))] bg-[rgb(var(--surface))] p-5">
           <div className="flex items-center justify-between gap-3">
-            <h2 className="font-black text-white">🔗 Inviter des élèves</h2>
+            <h2 className="font-black text-[rgb(var(--ink))]">🔗 Inviter des élèves</h2>
             <a
               href={`/school/classes/${cls.id}/invite`}
-              className="shrink-0 rounded-xl bg-purple-600 px-3 py-1.5 text-xs font-bold text-white transition hover:bg-purple-500"
+              className="shrink-0 rounded-xl bg-[rgb(var(--accent))] px-3 py-1.5 text-xs font-bold text-white transition hover:opacity-90"
             >
               Page d&apos;invitation →
             </a>
@@ -565,21 +565,21 @@ export default function ClassDetailPage() {
 
           {/* Code */}
           <div>
-            <p className="text-xs font-bold uppercase tracking-widest text-gray-500">Code d'invitation</p>
+            <p className="text-xs font-bold uppercase tracking-widest text-[rgb(var(--ink-3))]">Code d&apos;invitation</p>
             <div className="mt-2 flex items-center gap-3">
-              <div className="flex-1 rounded-xl bg-gray-950 px-4 py-3 font-mono text-2xl font-black tracking-widest text-purple-300">
+              <div className="flex-1 rounded-xl bg-[rgb(var(--surface-3))] px-4 py-3 font-mono text-2xl font-black tracking-widest text-[rgb(var(--accent))]">
                 {cls.invite_code}
               </div>
               <button
                 onClick={() => handleCopy("code")}
-                className="shrink-0 rounded-xl border border-gray-700 px-3 py-1.5 text-xs font-bold text-gray-400 transition hover:border-gray-500 hover:text-white"
+                className="shrink-0 rounded-xl border border-[rgb(var(--border))] bg-[rgb(var(--surface))] px-3 py-1.5 text-xs font-bold text-[rgb(var(--ink-2))] transition hover:border-[rgb(var(--ink-3))] hover:text-[rgb(var(--ink))]"
               >
                 {copied === "code" ? "✓ Copié" : "Copier"}
               </button>
               <button
                 onClick={() => handleRegenerate("code")}
                 disabled={regenerating === "code"}
-                className="shrink-0 rounded-xl border border-gray-700 px-3 py-1.5 text-xs font-bold text-gray-400 transition hover:border-gray-500 hover:text-white disabled:opacity-50"
+                className="shrink-0 rounded-xl border border-[rgb(var(--border))] bg-[rgb(var(--surface))] px-3 py-1.5 text-xs font-bold text-[rgb(var(--ink-2))] transition hover:border-[rgb(var(--ink-3))] hover:text-[rgb(var(--ink))] disabled:opacity-50"
               >
                 {regenerating === "code" ? "..." : "Régénérer"}
               </button>
@@ -588,27 +588,27 @@ export default function ClassDetailPage() {
 
           {/* Link */}
           <div>
-            <p className="text-xs font-bold uppercase tracking-widest text-gray-500">Lien d'invitation</p>
+            <p className="text-xs font-bold uppercase tracking-widest text-[rgb(var(--ink-3))]">Lien d&apos;invitation</p>
             <div className="mt-2 flex items-center gap-3">
-              <div className="flex-1 truncate rounded-xl bg-gray-950 px-4 py-3 font-mono text-xs text-gray-400">
+              <div className="flex-1 truncate rounded-xl bg-[rgb(var(--surface-3))] px-4 py-3 font-mono text-xs text-[rgb(var(--ink-2))]">
                 {inviteLink}
               </div>
               <button
                 onClick={() => handleCopy("link")}
-                className="shrink-0 rounded-xl border border-gray-700 px-3 py-1.5 text-xs font-bold text-gray-400 transition hover:border-gray-500 hover:text-white"
+                className="shrink-0 rounded-xl border border-[rgb(var(--border))] bg-[rgb(var(--surface))] px-3 py-1.5 text-xs font-bold text-[rgb(var(--ink-2))] transition hover:border-[rgb(var(--ink-3))] hover:text-[rgb(var(--ink))]"
               >
                 {copied === "link" ? "✓ Copié" : "Copier"}
               </button>
               <button
                 onClick={() => handleRegenerate("link")}
                 disabled={regenerating === "link"}
-                className="shrink-0 rounded-xl border border-gray-700 px-3 py-1.5 text-xs font-bold text-gray-400 transition hover:border-gray-500 hover:text-white disabled:opacity-50"
+                className="shrink-0 rounded-xl border border-[rgb(var(--border))] bg-[rgb(var(--surface))] px-3 py-1.5 text-xs font-bold text-[rgb(var(--ink-2))] transition hover:border-[rgb(var(--ink-3))] hover:text-[rgb(var(--ink))] disabled:opacity-50"
               >
                 {regenerating === "link" ? "..." : "Régénérer"}
               </button>
             </div>
-            <p className="mt-1.5 text-xs text-gray-600">
-              Régénérer le lien invalide l'ancien immédiatement.
+            <p className="mt-1.5 text-xs text-[rgb(var(--ink-3))]">
+              Régénérer le lien invalide l&apos;ancien immédiatement.
             </p>
           </div>
         </div>
@@ -621,8 +621,8 @@ export default function ClassDetailPage() {
               onClick={() => setPageTab(t)}
               className={`rounded-full px-4 py-1.5 text-sm font-bold transition ${
                 pageTab === t
-                  ? "bg-purple-500 text-gray-950"
-                  : "border border-gray-700 text-gray-500 hover:border-gray-600 hover:text-gray-300"
+                  ? "bg-[rgb(var(--accent))] text-white"
+                  : "border border-[rgb(var(--border))] bg-[rgb(var(--surface))] text-[rgb(var(--ink-2))] hover:border-[rgb(var(--ink-3))] hover:text-[rgb(var(--ink))]"
               }`}
             >
               {t === "members" ? `👥 Élèves (${activeMembers.length})` : "📋 Devoirs"}
@@ -632,9 +632,9 @@ export default function ClassDetailPage() {
 
         {/* Members section */}
         {pageTab === "members" && (
-          <div className="rounded-2xl border border-gray-800 bg-gray-900 p-5">
+          <div className="rounded-2xl border border-[rgb(var(--border))] bg-[rgb(var(--surface))] p-5">
             <div className="flex items-center justify-between gap-4">
-              <h2 className="font-black text-white">
+              <h2 className="font-black text-[rgb(var(--ink))]">
                 👥 Élèves ({activeMembers.length})
               </h2>
               <div className="flex gap-2">
@@ -644,8 +644,8 @@ export default function ClassDetailPage() {
                     onClick={() => setMemberTab(t)}
                     className={`rounded-full px-3 py-1 text-xs font-bold transition ${
                       memberTab === t
-                        ? "bg-purple-500 text-gray-950"
-                        : "border border-gray-700 text-gray-500 hover:border-gray-600 hover:text-gray-300"
+                        ? "bg-[rgb(var(--accent))] text-white"
+                        : "border border-[rgb(var(--border))] bg-[rgb(var(--surface))] text-[rgb(var(--ink-2))] hover:border-[rgb(var(--ink-3))] hover:text-[rgb(var(--ink))]"
                     }`}
                   >
                     {t === "active"
@@ -657,18 +657,18 @@ export default function ClassDetailPage() {
             </div>
 
             {visibleMembers.length === 0 ? (
-              <p className="mt-8 text-center text-sm italic text-gray-600">
+              <p className="mt-8 text-center text-sm italic text-[rgb(var(--ink-3))]">
                 {memberTab === "active"
                   ? "Aucun élève actif. Partage le code ou le lien d'invitation."
                   : "Aucun élève retiré."}
               </p>
             ) : (
-              <div className="mt-4 divide-y divide-gray-800">
+              <div className="mt-4 divide-y divide-[rgb(var(--border))]">
                 {visibleMembers.map((m) => (
                   <div key={m.id} className="flex items-center justify-between gap-4 py-3">
                     <div>
-                      <p className="text-sm font-bold text-white">{m.display_name}</p>
-                      <p className="text-xs text-gray-600">Rejoint le {formatDate(m.joined_at)}</p>
+                      <p className="text-sm font-bold text-[rgb(var(--ink))]">{m.display_name}</p>
+                      <p className="text-xs text-[rgb(var(--ink-3))]">Rejoint le {formatDate(m.joined_at)}</p>
                     </div>
                     <button
                       onClick={() =>
@@ -680,8 +680,8 @@ export default function ClassDetailPage() {
                       }
                       className={`rounded-lg border px-2 py-1 text-xs font-bold transition ${
                         m.status === "active"
-                          ? "border-red-800/50 text-red-500 hover:border-red-600 hover:text-red-400"
-                          : "border-gray-700 text-gray-400 hover:border-gray-500 hover:text-white"
+                          ? "border-[rgb(var(--red))]/40 text-[rgb(var(--red))] hover:border-[rgb(var(--red))]/70"
+                          : "border-[rgb(var(--border))] text-[rgb(var(--ink-2))] hover:border-[rgb(var(--ink-3))] hover:text-[rgb(var(--ink))]"
                       }`}
                     >
                       {m.status === "active" ? "Retirer" : "Réintégrer"}
@@ -695,8 +695,8 @@ export default function ClassDetailPage() {
 
         {/* Devoirs section */}
         {pageTab === "devoirs" && (
-          <div className="rounded-2xl border border-gray-800 bg-gray-900 p-5">
-            <h2 className="font-black text-white mb-4">📋 Devoirs</h2>
+          <div className="rounded-2xl border border-[rgb(var(--border))] bg-[rgb(var(--surface))] p-5">
+            <h2 className="mb-4 font-black text-[rgb(var(--ink))]">📋 Devoirs</h2>
             <AssignmentsTab classId={id} />
           </div>
         )}

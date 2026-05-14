@@ -59,9 +59,9 @@ const STATUS_LABEL: Record<string, string> = {
 };
 
 const STATUS_STYLE: Record<string, string> = {
-  pending: "border-gray-700 text-gray-500",
-  in_progress: "border-amber-600/40 text-amber-400",
-  completed: "border-green-600/40 text-green-400",
+  pending: "border-[rgb(var(--border))] text-[rgb(var(--ink-3))]",
+  in_progress: "border-[rgb(var(--warm))]/40 text-[rgb(var(--warm))]",
+  completed: "border-[rgb(var(--green))]/40 text-[rgb(var(--green))]",
 };
 
 function fmtDuration(seconds: number | null): string {
@@ -182,7 +182,7 @@ export default function AssignmentDetailPage() {
     return (
       <th
         onClick={() => toggleSort(k)}
-        className="px-3 py-2 text-left text-xs font-bold text-gray-500 cursor-pointer select-none hover:text-gray-300"
+        className="cursor-pointer select-none px-3 py-2 text-left text-xs font-bold text-[rgb(var(--ink-3))] hover:text-[rgb(var(--ink-2))]"
       >
         {label}
         {sortKey === k && <span className="ml-1">{sortAsc ? "↑" : "↓"}</span>}
@@ -192,11 +192,11 @@ export default function AssignmentDetailPage() {
 
   if (loading) {
     return (
-      <main className="min-h-screen bg-gray-950 px-4 py-8">
+      <main className="min-h-screen bg-[rgb(var(--surface-2))] px-4 py-8">
         <div className="mx-auto max-w-4xl space-y-4">
-          <div className="h-4 w-24 animate-pulse rounded bg-gray-800" />
-          <div className="h-8 w-64 animate-pulse rounded bg-gray-800" />
-          <div className="h-48 animate-pulse rounded-2xl bg-gray-800" />
+          <div className="h-4 w-24 animate-pulse rounded bg-[rgb(var(--surface-3))]" />
+          <div className="h-8 w-64 animate-pulse rounded bg-[rgb(var(--surface-3))]" />
+          <div className="h-48 animate-pulse rounded-2xl bg-[rgb(var(--surface-3))]" />
         </div>
       </main>
     );
@@ -207,10 +207,10 @@ export default function AssignmentDetailPage() {
   const isQuiz = assignment.resource_type === "quiz";
 
   return (
-    <main className="min-h-screen bg-gray-950 px-4 py-8 text-white">
+    <main className="min-h-screen bg-[rgb(var(--surface-2))] px-4 py-8 text-[rgb(var(--ink))]">
       <div className="mx-auto w-full max-w-4xl space-y-6">
 
-        <a href={`/school/classes/${classId}`} className="text-xs text-gray-500 hover:text-gray-400">
+        <a href={`/school/classes/${classId}`} className="text-xs text-[rgb(var(--ink-3))] hover:text-[rgb(var(--ink-2))]">
           ← Retour à la classe
         </a>
 
@@ -218,33 +218,33 @@ export default function AssignmentDetailPage() {
         <div className="flex items-start justify-between gap-4">
           <div>
             <div className="flex items-center gap-2">
-              <span className="rounded-full border border-gray-700 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-gray-400">
+              <span className="rounded-full border border-[rgb(var(--border))] bg-[rgb(var(--surface))] px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-[rgb(var(--ink-2))]">
                 {isQuiz ? "🧠 Quiz" : "📄 PDF"}
               </span>
-              <h1 className="text-2xl font-black text-white">{assignment.title}</h1>
+              <h1 className="serif text-2xl font-black text-[rgb(var(--ink))]">{assignment.title}</h1>
             </div>
-            <p className="mt-1 text-sm text-gray-500">{assignment.course_title}</p>
+            <p className="mt-1 text-sm text-[rgb(var(--ink-2))]">{assignment.course_title}</p>
             {assignment.due_date && (
-              <p className="text-xs text-amber-400">📅 Avant le {fmtDate(assignment.due_date)}</p>
+              <p className="text-xs text-[rgb(var(--warm))]">📅 Avant le {fmtDate(assignment.due_date)}</p>
             )}
           </div>
           <div className="flex shrink-0 gap-2">
             <button
               onClick={handleExport}
               disabled={exporting}
-              className="rounded-xl border border-gray-700 px-3 py-1.5 text-xs font-bold text-gray-400 transition hover:border-gray-500 hover:text-white disabled:opacity-50"
+              className="rounded-xl border border-[rgb(var(--border))] bg-[rgb(var(--surface))] px-3 py-1.5 text-xs font-bold text-[rgb(var(--ink-2))] transition hover:border-[rgb(var(--ink-3))] hover:text-[rgb(var(--ink))] disabled:opacity-50"
             >
               {exporting ? "Export..." : "📥 Exporter CSV"}
             </button>
             <button
               onClick={() => setEditing(true)}
-              className="rounded-xl border border-gray-700 px-3 py-1.5 text-xs font-bold text-gray-400 transition hover:border-gray-500 hover:text-white"
+              className="rounded-xl border border-[rgb(var(--border))] bg-[rgb(var(--surface))] px-3 py-1.5 text-xs font-bold text-[rgb(var(--ink-2))] transition hover:border-[rgb(var(--ink-3))] hover:text-[rgb(var(--ink))]"
             >
               Modifier
             </button>
             <button
               onClick={handleArchive}
-              className="rounded-xl border border-red-800/50 px-3 py-1.5 text-xs font-bold text-red-500 transition hover:border-red-600 hover:text-red-400"
+              className="rounded-xl border border-[rgb(var(--red))]/40 bg-[rgb(var(--surface))] px-3 py-1.5 text-xs font-bold text-[rgb(var(--red))] transition hover:border-[rgb(var(--red))]/70"
             >
               Archiver
             </button>
@@ -253,46 +253,46 @@ export default function AssignmentDetailPage() {
 
         {/* Edit form */}
         {editing && (
-          <div className="rounded-2xl border border-purple-500/30 bg-gray-900 p-5 space-y-4">
-            <h3 className="font-black text-white">Modifier le devoir</h3>
+          <div className="space-y-4 rounded-2xl border border-[rgb(var(--accent))]/30 bg-[rgb(var(--surface))] p-5">
+            <h3 className="font-black text-[rgb(var(--ink))]">Modifier le devoir</h3>
             <div>
-              <label className="text-xs font-bold text-gray-400">Titre</label>
+              <label className="text-xs font-bold text-[rgb(var(--ink-2))]">Titre</label>
               <input
                 type="text"
                 value={editTitle}
                 onChange={(e) => setEditTitle(e.target.value)}
-                className="mt-1 w-full rounded-xl border border-gray-700 bg-gray-950 px-3 py-2.5 text-sm text-white outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500/40"
+                className="mt-1 w-full rounded-xl border border-[rgb(var(--border))] bg-[rgb(var(--surface))] px-3 py-2.5 text-sm text-[rgb(var(--ink))] outline-none focus:border-[rgb(var(--accent))] focus:ring-2 focus:ring-[rgb(var(--accent))]/30"
               />
             </div>
             <div>
-              <label className="text-xs font-bold text-gray-400">Description</label>
+              <label className="text-xs font-bold text-[rgb(var(--ink-2))]">Description</label>
               <textarea
                 value={editDesc}
                 onChange={(e) => setEditDesc(e.target.value)}
                 rows={2}
-                className="mt-1 w-full resize-none rounded-xl border border-gray-700 bg-gray-950 px-3 py-2.5 text-sm text-white outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500/40"
+                className="mt-1 w-full resize-none rounded-xl border border-[rgb(var(--border))] bg-[rgb(var(--surface))] px-3 py-2.5 text-sm text-[rgb(var(--ink))] outline-none focus:border-[rgb(var(--accent))] focus:ring-2 focus:ring-[rgb(var(--accent))]/30"
               />
             </div>
             <div>
-              <label className="text-xs font-bold text-gray-400">Date limite</label>
+              <label className="text-xs font-bold text-[rgb(var(--ink-2))]">Date limite</label>
               <input
                 type="datetime-local"
                 value={editDue}
                 onChange={(e) => setEditDue(e.target.value)}
-                className="mt-1 w-full rounded-xl border border-gray-700 bg-gray-950 px-3 py-2.5 text-sm text-white outline-none focus:border-purple-500"
+                className="mt-1 w-full rounded-xl border border-[rgb(var(--border))] bg-[rgb(var(--surface))] px-3 py-2.5 text-sm text-[rgb(var(--ink))] outline-none focus:border-[rgb(var(--accent))]"
               />
             </div>
             <div className="flex gap-3">
               <button
                 onClick={() => setEditing(false)}
-                className="flex-1 rounded-2xl border border-gray-700 py-2.5 text-sm font-bold text-gray-400 transition hover:text-white"
+                className="flex-1 rounded-2xl border border-[rgb(var(--border))] py-2.5 text-sm font-bold text-[rgb(var(--ink-2))] transition hover:border-[rgb(var(--ink-3))] hover:text-[rgb(var(--ink))]"
               >
                 Annuler
               </button>
               <button
                 onClick={handleSave}
                 disabled={saving}
-                className="flex-1 rounded-2xl bg-purple-500 py-2.5 text-sm font-black text-gray-950 transition hover:bg-purple-400 disabled:opacity-50"
+                className="flex-1 rounded-2xl bg-[rgb(var(--accent))] py-2.5 text-sm font-black text-white transition hover:opacity-90 disabled:opacity-50"
               >
                 {saving ? "Enregistrement..." : "Enregistrer"}
               </button>
@@ -301,7 +301,7 @@ export default function AssignmentDetailPage() {
         )}
 
         {/* Tabs */}
-        <div className="flex gap-1 rounded-xl border border-gray-800 bg-gray-900 p-1">
+        <div className="flex gap-1 rounded-xl border border-[rgb(var(--border))] bg-[rgb(var(--surface))] p-1">
           {([
             { key: "overview", label: "Vue d'ensemble" },
             { key: "students", label: "Élèves" },
@@ -312,8 +312,8 @@ export default function AssignmentDetailPage() {
               onClick={() => setActiveTab(key)}
               className={`flex-1 rounded-lg py-2 text-sm font-bold transition ${
                 activeTab === key
-                  ? "bg-purple-500 text-gray-950"
-                  : "text-gray-500 hover:text-gray-300"
+                  ? "bg-[rgb(var(--accent))] text-white"
+                  : "text-[rgb(var(--ink-2))] hover:text-[rgb(var(--ink))]"
               }`}
             >
               {label}
@@ -325,33 +325,33 @@ export default function AssignmentDetailPage() {
         {activeTab === "overview" && overview && (
           <div className="space-y-4">
             <div className={`grid gap-3 ${isQuiz ? "grid-cols-2 sm:grid-cols-4" : "grid-cols-3"}`}>
-              <div className="rounded-2xl border border-gray-800 bg-gray-900 p-4 text-center">
-                <p className="text-2xl font-black text-white">{overview.nb_completed}/{overview.nb_total}</p>
-                <p className="mt-0.5 text-xs text-gray-500">Ont terminé</p>
+              <div className="rounded-2xl border border-[rgb(var(--border))] bg-[rgb(var(--surface))] p-4 text-center">
+                <p className="text-2xl font-black text-[rgb(var(--ink))]">{overview.nb_completed}/{overview.nb_total}</p>
+                <p className="mt-0.5 text-xs text-[rgb(var(--ink-3))]">Ont terminé</p>
               </div>
-              <div className="rounded-2xl border border-gray-800 bg-gray-900 p-4 text-center">
-                <p className="text-2xl font-black text-white">
+              <div className="rounded-2xl border border-[rgb(var(--border))] bg-[rgb(var(--surface))] p-4 text-center">
+                <p className="text-2xl font-black text-[rgb(var(--ink))]">
                   {overview.nb_total > 0 ? Math.round((overview.nb_completed / overview.nb_total) * 100) : 0}%
                 </p>
-                <p className="mt-0.5 text-xs text-gray-500">Complétion</p>
+                <p className="mt-0.5 text-xs text-[rgb(var(--ink-3))]">Complétion</p>
               </div>
               {isQuiz && (
                 <>
-                  <div className="rounded-2xl border border-gray-800 bg-gray-900 p-4 text-center">
-                    <p className="text-2xl font-black text-white">
+                  <div className="rounded-2xl border border-[rgb(var(--border))] bg-[rgb(var(--surface))] p-4 text-center">
+                    <p className="text-2xl font-black text-[rgb(var(--ink))]">
                       {overview.avg_score !== null ? `${overview.avg_score}%` : "—"}
                     </p>
-                    <p className="mt-0.5 text-xs text-gray-500">Score moyen</p>
+                    <p className="mt-0.5 text-xs text-[rgb(var(--ink-3))]">Score moyen</p>
                   </div>
-                  <div className="rounded-2xl border border-gray-800 bg-gray-900 p-4">
-                    <p className="mb-2 text-center text-xs text-gray-500">Répartition</p>
+                  <div className="rounded-2xl border border-[rgb(var(--border))] bg-[rgb(var(--surface))] p-4">
+                    <p className="mb-2 text-center text-xs text-[rgb(var(--ink-3))]">Répartition</p>
                     <div className="flex justify-center gap-2">
                       {(["A", "B", "C", "D"] as const).map((g) => (
                         <div key={g} className="flex flex-col items-center gap-0.5">
                           <span className={`rounded-full border px-1.5 py-0.5 text-[10px] font-black ${GRADE_STYLE[g]}`}>
                             {g}
                           </span>
-                          <span className="text-[11px] font-bold text-gray-400">{overview.grade_dist[g] ?? 0}</span>
+                          <span className="text-[11px] font-bold text-[rgb(var(--ink-2))]">{overview.grade_dist[g] ?? 0}</span>
                         </div>
                       ))}
                     </div>
@@ -362,11 +362,11 @@ export default function AssignmentDetailPage() {
 
             {isQuiz && overview.nb_new !== null && (
               <div className="flex flex-wrap gap-2">
-                <span className="rounded-full border border-purple-500/30 bg-purple-500/10 px-3 py-1 text-xs font-bold text-purple-300">
+                <span className="rounded-full border border-[rgb(var(--accent))]/30 bg-[rgb(var(--accent))]/10 px-3 py-1 text-xs font-bold text-[rgb(var(--accent))]">
                   📚 Chapitre : {overview.nb_new} question{overview.nb_new !== 1 ? "s" : ""}
                 </span>
                 {(overview.nb_recall ?? 0) > 0 && (
-                  <span className="rounded-full border border-cyan-500/30 bg-cyan-500/10 px-3 py-1 text-xs font-bold text-cyan-300">
+                  <span className="rounded-full border border-sky-300 bg-sky-50 px-3 py-1 text-xs font-bold text-sky-700">
                     🔄 Rappel : {overview.nb_recall} question{(overview.nb_recall ?? 0) !== 1 ? "s" : ""}
                   </span>
                 )}
@@ -375,15 +375,15 @@ export default function AssignmentDetailPage() {
 
             {isQuiz && (
               <div className="grid grid-cols-2 gap-3">
-                <div className="rounded-2xl border border-amber-800/30 bg-amber-950/20 p-4">
-                  <p className="text-xs font-bold text-amber-400">Ont demandé la solution</p>
-                  <p className="mt-1 text-2xl font-black text-white">{overview.nb_requested_solution}</p>
-                  <p className="text-xs text-gray-500">élève{overview.nb_requested_solution !== 1 ? "s" : ""}</p>
+                <div className="rounded-2xl border border-[rgb(var(--warm))]/30 bg-[rgb(var(--warm))]/5 p-4">
+                  <p className="text-xs font-bold text-[rgb(var(--warm))]">Ont demandé la solution</p>
+                  <p className="mt-1 text-2xl font-black text-[rgb(var(--ink))]">{overview.nb_requested_solution}</p>
+                  <p className="text-xs text-[rgb(var(--ink-3))]">élève{overview.nb_requested_solution !== 1 ? "s" : ""}</p>
                 </div>
-                <div className="rounded-2xl border border-blue-800/30 bg-blue-950/20 p-4">
-                  <p className="text-xs font-bold text-blue-400">Ont demandé de l&apos;aide</p>
-                  <p className="mt-1 text-2xl font-black text-white">{overview.nb_requested_explanation}</p>
-                  <p className="text-xs text-gray-500">élève{overview.nb_requested_explanation !== 1 ? "s" : ""}</p>
+                <div className="rounded-2xl border border-sky-300 bg-sky-50 p-4">
+                  <p className="text-xs font-bold text-sky-700">Ont demandé de l&apos;aide</p>
+                  <p className="mt-1 text-2xl font-black text-[rgb(var(--ink))]">{overview.nb_requested_explanation}</p>
+                  <p className="text-xs text-[rgb(var(--ink-3))]">élève{overview.nb_requested_explanation !== 1 ? "s" : ""}</p>
                 </div>
               </div>
             )}
@@ -400,8 +400,8 @@ export default function AssignmentDetailPage() {
                   onClick={() => setStatusFilter(f)}
                   className={`rounded-full px-3 py-1 text-xs font-bold transition ${
                     statusFilter === f
-                      ? "bg-purple-500 text-gray-950"
-                      : "border border-gray-700 text-gray-500 hover:border-gray-600 hover:text-gray-300"
+                      ? "bg-[rgb(var(--accent))] text-white"
+                      : "border border-[rgb(var(--border))] bg-[rgb(var(--surface))] text-[rgb(var(--ink-2))] hover:border-[rgb(var(--ink-3))] hover:text-[rgb(var(--ink))]"
                   }`}
                 >
                   {f === "all" ? "Tous" : STATUS_LABEL[f]}
@@ -409,13 +409,13 @@ export default function AssignmentDetailPage() {
               ))}
             </div>
 
-            <div className="overflow-hidden rounded-2xl border border-gray-800 bg-gray-900">
+            <div className="overflow-hidden rounded-2xl border border-[rgb(var(--border))] bg-[rgb(var(--surface))]">
               {visible.length === 0 ? (
-                <p className="py-10 text-center text-sm italic text-gray-600">Aucun élève dans cette catégorie.</p>
+                <p className="py-10 text-center text-sm italic text-[rgb(var(--ink-3))]">Aucun élève dans cette catégorie.</p>
               ) : (
                 <div className="overflow-x-auto">
                   <table className="w-full text-sm">
-                    <thead className="border-b border-gray-800">
+                    <thead className="border-b border-[rgb(var(--border))] bg-[rgb(var(--surface-2))]">
                       <tr>
                         <SortTh label="Élève" k="display_name" />
                         <SortTh label="Statut" k="status" />
@@ -430,20 +430,20 @@ export default function AssignmentDetailPage() {
                         <SortTh label="Dernière activité" k="last_attempt_at" />
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-gray-800/60">
+                    <tbody className="divide-y divide-[rgb(var(--border))]">
                       {visible.map((s) => (
-                        <tr key={s.student_user_id} className="hover:bg-gray-800/30">
-                          <td className="px-3 py-3 font-medium text-white">{s.display_name}</td>
+                        <tr key={s.student_user_id} className="hover:bg-[rgb(var(--surface-3))]">
+                          <td className="px-3 py-3 font-medium text-[rgb(var(--ink))]">{s.display_name}</td>
                           <td className="px-3 py-3">
-                            <span className={`rounded-full border px-2 py-0.5 text-[11px] font-bold ${STATUS_STYLE[s.status]}`}>
+                            <span className={`rounded-full border bg-[rgb(var(--surface))] px-2 py-0.5 text-[11px] font-bold ${STATUS_STYLE[s.status]}`}>
                               {STATUS_LABEL[s.status]}
                             </span>
                           </td>
                           {isQuiz && (
                             <>
-                              <td className="px-3 py-3 text-gray-300">
+                              <td className="px-3 py-3 text-[rgb(var(--ink-2))]">
                                 {s.score !== null ? (
-                                  <span className={Number(s.score) >= 80 ? "text-green-400 font-bold" : Number(s.score) >= 50 ? "text-amber-400 font-bold" : "text-red-400 font-bold"}>
+                                  <span className={Number(s.score) >= 80 ? "font-bold text-[rgb(var(--green))]" : Number(s.score) >= 50 ? "font-bold text-[rgb(var(--warm))]" : "font-bold text-[rgb(var(--red))]"}>
                                     {Math.round(Number(s.score))}%
                                   </span>
                                 ) : "—"}
@@ -456,11 +456,11 @@ export default function AssignmentDetailPage() {
                                   {s.letter_grade}
                                 </span>
                               </td>
-                              <td className="px-3 py-3 text-gray-400">{fmtDuration(s.duration_seconds)}</td>
-                              <td className="px-3 py-3 text-gray-400">{s.attempts_count || "—"}</td>
+                              <td className="px-3 py-3 text-[rgb(var(--ink-2))]">{fmtDuration(s.duration_seconds)}</td>
+                              <td className="px-3 py-3 text-[rgb(var(--ink-2))]">{s.attempts_count || "—"}</td>
                             </>
                           )}
-                          <td className="px-3 py-3 text-gray-500 text-xs">
+                          <td className="px-3 py-3 text-xs text-[rgb(var(--ink-3))]">
                             {fmtDate(s.last_attempt_at ?? s.completed_at)}
                           </td>
                         </tr>
@@ -475,22 +475,22 @@ export default function AssignmentDetailPage() {
 
         {/* ── Tab: Top erreurs ────────────────────────────────────────────── */}
         {activeTab === "top_errors" && (
-          <div className="rounded-2xl border border-gray-800 bg-gray-900">
+          <div className="rounded-2xl border border-[rgb(var(--border))] bg-[rgb(var(--surface))]">
             {topErrors.length === 0 ? (
-              <p className="py-10 text-center text-sm italic text-gray-600">
+              <p className="py-10 text-center text-sm italic text-[rgb(var(--ink-3))]">
                 Aucune donnée de réponse disponible.
               </p>
             ) : (
-              <div className="divide-y divide-gray-800/60">
+              <div className="divide-y divide-[rgb(var(--border))]">
                 {topErrors.map((e, i) => (
                   <div key={e.question_id} className="flex items-start gap-4 px-4 py-3">
-                    <span className="mt-0.5 shrink-0 text-xs font-black text-gray-600">#{i + 1}</span>
+                    <span className="mt-0.5 shrink-0 text-xs font-black text-[rgb(var(--ink-3))]">#{i + 1}</span>
                     <div className="min-w-0 flex-1">
-                      <p className="text-sm text-gray-200 leading-snug">{e.question}</p>
+                      <p className="text-sm leading-snug text-[rgb(var(--ink))]">{e.question}</p>
                     </div>
                     <div className="shrink-0 text-right">
-                      <p className="text-sm font-black text-red-400">{e.error_rate}%</p>
-                      <p className="text-[11px] text-gray-600">{e.wrong_count}/{e.total_answers} erreurs</p>
+                      <p className="text-sm font-black text-[rgb(var(--red))]">{e.error_rate}%</p>
+                      <p className="text-[11px] text-[rgb(var(--ink-3))]">{e.wrong_count}/{e.total_answers} erreurs</p>
                     </div>
                   </div>
                 ))}

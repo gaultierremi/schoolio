@@ -132,25 +132,25 @@ export default function NewAssignmentPage() {
   const chapterRangeComplete = chapterPageStart !== "" && chapterPageEnd !== "";
 
   return (
-    <main className="min-h-screen bg-gray-950 px-4 py-8 text-white">
+    <main className="min-h-screen bg-[rgb(var(--surface-2))] px-4 py-8 text-[rgb(var(--ink))]">
       <div className="mx-auto w-full max-w-xl">
         <a
           href={`/school/classes/${classId}`}
-          className="text-xs text-gray-500 hover:text-gray-400"
+          className="text-xs text-[rgb(var(--ink-3))] hover:text-[rgb(var(--ink-2))]"
         >
           ← Retour à la classe
         </a>
 
-        <h1 className="mt-4 text-2xl font-black text-white">📋 Créer un devoir</h1>
+        <h1 className="serif mt-4 text-2xl font-black text-[rgb(var(--ink))]">📋 Créer un devoir</h1>
 
         <form
           onSubmit={handleSubmit}
-          className="mt-6 space-y-5 rounded-2xl border border-gray-800 bg-gray-900 p-6"
+          className="mt-6 space-y-5 rounded-2xl border border-[rgb(var(--border))] bg-[rgb(var(--surface))] p-6"
         >
           {/* Title */}
           <div>
-            <label className="block text-sm font-bold text-gray-200">
-              Titre <span className="text-red-400">*</span>
+            <label className="block text-sm font-bold text-[rgb(var(--ink))]">
+              Titre <span className="text-[rgb(var(--red))]">*</span>
             </label>
             <input
               type="text"
@@ -158,28 +158,28 @@ export default function NewAssignmentPage() {
               maxLength={120}
               onChange={(e) => setTitle(e.target.value)}
               placeholder="ex: Chapitre 3 — Lecture"
-              className="mt-2 w-full rounded-xl border border-gray-700 bg-gray-950 px-4 py-3 text-sm text-white outline-none placeholder:text-gray-600 focus:border-purple-500 focus:ring-2 focus:ring-purple-500/40"
+              className="mt-2 w-full rounded-xl border border-[rgb(var(--border))] bg-[rgb(var(--surface))] px-4 py-3 text-sm text-[rgb(var(--ink))] outline-none placeholder:text-[rgb(var(--ink-3))] focus:border-[rgb(var(--accent))] focus:ring-2 focus:ring-[rgb(var(--accent))]/30"
             />
           </div>
 
           {/* Description */}
           <div>
-            <label className="block text-sm font-bold text-gray-200">
-              Description <span className="text-gray-600 font-normal">(optionnel)</span>
+            <label className="block text-sm font-bold text-[rgb(var(--ink))]">
+              Description <span className="font-normal text-[rgb(var(--ink-3))]">(optionnel)</span>
             </label>
             <textarea
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               rows={2}
               placeholder="Instructions pour les élèves…"
-              className="mt-2 w-full rounded-xl border border-gray-700 bg-gray-950 px-4 py-3 text-sm text-white outline-none placeholder:text-gray-600 focus:border-purple-500 focus:ring-2 focus:ring-purple-500/40 resize-none"
+              className="mt-2 w-full resize-none rounded-xl border border-[rgb(var(--border))] bg-[rgb(var(--surface))] px-4 py-3 text-sm text-[rgb(var(--ink))] outline-none placeholder:text-[rgb(var(--ink-3))] focus:border-[rgb(var(--accent))] focus:ring-2 focus:ring-[rgb(var(--accent))]/30"
             />
           </div>
 
           {/* Type */}
           <div>
-            <label className="block text-sm font-bold text-gray-200">
-              Type de devoir <span className="text-red-400">*</span>
+            <label className="block text-sm font-bold text-[rgb(var(--ink))]">
+              Type de devoir <span className="text-[rgb(var(--red))]">*</span>
             </label>
             <div className="mt-2 flex gap-2">
               {(["pdf", "quiz"] as const).map((t) => (
@@ -189,8 +189,8 @@ export default function NewAssignmentPage() {
                   onClick={() => { setResourceType(t); setResourceId(""); }}
                   className={`flex-1 rounded-xl border py-2.5 text-sm font-bold transition ${
                     resourceType === t
-                      ? "border-purple-500 bg-purple-500/20 text-purple-300"
-                      : "border-gray-700 text-gray-500 hover:border-gray-600 hover:text-gray-300"
+                      ? "border-[rgb(var(--accent))] bg-[rgb(var(--accent))]/10 text-[rgb(var(--accent))]"
+                      : "border-[rgb(var(--border))] bg-[rgb(var(--surface))] text-[rgb(var(--ink-2))] hover:border-[rgb(var(--ink-3))] hover:text-[rgb(var(--ink))]"
                   }`}
                 >
                   {t === "pdf" ? "📄 PDF à lire" : "🧠 Quiz"}
@@ -201,13 +201,13 @@ export default function NewAssignmentPage() {
 
           {/* Course selector */}
           <div>
-            <label className="block text-sm font-bold text-gray-200">
-              Cours <span className="text-red-400">*</span>
+            <label className="block text-sm font-bold text-[rgb(var(--ink))]">
+              Cours <span className="text-[rgb(var(--red))]">*</span>
             </label>
             {coursesLoading ? (
-              <div className="mt-2 h-10 animate-pulse rounded-xl bg-gray-800" />
+              <div className="mt-2 h-10 animate-pulse rounded-xl bg-[rgb(var(--surface-3))]" />
             ) : filteredCourses.length === 0 ? (
-              <div className="mt-2 rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-300">
+              <div className="mt-2 rounded-xl border border-[rgb(var(--warm))]/40 bg-[rgb(var(--warm))]/10 px-4 py-3 text-sm text-[rgb(var(--warm))]">
                 {resourceType === "pdf"
                   ? "Aucun cours avec PDF. Importe d'abord un PDF dans ta bibliothèque de cours."
                   : "Aucun cours avec des questions validées. Crée et valide des questions depuis tes cours."}
@@ -216,7 +216,7 @@ export default function NewAssignmentPage() {
               <select
                 value={resourceId}
                 onChange={(e) => setResourceId(e.target.value)}
-                className="mt-2 w-full rounded-xl border border-gray-700 bg-gray-950 px-4 py-3 text-sm text-white outline-none focus:border-purple-500"
+                className="mt-2 w-full rounded-xl border border-[rgb(var(--border))] bg-[rgb(var(--surface))] px-4 py-3 text-sm text-[rgb(var(--ink))] outline-none focus:border-[rgb(var(--accent))]"
               >
                 <option value="">— Sélectionner un cours —</option>
                 {filteredCourses.map((c) => (
@@ -230,12 +230,12 @@ export default function NewAssignmentPage() {
 
           {/* Quiz-specific config */}
           {resourceType === "quiz" && resourceId && (
-            <div className="space-y-4 rounded-xl border border-gray-700 bg-gray-950/50 p-4">
-              <p className="text-xs font-black uppercase tracking-widest text-gray-500">Configuration du quiz</p>
+            <div className="space-y-4 rounded-xl border border-[rgb(var(--border))] bg-[rgb(var(--surface-2))] p-4">
+              <p className="text-xs font-black uppercase tracking-widest text-[rgb(var(--ink-3))]">Configuration du quiz</p>
 
               {/* Questions count */}
               <div>
-                <label className="block text-sm font-bold text-gray-200">
+                <label className="block text-sm font-bold text-[rgb(var(--ink))]">
                   Nombre de questions
                 </label>
                 <div className="mt-2 flex items-center gap-3">
@@ -245,17 +245,17 @@ export default function NewAssignmentPage() {
                     max={30}
                     value={questionsCount}
                     onChange={(e) => setQuestionsCount(Number(e.target.value))}
-                    className="flex-1 accent-purple-500"
+                    className="flex-1 accent-[rgb(var(--accent))]"
                   />
-                  <span className="w-8 text-center font-black text-white text-lg">{questionsCount}</span>
+                  <span className="w-8 text-center text-lg font-black text-[rgb(var(--ink))]">{questionsCount}</span>
                 </div>
-                <p className="mt-1 text-xs text-gray-600">entre 5 et 30 questions</p>
+                <p className="mt-1 text-xs text-[rgb(var(--ink-3))]">entre 5 et 30 questions</p>
               </div>
 
               {/* Chapter page range */}
               <div>
-                <label className="block text-sm font-bold text-gray-200">
-                  Pages du chapitre <span className="text-gray-600 font-normal">(optionnel)</span>
+                <label className="block text-sm font-bold text-[rgb(var(--ink))]">
+                  Pages du chapitre <span className="font-normal text-[rgb(var(--ink-3))]">(optionnel)</span>
                 </label>
                 <div className="mt-2 flex items-center gap-2">
                   <input
@@ -264,19 +264,19 @@ export default function NewAssignmentPage() {
                     value={chapterPageStart}
                     onChange={(e) => setChapterPageStart(e.target.value)}
                     placeholder="De"
-                    className="w-24 rounded-xl border border-gray-700 bg-gray-950 px-3 py-2 text-sm text-white outline-none focus:border-purple-500"
+                    className="w-24 rounded-xl border border-[rgb(var(--border))] bg-[rgb(var(--surface))] px-3 py-2 text-sm text-[rgb(var(--ink))] outline-none focus:border-[rgb(var(--accent))]"
                   />
-                  <span className="text-gray-600">à</span>
+                  <span className="text-[rgb(var(--ink-3))]">à</span>
                   <input
                     type="number"
                     min={1}
                     value={chapterPageEnd}
                     onChange={(e) => setChapterPageEnd(e.target.value)}
                     placeholder="À"
-                    className="w-24 rounded-xl border border-gray-700 bg-gray-950 px-3 py-2 text-sm text-white outline-none focus:border-purple-500"
+                    className="w-24 rounded-xl border border-[rgb(var(--border))] bg-[rgb(var(--surface))] px-3 py-2 text-sm text-[rgb(var(--ink))] outline-none focus:border-[rgb(var(--accent))]"
                   />
                 </div>
-                <p className="mt-1 text-xs text-gray-600">
+                <p className="mt-1 text-xs text-[rgb(var(--ink-3))]">
                   Limite les questions aux pages de ce chapitre
                 </p>
               </div>
@@ -285,16 +285,16 @@ export default function NewAssignmentPage() {
               <div>
                 <div className="flex items-center justify-between">
                   <div>
-                    <label className="text-sm font-bold text-gray-200">
+                    <label className="text-sm font-bold text-[rgb(var(--ink))]">
                       Rappel des chapitres précédents
                     </label>
                     {recallDisabled ? (
-                      <p className="mt-0.5 text-xs text-gray-600">
+                      <p className="mt-0.5 text-xs text-[rgb(var(--ink-3))]">
                         {priorCountLoading ? "Vérification…" : "Disponible dès le 2ème devoir sur ce cours"}
                       </p>
                     ) : (
                       !chapterRangeComplete && (
-                        <p className="mt-0.5 text-xs text-gray-600">Spécifie une plage de pages pour activer</p>
+                        <p className="mt-0.5 text-xs text-[rgb(var(--ink-3))]">Spécifie une plage de pages pour activer</p>
                       )
                     )}
                   </div>
@@ -304,8 +304,8 @@ export default function NewAssignmentPage() {
                     onClick={() => setEnableRecall((v) => !v)}
                     className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full border-2 transition-colors focus:outline-none disabled:opacity-40 ${
                       enableRecall
-                        ? "border-purple-500 bg-purple-500"
-                        : "border-gray-600 bg-gray-800"
+                        ? "border-[rgb(var(--accent))] bg-[rgb(var(--accent))]"
+                        : "border-[rgb(var(--border))] bg-[rgb(var(--surface-3))]"
                     }`}
                   >
                     <span
@@ -318,9 +318,9 @@ export default function NewAssignmentPage() {
 
                 {enableRecall && (
                   <div className="mt-3">
-                    <label className="text-xs text-gray-400">
-                      Part de rappel : <span className="font-black text-purple-300">{recallPct}%</span>
-                      <span className="ml-2 text-gray-600">({100 - recallPct}% chapitre)</span>
+                    <label className="text-xs text-[rgb(var(--ink-2))]">
+                      Part de rappel : <span className="font-black text-[rgb(var(--accent))]">{recallPct}%</span>
+                      <span className="ml-2 text-[rgb(var(--ink-3))]">({100 - recallPct}% chapitre)</span>
                     </label>
                     <input
                       type="range"
@@ -329,7 +329,7 @@ export default function NewAssignmentPage() {
                       step={5}
                       value={recallPct}
                       onChange={(e) => setRecallPct(Number(e.target.value))}
-                      className="mt-1 w-full accent-purple-500"
+                      className="mt-1 w-full accent-[rgb(var(--accent))]"
                     />
                   </div>
                 )}
@@ -339,19 +339,19 @@ export default function NewAssignmentPage() {
 
           {/* Due date */}
           <div>
-            <label className="block text-sm font-bold text-gray-200">
-              Date limite <span className="text-gray-600 font-normal">(optionnel)</span>
+            <label className="block text-sm font-bold text-[rgb(var(--ink))]">
+              Date limite <span className="font-normal text-[rgb(var(--ink-3))]">(optionnel)</span>
             </label>
             <input
               type="datetime-local"
               value={dueDate}
               onChange={(e) => setDueDate(e.target.value)}
-              className="mt-2 w-full rounded-xl border border-gray-700 bg-gray-950 px-4 py-3 text-sm text-white outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500/40"
+              className="mt-2 w-full rounded-xl border border-[rgb(var(--border))] bg-[rgb(var(--surface))] px-4 py-3 text-sm text-[rgb(var(--ink))] outline-none focus:border-[rgb(var(--accent))] focus:ring-2 focus:ring-[rgb(var(--accent))]/30"
             />
           </div>
 
           {error && (
-            <div className="rounded-2xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm font-bold text-red-300">
+            <div className="rounded-2xl border border-[rgb(var(--red))]/30 bg-[rgb(var(--red))]/10 px-4 py-3 text-sm font-bold text-[rgb(var(--red))]">
               {error}
             </div>
           )}
@@ -359,7 +359,7 @@ export default function NewAssignmentPage() {
           <button
             type="submit"
             disabled={submitting || !title.trim() || !resourceId}
-            className="w-full rounded-2xl bg-purple-500 py-3.5 font-black text-gray-950 transition hover:bg-purple-400 disabled:cursor-not-allowed disabled:opacity-50"
+            className="w-full rounded-2xl bg-[rgb(var(--accent))] py-3.5 font-black text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
           >
             {submitting ? "Création..." : "Créer le devoir"}
           </button>
