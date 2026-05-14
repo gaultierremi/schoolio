@@ -87,6 +87,7 @@ export async function extractChapters(
     responseSchema: CHAPTERS_SCHEMA,
     maxTokens: 4096, // Petite output, marge confortable
     cacheTtlMs: 0,
+    model: "anthropic_haiku", // Haiku pour la vitesse, TOC est tâche simple
   });
 
   const parsed = parseChaptersResponse(response.text);
