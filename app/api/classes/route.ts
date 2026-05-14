@@ -106,11 +106,29 @@ export async function POST(req: NextRequest) {
       level?: string | null;
       subject?: string | null;
       parent_class_id?: string | null;
+      invitation_expires_at?: string | null;
     };
 
     const name = (body.name ?? "").trim();
     if (name.length < 2 || name.length > 80) {
       return NextResponse.json({ error: "Nom de classe invalide (2–80 caractères)" }, { status: 400 });
+    }
+
+    // Validation expiration optionnelle
+    let inviteExpiresAt: string | null = null;
+    if (body.invitation_expires_at !== undefined && body.invitation_expires_at !== null && body.invitation_expires_at !== "") {
+      const parsed = new Date(body.invitation_expires_at);
+      if (isNaN(parsed.getTime())) {
+        return NextResponse.json({ error: "Date d'expiration invalide" }, { status: 400 });
+      }
+      if (parsed.getTime() <= Date.now()) {
+        return NextResponse.json({ error: "La date d'expiration doit être dans le futur" }, { status: 400 });
+      }
+      // Cap raisonnable : pas plus de 10 ans dans le futur (anti-poke)
+      if (parsed.getTime() > Date.now() + 10 * 365 * 24 * 60 * 60 * 1000) {
+        return NextResponse.json({ error: "Expiration trop lointaine (max 10 ans)" }, { status: 400 });
+      }
+      inviteExpiresAt = parsed.toISOString();
     }
 
     const admin = createAdminClient();
@@ -154,9 +172,10 @@ export async function POST(req: NextRequest) {
         subject: body.subject ?? null,
         auth_mode: "full",
         invite_code,
+        invitation_expires_at: inviteExpiresAt,
         parent_class_id: parentClassId,
       })
-      .select("id, name, level, subject, auth_mode, invite_code, invite_link_token, parent_class_id, archived_at, created_at")
+      .select("id, name, level, subject, auth_mode, invite_code, invite_link_token, invitation_expires_at, parent_class_id, archived_at, created_at")
       .single();
 
     if (error) throw error;

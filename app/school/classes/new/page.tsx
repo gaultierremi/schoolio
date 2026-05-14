@@ -18,10 +18,17 @@ export default function NewClassPage() {
   const [level, setLevel] = useState<string>("");
   const [subject, setSubject] = useState<string>("");
   const [parentClassId, setParentClassId] = useState<string>("");
+  const [expiresAt, setExpiresAt] = useState<string>(""); // YYYY-MM-DD (input date local)
   const [cohortes, setCohortes] = useState<Cohorte[]>([]);
   const [loadingCohortes, setLoadingCohortes] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const tomorrowDate = useMemo(() => {
+    const d = new Date();
+    d.setDate(d.getDate() + 1);
+    return d.toISOString().slice(0, 10);
+  }, []);
 
   // Charge les cohortes existantes quand l'utilisateur switch sur "sous-classe matière"
   useEffect(() => {
@@ -60,6 +67,19 @@ export default function NewClassPage() {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) { router.replace("/"); return; }
 
+    // Si l'utilisateur a choisi une date d'expiration, on l'envoie en
+    // ISO 8601 à 23:59:59 local (fin de journée locale du prof).
+    let expirationIso: string | null = null;
+    if (expiresAt) {
+      const local = new Date(`${expiresAt}T23:59:59`);
+      if (isNaN(local.getTime())) {
+        setError("Date d'expiration invalide");
+        setSubmitting(false);
+        return;
+      }
+      expirationIso = local.toISOString();
+    }
+
     const res = await fetch("/api/classes", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -68,6 +88,7 @@ export default function NewClassPage() {
         level: level || null,
         subject: type === "subject_class" ? subject : (subject || null),
         parent_class_id: type === "subject_class" ? parentClassId : null,
+        invitation_expires_at: expirationIso,
       }),
     });
 
@@ -197,6 +218,25 @@ export default function NewClassPage() {
                 </option>
               ))}
             </select>
+          </div>
+
+          {/* Expiration du code d'invitation */}
+          <div>
+            <label className="block text-sm font-bold text-[rgb(var(--ink-2))]">
+              Code d&apos;invitation valide jusqu&apos;au
+              <span className="ml-1 text-xs font-normal text-[rgb(var(--ink-3))]">(optionnel)</span>
+            </label>
+            <input
+              type="date"
+              value={expiresAt}
+              onChange={(e) => setExpiresAt(e.target.value)}
+              min={tomorrowDate}
+              disabled={submitting}
+              className="mt-2 w-full rounded-xl border border-[rgb(var(--border))] bg-[rgb(var(--surface))] px-4 py-3 text-sm text-[rgb(var(--ink))] outline-none transition focus:border-[rgb(var(--accent))] focus:ring-2 focus:ring-[rgb(var(--accent))]/30 disabled:opacity-50"
+            />
+            <p className="mt-1 text-xs text-[rgb(var(--ink-3))]">
+              Laisse vide pour un code sans expiration. Utile pour un événement ponctuel (open door, démo).
+            </p>
           </div>
 
           {/* Error */}
