@@ -51,18 +51,22 @@ export default function SchoolQuestionsPage() {
     handlePdfUpload, saveDrafts, addPublicQuestion,
   } = useQuestionsPage();
 
-  // Filtre sidebar matière, scoped à l'onglet "à valider" pour aider à
-  // naviguer dans les centaines de questions générées sur un gros syllabus.
+  // Filtre sidebar matière + thème, scoped à l'onglet "à valider".
+  // Permet de naviguer dans des centaines de questions sur gros syllabus.
   const [pendingSubjectFilter, setPendingSubjectFilter] = useState<string | null>(null);
-  const filteredPendingBySubject = useMemo(
-    () =>
-      pendingSubjectFilter === null
-        ? pendingQuestions
-        : pendingQuestions.filter(
-            (q) => ((q.subject_enum ?? q.subject ?? "autre") as string) === pendingSubjectFilter,
-          ),
-    [pendingQuestions, pendingSubjectFilter],
-  );
+  const [pendingThemeFilter, setPendingThemeFilter] = useState<string | null>(null);
+  const filteredPendingBySubject = useMemo(() => {
+    return pendingQuestions.filter((q) => {
+      if (pendingSubjectFilter !== null) {
+        const s = (q.subject_enum ?? q.subject ?? "autre") as string;
+        if (s !== pendingSubjectFilter) return false;
+      }
+      if (pendingThemeFilter !== null) {
+        if ((q.period ?? "").trim() !== pendingThemeFilter) return false;
+      }
+      return true;
+    });
+  }, [pendingQuestions, pendingSubjectFilter, pendingThemeFilter]);
 
   // ── Guards ──
 
@@ -207,8 +211,14 @@ export default function SchoolQuestionsPage() {
                     <div className="flex flex-col gap-6 lg:flex-row">
                       <SubjectSidebar
                         questions={pendingQuestions}
-                        selected={pendingSubjectFilter}
-                        onSelect={setPendingSubjectFilter}
+                        selectedSubject={pendingSubjectFilter}
+                        selectedTheme={pendingThemeFilter}
+                        onSelectSubject={(s) => {
+                          setPendingSubjectFilter(s);
+                          // Reset theme quand on change de matière (les thèmes diffèrent)
+                          setPendingThemeFilter(null);
+                        }}
+                        onSelectTheme={setPendingThemeFilter}
                       />
                       <div className="flex-1 space-y-4 min-w-0">
                         {filteredPendingBySubject.length === 0 ? (

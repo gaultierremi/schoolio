@@ -35,8 +35,24 @@ const UUID_REGEX = /^[0-9a-f-]{36}$/i;
 // Au-delà, l'inférence échoue silencieusement (réponse vide → 0 question).
 // Cap explicitement avec un message d'erreur clair pour le prof.
 const MAX_PDF_BYTES = 20 * 1024 * 1024; // 20MB Gemini Vision limit
-const WORKER_COUNT = 3;
-const QUESTIONS_PER_WORKER = 10;
+// Scale parallèle : auto-ajuste selon le volume demandé (cf. computeWorkerLayout).
+// Plafond raisonnable pour éviter de saturer Anthropic/Gemini en parallèle.
+const MAX_WORKERS = 10;
+const QUESTIONS_PER_WORKER = 30;
+
+// Cible automatique de questions = min(MAX_QUESTIONS_PER_COURSE, pages × 3)
+// Pour un syllabus FWB typique (50-200 pages), donne 150-600 questions —
+// couverture solide sans gaspiller du budget IA.
+function autoTargetQuestions(pagesCount: number | null): number {
+  if (!pagesCount || pagesCount < 1) return 30; // fallback minimal si pages_count absent
+  return Math.min(MAX_QUESTIONS_PER_COURSE, Math.ceil(pagesCount * 3));
+}
+
+function computeWorkerLayout(target: number): { workerCount: number; questionsPerWorker: number } {
+  const workerCount = Math.min(MAX_WORKERS, Math.max(1, Math.ceil(target / QUESTIONS_PER_WORKER)));
+  const questionsPerWorker = Math.ceil(target / workerCount);
+  return { workerCount, questionsPerWorker };
+}
 
 // Cap du nombre total de questions par cours.
 // Raison : limiter les couts Anthropic a l'echelle et encourager la curation
@@ -240,11 +256,14 @@ async function generateQuestionsWithFallback(
   pdfBase64: string,
   systemPrompt: string,
   workerIndex: number,
+  workerCount: number,
+  questionsPerWorker: number,
 ): Promise<string> {
   const fullPrompt =
     `${systemPrompt}\n\n` +
-    `Worker ${workerIndex + 1}/${WORKER_COUNT}: genere ${QUESTIONS_PER_WORKER} questions distinctes (mcq, numeric et/ou short_text selon la matiere). ` +
-    `Evite les doublons et couvre une partie differente du document.`;
+    `Worker ${workerIndex + 1}/${workerCount}: genere ${questionsPerWorker} questions distinctes (mcq, numeric et/ou short_text selon la matiere). ` +
+    `Evite les doublons et couvre une partie differente du document. ` +
+    `IMPORTANT : pour chaque question, place dans le champ "period" le nom EXACT du chapitre, UAA, theme ou section du syllabus dont la question est tiree (ex: "UAA 2 : Cone", "Chapitre 3 - Reactions acides-bases", "Antiquite"). Ce champ sera utilise pour grouper les questions par theme dans l'interface prof.`;
 
   const response = await routeAIRequest("generate_questions", fullPrompt, {
     pdfBase64,
@@ -406,10 +425,13 @@ export async function POST(request: NextRequest) {
       page_range?: unknown;
     };
     const courseId = typeof body.courseId === "string" ? body.courseId : "";
-    const questionsCount =
+    // Cap raised : peut atteindre 600 questions par call (MAX_QUESTIONS_PER_COURSE).
+    // Si questionsCount non fourni, on auto-scale plus tard depuis pages_count
+    // une fois le cours fetché.
+    const requestedQuestionsCount =
       typeof body.questionsCount === "number" && body.questionsCount > 0
-        ? Math.min(body.questionsCount, 30)
-        : 30;
+        ? Math.min(body.questionsCount, MAX_QUESTIONS_PER_COURSE)
+        : null;
 
     let pageRange: PageRange | null = null;
     if (body.page_range !== null && typeof body.page_range === "object") {
@@ -468,8 +490,12 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Ajuster le nombre a generer pour ne pas depasser le plafond
-    const cappedQuestionsCount = Math.min(questionsCount, MAX_QUESTIONS_PER_COURSE - existing);
+    // Cible automatique si requestedQuestionsCount null : auto-scale depuis
+    // pages_count. Capé par la place disponible avant MAX_QUESTIONS_PER_COURSE.
+    const targetQuestions =
+      requestedQuestionsCount ?? autoTargetQuestions(typedCourse.pages_count ?? null);
+    const cappedQuestionsCount = Math.min(targetQuestions, MAX_QUESTIONS_PER_COURSE - existing);
+    const { workerCount, questionsPerWorker } = computeWorkerLayout(cappedQuestionsCount);
 
     const { data: pdfBlob, error: downloadError } = await admin.storage
       .from("course-pdfs")
@@ -536,8 +562,8 @@ export async function POST(request: NextRequest) {
     const promptWithRange = systemPrompt + pageRangePromptSuffix;
 
     const workerOutputs = await Promise.all(
-      Array.from({ length: WORKER_COUNT }, (_, workerIndex) =>
-        generateQuestionsWithFallback(pdfBase64, promptWithRange, workerIndex)
+      Array.from({ length: workerCount }, (_, workerIndex) =>
+        generateQuestionsWithFallback(pdfBase64, promptWithRange, workerIndex, workerCount, questionsPerWorker)
       )
     );
 
