@@ -1,13 +1,19 @@
 // lib/generate-questions/extract-content.ts
 //
-// Pipeline d'extraction structurée d'un syllabus PDF.
+// Pipeline d'extraction structurée d'un syllabus PDF — TEXT-ONLY.
 // Cf design spec : docs/superpowers/specs/2026-05-14-pdf-extraction-design.md
 //
+// Pivot 2026-05-14 : Anthropic Vision PDF était trop lent (~200s par appel)
+// même sur sub-PDF. On bascule sur extraction TEXTE locale via pdfjs-dist
+// (~1s pour 176 pages), puis Sonnet text-only par chapter (~15-30s par appel).
+// Gain : ~10x vitesse, ~10x coût. Trade-off : on perd les images / formules
+// visuelles (acceptable pour le contenu pédagogique typique).
+//
 // Flow :
-//   1. TOC extraction (Haiku 4.5 via extract-chapters.ts) → chapters[]
-//   2. Pool de 3 workers Sonnet 4.6 traitent chapter-by-chapter
-//   3. Chaque worker INSERT immédiatement ses snippets + questions
-//   4. Update workers_completed après chaque insert (partial success)
+//   1. Download PDF + extract texte localement (pdfjs-dist, ~1s)
+//   2. TOC extraction Haiku text-only sur samples du texte (~10-30s)
+//   3. Pool de 3 workers Sonnet text-only chapter-by-chapter (~15-30s/call)
+//   4. Chaque worker INSERT immédiatement ses snippets + questions
 
 import { SchemaType, type ResponseSchema } from "@google/generative-ai";
 import { createClient as createSupabaseAdminClient } from "@supabase/supabase-js";
@@ -15,7 +21,7 @@ import WebSocket from "ws";
 import { routeAIRequest } from "@/lib/ai-router";
 import { isValidSubject, isValidLevel, SUBJECTS_BY_ID } from "@/lib/subjects";
 import type { SubjectId, SchoolLevel } from "@/lib/subjects";
-import { extractPagesFromPdf } from "@/lib/pdf/extract-pages";
+import { extractTextFromPdf, joinPagesAsMarkdown } from "@/lib/pdf/extract-text";
 import { logActivity } from "@/lib/activity/log";
 import { logError } from "@/lib/observability/log-error";
 import { extractChapters, type Chapter } from "./extract-chapters";
@@ -295,26 +301,25 @@ async function processChapter(
   jobId: string,
   job: JobRow,
   course: CourseRow,
-  fullPdfBuffer: Buffer,
+  pagesText: string[],
   chapter: Chapter,
   targetQuestions: number,
   subjectLabel: string,
   level: SchoolLevel | null,
 ): Promise<{ snippetsInserted: number; questionsInserted: number }> {
-  const subBuffer = await extractPagesFromPdf({
-    pdfBuffer: fullPdfBuffer,
-    startPage: chapter.pageStart,
-    endPage: chapter.pageEnd,
-  });
-  const subBase64 = Buffer.from(subBuffer).toString("base64");
+  // TEXT-ONLY : on slice les pages du chapter depuis le texte déjà extrait
+  // localement (pas de PDF Vision lent). Headers "## Page N" préservent la
+  // structure spatiale pour que Sonnet puisse référencer les pages correctement.
+  const chapterText = joinPagesAsMarkdown(pagesText, chapter.pageStart, chapter.pageEnd);
 
-  const prompt = buildChapterPrompt(subjectLabel, level, chapter, targetQuestions);
+  const prompt =
+    buildChapterPrompt(subjectLabel, level, chapter, targetQuestions) +
+    `\n\n--- TEXTE DU CHAPITRE ---\n\n${chapterText}`;
 
   const response = await routeAIRequest("extract_chapter_content", prompt, {
-    pdfBase64: subBase64,
-    requireVision: true,
+    requireVision: false, // text-only, gain 10x vitesse + coût
     responseSchema: CHAPTER_EXTRACTION_SCHEMA,
-    maxTokens: 16384, // 15 snippets + 15 questions ~ 12-15K tokens, marge
+    maxTokens: 16384,
     cacheTtlMs: 0,
     model: "anthropic_claude", // Sonnet 4.6 pour qualité
   });
@@ -493,27 +498,25 @@ export async function runExtractionForJob(jobId: string): Promise<void> {
       throw new Error(`PDF de ${sizeMB}MB trop volumineux (max 20MB)`);
     }
 
-    let workingBuffer: Buffer = fullPdfBuffer;
-    let workingPagesCount = course.pages_count ?? null;
+    // Extract texte LOCAL avec pdfjs-dist (~1s pour 176 pages).
+    // pageRange est appliqué après extraction (slice de pagesText), pas via
+    // extractPagesFromPdf qui était utile pour PDF Vision.
+    const extracted = await extractTextFromPdf(fullPdfBuffer);
+    console.log(`[extract-content] text extraction: ${extracted.pageCount} pages, ${extracted.totalChars} chars, ${extracted.durationMs}ms`);
+
+    let pagesText = extracted.pagesText;
+    let workingPagesCount = extracted.pageCount;
     if (pageRange !== null) {
-      try {
-        const extracted = await extractPagesFromPdf({
-          pdfBuffer: fullPdfBuffer,
-          startPage: pageRange.start,
-          endPage: pageRange.end,
-        });
-        workingBuffer = Buffer.from(extracted);
-        workingPagesCount = pageRange.end - pageRange.start + 1;
-      } catch (err) {
-        console.warn("[extract-content] page_range extract failed, fallback PDF entier:", err);
-      }
+      const start = Math.max(1, pageRange.start);
+      const end = Math.min(extracted.pageCount, pageRange.end);
+      pagesText = extracted.pagesText.slice(start - 1, end);
+      workingPagesCount = end - start + 1;
     }
 
     // Phase: generating_workers (sémantique : 1 worker = 1 chapter)
     await updateJob(jobId, { phase: "generating_workers", workers_completed: 0 });
 
-    const workingBase64 = workingBuffer.toString("base64");
-    const chapters = await extractChapters(workingBase64, subjectLabel, workingPagesCount);
+    const chapters = await extractChapters(pagesText, subjectLabel, workingPagesCount);
 
     if (chapters.length === 0) {
       throw new Error("Aucun chapitre identifié dans le PDF");
@@ -548,7 +551,7 @@ export async function runExtractionForJob(jobId: string): Promise<void> {
           jobId,
           job,
           course,
-          fullPdfBuffer, // ← fullPdfBuffer car les chapter ranges sont absolues
+          pagesText, // ← texte par page (absolu si pageRange null, sinon trimmed)
           chapter,
           chapterQuotas[idx],
           subjectLabel,
