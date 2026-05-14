@@ -97,6 +97,7 @@ type ExtractedQuestion = {
 type CourseRow = {
   id: string;
   teacher_id: string;
+  school_id: string;
   subject_enum: string | null;
   level: number | null;
   pdf_storage_path: string | null;
@@ -258,7 +259,7 @@ export async function POST(request: NextRequest) {
 
     const { data: course, error: courseError } = await admin
       .from("courses")
-      .select("id, teacher_id, subject_enum, level, pdf_storage_path, organization_tags, pages_count")
+      .select("id, teacher_id, school_id, subject_enum, level, pdf_storage_path, organization_tags, pages_count")
       .eq("id", courseId)
       .limit(1)
       .maybeSingle();
@@ -356,6 +357,7 @@ export async function POST(request: NextRequest) {
 
     const rows = questions.map((q) => ({
       teacher_id: user.id,
+      school_id: typedCourse.school_id,
       course_id: courseId,
       subject: null,
       subject_enum: typedCourse.subject_enum ?? null,

@@ -16,6 +16,7 @@ type Question = {
   concept_page_hint: number | null;
   page_range_start: number | null;
   correction_steps: CorrectionStep[] | null;
+  concept_id: string | null;
 };
 
 type QuestionResult = {
