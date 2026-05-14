@@ -8,6 +8,7 @@ import type { SubjectId, SchoolLevel } from "@/lib/subjects";
 import { extractPagesFromPdf } from "@/lib/pdf/extract-pages";
 import { logActivity } from "@/lib/activity/log";
 import { logError } from "@/lib/observability/log-error";
+import { waitUntil } from "@vercel/functions";
 
 export const dynamic = "force-dynamic";
 // 300s = 5min, max sur Vercel Pro. Pour gros syllabus (176p+) avec 10
@@ -508,175 +509,196 @@ export async function POST(request: NextRequest) {
     const cappedQuestionsCount = Math.min(targetQuestions, MAX_QUESTIONS_PER_COURSE - existing);
     const { workerCount, questionsPerWorker } = computeWorkerLayout(cappedQuestionsCount);
 
-    const { data: pdfBlob, error: downloadError } = await admin.storage
-      .from("course-pdfs")
-      .download(typedCourse.pdf_storage_path);
-
-    if (downloadError || !pdfBlob) {
-      console.error("[courses/generate-questions]", downloadError);
-      return NextResponse.json({ error: "Impossible de telecharger le PDF" }, { status: 500 });
-    }
-
-    const fullPdfBuffer = Buffer.from(await pdfBlob.arrayBuffer());
-    if (fullPdfBuffer.byteLength > MAX_PDF_BYTES) {
-      const sizeMB = (fullPdfBuffer.byteLength / 1024 / 1024).toFixed(1);
-      return NextResponse.json(
-        {
-          error: `PDF de ${sizeMB}MB trop volumineux pour la génération (max 20MB). Split le syllabus en plusieurs PDF plus petits, ou utilise l'option "Sélection de pages" pour traiter par chapitre.`,
-        },
-        { status: 400 }
-      );
-    }
-
-    // Validate page range if provided
-    if (pageRange !== null) {
-      if (pageRange.start < 1 || pageRange.end < pageRange.start) {
-        return NextResponse.json({ error: "Plage de pages invalide" }, { status: 400 });
-      }
-      if (typedCourse.pages_count && pageRange.end > typedCourse.pages_count) {
-        return NextResponse.json(
-          { error: `La plage depasse le nombre de pages du PDF (${typedCourse.pages_count})` },
-          { status: 400 }
-        );
-      }
-    }
-
-    // Extract page subset if requested, fallback to full PDF on error
-    let pdfBuffer: Buffer = fullPdfBuffer;
-    if (pageRange !== null) {
-      try {
-        const extracted = await extractPagesFromPdf({
-          pdfBuffer: fullPdfBuffer,
-          startPage: pageRange.start,
-          endPage: pageRange.end,
-        });
-        pdfBuffer = Buffer.from(extracted);
-      } catch (err) {
-        console.warn("[generate-questions] Extraction pages echouee, fallback PDF entier:", err);
-        pageRange = null;
-      }
-    }
-
-    const pdfBase64 = pdfBuffer.toString("base64");
-
-    const subject: SubjectId = isValidSubject(typedCourse.subject_enum)
-      ? typedCourse.subject_enum
-      : "histoire";
-    const level: SchoolLevel | null = isValidLevel(typedCourse.level)
-      ? typedCourse.level
-      : null;
-    const systemPrompt = buildSystemPrompt(subject, level);
-
-    const pageRangePromptSuffix = pageRange !== null
-      ? ` Le contenu fourni correspond aux pages ${pageRange.start} a ${pageRange.end} du document original.`
-      : "";
-    const promptWithRange = systemPrompt + pageRangePromptSuffix;
-
-    const workerOutputs = await Promise.all(
-      Array.from({ length: workerCount }, (_, workerIndex) =>
-        generateQuestionsWithFallback(pdfBase64, promptWithRange, workerIndex, workerCount, questionsPerWorker)
-      )
-    );
-
-    const parsedOutputs = workerOutputs.map((rawText) =>
-      parseJsonObject<{ questions: ExtractedQuestion[]; page_count?: number }>(rawText)
-    );
-    const rawQuestions = parsedOutputs.flatMap((output) =>
-      Array.isArray(output.questions) ? output.questions : []
-    );
-    const normalized = rawQuestions.map(normalizeQuestion);
-    const questions = normalized
-      .filter((q): q is ExtractedQuestion => q !== null)
-      .slice(0, cappedQuestionsCount);
-
-    if (questions.length === 0) {
-      // Observability : on log les compteurs pour comprendre POURQUOI (Gemini
-      // n'a rien renvoyé, ou tout a été filtré en normalize). Sans ça on a
-      // un 500 opaque côté UI.
-      const rawTypes = rawQuestions.reduce<Record<string, number>>((acc, q) => {
-        const t = (q?.type ?? "unknown") as string;
-        acc[t] = (acc[t] || 0) + 1;
-        return acc;
-      }, {});
-      await logError(new Error("generate-questions: 0 questions after normalize"), {
-        source: "api.courses.generate-questions.POST",
-        context: {
-          courseId,
-          subject,
-          level,
-          pageRange,
-          rawCount: rawQuestions.length,
-          rawTypeDistribution: rawTypes,
-          normalizedNullCount: normalized.filter((n) => n === null).length,
-          cappedQuestionsCount,
-          pdfSizeBytes: fullPdfBuffer.byteLength,
-        },
-        userId: user.id,
-      });
-      return NextResponse.json(
-        {
-          error:
-            rawQuestions.length > 0
-              ? "Aucune question valide générée (toutes filtrées par validation). Réessaie ou réduis la plage de pages."
-              : "Maïa n'a pas pu générer de questions sur ce PDF. Vérifie que le contenu est lisible et essaie une plage de pages plus petite.",
-        },
-        { status: 500 }
-      );
-    }
-
-    const rows = questions.map((q) => ({
-      teacher_id: user.id,
-      school_id: typedCourse.school_id,
-      course_id: courseId,
-      subject: null,
-      subject_enum: typedCourse.subject_enum ?? null,
-      level: typedCourse.level ?? null,
-      type: q.type,
-      question: q.question,
-      // mcq fields
-      options: q.type === "mcq" ? (q.options ?? null) : null,
-      answer_index: q.type === "mcq" ? (q.answer_index ?? null) : null,
-      // numeric fields
-      expected_numeric_answer: q.type === "numeric" ? (q.expected_numeric_answer ?? null) : null,
-      numeric_tolerance: q.type === "numeric" ? (q.numeric_tolerance ?? 0.01) : null,
-      numeric_unit: q.type === "numeric" ? (q.numeric_unit ?? null) : null,
-      // short_text fields
-      expected_text_answers: q.type === "short_text" ? (q.expected_text_answers ?? null) : null,
-      // common
-      explanation: q.explanation || null,
-      period: q.period || null,
-      difficulty_stars: q.difficulty ?? null,
-      organization_tags: typedCourse.organization_tags ?? [],
-      is_ai_generated: true,
-      is_public: false,
-      page_range_start: pageRange?.start ?? null,
-      page_range_end: pageRange?.end ?? null,
-      concept_page_hint:
-        typeof q.concept_page_hint === "number" && q.concept_page_hint >= 1
-          ? q.concept_page_hint
-          : null,
-    }));
-
-    const { error: insertError } = await admin.from("teacher_questions").insert(rows);
-    if (insertError) throw insertError;
-
-    if (pageRange !== null) {
-      await logActivity({
-        event_type: "teacher_generated_targeted_questions",
-        actor_id: user.id,
-        actor_type: "teacher",
-        target_type: "course",
-        target_id: courseId,
+    // ── Create generation job row (UX progress bar) ─────────────────────────
+    // Le client va poller GET /[jobId]/status pendant que la génération tourne
+    // en background via waitUntil. Permet d'afficher les substeps + ETA.
+    const { data: jobRow, error: jobErr } = await admin
+      .from("question_generation_jobs")
+      .insert({
+        course_id: courseId,
         teacher_id: user.id,
-        context: { count: rows.length, page_range: pageRange },
-      });
+        school_id: typedCourse.school_id,
+        status: "pending",
+        phase: "queued",
+        total_target: cappedQuestionsCount,
+        worker_count: workerCount,
+        pages_count: typedCourse.pages_count,
+        page_range_start: pageRange?.start ?? null,
+        page_range_end: pageRange?.end ?? null,
+      })
+      .select("id")
+      .single();
+    if (jobErr || !jobRow) {
+      console.error("[courses/generate-questions] job insert failed:", jobErr);
+      return NextResponse.json({ error: "Création du job échouée" }, { status: 500 });
+    }
+    const jobId = (jobRow as { id: string }).id;
+
+    async function updateJob(patch: Record<string, unknown>) {
+      const a = createAdminClient();
+      await a
+        .from("question_generation_jobs")
+        .update({ ...patch, phase_changed_at: new Date().toISOString() })
+        .eq("id", jobId);
     }
 
-    return NextResponse.json({
-      success: true,
-      questionsGenerated: rows.length,
-      courseId,
-    });
+    // Helper qui contient toute la logique heavy (download PDF, workers,
+    // normalize, INSERT). Updates le job row à chaque phase.
+    async function runGeneration() {
+      try {
+        await updateJob({ status: "running", phase: "extracting_pdf" });
+
+        const { data: pdfBlob, error: downloadError } = await admin.storage
+          .from("course-pdfs")
+          .download(typedCourse.pdf_storage_path!);
+
+        if (downloadError || !pdfBlob) {
+          throw new Error(`PDF download failed: ${downloadError?.message ?? "no blob"}`);
+        }
+
+        const fullPdfBuffer = Buffer.from(await pdfBlob.arrayBuffer());
+        if (fullPdfBuffer.byteLength > MAX_PDF_BYTES) {
+          const sizeMB = (fullPdfBuffer.byteLength / 1024 / 1024).toFixed(1);
+          throw new Error(`PDF de ${sizeMB}MB trop volumineux (max 20MB)`);
+        }
+
+        let pdfBuffer: Buffer = fullPdfBuffer;
+        if (pageRange !== null) {
+          try {
+            const extracted = await extractPagesFromPdf({
+              pdfBuffer: fullPdfBuffer,
+              startPage: pageRange.start,
+              endPage: pageRange.end,
+            });
+            pdfBuffer = Buffer.from(extracted);
+          } catch (err) {
+            console.warn("[generate-questions] Extraction pages echouee, fallback PDF entier:", err);
+            pageRange = null;
+          }
+        }
+
+        const pdfBase64 = pdfBuffer.toString("base64");
+
+        const subject: SubjectId = isValidSubject(typedCourse.subject_enum)
+          ? typedCourse.subject_enum
+          : "histoire";
+        const level: SchoolLevel | null = isValidLevel(typedCourse.level)
+          ? typedCourse.level
+          : null;
+        const systemPrompt = buildSystemPrompt(subject, level);
+        const pageRangePromptSuffix = pageRange !== null
+          ? ` Le contenu fourni correspond aux pages ${pageRange.start} a ${pageRange.end} du document original.`
+          : "";
+        const promptWithRange = systemPrompt + pageRangePromptSuffix;
+
+        await updateJob({ phase: "generating_workers", workers_completed: 0 });
+
+        // Workers : on track le compteur en utilisant Promise.allSettled avec
+        // un update job à chaque résolution individuelle.
+        let workersDone = 0;
+        const workerOutputs = await Promise.all(
+          Array.from({ length: workerCount }, async (_, workerIndex) => {
+            const output = await generateQuestionsWithFallback(pdfBase64, promptWithRange, workerIndex, workerCount, questionsPerWorker);
+            workersDone++;
+            await updateJob({ workers_completed: workersDone });
+            return output;
+          })
+        );
+
+        const parsedOutputs = workerOutputs.map((rawText) =>
+          parseJsonObject<{ questions: ExtractedQuestion[]; page_count?: number }>(rawText)
+        );
+        const rawQuestions = parsedOutputs.flatMap((output) =>
+          Array.isArray(output.questions) ? output.questions : []
+        );
+
+        await updateJob({ phase: "validating", questions_raw: rawQuestions.length });
+
+        const normalized = rawQuestions.map(normalizeQuestion);
+        const questions = normalized
+          .filter((q): q is ExtractedQuestion => q !== null)
+          .slice(0, cappedQuestionsCount);
+
+        if (questions.length === 0) {
+          const rawTypes = rawQuestions.reduce<Record<string, number>>((acc, q) => {
+            const t = (q?.type ?? "unknown") as string;
+            acc[t] = (acc[t] || 0) + 1;
+            return acc;
+          }, {});
+          await logError(new Error("generate-questions: 0 questions after normalize"), {
+            source: "api.courses.generate-questions.POST",
+            context: { courseId, subject, level, pageRange, rawCount: rawQuestions.length, rawTypeDistribution: rawTypes, normalizedNullCount: normalized.filter((n) => n === null).length, cappedQuestionsCount, pdfSizeBytes: fullPdfBuffer.byteLength },
+            userId: user!.id,
+          });
+          throw new Error(rawQuestions.length > 0 ? "Aucune question valide générée (toutes filtrées)" : "Maïa n'a pas pu générer de questions sur ce PDF");
+        }
+
+        await updateJob({ phase: "inserting_db" });
+
+        const rows = questions.map((q) => ({
+          teacher_id: user!.id,
+          school_id: typedCourse.school_id,
+          course_id: courseId,
+          subject: null,
+          subject_enum: typedCourse.subject_enum ?? null,
+          level: typedCourse.level ?? null,
+          type: q.type,
+          question: q.question,
+          options: q.type === "mcq" ? (q.options ?? null) : null,
+          answer_index: q.type === "mcq" ? (q.answer_index ?? null) : null,
+          expected_numeric_answer: q.type === "numeric" ? (q.expected_numeric_answer ?? null) : null,
+          numeric_tolerance: q.type === "numeric" ? (q.numeric_tolerance ?? 0.01) : null,
+          numeric_unit: q.type === "numeric" ? (q.numeric_unit ?? null) : null,
+          expected_text_answers: q.type === "short_text" ? (q.expected_text_answers ?? null) : null,
+          explanation: q.explanation || null,
+          period: q.period || null,
+          difficulty_stars: q.difficulty ?? null,
+          organization_tags: typedCourse.organization_tags ?? [],
+          is_ai_generated: true,
+          is_public: false,
+          page_range_start: pageRange?.start ?? null,
+          page_range_end: pageRange?.end ?? null,
+          concept_page_hint: typeof q.concept_page_hint === "number" && q.concept_page_hint >= 1 ? q.concept_page_hint : null,
+        }));
+
+        const { error: insertError } = await admin.from("teacher_questions").insert(rows);
+        if (insertError) throw insertError;
+
+        if (pageRange !== null) {
+          await logActivity({
+            event_type: "teacher_generated_targeted_questions",
+            actor_id: user!.id,
+            actor_type: "teacher",
+            target_type: "course",
+            target_id: courseId,
+            teacher_id: user!.id,
+            context: { count: rows.length, page_range: pageRange },
+          });
+        }
+
+        await updateJob({
+          status: "done",
+          phase: "done",
+          questions_inserted: rows.length,
+          completed_at: new Date().toISOString(),
+        });
+      } catch (err) {
+        await logError(err, { source: "api.courses.generate-questions.runGeneration", context: { jobId } });
+        await updateJob({
+          status: "failed",
+          phase: "failed",
+          error_message: err instanceof Error ? err.message.slice(0, 500) : String(err).slice(0, 500),
+          completed_at: new Date().toISOString(),
+        });
+      }
+    }
+
+    // Kick off background. waitUntil garantit que la fonction Vercel ne kill
+    // pas le job avant son terme (maxDuration 300s applied).
+    waitUntil(runGeneration());
+
+    return NextResponse.json({ jobId });
+
   } catch (error) {
     console.error("[courses/generate-questions]", error);
     await logError(error, {
