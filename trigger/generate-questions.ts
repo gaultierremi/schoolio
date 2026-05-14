@@ -19,8 +19,10 @@ const UUID_REGEX = /^[0-9a-f-]{36}$/i;
 
 export const generateQuestionsTask = task({
   id: "generate-questions",
-  // 5min = limite free tier Trigger.dev. Si on hit le mur, on bumpera + Pro.
-  maxDuration: 300,
+  // 10min : permet 15-20 chapitres × 3 concurrent × ~30-60s/chapter sereinement.
+  // Free tier Trigger.dev autorise jusqu'à 1h, on consomme juste plus de compute
+  // du quota mensuel (50 GB-h compute) — négligeable pour le dogfood actuel.
+  maxDuration: 600,
   retry: {
     // Pas de retry automatique au niveau de la task : si on plante, le
     // runner a déjà mis status=failed dans la row jobs et le client
