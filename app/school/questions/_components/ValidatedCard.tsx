@@ -63,18 +63,37 @@ export function ValidatedCard({
           </div>
           <p className="mt-2 font-bold text-[rgb(var(--ink))]">{q.question}</p>
           <div className="mt-1.5 flex flex-wrap gap-1">
-            {q.options.map((opt, i) => (
-              <span
-                key={i}
-                className={`rounded-lg px-2 py-0.5 text-xs ${
-                  i === q.answer_index
-                    ? "bg-[rgb(var(--green))]/15 font-black text-[rgb(var(--green))]"
-                    : "bg-[rgb(var(--surface-3))] text-[rgb(var(--ink-2))]"
-                }`}
-              >
-                {opt}
+            {q.type === "numeric" ? (
+              <span className="rounded-lg bg-[rgb(var(--green))]/15 px-2 py-0.5 text-xs font-black text-[rgb(var(--green))]">
+                {q.expected_numeric_answer ?? "—"}
+                {q.numeric_unit ? ` ${q.numeric_unit}` : ""}
+                {q.numeric_tolerance != null
+                  ? ` (±${q.numeric_tolerance})`
+                  : ""}
               </span>
-            ))}
+            ) : q.type === "short_text" ? (
+              (q.expected_text_answers ?? []).map((ans, i) => (
+                <span
+                  key={i}
+                  className="rounded-lg bg-[rgb(var(--green))]/15 px-2 py-0.5 text-xs font-black text-[rgb(var(--green))]"
+                >
+                  {ans}
+                </span>
+              ))
+            ) : (
+              q.options.map((opt, i) => (
+                <span
+                  key={i}
+                  className={`rounded-lg px-2 py-0.5 text-xs ${
+                    i === q.answer_index
+                      ? "bg-[rgb(var(--green))]/15 font-black text-[rgb(var(--green))]"
+                      : "bg-[rgb(var(--surface-3))] text-[rgb(var(--ink-2))]"
+                  }`}
+                >
+                  {opt}
+                </span>
+              ))
+            )}
           </div>
           {q.explanation && (
             <p className="mt-1.5 text-xs italic text-[rgb(var(--ink-3))]">{q.explanation}</p>

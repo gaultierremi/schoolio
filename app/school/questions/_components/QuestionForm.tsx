@@ -1,4 +1,4 @@
-import { BLANK_FORM, PERIODS } from "../_types";
+import { BLANK_FORM, PERIODS, type QuestionType } from "../_types";
 import { SubjectLevelSelector } from "./SubjectLevelSelector";
 import { QuestionPreview } from "./QuestionPreview";
 
@@ -22,12 +22,27 @@ export function QuestionForm({
   onGenerateExpl: () => void;
 }) {
   const isTrueFalse = form.type === "truefalse";
+  const isMcq = form.type === "mcq";
+  const isNumeric = form.type === "numeric";
+  const isShortText = form.type === "short_text";
   const displayOptions = isTrueFalse ? ["Vrai", "Faux"] : form.options;
+
+  // Validation par type — l'enregistrement n'est autorisé que si les champs
+  // pertinents pour le type sont remplis.
+  const numericValid =
+    isNumeric &&
+    form.expected_numeric_answer.trim().length > 0 &&
+    Number.isFinite(Number(form.expected_numeric_answer));
+  const shortTextValid =
+    isShortText &&
+    form.expected_text_answers.filter((a) => a.trim().length > 0).length >= 1;
+  const mcqValid =
+    isMcq && form.options.filter((o) => o.trim()).length >= 2;
+  const trueFalseValid = isTrueFalse;
 
   const isValid =
     form.question.trim().length > 0 &&
-    (form.type === "truefalse" ||
-      form.options.filter((o) => o.trim()).length >= 2);
+    (mcqValid || trueFalseValid || numericValid || shortTextValid);
 
   return (
     <div className="mb-6 rounded-3xl border border-[rgb(var(--accent))]/30 bg-[rgb(var(--surface))] p-5">
@@ -46,16 +61,19 @@ export function QuestionForm({
               </label>
               <select
                 value={form.type}
-                onChange={(e) =>
+                onChange={(e) => {
+                  const nextType = e.target.value as QuestionType;
                   setForm({
                     ...form,
-                    type: e.target.value as "mcq" | "truefalse",
+                    type: nextType,
                     answer_index: 0,
-                  })
-                }
+                  });
+                }}
                 className="mt-1 w-full rounded-xl border border-[rgb(var(--border))] bg-[rgb(var(--surface))] px-3 py-2 text-[rgb(var(--ink))] outline-none focus:border-[rgb(var(--accent))]"
               >
                 <option value="mcq">QCM — Carré (4 options)</option>
+                <option value="numeric">Numérique — Réponse chiffrée</option>
+                <option value="short_text">Réponse libre — 1-5 variantes</option>
                 <option value="truefalse">Vrai / Faux — Duo (2 options)</option>
               </select>
             </div>
@@ -103,58 +121,141 @@ export function QuestionForm({
             />
           </div>
 
-          {/* Options */}
-          <div>
-            <label className="text-xs font-black uppercase tracking-widest text-[rgb(var(--ink-3))]">
-              {isTrueFalse
-                ? "Réponse correcte"
-                : "Options — clique sur le cercle pour marquer la bonne réponse"}
-            </label>
-            <div
-              className={`mt-2 grid gap-2 ${
-                isTrueFalse ? "grid-cols-2" : "grid-cols-1 sm:grid-cols-2"
-              }`}
-            >
-              {displayOptions.map((opt, i) => (
-                <div key={i} className="flex items-center gap-2">
-                  <button
-                    type="button"
-                    onClick={() => setForm({ ...form, answer_index: i })}
-                    className={`h-6 w-6 shrink-0 rounded-full border-2 transition ${
-                      form.answer_index === i
-                        ? "border-[rgb(var(--green))] bg-[rgb(var(--green))]"
-                        : "border-[rgb(var(--border))] hover:border-[rgb(var(--ink-3))]"
-                    }`}
-                    aria-label={`Marquer option ${i + 1} comme correcte`}
-                  />
-                  {isTrueFalse ? (
-                    <span
-                      className={`font-bold ${
-                        form.answer_index === i ? "text-[rgb(var(--green))]" : "text-[rgb(var(--ink))]"
-                      }`}
-                    >
-                      {opt}
-                    </span>
-                  ) : (
-                    <input
-                      value={form.options[i] ?? ""}
-                      onChange={(e) => {
-                        const next = [...form.options];
-                        next[i] = e.target.value;
-                        setForm({ ...form, options: next });
-                      }}
-                      placeholder={`Option ${String.fromCharCode(65 + i)}`}
-                      className={`w-full rounded-xl border px-3 py-2 text-sm text-[rgb(var(--ink))] outline-none placeholder:text-[rgb(var(--ink-3))] focus:border-[rgb(var(--accent))] ${
+          {/* Rendu spécifique par type */}
+          {(isMcq || isTrueFalse) && (
+            <div>
+              <label className="text-xs font-black uppercase tracking-widest text-[rgb(var(--ink-3))]">
+                {isTrueFalse
+                  ? "Réponse correcte"
+                  : "Options — clique sur le cercle pour marquer la bonne réponse"}
+              </label>
+              <div
+                className={`mt-2 grid gap-2 ${
+                  isTrueFalse ? "grid-cols-2" : "grid-cols-1 sm:grid-cols-2"
+                }`}
+              >
+                {displayOptions.map((opt, i) => (
+                  <div key={i} className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setForm({ ...form, answer_index: i })}
+                      className={`h-6 w-6 shrink-0 rounded-full border-2 transition ${
                         form.answer_index === i
-                          ? "border-[rgb(var(--green))]/50 bg-[rgb(var(--green))]/10"
-                          : "border-[rgb(var(--border))] bg-[rgb(var(--surface))]"
+                          ? "border-[rgb(var(--green))] bg-[rgb(var(--green))]"
+                          : "border-[rgb(var(--border))] hover:border-[rgb(var(--ink-3))]"
                       }`}
+                      aria-label={`Marquer option ${i + 1} comme correcte`}
                     />
-                  )}
-                </div>
-              ))}
+                    {isTrueFalse ? (
+                      <span
+                        className={`font-bold ${
+                          form.answer_index === i ? "text-[rgb(var(--green))]" : "text-[rgb(var(--ink))]"
+                        }`}
+                      >
+                        {opt}
+                      </span>
+                    ) : (
+                      <input
+                        value={form.options[i] ?? ""}
+                        onChange={(e) => {
+                          const next = [...form.options];
+                          next[i] = e.target.value;
+                          setForm({ ...form, options: next });
+                        }}
+                        placeholder={`Option ${String.fromCharCode(65 + i)}`}
+                        className={`w-full rounded-xl border px-3 py-2 text-sm text-[rgb(var(--ink))] outline-none placeholder:text-[rgb(var(--ink-3))] focus:border-[rgb(var(--accent))] ${
+                          form.answer_index === i
+                            ? "border-[rgb(var(--green))]/50 bg-[rgb(var(--green))]/10"
+                            : "border-[rgb(var(--border))] bg-[rgb(var(--surface))]"
+                        }`}
+                      />
+                    )}
+                  </div>
+                ))}
+              </div>
             </div>
-          </div>
+          )}
+
+          {isNumeric && (
+            <div className="space-y-3">
+              <div>
+                <label className="text-xs font-black uppercase tracking-widest text-[rgb(var(--ink-3))]">
+                  Réponse attendue (nombre)
+                </label>
+                <input
+                  type="text"
+                  inputMode="decimal"
+                  value={form.expected_numeric_answer}
+                  onChange={(e) =>
+                    setForm({ ...form, expected_numeric_answer: e.target.value })
+                  }
+                  placeholder="Ex : 7"
+                  className="mt-1 w-full rounded-xl border border-[rgb(var(--border))] bg-[rgb(var(--surface))] px-3 py-2 text-[rgb(var(--ink))] outline-none placeholder:text-[rgb(var(--ink-3))] focus:border-[rgb(var(--accent))]"
+                />
+              </div>
+              <div className="grid gap-3 sm:grid-cols-2">
+                <div>
+                  <label className="text-xs font-black uppercase tracking-widest text-[rgb(var(--ink-3))]">
+                    Tolérance ± (optionnel, défaut 0.01)
+                  </label>
+                  <input
+                    type="text"
+                    inputMode="decimal"
+                    value={form.numeric_tolerance}
+                    onChange={(e) =>
+                      setForm({ ...form, numeric_tolerance: e.target.value })
+                    }
+                    placeholder="0.01"
+                    className="mt-1 w-full rounded-xl border border-[rgb(var(--border))] bg-[rgb(var(--surface))] px-3 py-2 text-[rgb(var(--ink))] outline-none placeholder:text-[rgb(var(--ink-3))] focus:border-[rgb(var(--accent))]"
+                  />
+                </div>
+                <div>
+                  <label className="text-xs font-black uppercase tracking-widest text-[rgb(var(--ink-3))]">
+                    Unité (optionnel)
+                  </label>
+                  <input
+                    type="text"
+                    value={form.numeric_unit}
+                    onChange={(e) =>
+                      setForm({ ...form, numeric_unit: e.target.value })
+                    }
+                    placeholder="Ex : atomes, g, mol/L"
+                    className="mt-1 w-full rounded-xl border border-[rgb(var(--border))] bg-[rgb(var(--surface))] px-3 py-2 text-[rgb(var(--ink))] outline-none placeholder:text-[rgb(var(--ink-3))] focus:border-[rgb(var(--accent))]"
+                  />
+                </div>
+              </div>
+            </div>
+          )}
+
+          {isShortText && (
+            <div>
+              <label className="text-xs font-black uppercase tracking-widest text-[rgb(var(--ink-3))]">
+                Réponses acceptables (1-5 variantes orthographiques)
+              </label>
+              <div className="mt-2 space-y-2">
+                {form.expected_text_answers.map((ans, i) => (
+                  <input
+                    key={i}
+                    value={ans}
+                    onChange={(e) => {
+                      const next = [...form.expected_text_answers];
+                      next[i] = e.target.value;
+                      setForm({ ...form, expected_text_answers: next });
+                    }}
+                    placeholder={
+                      i === 0
+                        ? "Réponse principale"
+                        : `Variante ${i + 1} (optionnel)`
+                    }
+                    className="w-full rounded-xl border border-[rgb(var(--border))] bg-[rgb(var(--surface))] px-3 py-2 text-sm text-[rgb(var(--ink))] outline-none placeholder:text-[rgb(var(--ink-3))] focus:border-[rgb(var(--accent))]"
+                  />
+                ))}
+              </div>
+              <p className="mt-1 text-xs text-[rgb(var(--ink-3))]">
+                Comparaison après normalisation (minuscules, sans accents).
+              </p>
+            </div>
+          )}
 
           {/* Explanation + AI button */}
           <div>
@@ -198,7 +299,7 @@ export function QuestionForm({
           disabled={saving || !isValid}
           title={
             !isValid
-              ? "Complète la question et sélectionne une bonne réponse"
+              ? "Complète la question et les champs spécifiques à ce type."
               : undefined
           }
           className="rounded-2xl bg-[rgb(var(--accent))] px-5 py-3 font-black text-white hover:opacity-90 disabled:opacity-40"

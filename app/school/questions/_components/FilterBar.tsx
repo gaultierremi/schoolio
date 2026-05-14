@@ -39,6 +39,8 @@ export function FilterBar({
       >
         <option value="">Tous les types</option>
         <option value="mcq">QCM</option>
+        <option value="numeric">Numérique</option>
+        <option value="short_text">Réponse libre</option>
         <option value="truefalse">Vrai / Faux</option>
       </select>
       <select
