@@ -712,6 +712,10 @@ export default function ImportPage() {
           fileSize: file.size,
           fileHash: hash,
           organization_tags: orgTagIds,
+          // ── User upfront choice (mandatory) — devient la source de vérité pour
+          //    subject_enum et level sur le course. infer-metadata respectera.
+          ...(defaultSubject ? { subject_enum: defaultSubject } : {}),
+          ...(defaultLevel !== null ? { level: defaultLevel } : {}),
         }),
       });
       const data = (await res.json()) as {
