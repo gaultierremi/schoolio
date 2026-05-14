@@ -37,11 +37,14 @@ ALTER TABLE public.content_snippets ADD CONSTRAINT content_snippets_source_kind_
   CHECK (
     (source_kind = 'syllabus_extraction' AND course_id IS NOT NULL AND concept_id IS NULL)
     OR
-    (source_kind != 'syllabus_extraction' AND concept_id IS NOT NULL)
+    (source_kind != 'syllabus_extraction' AND concept_id IS NOT NULL AND course_id IS NULL)
   );
 
--- 6) Index dedup pour syllabus_extraction : pas de doublon course + chapter + text hash partiel
--- (text peut être 4000 chars, on hash avec md5 pour index OK)
+-- 6) Index dedup pour syllabus_extraction : pas de doublon course + text identique.
+-- Si deux chapitres du même course produisent un snippet de texte IDENTIQUE (cas rare,
+-- ex: "Définition de l'atome" qui apparaît textuellement dans 2 chapitres), un seul
+-- sera inséré. Acceptable trade-off : on évite la dup massive d'un re-trigger sans
+-- complexifier l'index avec chapter_title (qui vit dans source_ref JSONB).
 CREATE UNIQUE INDEX IF NOT EXISTS uq_content_snippets_syllabus_extraction
   ON public.content_snippets(course_id, md5(text))
   WHERE source_kind = 'syllabus_extraction';
