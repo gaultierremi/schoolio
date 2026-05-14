@@ -10,7 +10,11 @@ import { logActivity } from "@/lib/activity/log";
 import { logError } from "@/lib/observability/log-error";
 
 export const dynamic = "force-dynamic";
-export const maxDuration = 120;
+// 300s = 5min, max sur Vercel Pro. Pour gros syllabus (176p+) avec 10
+// workers Anthropic streaming, on peut s'approcher de 2-4min — 2min était
+// trop tight, route timeout → reponse HTML "An error occurred" → client
+// JSON parse fail.
+export const maxDuration = 300;
 
 // LEGACY ANTHROPIC IMPLEMENTATION (kept for reference)
 /*
@@ -37,15 +41,22 @@ const UUID_REGEX = /^[0-9a-f-]{36}$/i;
 const MAX_PDF_BYTES = 20 * 1024 * 1024; // 20MB Gemini Vision limit
 // Scale parallèle : auto-ajuste selon le volume demandé (cf. computeWorkerLayout).
 // Plafond raisonnable pour éviter de saturer Anthropic/Gemini en parallèle.
-const MAX_WORKERS = 10;
-const QUESTIONS_PER_WORKER = 30;
+// 6 workers max : balance entre parallélisme (réduit la durée totale) et
+// concurrence Anthropic (chaque worker streaming consomme une connexion).
+// Au-delà de 6 parallèles sur PDF Vision, Anthropic peut throttler.
+const MAX_WORKERS = 6;
+const QUESTIONS_PER_WORKER = 50;
 
 // Cible automatique de questions = min(MAX_QUESTIONS_PER_COURSE, pages × 3)
 // Pour un syllabus FWB typique (50-200 pages), donne 150-600 questions —
 // couverture solide sans gaspiller du budget IA.
+// Cible par appel : capée à 300 (6 workers × 50) pour rester dans la
+// fenêtre maxDuration 300s. Le prof peut re-trigger pour générer plus
+// (chaque appel ajoute des questions, plafond global MAX_QUESTIONS_PER_COURSE).
+const AUTO_TARGET_CAP_PER_CALL = 300;
 function autoTargetQuestions(pagesCount: number | null): number {
-  if (!pagesCount || pagesCount < 1) return 30; // fallback minimal si pages_count absent
-  return Math.min(MAX_QUESTIONS_PER_COURSE, Math.ceil(pagesCount * 3));
+  if (!pagesCount || pagesCount < 1) return 30;
+  return Math.min(AUTO_TARGET_CAP_PER_CALL, Math.ceil(pagesCount * 3));
 }
 
 function computeWorkerLayout(target: number): { workerCount: number; questionsPerWorker: number } {
