@@ -12,7 +12,7 @@ import { PendingCard } from "./_components/PendingCard";
 import { ValidatedCard } from "./_components/ValidatedCard";
 import { RejectedCard } from "./_components/RejectedCard";
 import { TypeBadge } from "./_components/TypeBadge";
-import { SubjectSidebar, type QuestionTypeFilter } from "./_components/SubjectSidebar";
+import { SubjectSidebar, type QuestionType } from "./_components/SubjectSidebar";
 
 export default function SchoolQuestionsPage() {
   const {
@@ -54,9 +54,12 @@ export default function SchoolQuestionsPage() {
   // Filtre sidebar matière + thème + type, scoped à l'onglet "à valider".
   // Permet de naviguer dans des centaines de questions sur gros syllabus, et
   // de valider par batch d'un même type (ex: tous les QCM d'un chapitre).
+  // Type filter en multi-select : Set vide = aucun filtre (= "Tous").
   const [pendingSubjectFilter, setPendingSubjectFilter] = useState<string | null>(null);
   const [pendingThemeFilter, setPendingThemeFilter] = useState<string | null>(null);
-  const [pendingTypeFilter, setPendingTypeFilter] = useState<QuestionTypeFilter>("all");
+  const [pendingTypeFilters, setPendingTypeFilters] = useState<Set<QuestionType>>(
+    () => new Set(),
+  );
   const filteredPendingBySubject = useMemo(() => {
     return pendingQuestions.filter((q) => {
       if (pendingSubjectFilter !== null) {
@@ -66,15 +69,15 @@ export default function SchoolQuestionsPage() {
       if (pendingThemeFilter !== null) {
         if ((q.period ?? "").trim() !== pendingThemeFilter) return false;
       }
-      if (pendingTypeFilter !== "all") {
+      if (pendingTypeFilters.size > 0) {
         const qt = q.type as string | null | undefined;
         // "truefalse" est legacy mais visuellement traité comme un QCM 2 options.
         const normalized = qt === "truefalse" ? "mcq" : qt;
-        if (normalized !== pendingTypeFilter) return false;
+        if (!normalized || !pendingTypeFilters.has(normalized as QuestionType)) return false;
       }
       return true;
     });
-  }, [pendingQuestions, pendingSubjectFilter, pendingThemeFilter, pendingTypeFilter]);
+  }, [pendingQuestions, pendingSubjectFilter, pendingThemeFilter, pendingTypeFilters]);
 
   // ── Guards ──
 
@@ -221,14 +224,14 @@ export default function SchoolQuestionsPage() {
                         questions={pendingQuestions}
                         selectedSubject={pendingSubjectFilter}
                         selectedTheme={pendingThemeFilter}
-                        selectedType={pendingTypeFilter}
+                        selectedTypes={pendingTypeFilters}
                         onSelectSubject={(s) => {
                           setPendingSubjectFilter(s);
                           // Reset theme quand on change de matière (les thèmes diffèrent)
                           setPendingThemeFilter(null);
                         }}
                         onSelectTheme={setPendingThemeFilter}
-                        onSelectType={setPendingTypeFilter}
+                        onSelectTypes={setPendingTypeFilters}
                       />
                       <div className="flex-1 space-y-4 min-w-0">
                         {filteredPendingBySubject.length === 0 ? (
