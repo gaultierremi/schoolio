@@ -66,12 +66,14 @@ export async function GET(
         if (pdfBlob) {
           const pdfBuffer = Buffer.from(await pdfBlob.arrayBuffer());
           if (pdfBuffer.byteLength <= MAX_PDF_BYTES) {
+            // Legacy route: cockpit POC uses /api/feat/cockpit/sessions/[code]/contextual-questions
             aiGenerated = await generateLiveQuestions(
               admin,
               user.id,
               courseId,
               currentPage,
-              pdfBuffer,
+              "demo-1", // pdfKey placeholder — live_sessions not used in cockpit POC
+              "",       // transcript placeholder
             );
           }
         }
