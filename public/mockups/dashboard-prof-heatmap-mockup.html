@@ -1,0 +1,493 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Maïa — Dashboard prof : Devoir + Lacunes (mockup)</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,typography"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Source+Serif+4:opsz,wght@8..60,500;8..60,600;8..60,700&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/lucide@0.469.0/dist/umd/lucide.min.js"></script>
+<style>
+  :root {
+    --surface: 255 255 255;
+    --surface-2: 247 248 250;
+    --border: 230 232 236;
+    --text-primary: 11 18 32;
+    --text-secondary: 91 100 120;
+    --text-tertiary: 138 146 162;
+    --accent: 109 40 217;
+    --accent-2: 124 58 237;
+    --chimie: 37 99 235;
+    /* Mastery levels — gradient red→green */
+    --mastery-none: 226 232 240;
+    --mastery-1: 239 68 68;
+    --mastery-2: 251 146 60;
+    --mastery-3: 250 204 21;
+    --mastery-4: 132 204 22;
+    --mastery-5: 34 197 94;
+  }
+  .dark {
+    --surface: 11 15 23;
+    --surface-2: 17 24 39;
+    --border: 31 41 55;
+    --text-primary: 243 244 246;
+    --text-secondary: 156 163 175;
+    --text-tertiary: 107 114 128;
+    --accent: 167 139 250;
+    --accent-2: 139 92 246;
+    --mastery-none: 51 65 85;
+    --mastery-1: 248 113 113;
+    --mastery-2: 251 146 60;
+    --mastery-3: 250 204 21;
+    --mastery-4: 163 230 53;
+    --mastery-5: 74 222 128;
+  }
+  html, body {
+    background: rgb(var(--surface-2));
+    color: rgb(var(--text-primary));
+    font-family: 'Inter', ui-sans-serif, system-ui, sans-serif;
+  }
+  .serif { font-family: 'Source Serif 4', ui-serif, Georgia, serif; }
+  .card {
+    background: rgb(var(--surface));
+    border: 1px solid rgb(var(--border));
+    border-radius: 14px;
+  }
+  .ink { color: rgb(var(--text-primary)); }
+  .ink2 { color: rgb(var(--text-secondary)); }
+  .ink3 { color: rgb(var(--text-tertiary)); }
+  .accent-bg { background: rgb(var(--accent)); }
+  .chimie-bg { background: rgb(var(--chimie) / 0.10); color: rgb(var(--chimie)); }
+  .dark .chimie-bg { background: rgb(var(--chimie) / 0.22); filter: brightness(1.2); }
+  .border1 { border-color: rgb(var(--border)); }
+  .heatmap-cell {
+    transition: all 120ms ease;
+    cursor: pointer;
+  }
+  .heatmap-cell:hover {
+    outline: 2px solid rgb(var(--accent));
+    outline-offset: -2px;
+    transform: scale(1.05);
+    z-index: 10;
+  }
+  .mastery-0 { background: rgb(var(--mastery-none)); color: rgb(var(--text-tertiary)); }
+  .mastery-1 { background: rgb(var(--mastery-1)); color: white; }
+  .mastery-2 { background: rgb(var(--mastery-2)); color: rgb(17 24 39); }
+  .mastery-3 { background: rgb(var(--mastery-3)); color: rgb(17 24 39); }
+  .mastery-4 { background: rgb(var(--mastery-4)); color: rgb(17 24 39); }
+  .mastery-5 { background: rgb(var(--mastery-5)); color: white; }
+  .student-row:hover { background: rgb(var(--surface-2)); }
+  *:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 2px rgb(var(--surface)), 0 0 0 4px rgb(var(--accent));
+    border-radius: 8px;
+  }
+  /* Compact scrollbar */
+  .scroll-x { overflow-x: auto; }
+  .scroll-x::-webkit-scrollbar { height: 6px; }
+  .scroll-x::-webkit-scrollbar-thumb { background: rgb(var(--border)); border-radius: 3px; }
+</style>
+</head>
+<body>
+
+<!-- ── TOP BAR ──────────────────────────────────────────────────────────────── -->
+<header class="border-b border1" style="background: rgb(var(--surface));">
+  <div class="mx-auto flex max-w-[1400px] items-center justify-between px-6 py-3">
+    <div class="flex items-center gap-3">
+      <div class="flex h-7 w-7 items-center justify-center rounded-lg accent-bg text-white text-xs font-bold">M</div>
+      <span class="serif text-lg font-semibold ink">Maïa</span>
+      <span class="ink3 text-sm">· Espace prof</span>
+    </div>
+    <div class="flex items-center gap-3">
+      <button id="theme-toggle" class="rounded-lg border border1 p-2 text-sm ink2 hover:ink" aria-label="Theme">
+        <i data-lucide="moon" class="h-4 w-4"></i>
+      </button>
+      <div class="flex items-center gap-2">
+        <div class="flex h-8 w-8 items-center justify-center rounded-full" style="background: rgb(var(--accent) / 0.15); color: rgb(var(--accent));">
+          <span class="text-xs font-semibold">CD</span>
+        </div>
+        <span class="ink text-sm font-medium">Mme Dubois</span>
+      </div>
+    </div>
+  </div>
+</header>
+
+<!-- ── BREADCRUMB + ASSIGNMENT HEADER ──────────────────────────────────────── -->
+<div class="mx-auto max-w-[1400px] px-6 pt-6">
+  <nav class="flex items-center gap-2 text-sm ink3">
+    <a href="#" class="hover:ink2">Mes classes</a>
+    <i data-lucide="chevron-right" class="h-3.5 w-3.5"></i>
+    <a href="#" class="hover:ink2">4ème B — Chimie</a>
+    <i data-lucide="chevron-right" class="h-3.5 w-3.5"></i>
+    <a href="#" class="hover:ink2">Devoirs</a>
+    <i data-lucide="chevron-right" class="h-3.5 w-3.5"></i>
+    <span class="ink">Devoir #3</span>
+  </nav>
+
+  <div class="mt-4 flex flex-wrap items-start justify-between gap-4">
+    <div>
+      <div class="flex items-center gap-2">
+        <span class="chimie-bg rounded-md px-2 py-0.5 text-xs font-medium">Chimie</span>
+        <span class="ink3 text-xs">4ème secondaire · FW-B</span>
+      </div>
+      <h1 class="serif mt-2 text-3xl font-semibold ink">Devoir #3 — Stœchiométrie et solutions</h1>
+      <p class="mt-1 ink2 text-sm">
+        Distribué le 6 mai · Échéance 13 mai · 25 questions · ~30 min
+      </p>
+    </div>
+    <div class="flex gap-2">
+      <button class="rounded-lg border border1 px-3 py-2 text-sm font-medium ink2 hover:ink">
+        <i data-lucide="download" class="mr-1.5 inline h-4 w-4"></i>Exporter
+      </button>
+      <button class="rounded-lg border border1 px-3 py-2 text-sm font-medium ink2 hover:ink">
+        <i data-lucide="link-2" class="mr-1.5 inline h-4 w-4"></i>Partager
+      </button>
+      <button class="rounded-lg accent-bg px-3 py-2 text-sm font-medium text-white hover:opacity-90">
+        <i data-lucide="message-square" class="mr-1.5 inline h-4 w-4"></i>Plan de remédiation
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ── KPI CARDS ────────────────────────────────────────────────────────────── -->
+<div class="mx-auto mt-6 max-w-[1400px] px-6">
+  <div class="grid grid-cols-2 gap-3 sm:grid-cols-4">
+    <div class="card p-4">
+      <p class="ink3 text-xs uppercase tracking-wide">Participation</p>
+      <p class="serif mt-1 text-2xl font-semibold ink">21<span class="ink3 text-base">/25</span></p>
+      <p class="ink2 mt-1 text-xs">84% des élèves ont terminé</p>
+    </div>
+    <div class="card p-4">
+      <p class="ink3 text-xs uppercase tracking-wide">Moyenne classe</p>
+      <p class="serif mt-1 text-2xl font-semibold ink">62%</p>
+      <p class="ink2 mt-1 text-xs">↘ -8pts vs Devoir #2</p>
+    </div>
+    <div class="card p-4">
+      <p class="ink3 text-xs uppercase tracking-wide">Concept le + faible</p>
+      <p class="serif mt-1 text-lg font-semibold ink">Stœchiométrie</p>
+      <p class="text-xs" style="color: rgb(var(--mastery-1));">38% maîtrise classe</p>
+    </div>
+    <div class="card p-4">
+      <p class="ink3 text-xs uppercase tracking-wide">Concept le + fort</p>
+      <p class="serif mt-1 text-lg font-semibold ink">Tableau périodique</p>
+      <p class="text-xs" style="color: rgb(var(--mastery-5));">81% maîtrise classe</p>
+    </div>
+  </div>
+</div>
+
+<!-- ── FILTERS BAR ──────────────────────────────────────────────────────────── -->
+<div class="mx-auto mt-6 max-w-[1400px] px-6">
+  <div class="card flex flex-wrap items-center gap-2 p-3">
+    <span class="ink3 text-xs uppercase tracking-wide mr-1">Filtrer</span>
+    <button class="rounded-md bg-purple-100 px-3 py-1 text-xs font-medium" style="color: rgb(var(--accent));">
+      Tous (25)
+    </button>
+    <button class="rounded-md border border1 px-3 py-1 text-xs ink2 hover:ink">
+      Terminés (21)
+    </button>
+    <button class="rounded-md border border1 px-3 py-1 text-xs ink2 hover:ink">
+      En cours (2)
+    </button>
+    <button class="rounded-md border border1 px-3 py-1 text-xs ink2 hover:ink">
+      Non commencés (2)
+    </button>
+    <span class="mx-2 h-4 w-px" style="background: rgb(var(--border));"></span>
+    <span class="ink3 text-xs uppercase tracking-wide mr-1">Trier</span>
+    <select class="rounded-md border border1 bg-transparent px-2 py-1 text-xs ink2">
+      <option>Élèves les plus en difficulté</option>
+      <option>Ordre alphabétique</option>
+      <option>Date de soumission</option>
+      <option>Score décroissant</option>
+    </select>
+    <div class="ml-auto flex items-center gap-2">
+      <span class="ink3 text-xs">Légende :</span>
+      <span class="flex items-center gap-1 text-xs ink2"><span class="inline-block h-3 w-3 rounded mastery-1"></span>0-39%</span>
+      <span class="flex items-center gap-1 text-xs ink2"><span class="inline-block h-3 w-3 rounded mastery-2"></span>40-54%</span>
+      <span class="flex items-center gap-1 text-xs ink2"><span class="inline-block h-3 w-3 rounded mastery-3"></span>55-69%</span>
+      <span class="flex items-center gap-1 text-xs ink2"><span class="inline-block h-3 w-3 rounded mastery-4"></span>70-84%</span>
+      <span class="flex items-center gap-1 text-xs ink2"><span class="inline-block h-3 w-3 rounded mastery-5"></span>85-100%</span>
+      <span class="flex items-center gap-1 text-xs ink2"><span class="inline-block h-3 w-3 rounded mastery-0"></span>non évalué</span>
+    </div>
+  </div>
+</div>
+
+<!-- ── MAIN GRID : LEFT = HEATMAP, RIGHT = SIDE PANELS ────────────────────── -->
+<div class="mx-auto mt-4 max-w-[1400px] px-6 pb-12">
+  <div class="grid gap-4 lg:grid-cols-[1fr_320px]">
+
+    <!-- LEFT : HEATMAP ──────────────────────────────────────────────────── -->
+    <section class="card p-5">
+      <div class="mb-3 flex items-center justify-between">
+        <div>
+          <h2 class="serif text-lg font-semibold ink">Carte de maîtrise — 8 concepts chimie 4ème</h2>
+          <p class="ink3 mt-0.5 text-xs">Cliquer sur une cellule = détail élève · cliquer sur un concept = drill-down classe</p>
+        </div>
+      </div>
+
+      <div class="scroll-x">
+        <table class="w-full text-sm" style="border-collapse: separate; border-spacing: 4px;">
+          <thead>
+            <tr>
+              <th class="sticky left-0 z-10 min-w-[170px] text-left ink3 text-xs font-medium px-2" style="background: rgb(var(--surface));">
+                Élève
+              </th>
+              <th class="text-center ink3 text-xs font-medium" data-concept="atomes">Atomes</th>
+              <th class="text-center ink3 text-xs font-medium" data-concept="tableau">Tableau<br>périodique</th>
+              <th class="text-center ink3 text-xs font-medium" data-concept="liaisons">Liaisons<br>chimiques</th>
+              <th class="text-center ink3 text-xs font-medium" data-concept="nomenclature">Nomenclature</th>
+              <th class="text-center ink3 text-xs font-medium" data-concept="equations">Équations<br>équilibrage</th>
+              <th class="text-center ink3 text-xs font-medium" data-concept="stoechiometrie">Stœchiométrie</th>
+              <th class="text-center ink3 text-xs font-medium" data-concept="solutions">Solutions<br>concentrations</th>
+              <th class="text-center ink3 text-xs font-medium" data-concept="acides">Acides<br>et bases</th>
+              <th class="text-right ink3 text-xs font-medium pl-3">Statut</th>
+            </tr>
+            <!-- Class average row -->
+            <tr class="text-xs">
+              <td class="sticky left-0 z-10 py-1 px-2 ink3 italic" style="background: rgb(var(--surface));">Moyenne classe</td>
+              <td><div class="heatmap-cell mastery-4 mx-auto flex h-7 w-12 items-center justify-center rounded-md font-medium" title="78% — bon">78</div></td>
+              <td><div class="heatmap-cell mastery-5 mx-auto flex h-7 w-12 items-center justify-center rounded-md font-medium" title="81% — fort">81</div></td>
+              <td><div class="heatmap-cell mastery-4 mx-auto flex h-7 w-12 items-center justify-center rounded-md font-medium" title="72%">72</div></td>
+              <td><div class="heatmap-cell mastery-3 mx-auto flex h-7 w-12 items-center justify-center rounded-md font-medium" title="64%">64</div></td>
+              <td><div class="heatmap-cell mastery-3 mx-auto flex h-7 w-12 items-center justify-center rounded-md font-medium" title="58%">58</div></td>
+              <td><div class="heatmap-cell mastery-1 mx-auto flex h-7 w-12 items-center justify-center rounded-md font-medium" title="38% — faible classe">38</div></td>
+              <td><div class="heatmap-cell mastery-2 mx-auto flex h-7 w-12 items-center justify-center rounded-md font-medium" title="47% — faible">47</div></td>
+              <td><div class="heatmap-cell mastery-3 mx-auto flex h-7 w-12 items-center justify-center rounded-md font-medium" title="60%">60</div></td>
+              <td class="text-right ink3 text-xs pl-3">—</td>
+            </tr>
+          </thead>
+          <tbody id="students-tbody">
+            <!-- Generated below -->
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- RIGHT : SIDE PANELS ───────────────────────────────────────────── -->
+    <aside class="space-y-4">
+
+      <!-- Concept dropdown -->
+      <div class="card p-4">
+        <h3 class="ink3 text-xs uppercase tracking-wide">Suggestions de remédiation</h3>
+        <p class="serif mt-2 text-base ink">3 élèves nécessitent un suivi prioritaire</p>
+        <ul class="mt-3 space-y-2 text-sm">
+          <li class="flex items-start gap-2">
+            <i data-lucide="alert-triangle" class="mt-0.5 h-4 w-4 flex-shrink-0" style="color: rgb(var(--mastery-1));"></i>
+            <div>
+              <p class="ink font-medium">Mathéo Vandenbroucke</p>
+              <p class="ink3 text-xs">5 concepts en rouge — entretien individuel suggéré</p>
+            </div>
+          </li>
+          <li class="flex items-start gap-2">
+            <i data-lucide="alert-triangle" class="mt-0.5 h-4 w-4 flex-shrink-0" style="color: rgb(var(--mastery-1));"></i>
+            <div>
+              <p class="ink font-medium">Kylian Dupuis</p>
+              <p class="ink3 text-xs">Stœchiométrie + solutions à reprendre</p>
+            </div>
+          </li>
+          <li class="flex items-start gap-2">
+            <i data-lucide="alert-triangle" class="mt-0.5 h-4 w-4 flex-shrink-0" style="color: rgb(var(--mastery-2));"></i>
+            <div>
+              <p class="ink font-medium">Lou Beaumont</p>
+              <p class="ink3 text-xs">Non commencé — relance recommandée</p>
+            </div>
+          </li>
+        </ul>
+        <button class="mt-4 w-full rounded-lg accent-bg px-3 py-2 text-sm font-medium text-white hover:opacity-90">
+          Générer un plan de remédiation IA
+        </button>
+      </div>
+
+      <!-- Lacunes classe -->
+      <div class="card p-4">
+        <h3 class="ink3 text-xs uppercase tracking-wide">Lacunes collectives</h3>
+        <p class="serif mt-2 text-base ink">À reprendre en cours</p>
+        <ul class="mt-3 space-y-3">
+          <li>
+            <div class="flex items-center justify-between text-sm">
+              <span class="ink font-medium">Stœchiométrie</span>
+              <span class="text-xs font-semibold" style="color: rgb(var(--mastery-1));">38%</span>
+            </div>
+            <div class="mt-1 h-1.5 w-full rounded-full" style="background: rgb(var(--border));">
+              <div class="h-1.5 rounded-full" style="width: 38%; background: rgb(var(--mastery-1));"></div>
+            </div>
+            <p class="ink3 mt-1 text-xs">17/21 élèves &lt; 50% · concept fondamental pour Devoir #4</p>
+          </li>
+          <li>
+            <div class="flex items-center justify-between text-sm">
+              <span class="ink font-medium">Solutions & concentrations</span>
+              <span class="text-xs font-semibold" style="color: rgb(var(--mastery-2));">47%</span>
+            </div>
+            <div class="mt-1 h-1.5 w-full rounded-full" style="background: rgb(var(--border));">
+              <div class="h-1.5 rounded-full" style="width: 47%; background: rgb(var(--mastery-2));"></div>
+            </div>
+            <p class="ink3 mt-1 text-xs">12/21 élèves &lt; 50% · pré-requis stœchio</p>
+          </li>
+          <li>
+            <div class="flex items-center justify-between text-sm">
+              <span class="ink font-medium">Équations & équilibrage</span>
+              <span class="text-xs font-semibold" style="color: rgb(var(--mastery-3));">58%</span>
+            </div>
+            <div class="mt-1 h-1.5 w-full rounded-full" style="background: rgb(var(--border));">
+              <div class="h-1.5 rounded-full" style="width: 58%; background: rgb(var(--mastery-3));"></div>
+            </div>
+            <p class="ink3 mt-1 text-xs">9/21 élèves &lt; 50%</p>
+          </li>
+        </ul>
+        <button class="mt-4 w-full rounded-lg border border1 px-3 py-2 text-sm ink2 hover:ink">
+          Voir les questions où la classe galère
+        </button>
+      </div>
+
+      <!-- Coverage curriculum -->
+      <div class="card p-4">
+        <h3 class="ink3 text-xs uppercase tracking-wide">Couverture programme</h3>
+        <p class="serif mt-2 text-base ink">4ème secondaire FW-B</p>
+        <p class="ink2 mt-2 text-xs leading-relaxed">
+          Ce devoir couvre <strong class="ink">3 des 8 thèmes</strong> du programme officiel.
+          Thèmes non encore évalués : Liaisons chimiques · Acides & bases.
+        </p>
+        <button class="mt-3 w-full rounded-lg border border1 px-3 py-2 text-xs ink2 hover:ink">
+          Vue programme complet
+        </button>
+      </div>
+
+    </aside>
+  </div>
+</div>
+
+<!-- ── TOOLTIP (singleton) ──────────────────────────────────────────────── -->
+<div id="tooltip" class="pointer-events-none fixed z-50 hidden rounded-lg px-3 py-2 text-xs shadow-lg"
+     style="background: rgb(var(--text-primary)); color: rgb(var(--surface));">
+</div>
+
+<script>
+  // ── Mock data : 25 élèves 4ème B chimie, masteries réalistes ────────────
+  const concepts = ["atomes","tableau","liaisons","nomenclature","equations","stoechiometrie","solutions","acides"];
+  const students = [
+    // [prenom, nom, statut, masteries[atomes,tableau,liaisons,nomenclature,equations,stoechio,solutions,acides]]
+    ["Adèle","Lefèvre","done",       [88,92,84,78,82,72,68,75]],
+    ["Bastien","Toussaint","done",   [82,90,76,68,72,55,52,68]],
+    ["Camille","Petit","done",       [85,88,80,72,76,62,58,70]],
+    ["Daphné","Mertens","done",      [80,85,70,68,62,42,45,58]],
+    ["Emrick","Lambert","done",      [75,82,68,62,58,38,42,52]],
+    ["Florine","Vermeulen","done",   [78,85,72,65,60,40,48,55]],
+    ["Gaspard","De Baere","done",    [90,95,88,82,78,65,72,80]],
+    ["Hugo","Lemmens","done",        [72,78,65,58,52,32,38,48]],
+    ["Inès","Charlier","done",       [88,92,82,78,72,58,62,70]],
+    ["Justine","Dewaele","done",     [80,88,75,68,65,48,52,62]],
+    ["Kylian","Dupuis","done",       [60,72,55,48,38,22,28,42]],
+    ["Lou","Beaumont","not_started", [0,0,0,0,0,0,0,0]],
+    ["Mathéo","Vandenbroucke","done",[55,68,42,38,32,18,22,35]],
+    ["Nora","Geerts","done",         [82,88,78,70,68,52,55,65]],
+    ["Ophélie","Renard","done",      [85,90,82,75,72,62,65,72]],
+    ["Paul","Janssens","done",       [78,85,72,65,62,48,50,60]],
+    ["Quentin","Goffinet","in_progress",[70,80,65,55,0,0,0,0]],
+    ["Roxane","Verbeke","done",      [85,90,80,75,70,55,60,68]],
+    ["Sacha","Boulanger","done",     [72,78,65,58,55,38,42,52]],
+    ["Tom","Wauters","done",         [80,85,72,68,62,45,48,58]],
+    ["Ursula","Engelen","done",      [88,92,82,78,75,62,68,72]],
+    ["Victor","Hennequin","in_progress",[75,82,0,0,0,0,0,0]],
+    ["Wilhelm","Smets","done",       [78,85,72,65,58,40,45,55]],
+    ["Yann","Maes","not_started",    [0,0,0,0,0,0,0,0]],
+    ["Zoé","Delvaux","done",         [92,95,88,85,82,72,78,82]],
+  ];
+
+  function masteryClass(v) {
+    if (v === 0) return "mastery-0";
+    if (v < 40)  return "mastery-1";
+    if (v < 55)  return "mastery-2";
+    if (v < 70)  return "mastery-3";
+    if (v < 85)  return "mastery-4";
+    return "mastery-5";
+  }
+  function statutLabel(s) {
+    if (s === "done") return ["Terminé", "rgb(var(--mastery-5))"];
+    if (s === "in_progress") return ["En cours", "rgb(var(--mastery-3))"];
+    return ["Non commencé", "rgb(var(--text-tertiary))"];
+  }
+  function sortByDifficulty(rows) {
+    return rows.slice().sort((a, b) => {
+      const avgA = a[3].filter(v => v > 0).reduce((s, v) => s + v, 0) / Math.max(1, a[3].filter(v => v > 0).length || 1);
+      const avgB = b[3].filter(v => v > 0).reduce((s, v) => s + v, 0) / Math.max(1, b[3].filter(v => v > 0).length || 1);
+      // not_started pinned at bottom
+      if (a[2] === "not_started" && b[2] !== "not_started") return 1;
+      if (b[2] === "not_started" && a[2] !== "not_started") return -1;
+      return avgA - avgB;
+    });
+  }
+
+  const tbody = document.getElementById("students-tbody");
+  const tooltip = document.getElementById("tooltip");
+
+  function render(rows) {
+    tbody.innerHTML = "";
+    sortByDifficulty(rows).forEach(([prenom, nom, statut, masteries]) => {
+      const tr = document.createElement("tr");
+      tr.className = "student-row";
+      const [label, color] = statutLabel(statut);
+      const initial = prenom.charAt(0) + nom.charAt(0);
+      tr.innerHTML = `
+        <td class="sticky left-0 z-10 min-w-[170px] px-2 py-1" style="background: rgb(var(--surface));">
+          <div class="flex items-center gap-2">
+            <div class="flex h-7 w-7 items-center justify-center rounded-full text-[10px] font-semibold" style="background: rgb(var(--accent) / 0.12); color: rgb(var(--accent));">${initial}</div>
+            <div>
+              <p class="ink text-xs font-medium leading-tight">${prenom} ${nom}</p>
+            </div>
+          </div>
+        </td>
+        ${masteries.map((v, i) => `
+          <td>
+            <div class="heatmap-cell mx-auto flex h-7 w-12 items-center justify-center rounded-md text-xs font-semibold ${masteryClass(v)}"
+                 data-tooltip="${prenom} · ${conceptLabel(concepts[i])}\\n${v === 0 ? 'non évalué' : v + '% maîtrise · ' + Math.floor(v/12) + '/8 questions correctes'}">
+              ${v === 0 ? '—' : v}
+            </div>
+          </td>
+        `).join('')}
+        <td class="pl-3 text-right">
+          <span class="text-xs font-medium" style="color: ${color};">${label}</span>
+        </td>
+      `;
+      tbody.appendChild(tr);
+    });
+    attachTooltipHandlers();
+  }
+
+  function conceptLabel(key) {
+    return {
+      "atomes":"Atomes","tableau":"Tableau périodique","liaisons":"Liaisons chimiques",
+      "nomenclature":"Nomenclature","equations":"Équations","stoechiometrie":"Stœchiométrie",
+      "solutions":"Solutions","acides":"Acides & bases"
+    }[key];
+  }
+
+  function attachTooltipHandlers() {
+    document.querySelectorAll(".heatmap-cell[data-tooltip]").forEach(el => {
+      el.addEventListener("mouseenter", e => {
+        tooltip.textContent = el.dataset.tooltip.replace(/\\n/g, " — ");
+        tooltip.classList.remove("hidden");
+      });
+      el.addEventListener("mousemove", e => {
+        tooltip.style.left = (e.clientX + 12) + "px";
+        tooltip.style.top = (e.clientY + 12) + "px";
+      });
+      el.addEventListener("mouseleave", () => tooltip.classList.add("hidden"));
+      el.addEventListener("click", () => {
+        const t = el.dataset.tooltip.split("\\n");
+        alert("Click → drill-down :\\n" + t.join("\\n") + "\\n\\n(mockup — l'app réelle ouvrira un panneau avec les questions ratées + suggestions de remédiation IA)");
+      });
+    });
+  }
+
+  // ── Theme toggle ──────────────────────────────────────────────────────
+  document.getElementById("theme-toggle").addEventListener("click", () => {
+    document.documentElement.classList.toggle("dark");
+    lucide.createIcons();
+  });
+
+  // Initial render
+  render(students);
+  lucide.createIcons();
+</script>
+
+</body>
+</html>
