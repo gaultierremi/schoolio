@@ -488,6 +488,14 @@ export default function ImportPage() {
   const [items, setItems] = useState<FileItem[]>([]);
   const [toast, setToast] = useState<string | null>(null);
 
+  // Upfront defaults : matière + niveau obligatoires AVANT upload.
+  // Évite des appels Claude inutiles pour inférer ces champs quand le prof
+  // les connaît déjà, et donne à Maïa un signal fort pour mieux nommer
+  // le titre du cours.
+  const [defaultSubject, setDefaultSubject] = useState<CourseSubject | "">("");
+  const [defaultLevel, setDefaultLevel] = useState<SchoolLevel | null>(null);
+  const upfrontReady = defaultSubject !== "" && defaultLevel !== null;
+
   // Tag picker state
   const [teacherTags, setTeacherTags] = useState<TeacherTag[]>([]);
   const [selectedTagIds, setSelectedTagIds] = useState<Set<string>>(new Set());
@@ -838,8 +846,8 @@ export default function ImportPage() {
       courseId: null,
       storagePath: null,
       inference: null,
-      editSubject: "autre",
-      editLevel: null,
+      editSubject: defaultSubject || "autre",
+      editLevel: defaultLevel,
       editTitle: file.name.replace(/\.pdf$/i, "").trim().slice(0, 60),
       editing: false,
       error: null,
@@ -891,8 +899,51 @@ export default function ImportPage() {
           </Link>
           <h1 className="text-2xl font-bold text-white">Import en masse</h1>
           <p className="text-sm text-white/50 mt-1">
-            Déposez vos PDF — Maïa détecte automatiquement matière, niveau et titre.
+            Choisis d&apos;abord la matière et l&apos;année, puis dépose tes PDF.
           </p>
+        </div>
+
+        {/* Defaults obligatoires AVANT upload — Maïa s'en sert pour mieux
+            comprendre le contenu et économise des appels d'inférence. */}
+        <div className="rounded-2xl border border-white/10 bg-white/5 p-4 space-y-3">
+          <p className="text-xs font-semibold uppercase tracking-widest text-white/40">
+            Pour quels cours ?
+          </p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <label className="text-xs text-white/60 flex flex-col gap-1">
+              Matière <span className="text-red-400">*</span>
+              <select
+                value={defaultSubject}
+                onChange={(e) => setDefaultSubject(e.target.value as CourseSubject | "")}
+                disabled={isGenerating}
+                className="bg-gray-900 border border-white/15 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-purple-400 disabled:opacity-50"
+              >
+                <option value="">Choisis une matière…</option>
+                {SUBJECT_OPTIONS.map((s) => (
+                  <option key={s} value={s}>{SUBJECT_LABELS[s]}</option>
+                ))}
+              </select>
+            </label>
+            <label className="text-xs text-white/60 flex flex-col gap-1">
+              Année d&apos;étude <span className="text-red-400">*</span>
+              <select
+                value={defaultLevel ?? ""}
+                onChange={(e) => setDefaultLevel(e.target.value ? (Number(e.target.value) as SchoolLevel) : null)}
+                disabled={isGenerating}
+                className="bg-gray-900 border border-white/15 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-purple-400 disabled:opacity-50"
+              >
+                <option value="">Choisis une année…</option>
+                {[1, 2, 3, 4, 5, 6].map((l) => (
+                  <option key={l} value={l}>{l}e année secondaire</option>
+                ))}
+              </select>
+            </label>
+          </div>
+          {!upfrontReady && (
+            <p className="text-xs text-amber-300">
+              Choisis la matière et l&apos;année pour activer le dépôt de PDF.
+            </p>
+          )}
         </div>
 
         <TagPicker
@@ -902,7 +953,7 @@ export default function ImportPage() {
           onToggle={toggleTag}
         />
 
-        <DropZone onFiles={addFiles} disabled={isGenerating} />
+        <DropZone onFiles={addFiles} disabled={isGenerating || !upfrontReady} />
 
         {/* Gemini queue progress banner */}
         {geminiQueueState !== null && (
