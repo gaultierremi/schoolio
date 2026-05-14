@@ -21,16 +21,26 @@ import { logError } from "@/lib/observability/log-error";
 // ── Constants exportées (utilisées aussi par route.ts pour calculs) ──────────
 
 export const MAX_PDF_BYTES = 20 * 1024 * 1024; // 20MB Gemini Vision limit
-// 6 workers en parallèle sur Trigger.dev cloud, chacun reçoit une PARTITION
-// du PDF (pages distinctes). Avantages vs avant :
-//   - Anthropic Vision ~6x plus rapide sur 30p que sur 176p
-//   - 600 questions en ~60s parallèle (vs 4-5min pour 100q sur PDF entier)
-//   - Pas besoin de bump maxDuration (reste à 300s = free tier Trigger.dev)
+// 4 workers en parallèle sur Trigger.dev cloud, chacun reçoit une PARTITION
+// du PDF (pages distinctes). Observation 2026-05-14 : Anthropic free tier
+// throttle au-delà de ~3-4 connexions concurrent sur PDF Vision streaming,
+// donc 6 workers prenaient 100s chacun (serial-ish) au lieu des 30-60s
+// espérés. 4 workers gardent le parallélisme efficace sans hit le throttle.
+//
+// Avantages vs avant partitionnement :
+//   - Anthropic Vision ~4x plus rapide sur 44p que sur 176p
 //   - Couverture du PDF garantie (worker N traite EXACTEMENT son segment)
-export const MAX_WORKERS = 6;
+export const MAX_WORKERS = 4;
 export const QUESTIONS_PER_WORKER = 50;
-export const AUTO_TARGET_CAP_PER_CALL = 300; // 6 × 50
+export const AUTO_TARGET_CAP_PER_CALL = 200; // 4 × 50
 export const MAX_QUESTIONS_PER_COURSE = 600;
+
+// Wall-clock budget INTERNE pour les workers (laisse 40s de marge avant
+// Trigger.dev maxDuration=300s pour : phase validating + insert DB + write
+// status final). Si workers individuels dépassent ce timeout, on fait un
+// graceful "partial success" : on prend les workers qui ont fini, log les
+// autres, et continue avec les questions disponibles.
+const WORKERS_DEADLINE_MS = 260_000; // 260s
 
 export function autoTargetQuestions(pagesCount: number | null): number {
   if (!pagesCount || pagesCount < 1) return 30;
@@ -498,65 +508,121 @@ export async function runGenerationForJob(jobId: string): Promise<void> {
     await updateJob(jobId, { phase: "generating_workers", workers_completed: 0 });
 
     let workersDone = 0;
-    const settled = await Promise.allSettled(
-      activeWorkerRanges.map(async (localRange, workerIndex) => {
-        const wt0 = Date.now();
-        // Range global (utile dans le prompt + offset post-traitement)
-        const globalRange: PageRange = {
-          start: scopeStartPage + localRange.start - 1,
-          end: scopeStartPage + localRange.end - 1,
-        };
-        try {
-          // Extract le sous-PDF pour ce worker (rapide, in-process)
-          const subBuffer = await extractPagesFromPdf({
-            pdfBuffer,
-            startPage: localRange.start,
-            endPage: localRange.end,
-          });
-          const subBase64 = Buffer.from(subBuffer).toString("base64");
+    type WorkerOutcome =
+      | { status: "fulfilled"; value: { rawText: string; globalRange: PageRange } }
+      | { status: "rejected"; reason: unknown }
+      | { status: "timeout"; reason: string };
 
-          const output = await generateQuestionsWithFallback(
-            subBase64,
-            promptWithRange,
+    // Wrapper : chaque worker resolve TOUJOURS (jamais reject) pour que
+    // Promise.all soit fiable. Le timeout global est géré par Promise.race
+    // avec un deadline timer qui resolve avec tous les workers non-terminés
+    // marqués "timeout" → partial success utilisable même si Anthropic
+    // throttle quelques workers.
+    const workerPromises: Promise<WorkerOutcome>[] = activeWorkerRanges.map(async (localRange, workerIndex) => {
+      const wt0 = Date.now();
+      const globalRange: PageRange = {
+        start: scopeStartPage + localRange.start - 1,
+        end: scopeStartPage + localRange.end - 1,
+      };
+      try {
+        const subBuffer = await extractPagesFromPdf({
+          pdfBuffer,
+          startPage: localRange.start,
+          endPage: localRange.end,
+        });
+        const subBase64 = Buffer.from(subBuffer).toString("base64");
+
+        const output = await generateQuestionsWithFallback(
+          subBase64,
+          promptWithRange,
+          workerIndex,
+          activeWorkerRanges.length,
+          questionsPerWorker,
+          globalRange,
+          globalRange.start - 1,
+        );
+        workersDone++;
+        await updateJob(jobId, { workers_completed: workersDone });
+        return { status: "fulfilled" as const, value: { rawText: output, globalRange } };
+      } catch (err) {
+        await logError(err, {
+          source: "generate-questions.runner.worker",
+          context: {
+            jobId,
             workerIndex,
-            activeWorkerRanges.length,
+            workerCount: activeWorkerRanges.length,
             questionsPerWorker,
+            localRange,
             globalRange,
-            globalRange.start - 1, // offset à appliquer au concept_page_hint
-          );
-          workersDone++;
-          await updateJob(jobId, { workers_completed: workersDone });
-          // Retourne aussi le globalRange pour offset les concept_page_hint
-          return { rawText: output, globalRange };
-        } catch (err) {
-          await logError(err, {
-            source: "generate-questions.runner.worker",
-            context: {
-              jobId,
-              workerIndex,
-              workerCount: activeWorkerRanges.length,
-              questionsPerWorker,
-              localRange,
-              globalRange,
-              durationMs: Date.now() - wt0,
-              pdfSizeBytes: pdfBuffer.byteLength,
-            },
-          });
-          throw err;
+            durationMs: Date.now() - wt0,
+            pdfSizeBytes: pdfBuffer.byteLength,
+          },
+        });
+        return { status: "rejected" as const, reason: err };
+      }
+    });
+
+    // Deadline interne : si on dépasse WORKERS_DEADLINE_MS, on récupère les
+    // workers qui ont fini et on continue avec ce qu'on a (partial success).
+    // Indispensable : sinon Trigger.dev kill ungracefully à 300s = job stuck
+    // en "running" en DB → spinner infini côté client.
+    let timedOut = false;
+    const deadlinePromise = new Promise<"deadline">((resolve) => {
+      setTimeout(() => {
+        timedOut = true;
+        resolve("deadline");
+      }, WORKERS_DEADLINE_MS);
+    });
+
+    // On wrap chaque worker pour signaler quand fini ; on race global
+    // entre "tous les workers" et "deadline".
+    const trackedResults = new Array<WorkerOutcome | undefined>(workerPromises.length);
+    let resolvedCount = 0;
+    workerPromises.forEach((p, i) => {
+      p.then((res) => {
+        trackedResults[i] = res;
+        resolvedCount++;
+      });
+    });
+    const allDonePromise = Promise.all(workerPromises).then(() => "all" as const);
+    const raceResult = await Promise.race([allDonePromise, deadlinePromise]);
+
+    if (raceResult === "deadline") {
+      // Marquer comme timeout les workers non-résolus
+      for (let i = 0; i < trackedResults.length; i++) {
+        if (trackedResults[i] === undefined) {
+          trackedResults[i] = {
+            status: "timeout",
+            reason: `Worker ${i} timed out after ${Math.round(WORKERS_DEADLINE_MS / 1000)}s (Trigger.dev deadline approaching, partial success)`,
+          };
         }
-      }),
-    );
+      }
+      await logError(new Error(`Workers deadline hit: ${resolvedCount}/${workerPromises.length} done`), {
+        source: "generate-questions.runner.workers-deadline",
+        context: { jobId, resolvedCount, totalWorkers: workerPromises.length, deadlineMs: WORKERS_DEADLINE_MS },
+      });
+    }
 
     type WorkerResult = { rawText: string; globalRange: PageRange };
     const workerResults: WorkerResult[] = [];
     const workerErrors: string[] = [];
-    settled.forEach((r, i) => {
+    trackedResults.forEach((r, i) => {
+      if (!r) {
+        // Ne devrait pas arriver après le code ci-dessus mais safety
+        workerErrors.push(`worker ${i}: state inconsistent`);
+        return;
+      }
       if (r.status === "fulfilled") workerResults.push(r.value);
-      else workerErrors.push(`worker ${i}: ${r.reason instanceof Error ? r.reason.message : String(r.reason)}`);
+      else if (r.status === "rejected")
+        workerErrors.push(`worker ${i}: ${r.reason instanceof Error ? r.reason.message : String(r.reason)}`);
+      else workerErrors.push(`worker ${i}: ${r.reason}`);
     });
 
     if (workerResults.length === 0) {
-      throw new Error(`Tous les workers ont échoué (${activeWorkerRanges.length}) : ${workerErrors.slice(0, 2).join(" | ")}`);
+      const reason = timedOut
+        ? `Aucun worker n'a fini dans la fenêtre ${Math.round(WORKERS_DEADLINE_MS / 1000)}s — Anthropic throttle probable. Réessaye dans 1 min.`
+        : `Tous les workers ont échoué (${activeWorkerRanges.length}) : ${workerErrors.slice(0, 2).join(" | ")}`;
+      throw new Error(reason);
     }
 
     // Parse + offset concept_page_hint par worker (le sub-PDF vu par Claude
