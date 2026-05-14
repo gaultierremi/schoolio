@@ -58,9 +58,9 @@ function stepLabel(stepIndex: number, data: JobStatusResponse): string {
       if (data.worker_count <= 1) {
         return data.workers_completed === 0
           ? "Identification des chapitres…"
-          : `Génération en cours (${data.questions_raw} questions générées)`;
+          : `Génération en cours (${data.questions_inserted} questions inserted)`;
       }
-      return `Chapitre ${Math.min(data.workers_completed + 1, data.worker_count)}/${data.worker_count} (${data.questions_raw} questions générées)`;
+      return `Chapitre ${Math.min(data.workers_completed + 1, data.worker_count)}/${data.worker_count} · ${data.questions_inserted} questions`;
     }
     case 2:
       return "Validation";
