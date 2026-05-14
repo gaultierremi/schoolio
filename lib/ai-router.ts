@@ -1,4 +1,5 @@
 import { createClient } from "@supabase/supabase-js";
+import WebSocket from "ws";
 import { createHash } from "crypto";
 import type { AIProvider, AIRequest, AIResponse } from "./ai-providers/types";
 import { GeminiProProvider, GeminiFlashProvider } from "./ai-providers/gemini";
@@ -51,9 +52,16 @@ const ALL_PROVIDERS: AIProvider[] = [
 ];
 
 function createAdminClient() {
+  // Polyfill `ws` requis sur Trigger.dev cloud (Node 21, pas de WS natif)
+  // — sinon RealtimeClient.init throw au boot. Cf runner.ts pour détails.
   return createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE_KEY!,
+    {
+      auth: { persistSession: false, autoRefreshToken: false },
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      realtime: { transport: WebSocket as any },
+    },
   );
 }
 

@@ -1,4 +1,5 @@
 import { createClient as createSupabaseAdminClient } from "@supabase/supabase-js";
+import WebSocket from "ws";
 
 type LogActivityParams = {
   event_type: string;
@@ -14,7 +15,13 @@ export async function logActivity(params: LogActivityParams): Promise<void> {
   try {
     const admin = createSupabaseAdminClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!
+      process.env.SUPABASE_SERVICE_ROLE_KEY!,
+      {
+        auth: { persistSession: false, autoRefreshToken: false },
+        // Polyfill `ws` requis sur Trigger.dev cloud (Node 21).
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        realtime: { transport: WebSocket as any },
+      },
     );
     await admin.from("activity_events").insert({
       event_type: params.event_type,
