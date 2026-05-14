@@ -2,7 +2,24 @@
 
 import { useEffect, useId, useRef, useState } from "react";
 import type { KeyboardEvent, MouseEvent } from "react";
-import { Mic, Square } from "lucide-react";
+function MicIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+        d="M12 1a3 3 0 00-3 3v8a3 3 0 006 0V4a3 3 0 00-3-3z" />
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+        d="M19 10v2a7 7 0 01-14 0v-2M12 19v4M8 23h8" />
+    </svg>
+  );
+}
+
+function SquareIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+      <rect x="3" y="3" width="18" height="18" rx="2" />
+    </svg>
+  );
+}
 
 export type BetaFeedbackPayload = {
   transcript: string;
@@ -228,7 +245,7 @@ export default function BetaFeedbackOverlay({
             className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-purple-500/30 bg-purple-500/10 text-purple-200"
             aria-hidden="true"
           >
-            <Mic className="h-5 w-5" />
+            <MicIcon className="h-5 w-5" />
           </div>
           <div className="min-w-0">
             <h2 id={titleId} className="text-xl font-bold text-white">
@@ -288,12 +305,12 @@ export default function BetaFeedbackOverlay({
             >
               {isRecording ? (
                 <>
-                  <Square className="h-4 w-4 fill-current" />
+                  <SquareIcon className="h-4 w-4" />
                   Arrêter
                 </>
               ) : (
                 <>
-                  <Mic className="h-4 w-4" />
+                  <MicIcon className="h-4 w-4" />
                   Démarrer l'enregistrement
                 </>
               )}

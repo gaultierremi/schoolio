@@ -3,6 +3,7 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import type { SchoolLevel } from "@/lib/subjects";
+import GenerationProgress from "./_components/GenerationProgress";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -43,6 +44,7 @@ type FileItem = {
   progress: number;
   hash: string | null;
   courseId: string | null;
+  jobId: string | null;
   storagePath: string | null;
   inference: Inference | null;
   editSubject: CourseSubject;
@@ -809,11 +811,27 @@ export default function ImportPage() {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ courseId: item.courseId }),
         });
-        const data = (await res.json()) as { success?: boolean; questionsGenerated?: number; error?: string };
-        if (!res.ok || !data.success) throw new Error(data.error ?? "Erreur de génération");
-        patchItem(item.id, { status: "generated" });
-        totalQ += data.questionsGenerated ?? 0;
-        setGenProgress((p) => ({ ...p, done: p.done + 1 }));
+        const data = (await res.json()) as {
+          // New async contract
+          jobId?: string;
+          // Legacy sync contract (kept for backward compat)
+          success?: boolean;
+          questionsGenerated?: number;
+          error?: string;
+        };
+        if (!res.ok) throw new Error(data.error ?? "Erreur de génération");
+
+        if (data.jobId) {
+          // Async job: store jobId so the GenerationProgress component can poll
+          patchItem(item.id, { jobId: data.jobId });
+          // onComplete/onError fired by the polling component will finalize this item
+        } else {
+          // Legacy sync response
+          if (!data.success) throw new Error(data.error ?? "Erreur de génération");
+          patchItem(item.id, { status: "generated" });
+          totalQ += data.questionsGenerated ?? 0;
+          setGenProgress((p) => ({ ...p, done: p.done + 1 }));
+        }
       } catch (err) {
         patchItem(item.id, {
           status: "error",
@@ -825,9 +843,58 @@ export default function ImportPage() {
 
     await runWithPool(tasks, 3);
 
-    setIsGenerating(false);
-    setGenDone(true);
-    setTotalQGenerated(totalQ);
+    // If all items went through the legacy sync path (no jobId issued), we can
+    // close the banner immediately. If any item received a jobId, the
+    // handleJobComplete/handleJobError callbacks will finalize the banner once
+    // polling resolves for every item.
+    setItems((prev) => {
+      const anyPolling = prev.some((i) => i.status === "generating" && i.jobId !== null);
+      if (!anyPolling) {
+        // All resolved synchronously
+        setIsGenerating(false);
+        setGenDone(true);
+        setTotalQGenerated(totalQ);
+      }
+      return prev;
+    });
+  }
+
+  // ── Async job completion handlers ─────────────────────────────────────────
+
+  function handleJobComplete(itemId: string, questionsInserted: number) {
+    setTotalQGenerated((prev) => prev + questionsInserted);
+    setGenProgress((p) => ({ ...p, done: p.done + 1 }));
+    setItems((prev) => {
+      const next = prev.map((i) =>
+        i.id === itemId ? { ...i, status: "generated" as const, jobId: null } : i
+      );
+      const anyStillPolling = next.some((i) => i.status === "generating" && i.jobId !== null);
+      if (!anyStillPolling) {
+        // Use a micro-task so React can flush this setItems before the next setters
+        Promise.resolve().then(() => {
+          setIsGenerating(false);
+          setGenDone(true);
+        });
+      }
+      return next;
+    });
+  }
+
+  function handleJobError(itemId: string, msg: string) {
+    setGenProgress((p) => ({ ...p, done: p.done + 1, failed: p.failed + 1 }));
+    setItems((prev) => {
+      const next = prev.map((i) =>
+        i.id === itemId ? { ...i, status: "error" as const, error: msg, jobId: null } : i
+      );
+      const anyStillPolling = next.some((i) => i.status === "generating" && i.jobId !== null);
+      if (!anyStillPolling) {
+        Promise.resolve().then(() => {
+          setIsGenerating(false);
+          setGenDone(true);
+        });
+      }
+      return next;
+    });
   }
 
   // ── File addition ──────────────────────────────────────────────────────────
@@ -843,6 +910,7 @@ export default function ImportPage() {
       progress: 0,
       hash: null,
       courseId: null,
+      jobId: null,
       storagePath: null,
       inference: null,
       editSubject: defaultSubject || "autre",
@@ -962,16 +1030,26 @@ export default function ImportPage() {
         {items.length > 0 && (
           <div className="flex flex-col gap-2">
             {items.map((item) => (
-              <FileRow
-                key={item.id}
-                item={item}
-                onRetry={retryItem}
-                onToggleEdit={(id) => patchItem(id, { editing: !items.find((i) => i.id === id)?.editing })}
-                onSubject={(id, v) => patchItem(id, { editSubject: v })}
-                onLevel={(id, v) => patchItem(id, { editLevel: v })}
-                onTitle={(id, v) => patchItem(id, { editTitle: v })}
-                onValidate={handleValidate}
-              />
+              <div key={item.id} className="flex flex-col gap-0">
+                <FileRow
+                  item={item}
+                  onRetry={retryItem}
+                  onToggleEdit={(id) => patchItem(id, { editing: !items.find((i) => i.id === id)?.editing })}
+                  onSubject={(id, v) => patchItem(id, { editSubject: v })}
+                  onLevel={(id, v) => patchItem(id, { editLevel: v })}
+                  onTitle={(id, v) => patchItem(id, { editTitle: v })}
+                  onValidate={handleValidate}
+                />
+                {item.status === "generating" && item.jobId && (
+                  <div className="rounded-b-xl border border-t-0 border-white/10 bg-white/3 px-4 pb-3">
+                    <GenerationProgress
+                      jobId={item.jobId}
+                      onComplete={(n) => handleJobComplete(item.id, n)}
+                      onError={(msg) => handleJobError(item.id, msg)}
+                    />
+                  </div>
+                )}
+              </div>
             ))}
           </div>
         )}
