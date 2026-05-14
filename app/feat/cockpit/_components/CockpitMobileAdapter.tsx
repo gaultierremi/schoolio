@@ -8,8 +8,9 @@ import { ContextualQuestionCard } from "@/components/ui/ContextualQuestionCard";
 import { RandomPickAnimation, type Student } from "@/components/ui/RandomPickAnimation";
 import { QuestionFlowModal } from "@/components/teacher-live/QuestionFlowModal";
 import { MOCK_STUDENTS } from "@/types/post-course";
-import type { ContextualQuestion } from "@/lib/contextual-questions";
-import { Mic, MicOff } from "lucide-react";
+import type { ContextualQuestion, } from "@/lib/contextual-questions";
+import type { WhisperMessage } from "@/types/post-course";
+import { Mic, MicOff, X } from "lucide-react";
 
 type QuestionFlow =
   | { stage: "idle" }
@@ -30,6 +31,7 @@ export type CockpitMobileAdapterProps = {
 
 const SUGGESTION_DEBOUNCE_MS = 1500;
 const MAX_AI_ATTEMPTS = 3;
+const WHISPER_DISMISS_MS = 8_000;
 
 const MOCK_PICK_CANDIDATES: Student[] = MOCK_STUDENTS.map((s) => ({
   id: s.id,
@@ -93,6 +95,34 @@ export function CockpitMobileAdapter({
   const suggestionDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const lastFetchedPageRef = useRef<number | null>(null);
 
+  // ── Whisper IA ─────────────────────────────────────────────────────────────
+  const [whisper, setWhisper] = useState<WhisperMessage | null>(null);
+  const whisperDismissRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const lastWhisperPageRef = useRef<number | null>(null);
+
+  function showWhisper(msg: WhisperMessage) {
+    setWhisper(msg);
+    if (whisperDismissRef.current) clearTimeout(whisperDismissRef.current);
+    whisperDismissRef.current = setTimeout(() => setWhisper(null), WHISPER_DISMISS_MS);
+  }
+
+  async function triggerWhisper(page: number) {
+    if (lastWhisperPageRef.current === page) return;
+    lastWhisperPageRef.current = page;
+    try {
+      const res = await fetch(`/api/feat/cockpit/sessions/${sessionCode}/whisper`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ page }),
+      });
+      if (!res.ok) return;
+      const json = await res.json() as { whisper: WhisperMessage };
+      showWhisper(json.whisper);
+    } catch {
+      // non-blocking
+    }
+  }
+
   const fetchSuggestions = useCallback(async (page: number, withGenerate = false) => {
     setIsLoadingQuestions(true);
     try {
@@ -122,9 +152,11 @@ export function CockpitMobileAdapter({
     if (suggestionDebounceRef.current) clearTimeout(suggestionDebounceRef.current);
     suggestionDebounceRef.current = setTimeout(() => {
       fetchSuggestions(currentPage);
+      if (listening) triggerWhisper(currentPage);
     }, SUGGESTION_DEBOUNCE_MS);
     return () => { if (suggestionDebounceRef.current) clearTimeout(suggestionDebounceRef.current); };
-  }, [currentPage, fetchSuggestions]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentPage, fetchSuggestions, listening]);
 
   // ── Question projection ────────────────────────────────────────────────────
   async function handleProjectQuestion(question: ContextualQuestion) {
@@ -395,6 +427,39 @@ export function CockpitMobileAdapter({
           stage={questionFlow.stage}
         />
       ) : null}
+
+      {/* ── Whisper Bubble ─────────────────────────────────────────────────── */}
+      {whisper && (
+        <div
+          className="absolute bottom-20 left-3 right-3 z-50 animate-in slide-in-from-bottom-4 fade-in duration-300"
+          role="status"
+          aria-live="polite"
+        >
+          <div className="rounded-2xl bg-stone-800/95 border border-stone-700 px-4 py-3 shadow-xl backdrop-blur-sm">
+            <div className="flex items-start gap-3">
+              <span className="text-xl shrink-0">{whisper.avatar}</span>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 mb-1">
+                  <p className="text-xs font-semibold text-stone-300">{whisper.student}</p>
+                  {whisper.source === "ai" && (
+                    <span className="rounded-full bg-violet-500/20 px-1.5 py-0.5 text-[9px] font-bold text-violet-400 uppercase tracking-wider">
+                      IA
+                    </span>
+                  )}
+                </div>
+                <p className="text-sm text-stone-200 leading-snug">{whisper.text}</p>
+              </div>
+              <button
+                onClick={() => setWhisper(null)}
+                className="shrink-0 text-stone-500 hover:text-stone-300 transition-colors"
+                type="button"
+              >
+                <X size={14} />
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
