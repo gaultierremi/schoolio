@@ -425,7 +425,7 @@ export default function StudyWizard() {
                 </p>
               </div>
               <span className="ml-auto shrink-0 rounded-full bg-purple-500/20 px-2 py-0.5 text-[10px] font-black uppercase tracking-wide text-purple-300">
-                IA
+                Maïa
               </span>
             </button>
 

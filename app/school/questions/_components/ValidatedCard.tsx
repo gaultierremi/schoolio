@@ -33,7 +33,7 @@ export function ValidatedCard({
             <TypeBadge type={q.type} />
             {isAiValidated && (
               <span className="rounded-full bg-green-500/20 px-2 py-0.5 text-xs font-black text-green-300">
-                ✓ 🤖 IA
+                ✓ Maïa
               </span>
             )}
             {isPdfExtracted && (

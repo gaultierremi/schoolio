@@ -4,7 +4,7 @@ const faqs = [
   {
     question: "Mes profs doivent-ils créer leurs propres questions ?",
     answer:
-      "Non. L'IA génère les questions à partir de votre syllabus PDF. Le prof relit, ajuste, valide — typiquement 5 minutes par devoir. Vous gardez le contrôle pédagogique, sans la charge.",
+      "Non. Maïa génère les questions à partir de votre syllabus PDF. Le prof relit, ajuste, valide — typiquement 5 minutes par devoir. Vous gardez le contrôle pédagogique, sans la charge.",
   },
   {
     question: "Combien de temps pour déployer dans mon école ?",

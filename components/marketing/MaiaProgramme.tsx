@@ -12,7 +12,7 @@ export default function MaiaProgramme() {
             <em className="not-italic">tous les programmes</em>.
           </h2>
           <p className="mt-5 text-lg ink2 leading-relaxed">
-            Notre IA est entraînée sur le programme officiel de la{" "}
+            Maïa est entraînée sur le programme officiel de la{" "}
             <strong className="ink">Fédération Wallonie-Bruxelles</strong>, secondaire
             général et qualifiant. Les concepts, les attendus, le vocabulaire — tout est
             calé sur ce que vos profs enseignent et ce que l&apos;élève voit à

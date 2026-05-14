@@ -344,7 +344,7 @@ function FileRow({ item, onRetry, onToggleEdit, onSubject, onLevel, onTitle, onV
     pending:   <span className="text-white/40 text-xs">En attente</span>,
     hashing:   <span className="flex items-center gap-1 text-white/60 text-xs"><Spinner />Calcul hash…</span>,
     uploading: <span className="flex items-center gap-1 text-white/60 text-xs"><Spinner />Upload {item.progress}%</span>,
-    inferring: <span className="flex items-center gap-1 text-white/60 text-xs"><Spinner />Analyse IA…</span>,
+    inferring: <span className="flex items-center gap-1 text-white/60 text-xs"><Spinner />Analyse Maïa…</span>,
     ready:     null,
     validated: (
       <span className="flex items-center gap-1 text-green-400 text-xs">
@@ -394,7 +394,7 @@ function FileRow({ item, onRetry, onToggleEdit, onSubject, onLevel, onTitle, onV
       {(item.status === "ready" || (item.status === "validated" && item.editing)) && item.inference && (
         <div className="flex flex-col gap-0.5">
           <p className="text-xs text-white/50">
-            Confiance IA : {item.inference.confidence}% ·{" "}
+            Confiance Maïa : {item.inference.confidence}% ·{" "}
             <button
               onClick={() => onToggleEdit(item.id)}
               className="text-purple-400 hover:text-purple-300 underline underline-offset-2 transition-colors"
@@ -468,7 +468,7 @@ function GeminiQueueBanner({ state }: { state: NonNullable<GeminiQueueState> }) 
           </>
         ) : (
           <>
-            Analyse IA{" "}
+            Analyse Maïa{" "}
             <span className="text-white font-medium">{current}/{total}</span>
           </>
         )}
@@ -567,7 +567,7 @@ export default function ImportPage() {
       if (!res.ok || !data.inference) {
         patchItem(id, {
           status: "error",
-          error: data.error ?? "Erreur lors de l'analyse IA",
+          error: data.error ?? "Erreur lors de l'analyse Maïa",
           retryFrom: "infer",
         });
         return "error";
@@ -891,7 +891,7 @@ export default function ImportPage() {
           </Link>
           <h1 className="text-2xl font-bold text-white">Import en masse</h1>
           <p className="text-sm text-white/50 mt-1">
-            Déposez vos PDF — l&apos;IA détecte automatiquement matière, niveau et titre.
+            Déposez vos PDF — Maïa détecte automatiquement matière, niveau et titre.
           </p>
         </div>
 

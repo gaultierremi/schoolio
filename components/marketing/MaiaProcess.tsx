@@ -93,10 +93,10 @@ export default function MaiaProcess() {
                 </span>
               </div>
               <h3 className="serif mt-4 text-2xl font-semibold ink">
-                Le prof upload son syllabus. L&apos;IA génère le quiz.
+                Le prof upload son syllabus. Maïa génère le quiz.
               </h3>
               <p className="mt-3 text-base ink2 leading-relaxed">
-                Un PDF de cours, un thème — l&apos;IA génère 25 questions alignées sur le
+                Un PDF de cours, un thème — Maïa génère 25 questions alignées sur le
                 programme officiel. Le prof relit, ajuste si besoin, distribue à la
                 classe. Pas besoin d&apos;être un expert en pédagogie numérique.
               </p>
@@ -117,8 +117,8 @@ export default function MaiaProcess() {
               </h3>
               <p className="mt-3 text-base ink2 leading-relaxed">
                 Chaque réponse alimente le modèle de maîtrise par concept (algorithme
-                SM-2 + tagging IA). L&apos;élève voit progresser sa carte des lacunes en
-                temps réel. Quand il bute, le tuteur IA pose une question Socratique — il
+                SM-2 + tagging Maïa). L&apos;élève voit progresser sa carte des lacunes en
+                temps réel. Quand il bute, le tuteur Maïa pose une question Socratique — il
                 ne donne jamais la réponse.
               </p>
             </div>
@@ -137,7 +137,7 @@ export default function MaiaProcess() {
                 <div className="pm-cell pm-1">35</div>
               </div>
               <div className="divider my-3" />
-              <p className="ink3 text-[10px] uppercase tracking-wide">Plan IA suggéré</p>
+              <p className="ink3 text-[10px] uppercase tracking-wide">Plan Maïa suggéré</p>
               <p className="serif mt-1 text-base font-semibold ink">
                 16 min sur la stœchio
               </p>

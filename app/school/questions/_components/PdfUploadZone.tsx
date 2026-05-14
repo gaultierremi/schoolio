@@ -31,7 +31,7 @@ export function PdfUploadZone({
   return (
     <div className="space-y-4">
       <p className="text-gray-400">
-        Dépose un PDF de cours et l&apos;IA génère des questions avec détection
+        Dépose un PDF de cours et Maïa génère des questions avec détection
         automatique de la période historique.
       </p>
 

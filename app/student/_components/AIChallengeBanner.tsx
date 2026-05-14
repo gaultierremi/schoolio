@@ -8,7 +8,7 @@ export default function AIChallengeBanner() {
           <Target className="h-5 w-5 shrink-0 text-[rgb(var(--accent))]" aria-hidden />
           <div>
             <p className="text-xs font-bold uppercase tracking-widest text-[rgb(var(--accent))]">
-              Défi IA
+              Défi Maïa
             </p>
             <p className="mt-0.5 text-sm font-semibold text-[rgb(var(--ink))]">
               Questions personnalisées selon tes lacunes

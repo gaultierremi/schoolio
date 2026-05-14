@@ -23,7 +23,7 @@ const STEPS: { key: JobStatus; label: string }[] = [
   { key: "pending", label: "En file d'attente" },
   { key: "extracting", label: "Extraction du PDF" },
   { key: "chunking", label: "Découpage par UAA" },
-  { key: "batching", label: "Génération IA (batch Anthropic)" },
+  { key: "batching", label: "Génération par Maïa (batch Anthropic)" },
   { key: "storing", label: "Enregistrement en base" },
   { key: "done", label: "Terminé" },
 ];

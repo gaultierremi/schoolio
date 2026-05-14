@@ -111,7 +111,7 @@ export function PageRangeGenerator({ courseId, pagesCount, courseTitle, onSucces
             <div className="h-10 w-10 animate-spin rounded-full border-4 border-gray-700 border-t-purple-500" />
             <p className="font-black text-white">Génération en cours via Maïa…</p>
             <p className="text-sm text-gray-400">
-              L'IA analyse les pages {range[0]}–{range[1]} de «{courseTitle}» et génère ton contenu.
+              Maïa analyse les pages {range[0]}–{range[1]} de «{courseTitle}» et génère ton contenu.
             </p>
           </div>
         ) : (

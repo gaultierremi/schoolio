@@ -83,9 +83,9 @@ function OriginBadge({ origin }: { origin: QuestionOrigin }) {
   if (origin === "ai_live") {
     return (
       <span
-        aria-label="Question générée en live par IA"
+        aria-label="Question générée en live par Maïa"
         className="inline-flex min-h-6 shrink-0 items-center justify-center gap-1 rounded-md border border-cyan-400/30 bg-cyan-950/40 px-2 py-0.5 text-xs font-medium leading-none text-cyan-300"
-        title="Question générée en live par IA"
+        title="Question générée en live par Maïa"
       >
         <span aria-hidden="true">⚡</span>
         <span>Live</span>

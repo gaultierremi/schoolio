@@ -39,7 +39,7 @@ export function PendingCard({
           </span>
         ) : (
           <span className="rounded-full bg-indigo-500/20 px-2 py-0.5 text-xs font-black text-indigo-300">
-            🤖 IA
+            Maïa
           </span>
         )}
         {q.period && (

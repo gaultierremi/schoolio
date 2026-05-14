@@ -119,14 +119,14 @@ function GenerateModal({
             <div className="h-10 w-10 animate-spin rounded-full border-4 border-gray-700 border-t-purple-500" />
             <p className="font-black text-white">Génération en cours via Maïa…</p>
             <p className="text-sm text-gray-400 text-center">
-              Patience, ~60s en moyenne. L&apos;IA analyse le PDF et génère {count} exercices avec résolutions détaillées.
+              Patience, ~60s en moyenne. Maïa analyse le PDF et génère {count} exercices avec résolutions détaillées.
             </p>
           </div>
         ) : (
           <>
             <h2 className="text-lg font-black text-white">Générer des exercices</h2>
             <p className="mt-1 text-sm text-gray-400">
-              L&apos;IA va créer des exercices avec résolutions étape par étape depuis le PDF du cours.
+              Maïa va créer des exercices avec résolutions étape par étape depuis le PDF du cours.
             </p>
 
             <div className="mt-5">

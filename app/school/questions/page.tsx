@@ -187,7 +187,7 @@ export default function SchoolQuestionsPage() {
                 <div>
                   {pendingQuestions.length === 0 ? (
                     <div className="rounded-2xl border border-dashed border-gray-800 p-10 text-center text-gray-500">
-                      Aucune question IA en attente de validation.
+                      Aucune question générée par Maïa en attente de validation.
                     </div>
                   ) : (
                     <div className="space-y-4">
@@ -304,7 +304,7 @@ export default function SchoolQuestionsPage() {
                   {sortedValidated.length === 0 ? (
                     <div className="rounded-2xl border border-dashed border-gray-800 p-10 text-center text-gray-500">
                       {validatedQuestionsBase.length === 0
-                        ? "Aucune question validée. Valide des questions IA ou crée-en une."
+                        ? "Aucune question validée. Valide des questions générées par Maïa ou crée-en une."
                         : "Aucun résultat pour ces filtres."}
                     </div>
                   ) : (

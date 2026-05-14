@@ -51,7 +51,7 @@ export default function MaiaPromises() {
                   className="mt-0.5 h-4 w-4 flex-shrink-0"
                   style={{ color: "rgb(var(--green))" }}
                 />
-                Tuteur IA qui guide sans donner la réponse
+                Tuteur Maïa qui guide sans donner la réponse
               </li>
               <li className="flex items-start gap-2">
                 <Check
@@ -95,7 +95,7 @@ export default function MaiaPromises() {
                   className="mt-0.5 h-4 w-4 flex-shrink-0"
                   style={{ color: "rgb(var(--green))" }}
                 />
-                Plan de remédiation IA suggéré pour chaque élève
+                Plan de remédiation Maïa suggéré pour chaque élève
               </li>
               <li className="flex items-start gap-2">
                 <Check
