@@ -9,10 +9,10 @@ export default defineConfig({
   runtime: "node",
   dirs: ["./trigger"],
 
-  // 5min par défaut suffisent pour la plupart des syllabi. Le free tier
-  // Trigger.dev limite à 5min en gratuit, jusqu'à 1h en Pro.
-  // Si on hit le mur côté gros syllabus 600q, on bumpera + on évaluera Pro.
-  maxDuration: 300,
+  // 10min par défaut : gros syllabus 200p × 15-20 chapitres avec 3 concurrent
+  // peut friser les 5min, on prend de la marge. Free tier accepte (juste
+  // plus de compute consommé du quota mensuel 50 GB-h).
+  maxDuration: 600,
 
   // Retry doux : un seul retry après 30s sur les erreurs réseau.
   // Anthropic / Gemini ont parfois des hiccups (502, timeout), pas
