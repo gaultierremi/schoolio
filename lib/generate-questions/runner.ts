@@ -265,17 +265,67 @@ const QUESTIONS_SCHEMA: ResponseSchema = {
 
 function parseJsonObject<T>(rawText: string): T {
   const trimmed = rawText.trim();
-  try { return JSON.parse(trimmed) as T; } catch { /* fallback below */ }
+  try { return JSON.parse(trimmed) as T; } catch { /* try fenced */ }
 
   const fenced = trimmed.match(/```(?:json)?\s*([\s\S]*?)```/i);
   if (fenced?.[1]) {
-    try { return JSON.parse(fenced[1].trim()) as T; } catch { /* fallback below */ }
+    try { return JSON.parse(fenced[1].trim()) as T; } catch { /* try greedy */ }
   }
 
   const jsonMatch = trimmed.match(/\{[\s\S]*\}/);
-  if (jsonMatch?.[0]) return JSON.parse(jsonMatch[0]) as T;
+  if (jsonMatch?.[0]) {
+    try { return JSON.parse(jsonMatch[0]) as T; } catch { /* try repair */ }
+  }
 
-  throw new Error("Reponse JSON invalide");
+  // Last-chance repair : Anthropic max_tokens hit → JSON tronqué au milieu
+  // d'un object/array. On essaye de couper proprement à la dernière entrée
+  // valide en backtracking : on ferme tous les arrays/objects ouverts et
+  // on retire la dernière entrée potentiellement incomplète.
+  const repaired = tryRepairTruncatedJson(trimmed);
+  if (repaired) {
+    try { return JSON.parse(repaired) as T; } catch { /* give up */ }
+  }
+
+  throw new Error("Réponse JSON invalide ou tronquée (Anthropic max_tokens probable)");
+}
+
+/**
+ * Tente de réparer un JSON tronqué au milieu d'un array (cas typique :
+ * Anthropic hit max_tokens=32768 → derniere question coupée).
+ * Stratégie : trouver le dernier `}` valide dans le tableau questions[],
+ * couper après, fermer le tableau + l'objet root.
+ * Return null si pas réparable de façon évidente.
+ */
+function tryRepairTruncatedJson(raw: string): string | null {
+  // Doit contenir un array questions
+  const questionsArrayStart = raw.indexOf('"questions"');
+  if (questionsArrayStart === -1) return null;
+  const arrayOpen = raw.indexOf("[", questionsArrayStart);
+  if (arrayOpen === -1) return null;
+
+  // Walk depuis arrayOpen, track depth, repère le dernier `}` à depth=1
+  // (= fin d'une question valide dans l'array)
+  let depth = 0;
+  let inString = false;
+  let escape = false;
+  let lastValidObjectEnd = -1;
+  for (let i = arrayOpen; i < raw.length; i++) {
+    const c = raw[i];
+    if (escape) { escape = false; continue; }
+    if (c === "\\") { escape = true; continue; }
+    if (c === '"') { inString = !inString; continue; }
+    if (inString) continue;
+    if (c === "{" || c === "[") depth++;
+    else if (c === "}" || c === "]") {
+      depth--;
+      // Quand on ferme un objet et qu'on revient à depth=1 (toujours dans
+      // l'array questions), c'est la fin d'une question valide.
+      if (c === "}" && depth === 1) lastValidObjectEnd = i;
+    }
+  }
+  if (lastValidObjectEnd === -1) return null;
+  // Construit le JSON réparé : [start..lastValidObjectEnd] + "]}"
+  return raw.slice(0, lastValidObjectEnd + 1) + "]}";
 }
 
 function normalizeMcqQuestion(question: ExtractedQuestion): ExtractedQuestion | null {
@@ -649,20 +699,41 @@ export async function runGenerationForJob(jobId: string): Promise<void> {
 
     // Parse + offset concept_page_hint par worker (le sub-PDF vu par Claude
     // a des pages 1..N relatives, on remappe vers les pages globales du PDF complet).
+    // Résilient : si UN worker a un JSON malformé (max_tokens hit, char bizarre),
+    // on log + skip + continue avec les autres. Mieux 100 questions de 3 workers
+    // que 0 questions parce qu'un seul a foiré.
     const rawQuestions: ExtractedQuestion[] = [];
+    let parseFailures = 0;
     for (const { rawText, globalRange } of workerResults) {
-      const parsed = parseJsonObject<{ questions: ExtractedQuestion[]; page_count?: number }>(rawText);
-      const pageOffset = globalRange.start - 1; // page locale 1 → globalRange.start
+      let parsed: { questions: ExtractedQuestion[]; page_count?: number };
+      try {
+        parsed = parseJsonObject<{ questions: ExtractedQuestion[]; page_count?: number }>(rawText);
+      } catch (parseErr) {
+        parseFailures++;
+        await logError(parseErr, {
+          source: "generate-questions.runner.parse",
+          context: {
+            jobId,
+            globalRange,
+            rawTextLength: rawText.length,
+            rawTextHead: rawText.slice(0, 200),
+            rawTextTail: rawText.slice(-200),
+          },
+        });
+        continue;
+      }
+      const pageOffset = globalRange.start - 1;
       const subPdfLength = globalRange.end - globalRange.start + 1;
       for (const q of parsed.questions ?? []) {
         if (typeof q.concept_page_hint === "number" && q.concept_page_hint >= 1) {
-          // Si Claude a renvoyé une page > taille du sub-PDF (improbable mais
-          // possible s'il a halluciné une page globale), on cap au range global.
           const localPage = Math.min(q.concept_page_hint, subPdfLength);
           q.concept_page_hint = pageOffset + localPage;
         }
         rawQuestions.push(q);
       }
+    }
+    if (parseFailures > 0) {
+      console.warn(`[runner] ${parseFailures}/${workerResults.length} worker outputs avaient un JSON malformé (skipped)`);
     }
 
     // ── PHASE: validating ────────────────────────────────────────────────────
