@@ -250,9 +250,26 @@ async function generateForChapter(
     cacheTtlMs: 0,
   });
 
-  // Parse simple — le chapitre fait peu de pages donc Claude ne tronque jamais.
-  const parsed = JSON.parse(response.text.trim()) as { questions?: ExtractedQuestion[] };
+  const parsed = parseQuestionsResponse(response.text);
   return Array.isArray(parsed.questions) ? parsed.questions : [];
+}
+
+/**
+ * Parse résilient de la réponse questions (idem extract-chapters).
+ * Anthropic/Gemini peut wrap en markdown fences ou préfixer avec du prose.
+ */
+function parseQuestionsResponse(raw: string): { questions?: ExtractedQuestion[] } {
+  const trimmed = raw.trim();
+  try { return JSON.parse(trimmed); } catch { /* try fence */ }
+  const fenced = trimmed.match(/```(?:json)?\s*([\s\S]*?)```/i);
+  if (fenced?.[1]) {
+    try { return JSON.parse(fenced[1].trim()); } catch { /* try greedy */ }
+  }
+  const greedy = trimmed.match(/\{[\s\S]*\}/);
+  if (greedy?.[0]) {
+    try { return JSON.parse(greedy[0]); } catch { /* give up */ }
+  }
+  return { questions: [] };
 }
 
 // ── Pool d'exécution concurrence-limitée ────────────────────────────────────

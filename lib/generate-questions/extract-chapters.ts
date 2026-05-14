@@ -16,6 +16,27 @@ export type Chapter = {
   pageEnd: number;
 };
 
+/**
+ * Parse résilient de la réponse Anthropic/Gemini :
+ *   1) JSON.parse direct si la réponse est pure
+ *   2) Strip des fences markdown (```json ... ```)
+ *   3) Match greedy { ... } pour ignorer le prose avant/après
+ *   4) Fallback: empty chapters → le caller utilisera "Document complet"
+ */
+function parseChaptersResponse(raw: string): { chapters?: Chapter[] } {
+  const trimmed = raw.trim();
+  try { return JSON.parse(trimmed); } catch { /* try fence */ }
+  const fenced = trimmed.match(/```(?:json)?\s*([\s\S]*?)```/i);
+  if (fenced?.[1]) {
+    try { return JSON.parse(fenced[1].trim()); } catch { /* try greedy */ }
+  }
+  const greedy = trimmed.match(/\{[\s\S]*\}/);
+  if (greedy?.[0]) {
+    try { return JSON.parse(greedy[0]); } catch { /* give up */ }
+  }
+  return { chapters: [] };
+}
+
 const CHAPTERS_SCHEMA: ResponseSchema = {
   type: SchemaType.OBJECT,
   properties: {
@@ -68,7 +89,7 @@ export async function extractChapters(
     cacheTtlMs: 0,
   });
 
-  const parsed = JSON.parse(response.text.trim()) as { chapters?: Chapter[] };
+  const parsed = parseChaptersResponse(response.text);
   const chapters = Array.isArray(parsed.chapters) ? parsed.chapters : [];
 
   // Validation & normalisation : on accepte uniquement les chapitres avec des
