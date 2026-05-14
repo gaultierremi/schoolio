@@ -40,21 +40,23 @@ const UUID_REGEX = /^[0-9a-f-]{36}$/i;
 // Au-delà, l'inférence échoue silencieusement (réponse vide → 0 question).
 // Cap explicitement avec un message d'erreur clair pour le prof.
 const MAX_PDF_BYTES = 20 * 1024 * 1024; // 20MB Gemini Vision limit
-// Scale parallèle : auto-ajuste selon le volume demandé (cf. computeWorkerLayout).
-// Plafond raisonnable pour éviter de saturer Anthropic/Gemini en parallèle.
-// 6 workers max : balance entre parallélisme (réduit la durée totale) et
-// concurrence Anthropic (chaque worker streaming consomme une connexion).
-// Au-delà de 6 parallèles sur PDF Vision, Anthropic peut throttler.
-const MAX_WORKERS = 6;
+// Scale parallèle : observation empirique 2026-05-14 — 6 workers parallèles
+// sur Anthropic streaming PDF Vision restent stuck `generating_workers`
+// avec 0-1/6 completed après 2min (waitUntil semble killé ou Anthropic
+// throttle). Hotfix : on baisse drastiquement à 2 workers, le temps de
+// remonter l'observabilité (logError par worker) pour comprendre où ça
+// plante. Une fois la cause identifiée, on pourra remonter prudemment.
+const MAX_WORKERS = 2;
 const QUESTIONS_PER_WORKER = 50;
 
 // Cible automatique de questions = min(MAX_QUESTIONS_PER_COURSE, pages × 3)
 // Pour un syllabus FWB typique (50-200 pages), donne 150-600 questions —
 // couverture solide sans gaspiller du budget IA.
-// Cible par appel : capée à 300 (6 workers × 50) pour rester dans la
-// fenêtre maxDuration 300s. Le prof peut re-trigger pour générer plus
-// (chaque appel ajoute des questions, plafond global MAX_QUESTIONS_PER_COURSE).
-const AUTO_TARGET_CAP_PER_CALL = 300;
+// Cible par appel : capée à 100 (2 workers × 50) pour rester dans la
+// fenêtre maxDuration 300s avec concurrence réduite. Le prof peut
+// re-trigger pour générer plus (chaque appel ajoute des questions,
+// plafond global MAX_QUESTIONS_PER_COURSE = 600).
+const AUTO_TARGET_CAP_PER_CALL = 100;
 function autoTargetQuestions(pagesCount: number | null): number {
   if (!pagesCount || pagesCount < 1) return 30;
   return Math.min(AUTO_TARGET_CAP_PER_CALL, Math.ceil(pagesCount * 3));
@@ -593,17 +595,53 @@ export async function POST(request: NextRequest) {
 
         await updateJob({ phase: "generating_workers", workers_completed: 0 });
 
-        // Workers : on track le compteur en utilisant Promise.allSettled avec
-        // un update job à chaque résolution individuelle.
+        // Workers : on track le compteur ET on log chaque erreur indi-
+        // viduellement. Si un worker plante, on continue avec les autres
+        // (Promise.allSettled) — mieux vaut 50 questions que 0. Chaque
+        // throw est loggé dans error_logs avec workerIndex pour pouvoir
+        // diagnostiquer post-mortem (cf bug "stuck generating_workers").
         let workersDone = 0;
-        const workerOutputs = await Promise.all(
+        const settled = await Promise.allSettled(
           Array.from({ length: workerCount }, async (_, workerIndex) => {
-            const output = await generateQuestionsWithFallback(pdfBase64, promptWithRange, workerIndex, workerCount, questionsPerWorker);
-            workersDone++;
-            await updateJob({ workers_completed: workersDone });
-            return output;
-          })
+            const wt0 = Date.now();
+            try {
+              const output = await generateQuestionsWithFallback(
+                pdfBase64,
+                promptWithRange,
+                workerIndex,
+                workerCount,
+                questionsPerWorker,
+              );
+              workersDone++;
+              await updateJob({ workers_completed: workersDone });
+              return output;
+            } catch (err) {
+              await logError(err, {
+                source: "api.courses.generate-questions.worker",
+                context: {
+                  jobId,
+                  workerIndex,
+                  workerCount,
+                  questionsPerWorker,
+                  durationMs: Date.now() - wt0,
+                  pdfSizeBytes: pdfBuffer.byteLength,
+                },
+              });
+              throw err;
+            }
+          }),
         );
+
+        const workerOutputs: string[] = [];
+        const workerErrors: string[] = [];
+        settled.forEach((r, i) => {
+          if (r.status === "fulfilled") workerOutputs.push(r.value);
+          else workerErrors.push(`worker ${i}: ${r.reason instanceof Error ? r.reason.message : String(r.reason)}`);
+        });
+
+        if (workerOutputs.length === 0) {
+          throw new Error(`Tous les workers ont échoué (${workerCount}) : ${workerErrors.slice(0, 2).join(" | ")}`);
+        }
 
         const parsedOutputs = workerOutputs.map((rawText) =>
           parseJsonObject<{ questions: ExtractedQuestion[]; page_count?: number }>(rawText)
