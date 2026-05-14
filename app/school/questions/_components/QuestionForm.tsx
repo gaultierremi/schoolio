@@ -1,4 +1,4 @@
-import { BLANK_FORM, PERIODS, type QuestionType } from "../_types";
+import { BLANK_FORM, type QuestionType } from "../_types";
 import { SubjectLevelSelector } from "./SubjectLevelSelector";
 import { QuestionPreview } from "./QuestionPreview";
 
@@ -53,48 +53,32 @@ export function QuestionForm({
       <div className="mt-4 grid gap-6 lg:grid-cols-[1fr_260px]">
         {/* Left: form fields */}
         <div className="space-y-4">
-          {/* Row 1: type + period */}
-          <div className="grid gap-4 sm:grid-cols-2">
-            <div>
-              <label className="text-xs font-black uppercase tracking-widest text-[rgb(var(--ink-3))]">
-                Type
-              </label>
-              <select
-                value={form.type}
-                onChange={(e) => {
-                  const nextType = e.target.value as QuestionType;
-                  setForm({
-                    ...form,
-                    type: nextType,
-                    answer_index: 0,
-                  });
-                }}
-                className="mt-1 w-full rounded-xl border border-[rgb(var(--border))] bg-[rgb(var(--surface))] px-3 py-2 text-[rgb(var(--ink))] outline-none focus:border-[rgb(var(--accent))]"
-              >
-                <option value="mcq">QCM — Carré (4 options)</option>
-                <option value="numeric">Numérique — Réponse chiffrée</option>
-                <option value="short_text">Réponse libre — 1-5 variantes</option>
-                <option value="truefalse">Vrai / Faux — Duo (2 options)</option>
-              </select>
-            </div>
-
-            <div>
-              <label className="text-xs font-black uppercase tracking-widest text-[rgb(var(--ink-3))]">
-                Période historique
-              </label>
-              <select
-                value={form.period}
-                onChange={(e) => setForm({ ...form, period: e.target.value })}
-                className="mt-1 w-full rounded-xl border border-[rgb(var(--border))] bg-[rgb(var(--surface))] px-3 py-2 text-[rgb(var(--ink))] outline-none focus:border-[rgb(var(--accent))]"
-              >
-                <option value="">Sélectionner une période</option>
-                {PERIODS.map((p) => (
-                  <option key={p} value={p}>
-                    {p}
-                  </option>
-                ))}
-              </select>
-            </div>
+          {/* Row 1: type
+              Note : le champ "period" est conservé en state (preservé sur edit
+              depuis la question existante, écrit en DB par le pipeline syllabus
+              comme nom de chapitre) mais n'est plus éditable par le prof.
+              Cf. PR ux/sidebar-and-form-cleanup pour le rationale. */}
+          <div>
+            <label className="text-xs font-black uppercase tracking-widest text-[rgb(var(--ink-3))]">
+              Type
+            </label>
+            <select
+              value={form.type}
+              onChange={(e) => {
+                const nextType = e.target.value as QuestionType;
+                setForm({
+                  ...form,
+                  type: nextType,
+                  answer_index: 0,
+                });
+              }}
+              className="mt-1 w-full rounded-xl border border-[rgb(var(--border))] bg-[rgb(var(--surface))] px-3 py-2 text-[rgb(var(--ink))] outline-none focus:border-[rgb(var(--accent))]"
+            >
+              <option value="mcq">QCM — Carré (4 options)</option>
+              <option value="numeric">Numérique — Réponse chiffrée</option>
+              <option value="short_text">Réponse libre — 1-5 variantes</option>
+              <option value="truefalse">Vrai / Faux — Duo (2 options)</option>
+            </select>
           </div>
 
           {/* Subject + Level */}

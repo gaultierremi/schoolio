@@ -126,6 +126,31 @@ export function SubjectSidebar<T extends Question>({
 
   return (
     <aside className="w-full shrink-0 space-y-6 lg:w-80">
+      {onSelectTypes && (
+        <div>
+          <p className="mb-3 text-xs font-semibold uppercase tracking-widest text-[rgb(var(--ink-3))]">
+            Type
+          </p>
+          <div className="flex flex-row flex-wrap gap-2 lg:flex-col lg:flex-nowrap">
+            <SidebarButton
+              label="Tous"
+              count={typeCounts.all}
+              selected={noTypeSelected}
+              onClick={() => onSelectTypes(new Set())}
+            />
+            {ALL_TYPES.map((t) => (
+              <CheckboxButton
+                key={t}
+                label={TYPE_LABELS[t]}
+                count={typeCounts[t]}
+                checked={selectedTypes?.has(t) ?? false}
+                onClick={() => toggleType(t)}
+              />
+            ))}
+          </div>
+        </div>
+      )}
+
       <div>
         <p className="mb-3 text-xs font-semibold uppercase tracking-widest text-[rgb(var(--ink-3))]">
           Matière
@@ -149,7 +174,7 @@ export function SubjectSidebar<T extends Question>({
         </div>
       </div>
 
-      {themeCounts.length > 0 && (
+      {selectedSubject !== null && themeCounts.length > 0 && (
         <div>
           <p className="mb-3 text-xs font-semibold uppercase tracking-widest text-[rgb(var(--ink-3))]">
             Thème / chapitre
@@ -172,33 +197,8 @@ export function SubjectSidebar<T extends Question>({
               />
             ))}
             {themeCounts.length > 30 && (
-              <p className="text-xs text-[rgb(var(--ink-3))]">+ {themeCounts.length - 30} thèmes (filtre matière pour réduire)</p>
+              <p className="text-xs text-[rgb(var(--ink-3))]">+ {themeCounts.length - 30} thèmes</p>
             )}
-          </div>
-        </div>
-      )}
-
-      {onSelectTypes && (
-        <div>
-          <p className="mb-3 text-xs font-semibold uppercase tracking-widest text-[rgb(var(--ink-3))]">
-            Type
-          </p>
-          <div className="flex flex-row flex-wrap gap-2 lg:flex-col lg:flex-nowrap">
-            <SidebarButton
-              label="Tous"
-              count={typeCounts.all}
-              selected={noTypeSelected}
-              onClick={() => onSelectTypes(new Set())}
-            />
-            {ALL_TYPES.map((t) => (
-              <CheckboxButton
-                key={t}
-                label={TYPE_LABELS[t]}
-                count={typeCounts[t]}
-                checked={selectedTypes?.has(t) ?? false}
-                onClick={() => toggleType(t)}
-              />
-            ))}
           </div>
         </div>
       )}
