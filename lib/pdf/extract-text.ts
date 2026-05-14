@@ -5,11 +5,17 @@
 // LOCALE rapide (~1s sur le même PDF). Le texte extrait est ensuite envoyé
 // à Sonnet text-only, qui est ~10x plus rapide que Vision sur le même contenu.
 //
-// Implémentation v2 : on utilise `pdf-parse` plutôt que pdfjs-dist direct.
-// Raison : pdfjs-dist 4.x essaie de charger un worker file (pdf.worker.mjs)
-// même en mode disableWorker, ce qui plante sur Trigger.dev cloud
-// ("Cannot find module '/app/pdf.worker.mjs'"). pdf-parse encapsule pdfjs
-// proprement pour Node serverless sans cette dépendance.
+// Implémentation v3 (serverless-safe) : on utilise `unpdf` (fork serverless
+// de pdfjs-dist maintenu par l'équipe Nuxt). unpdf embarque un build pdfjs
+// pré-configuré pour Node serverless — pas de worker file à charger, pas
+// de test fixture à embarquer, single import.
+//
+// Historique des tentatives ratées (à ne pas refaire) :
+//   1) pdfjs-dist 4.10.38 direct → "Cannot find module '/app/pdf.worker.mjs'"
+//      en cloud Trigger.dev (le worker file n'est pas bundlé).
+//   2) pdfjs-dist + disableWorker:true → MÊME erreur (option ignorée en v4).
+//   3) pdf-parse 1.1.1 → "ENOENT: ./test/data/05-versions-space.pdf"
+//      (bug connu : son index.js charge un fixture de test au startup).
 //
 // Trade-off : on perd les images / diagrammes / structures moléculaires 2D.
 // Pour le cours typique de secondaire (chimie, histoire, etc.), ~95% du
@@ -27,11 +33,10 @@ export type PdfTextExtraction = {
 };
 
 /**
- * Extract text content from a PDF buffer using `pdf-parse`.
+ * Extract text content from a PDF buffer using `unpdf`.
  *
- * pdf-parse retourne le texte intégral du PDF avec des `\n` entre les pages
- * et un `\f` (form feed) en délimiteur de page. On split sur `\f` pour
- * récupérer le texte par page.
+ * unpdf retourne `{ totalPages, text }` où `text` est un `string[]` (une
+ * entrée par page) quand `mergePages: false`. On l'utilise tel quel.
  *
  * Returns pages 1-indexed dans pagesText (page N = pagesText[N-1]).
  */
@@ -40,38 +45,37 @@ export async function extractTextFromPdf(
 ): Promise<PdfTextExtraction> {
   const t0 = Date.now();
 
-  // Dynamic import : pdf-parse charge pdfjs-dist en interne mais sans dépendance
-  // au worker file en runtime.
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const pdfParseMod: any = await import("pdf-parse");
-  const pdfParse = pdfParseMod.default ?? pdfParseMod;
+  // Dynamic import : évite de charger unpdf au cold-start si l'extraction
+  // n'est pas appelée (la lib pèse plusieurs MB une fois bundlée).
+  const { extractText, getDocumentProxy } = await import("unpdf");
 
-  const buf = Buffer.isBuffer(pdfBuffer) ? pdfBuffer : Buffer.from(pdfBuffer);
-  const result = await pdfParse(buf);
+  // unpdf veut un Uint8Array (pas un Buffer Node). Buffer extends Uint8Array
+  // mais on normalise pour être safe sur tous les runtimes.
+  const data =
+    pdfBuffer instanceof Uint8Array && !Buffer.isBuffer(pdfBuffer)
+      ? pdfBuffer
+      : new Uint8Array(
+          pdfBuffer.buffer,
+          pdfBuffer.byteOffset,
+          pdfBuffer.byteLength,
+        );
 
-  // pdf-parse insère un form-feed (\f, U+000C) entre les pages dans `.text`.
-  // On split là-dessus pour reconstituer les pages individuellement.
-  const rawText: string = result.text ?? "";
-  const parts = rawText.split("\f");
+  // On passe par getDocumentProxy d'abord pour avoir un PDFDocumentProxy
+  // réutilisable si on veut ajouter de l'extraction d'images plus tard.
+  const pdf = await getDocumentProxy(data);
+  const { totalPages, text } = await extractText(pdf, { mergePages: false });
 
-  // Filtrer les pages vides en queue (parfois pdf-parse ajoute un \f final).
-  while (parts.length > 0 && parts[parts.length - 1].trim() === "") {
-    parts.pop();
-  }
-
-  // Si on a moins de pages que result.numpages (peut arriver si certaines
-  // pages ont 0 contenu textuel), on pad avec strings vides pour préserver
-  // l'index par page.
-  const numPages = result.numpages ?? parts.length;
+  // Defensive : trim et garantit qu'on a exactement totalPages entrées
+  // (au cas où unpdf retournerait une longueur différente).
   const pagesText: string[] = [];
-  for (let i = 0; i < numPages; i++) {
-    pagesText.push((parts[i] ?? "").trim());
+  for (let i = 0; i < totalPages; i++) {
+    pagesText.push((text[i] ?? "").trim());
   }
 
   const totalChars = pagesText.reduce((sum, t) => sum + t.length, 0);
   return {
     pagesText,
-    pageCount: numPages,
+    pageCount: totalPages,
     totalChars,
     durationMs: Date.now() - t0,
   };
