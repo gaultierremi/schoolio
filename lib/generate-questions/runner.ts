@@ -10,6 +10,7 @@
 
 import { SchemaType, type ResponseSchema } from "@google/generative-ai";
 import { createClient as createSupabaseAdminClient } from "@supabase/supabase-js";
+import WebSocket from "ws";
 import { routeAIRequest } from "@/lib/ai-router";
 import { isValidSubject, isValidLevel, SUBJECTS_BY_ID } from "@/lib/subjects";
 import type { SubjectId, SchoolLevel } from "@/lib/subjects";
@@ -86,9 +87,21 @@ type CourseRow = {
 // ── Admin client ─────────────────────────────────────────────────────────────
 
 function createAdminClient() {
+  // Le runner tourne sur Trigger.dev cloud (Node 21, pas de WebSocket natif).
+  // Le SDK Supabase initialise Realtime au boot → throw "Node.js 21 detected
+  // without native WebSocket support". On désactive Realtime + on injecte
+  // explicitement le polyfill `ws` pour le transport, au cas où.
+  // (Le runner ne fait QUE du CRUD sur les tables, jamais de subscribe.)
   return createSupabaseAdminClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
+    process.env.SUPABASE_SERVICE_ROLE_KEY!,
+    {
+      auth: { persistSession: false, autoRefreshToken: false },
+      realtime: {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        transport: WebSocket as any,
+      },
+    }
   );
 }
 
