@@ -25,32 +25,32 @@ export function PendingCard({
 }) {
   return (
     <div
-      className={`rounded-2xl border border-gray-700 bg-gray-900 p-4 transition-opacity duration-200 ${
+      className={`rounded-2xl border border-[rgb(var(--border))] bg-[rgb(var(--surface))] p-4 transition-opacity duration-200 ${
         isFading ? "opacity-0" : "opacity-100"
       }`}
     >
-      <div className="flex flex-wrap items-center gap-2 mb-3">
+      <div className="mb-3 flex flex-wrap items-center gap-2">
         <TypeBadge type={q.type} />
         {q.origin === "extracted_from_pdf" ? (
-          <span className="rounded-full bg-cyan-500/20 px-2 py-0.5 text-xs font-black text-cyan-300">
+          <span className="rounded-full bg-cyan-100 px-2 py-0.5 text-xs font-black text-cyan-700">
             PDF
           </span>
         ) : (
-          <span className="rounded-full bg-indigo-500/20 px-2 py-0.5 text-xs font-black text-indigo-300">
+          <span className="rounded-full bg-indigo-100 px-2 py-0.5 text-xs font-black text-indigo-700">
             Maïa
           </span>
         )}
         {q.period && (
-          <span className="rounded-full bg-gray-800 px-2 py-0.5 text-xs text-gray-400">
+          <span className="rounded-full bg-[rgb(var(--surface-3))] px-2 py-0.5 text-xs text-[rgb(var(--ink-2))]">
             {q.period}
           </span>
         )}
         {q.subject_enum && (
-          <span className="text-xs text-gray-500">{q.subject_enum}</span>
+          <span className="text-xs text-[rgb(var(--ink-3))]">{q.subject_enum}</span>
         )}
       </div>
 
-      <p className="font-bold text-white">{q.question}</p>
+      <p className="font-bold text-[rgb(var(--ink))]">{q.question}</p>
 
       <div className="mt-2 flex flex-wrap gap-1">
         {q.options.map((opt, i) => (
@@ -58,8 +58,8 @@ export function PendingCard({
             key={i}
             className={`rounded-lg px-2 py-0.5 text-xs ${
               i === q.answer_index
-                ? "bg-green-500/20 font-black text-green-300"
-                : "bg-gray-800 text-gray-400"
+                ? "bg-[rgb(var(--green))]/15 font-black text-[rgb(var(--green))]"
+                : "bg-[rgb(var(--surface-3))] text-[rgb(var(--ink-2))]"
             }`}
           >
             {opt}
@@ -68,37 +68,37 @@ export function PendingCard({
       </div>
 
       {q.explanation && (
-        <p className="mt-2 text-xs italic text-gray-500">{q.explanation}</p>
+        <p className="mt-2 text-xs italic text-[rgb(var(--ink-3))]">{q.explanation}</p>
       )}
 
-      <div className="mt-4 flex flex-wrap items-center gap-3 border-t border-gray-800 pt-3">
+      <div className="mt-4 flex flex-wrap items-center gap-3 border-t border-[rgb(var(--border))] pt-3">
         <div className="flex items-center gap-2">
-          <span className="text-xs text-gray-500">Difficulté :</span>
+          <span className="text-xs text-[rgb(var(--ink-3))]">Difficulté :</span>
           <DifficultyStarsEditor
             questionId={q.id}
             value={q.difficulty_stars}
             onChange={onDifficultyChange}
           />
         </div>
-        <div className="flex gap-2 ml-auto">
+        <div className="ml-auto flex gap-2">
           <button
             onClick={onEdit}
             disabled={isBusy}
-            className="rounded-xl border border-gray-700 px-3 py-1.5 text-xs font-bold text-gray-300 hover:border-purple-500/50 hover:text-purple-300 disabled:opacity-40"
+            className="rounded-xl border border-[rgb(var(--border))] px-3 py-1.5 text-xs font-bold text-[rgb(var(--ink-2))] hover:border-[rgb(var(--accent))]/50 hover:text-[rgb(var(--accent))] disabled:opacity-40"
           >
             Modifier
           </button>
           <button
             onClick={onReject}
             disabled={isBusy}
-            className="rounded-xl border border-red-500/30 px-3 py-1.5 text-xs font-bold text-red-400 hover:bg-red-500/10 disabled:opacity-40"
+            className="rounded-xl border border-[rgb(var(--red))]/30 px-3 py-1.5 text-xs font-bold text-[rgb(var(--red))] hover:bg-[rgb(var(--red))]/10 disabled:opacity-40"
           >
             {isRejecting ? "…" : "Rejeter"}
           </button>
           <button
             onClick={onValidate}
             disabled={isBusy}
-            className="rounded-xl bg-green-500 px-4 py-1.5 text-xs font-black text-gray-950 hover:bg-green-400 disabled:opacity-40"
+            className="rounded-xl bg-[rgb(var(--green))] px-4 py-1.5 text-xs font-black text-white hover:opacity-90 disabled:opacity-40"
           >
             {isValidating ? "…" : "Valider"}
           </button>

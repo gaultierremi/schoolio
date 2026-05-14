@@ -29,18 +29,18 @@ export function ValidatedCard({
   const isPdfExtracted = q.origin === "extracted_from_pdf" && !!q.validated_at;
 
   return (
-    <div className="rounded-2xl border border-gray-800 bg-gray-900 p-4">
+    <div className="rounded-2xl border border-[rgb(var(--border))] bg-[rgb(var(--surface))] p-4">
       <div className="flex items-start gap-3">
-        <div className="flex-1 min-w-0">
+        <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
             <TypeBadge type={q.type} />
             {isAiValidated && (
-              <span className="rounded-full bg-green-500/20 px-2 py-0.5 text-xs font-black text-green-300">
+              <span className="rounded-full bg-[rgb(var(--green))]/15 px-2 py-0.5 text-xs font-black text-[rgb(var(--green))]">
                 ✓ Maïa
               </span>
             )}
             {isPdfExtracted && (
-              <span className="rounded-full bg-cyan-500/20 px-2 py-0.5 text-xs font-black text-cyan-300">
+              <span className="rounded-full bg-cyan-100 px-2 py-0.5 text-xs font-black text-cyan-700">
                 ✓ 📄 PDF
               </span>
             )}
@@ -50,26 +50,26 @@ export function ValidatedCard({
               onChange={onDifficultyChange}
             />
             {q.period && (
-              <span className="rounded-full bg-gray-800 px-2 py-0.5 text-xs text-gray-400">
+              <span className="rounded-full bg-[rgb(var(--surface-3))] px-2 py-0.5 text-xs text-[rgb(var(--ink-2))]">
                 {q.period}
               </span>
             )}
             {q.subject_enum && (
-              <span className="text-xs text-gray-500">{q.subject_enum}</span>
+              <span className="text-xs text-[rgb(var(--ink-3))]">{q.subject_enum}</span>
             )}
             {typeof q.use_count === "number" && (
-              <span className="text-xs text-gray-600">{q.use_count} util.</span>
+              <span className="text-xs text-[rgb(var(--ink-3))]">{q.use_count} util.</span>
             )}
           </div>
-          <p className="mt-2 font-bold text-white">{q.question}</p>
+          <p className="mt-2 font-bold text-[rgb(var(--ink))]">{q.question}</p>
           <div className="mt-1.5 flex flex-wrap gap-1">
             {q.options.map((opt, i) => (
               <span
                 key={i}
                 className={`rounded-lg px-2 py-0.5 text-xs ${
                   i === q.answer_index
-                    ? "bg-green-500/20 font-black text-green-300"
-                    : "bg-gray-800 text-gray-400"
+                    ? "bg-[rgb(var(--green))]/15 font-black text-[rgb(var(--green))]"
+                    : "bg-[rgb(var(--surface-3))] text-[rgb(var(--ink-2))]"
                 }`}
               >
                 {opt}
@@ -77,7 +77,7 @@ export function ValidatedCard({
             ))}
           </div>
           {q.explanation && (
-            <p className="mt-1.5 text-xs italic text-gray-500">{q.explanation}</p>
+            <p className="mt-1.5 text-xs italic text-[rgb(var(--ink-3))]">{q.explanation}</p>
           )}
         </div>
 
@@ -86,69 +86,69 @@ export function ValidatedCard({
             onClick={onTogglePublic}
             className={`rounded-xl px-3 py-1.5 text-xs font-black transition ${
               q.is_public
-                ? "bg-green-500/20 text-green-300 hover:bg-green-500/30"
-                : "border border-gray-700 text-gray-500 hover:text-white"
+                ? "bg-[rgb(var(--green))]/15 text-[rgb(var(--green))] hover:bg-[rgb(var(--green))]/25"
+                : "border border-[rgb(var(--border))] text-[rgb(var(--ink-3))] hover:text-[rgb(var(--ink))]"
             }`}
           >
             {q.is_public ? "Publique" : "Privée"}
           </button>
           <button
             onClick={onEdit}
-            className="rounded-xl border border-gray-700 px-3 py-1.5 text-xs font-bold text-gray-300 hover:border-purple-500/50 hover:text-purple-300"
+            className="rounded-xl border border-[rgb(var(--border))] px-3 py-1.5 text-xs font-bold text-[rgb(var(--ink-2))] hover:border-[rgb(var(--accent))]/50 hover:text-[rgb(var(--accent))]"
           >
             Éditer
           </button>
           <button
             onClick={onDuplicate}
-            className="rounded-xl border border-gray-700 px-3 py-1.5 text-xs font-bold text-gray-400 hover:border-blue-500/50 hover:text-blue-300"
+            className="rounded-xl border border-[rgb(var(--border))] px-3 py-1.5 text-xs font-bold text-[rgb(var(--ink-2))] hover:border-blue-400 hover:text-blue-600"
           >
             Dupliquer
           </button>
           {isAiValidated && (
             <button
               onClick={onUnvalidate}
-              className="rounded-xl border border-amber-500/30 px-3 py-1.5 text-xs font-bold text-amber-400 hover:bg-amber-500/10"
+              className="rounded-xl border border-[rgb(var(--warm))]/30 px-3 py-1.5 text-xs font-bold text-[rgb(var(--warm))] hover:bg-[rgb(var(--warm))]/10"
             >
               Dépublier
             </button>
           )}
           <button
             onClick={onDelete}
-            className="rounded-xl border border-red-500/30 px-3 py-1.5 text-xs font-bold text-red-400 hover:bg-red-500/10"
+            className="rounded-xl border border-[rgb(var(--red))]/30 px-3 py-1.5 text-xs font-bold text-[rgb(var(--red))] hover:bg-[rgb(var(--red))]/10"
           >
             ✕
           </button>
         </div>
       </div>
 
-      <div className="mt-3 border-t border-gray-800 pt-3">
+      <div className="mt-3 border-t border-[rgb(var(--border))] pt-3">
         {proposeState.kind === "idle" && (
           <button
             onClick={onPropose}
-            className="rounded-xl bg-indigo-500/20 px-3 py-1.5 text-xs font-black text-indigo-300 transition hover:bg-indigo-500/30"
+            className="rounded-xl bg-indigo-100 px-3 py-1.5 text-xs font-black text-indigo-700 transition hover:bg-indigo-200"
           >
             📤 Proposer au site HistoGuess
           </button>
         )}
         {proposeState.kind === "loading" && (
-          <span className="text-xs text-gray-500">Vérification en cours...</span>
+          <span className="text-xs text-[rgb(var(--ink-3))]">Vérification en cours...</span>
         )}
         {proposeState.kind === "proposed" && (
-          <span className="inline-flex items-center gap-1.5 rounded-xl bg-green-500/20 px-3 py-1.5 text-xs font-black text-green-300">
+          <span className="inline-flex items-center gap-1.5 rounded-xl bg-[rgb(var(--green))]/15 px-3 py-1.5 text-xs font-black text-[rgb(var(--green))]">
             ✓ Proposée au site
           </span>
         )}
         {proposeState.kind === "duplicate" && (
-          <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-3">
-            <p className="text-xs font-black text-amber-300">
+          <div className="rounded-xl border border-[rgb(var(--warm))]/30 bg-[rgb(var(--warm))]/10 p-3">
+            <p className="text-xs font-black text-[rgb(var(--warm))]">
               ⚠️ Question similaire déjà existante :
             </p>
-            <p className="mt-1 text-xs italic text-gray-400">
+            <p className="mt-1 text-xs italic text-[rgb(var(--ink-2))]">
               &ldquo;{proposeState.similarText}&rdquo;
             </p>
             <button
               onClick={onForcePropose}
-              className="mt-2 rounded-lg bg-amber-500/30 px-3 py-1.5 text-xs font-black text-amber-200 hover:bg-amber-500/50"
+              className="mt-2 rounded-lg bg-[rgb(var(--warm))]/25 px-3 py-1.5 text-xs font-black text-[rgb(var(--warm))] hover:bg-[rgb(var(--warm))]/40"
             >
               Proposer quand même
             </button>

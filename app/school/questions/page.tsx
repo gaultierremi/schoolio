@@ -72,7 +72,7 @@ export default function SchoolQuestionsPage() {
 
   if (pageLoading) {
     return (
-      <main className="min-h-screen bg-gray-950 p-8 text-white">
+      <main className="min-h-screen bg-[rgb(var(--surface-2))] p-8 text-[rgb(var(--ink))]">
         Chargement...
       </main>
     );
@@ -80,10 +80,10 @@ export default function SchoolQuestionsPage() {
 
   if (!isTeacher) {
     return (
-      <main className="min-h-screen bg-gray-950 p-8 text-white">
-        <div className="mx-auto max-w-xl rounded-3xl border border-red-500/30 bg-red-500/10 p-6">
-          <h1 className="text-2xl font-black text-red-300">Accès refusé</h1>
-          <p className="mt-2 text-gray-300">
+      <main className="min-h-screen bg-[rgb(var(--surface-2))] p-8 text-[rgb(var(--ink))]">
+        <div className="mx-auto max-w-xl rounded-3xl border border-[rgb(var(--red))]/30 bg-[rgb(var(--red))]/10 p-6">
+          <h1 className="text-2xl font-black text-[rgb(var(--red))]">Accès refusé</h1>
+          <p className="mt-2 text-[rgb(var(--ink-2))]">
             Cet espace est réservé aux professeurs autorisés.
           </p>
         </div>
@@ -94,22 +94,22 @@ export default function SchoolQuestionsPage() {
   // ── Render ──
 
   return (
-    <main className="min-h-screen bg-gray-950 px-4 py-8 text-white">
+    <main className="min-h-screen bg-[rgb(var(--surface-2))] px-4 py-8 text-[rgb(var(--ink))]">
       <div className="mx-auto w-full max-w-4xl">
         <a
           href="/school"
-          className="text-sm font-bold text-gray-500 transition hover:text-purple-400"
+          className="text-sm font-bold text-[rgb(var(--ink-3))] transition hover:text-[rgb(var(--accent))]"
         >
           ← Espace professeur
         </a>
 
         <h1 className="mt-4 text-4xl font-black">Mes questions</h1>
-        <p className="mt-2 text-gray-400">
+        <p className="mt-2 text-[rgb(var(--ink-2))]">
           Crée, importe depuis un PDF et gère tes questions de quiz.
         </p>
 
         {/* Outer tabs */}
-        <div className="mt-6 flex gap-1 border-b border-gray-800">
+        <div className="mt-6 flex gap-1 border-b border-[rgb(var(--border))]">
           {(
             [
               { key: "my", label: `Mes questions (${myQuestions.length})` },
@@ -122,8 +122,8 @@ export default function SchoolQuestionsPage() {
               onClick={() => setTab(key)}
               className={`rounded-t-xl px-4 py-3 text-sm font-black transition ${
                 tab === key
-                  ? "bg-gray-900 text-purple-400"
-                  : "text-gray-500 hover:text-white"
+                  ? "bg-[rgb(var(--surface))] text-[rgb(var(--accent))]"
+                  : "text-[rgb(var(--ink-3))] hover:text-[rgb(var(--ink))]"
               }`}
             >
               {label}
@@ -152,25 +152,25 @@ export default function SchoolQuestionsPage() {
                     setForm({ ...BLANK_FORM });
                     setShowForm(true);
                   }}
-                  className="mb-6 rounded-2xl bg-purple-500 px-5 py-3 font-black text-gray-950 transition hover:bg-purple-400"
+                  className="mb-6 rounded-2xl bg-[rgb(var(--accent))] px-5 py-3 font-black text-white transition hover:opacity-90"
                 >
                   + Nouvelle question
                 </button>
               )}
 
               {/* Inner val tabs */}
-              <div className="flex gap-1 border-b border-gray-800 mb-5">
+              <div className="flex gap-1 border-b border-[rgb(var(--border))] mb-5">
                 <button
                   onClick={() => setValTab("pending")}
                   className={`flex items-center gap-2 rounded-t-xl px-4 py-3 text-sm font-black transition ${
                     valTab === "pending"
-                      ? "bg-gray-900 text-purple-400"
-                      : "text-gray-500 hover:text-white"
+                      ? "bg-[rgb(var(--surface))] text-[rgb(var(--accent))]"
+                      : "text-[rgb(var(--ink-3))] hover:text-[rgb(var(--ink))]"
                   }`}
                 >
                   À valider
                   {pendingQuestions.length > 0 && (
-                    <span className="inline-flex h-5 min-w-[20px] items-center justify-center rounded-full bg-amber-500 px-1 text-[10px] font-black text-gray-950">
+                    <span className="inline-flex h-5 min-w-[20px] items-center justify-center rounded-full bg-[rgb(var(--warm))] px-1 text-[10px] font-black text-white">
                       {pendingQuestions.length}
                     </span>
                   )}
@@ -179,8 +179,8 @@ export default function SchoolQuestionsPage() {
                   onClick={() => setValTab("validated")}
                   className={`rounded-t-xl px-4 py-3 text-sm font-black transition ${
                     valTab === "validated"
-                      ? "bg-gray-900 text-purple-400"
-                      : "text-gray-500 hover:text-white"
+                      ? "bg-[rgb(var(--surface))] text-[rgb(var(--accent))]"
+                      : "text-[rgb(var(--ink-3))] hover:text-[rgb(var(--ink))]"
                   }`}
                 >
                   Validées ({validatedQuestionsBase.length})
@@ -189,13 +189,13 @@ export default function SchoolQuestionsPage() {
                   onClick={() => setValTab("rejected")}
                   className={`rounded-t-xl px-4 py-3 text-sm font-black transition ${
                     valTab === "rejected"
-                      ? "bg-gray-900 text-purple-400"
-                      : "text-gray-500 hover:text-white"
+                      ? "bg-[rgb(var(--surface))] text-[rgb(var(--accent))]"
+                      : "text-[rgb(var(--ink-3))] hover:text-[rgb(var(--ink))]"
                   }`}
                 >
                   Rejetées
                   {rejectedQuestions.length > 0 && (
-                    <span className="ml-2 text-gray-600">({rejectedQuestions.length})</span>
+                    <span className="ml-2 text-[rgb(var(--ink-3))]">({rejectedQuestions.length})</span>
                   )}
                 </button>
               </div>
@@ -204,7 +204,7 @@ export default function SchoolQuestionsPage() {
               {valTab === "pending" && (
                 <div>
                   {pendingQuestions.length === 0 ? (
-                    <div className="rounded-2xl border border-dashed border-gray-800 p-10 text-center text-gray-500">
+                    <div className="rounded-2xl border border-dashed border-[rgb(var(--border))] p-10 text-center text-[rgb(var(--ink-3))]">
                       Aucune question générée par Maïa en attente de validation.
                     </div>
                   ) : (
@@ -222,7 +222,7 @@ export default function SchoolQuestionsPage() {
                       />
                       <div className="flex-1 space-y-4 min-w-0">
                         {filteredPendingBySubject.length === 0 ? (
-                          <div className="rounded-2xl border border-dashed border-gray-800 p-8 text-center text-sm text-gray-500">
+                          <div className="rounded-2xl border border-dashed border-[rgb(var(--border))] p-8 text-center text-sm text-[rgb(var(--ink-3))]">
                             Aucune question pour cette matière.
                           </div>
                         ) : (
@@ -269,7 +269,7 @@ export default function SchoolQuestionsPage() {
                       onChange={(e) =>
                         setSortBy(e.target.value as "date" | "type" | "period")
                       }
-                      className="rounded-xl border border-gray-700 bg-gray-900 px-3 py-2 text-sm text-white outline-none focus:border-purple-500"
+                      className="rounded-xl border border-[rgb(var(--border))] bg-[rgb(var(--surface))] px-3 py-2 text-sm text-[rgb(var(--ink))] outline-none focus:border-[rgb(var(--accent))]"
                     >
                       <option value="date">Trier par date</option>
                       <option value="type">Trier par type</option>
@@ -279,7 +279,7 @@ export default function SchoolQuestionsPage() {
 
                   {/* Star filter */}
                   <div className="mb-4 flex flex-wrap items-center gap-2">
-                    <span className="text-xs text-gray-500">Difficulté :</span>
+                    <span className="text-xs text-[rgb(var(--ink-3))]">Difficulté :</span>
                     {([0, 1, 2, 3] as const).map((s) => (
                       <button
                         key={s}
@@ -287,7 +287,7 @@ export default function SchoolQuestionsPage() {
                         className={`rounded-xl px-2.5 py-1 text-xs font-bold transition ${
                           filterStars === s
                             ? "bg-yellow-500/20 text-yellow-300 border border-yellow-500/30"
-                            : "border border-gray-700 text-gray-500 hover:text-white"
+                            : "border border-[rgb(var(--border))] text-[rgb(var(--ink-3))] hover:text-[rgb(var(--ink))]"
                         }`}
                       >
                         {s === 0 ? "Toutes" : "★".repeat(s)}
@@ -296,16 +296,16 @@ export default function SchoolQuestionsPage() {
                   </div>
 
                   {/* Subject/level filter */}
-                  <div className="mb-5 rounded-2xl border border-gray-800 bg-gray-900 p-4">
+                  <div className="mb-5 rounded-2xl border border-[rgb(var(--border))] bg-[rgb(var(--surface))] p-4">
                     <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
                       <div>
-                        <p className="text-sm font-black text-white">
+                        <p className="text-sm font-black text-[rgb(var(--ink))]">
                           {validatedQuestionsBase.length} question
                           {validatedQuestionsBase.length > 1 ? "s" : ""} validée
                           {validatedQuestionsBase.length > 1 ? "s" : ""}
                         </p>
                         {hasValidatedFilter && (
-                          <p className="mt-1 text-xs font-bold text-purple-300">
+                          <p className="mt-1 text-xs font-bold text-[rgb(var(--accent))]">
                             {filteredValidated.length} résultat
                             {filteredValidated.length > 1 ? "s" : ""}
                           </p>
@@ -322,7 +322,7 @@ export default function SchoolQuestionsPage() {
                             setMyFilterOrigin("");
                             setFilterStars(0);
                           }}
-                          className="rounded-xl border border-gray-700 px-3 py-2 text-xs font-bold text-gray-400 transition hover:border-purple-500/50 hover:text-purple-300"
+                          className="rounded-xl border border-[rgb(var(--border))] px-3 py-2 text-xs font-bold text-[rgb(var(--ink-2))] transition hover:border-[rgb(var(--accent))]/50 hover:text-[rgb(var(--accent))]"
                         >
                           Réinitialiser
                         </button>
@@ -338,7 +338,7 @@ export default function SchoolQuestionsPage() {
                   </div>
 
                   {sortedValidated.length === 0 ? (
-                    <div className="rounded-2xl border border-dashed border-gray-800 p-10 text-center text-gray-500">
+                    <div className="rounded-2xl border border-dashed border-[rgb(var(--border))] p-10 text-center text-[rgb(var(--ink-3))]">
                       {validatedQuestionsBase.length === 0
                         ? "Aucune question validée. Valide des questions générées par Maïa ou crée-en une."
                         : "Aucun résultat pour ces filtres."}
@@ -373,7 +373,7 @@ export default function SchoolQuestionsPage() {
               {valTab === "rejected" && (
                 <div>
                   {rejectedQuestions.length === 0 ? (
-                    <div className="rounded-2xl border border-dashed border-gray-800 p-10 text-center text-gray-500">
+                    <div className="rounded-2xl border border-dashed border-[rgb(var(--border))] p-10 text-center text-[rgb(var(--ink-3))]">
                       Aucune question rejetée.
                     </div>
                   ) : (
@@ -418,7 +418,7 @@ export default function SchoolQuestionsPage() {
               ) : (
                 <div>
                   <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
-                    <p className="font-black text-white">
+                    <p className="font-black text-[rgb(var(--ink))]">
                       {drafts.filter((d) => d.kept).length} /{" "}
                       {drafts.length} question(s) sélectionnée(s)
                     </p>
@@ -427,7 +427,7 @@ export default function SchoolQuestionsPage() {
                         onClick={() => {
                           setDrafts([]);
                         }}
-                        className="rounded-xl border border-gray-700 px-4 py-2 text-sm font-bold text-gray-300 hover:text-white"
+                        className="rounded-xl border border-[rgb(var(--border))] px-4 py-2 text-sm font-bold text-[rgb(var(--ink-2))] hover:text-[rgb(var(--ink))]"
                       >
                         Recommencer
                       </button>
@@ -436,7 +436,7 @@ export default function SchoolQuestionsPage() {
                         disabled={
                           savingDrafts || drafts.filter((d) => d.kept).length === 0
                         }
-                        className="rounded-xl bg-green-500 px-5 py-2 text-sm font-black text-gray-950 hover:bg-green-400 disabled:opacity-40"
+                        className="rounded-xl bg-[rgb(var(--green))] px-5 py-2 text-sm font-black text-white hover:opacity-90 disabled:opacity-40"
                       >
                         {savingDrafts ? "Sauvegarde..." : "Tout valider →"}
                       </button>
@@ -444,14 +444,14 @@ export default function SchoolQuestionsPage() {
                   </div>
 
                   {pdfStats && (
-                    <div className="mb-4 flex flex-wrap items-center gap-3 rounded-2xl border border-gray-800 bg-gray-900 px-4 py-3">
+                    <div className="mb-4 flex flex-wrap items-center gap-3 rounded-2xl border border-[rgb(var(--border))] bg-[rgb(var(--surface))] px-4 py-3">
                       {pdfStats.fromCache && (
-                        <span className="rounded-full bg-green-500/10 px-3 py-1 text-xs font-black text-green-400">
+                        <span className="rounded-full bg-[rgb(var(--green))]/10 px-3 py-1 text-xs font-black text-[rgb(var(--green))]">
                           ✓ Questions récupérées depuis le cache
                         </span>
                       )}
                       {pdfStats.pageCount !== null && (
-                        <span className="text-sm text-gray-400">
+                        <span className="text-sm text-[rgb(var(--ink-2))]">
                           {pdfStats.pageCount} page(s) analysée(s)
                         </span>
                       )}
@@ -491,7 +491,7 @@ export default function SchoolQuestionsPage() {
                 />
               </div>
 
-              <p className="mb-4 text-sm text-gray-500">
+              <p className="mb-4 text-sm text-[rgb(var(--ink-3))]">
                 {filteredPublic.length} question(s) approuvée(s) HistoGuess
               </p>
 
@@ -499,30 +499,30 @@ export default function SchoolQuestionsPage() {
                 {filteredPublic.map((q) => (
                   <div
                     key={q.id}
-                    className="flex items-start gap-3 rounded-2xl border border-gray-800 bg-gray-900 p-4"
+                    className="flex items-start gap-3 rounded-2xl border border-[rgb(var(--border))] bg-[rgb(var(--surface))] p-4"
                   >
                     <div className="flex-1 min-w-0">
                       <div className="flex flex-wrap items-center gap-2">
                         <TypeBadge type={q.type} />
                         {q.period && (
-                          <span className="rounded-full bg-gray-800 px-2 py-0.5 text-xs text-gray-400">
+                          <span className="rounded-full bg-[rgb(var(--surface-3))] px-2 py-0.5 text-xs text-[rgb(var(--ink-2))]">
                             {q.period}
                           </span>
                         )}
                         {q.difficulty && (
-                          <span className="text-xs text-gray-600">
+                          <span className="text-xs text-[rgb(var(--ink-3))]">
                             Difficulté {q.difficulty}
                           </span>
                         )}
                       </div>
-                      <p className="mt-1 text-sm font-bold text-white">
+                      <p className="mt-1 text-sm font-bold text-[rgb(var(--ink))]">
                         {q.question}
                       </p>
                     </div>
                     <button
                       onClick={() => addPublicQuestion(q)}
                       disabled={addingId === q.id}
-                      className="shrink-0 rounded-xl bg-purple-500/20 px-3 py-2 text-xs font-black text-purple-300 transition hover:bg-purple-500/30 disabled:opacity-40"
+                      className="shrink-0 rounded-xl bg-[rgb(var(--accent))]/15 px-3 py-2 text-xs font-black text-[rgb(var(--accent))] transition hover:bg-[rgb(var(--accent))]/25 disabled:opacity-40"
                     >
                       {addingId === q.id ? "..." : "+ Ajouter"}
                     </button>
@@ -536,7 +536,7 @@ export default function SchoolQuestionsPage() {
 
       {/* Toast */}
       {valToast && (
-        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 rounded-2xl bg-green-500 px-6 py-3 font-black text-gray-950 shadow-lg">
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 rounded-2xl bg-[rgb(var(--green))] px-6 py-3 font-black text-white shadow-lg">
           {valToast}
         </div>
       )}
