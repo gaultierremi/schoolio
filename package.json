@@ -19,6 +19,7 @@
     "@supabase/ssr": "^0.10.2",
     "@supabase/supabase-js": "^2.105.3",
     "@tailwindcss/postcss": "^4.2.4",
+    "@trigger.dev/sdk": "^4.4.6",
     "@types/katex": "^0.16.8",
     "@vercel/functions": "^3.5.1",
     "canvas-confetti": "^1.9.4",
