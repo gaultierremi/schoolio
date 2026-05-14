@@ -1,0 +1,911 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Maïa — Apprendre ce qu'on ne sait pas encore</title>
+<meta name="description" content="Plateforme d'apprentissage augmentée pour le secondaire. Chaque élève voit ses lacunes, le prof voit sa classe, l'IA s'occupe du reste. Aligné programme FW-B." />
+<script src="https://cdn.tailwindcss.com?plugins=forms,typography"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Source+Serif+4:opsz,wght@8..60,500;8..60,600;8..60,700&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/lucide@0.469.0/dist/umd/lucide.min.js"></script>
+<style>
+  :root {
+    --surface: 255 255 255;
+    --surface-2: 252 250 248;
+    --surface-3: 247 245 250;
+    --surface-dark: 17 24 39;
+    --border: 232 228 222;
+    --text-primary: 17 24 39;
+    --text-secondary: 87 96 116;
+    --text-tertiary: 138 146 162;
+    --accent: 109 40 217;
+    --accent-2: 124 58 237;
+    --accent-soft: 233 213 255;
+    --warm: 245 158 11;
+    --green: 34 197 94;
+    --red: 239 68 68;
+  }
+  .dark {
+    --surface: 14 18 28;
+    --surface-2: 20 24 36;
+    --surface-3: 28 32 44;
+    --border: 38 45 60;
+    --text-primary: 243 244 246;
+    --text-secondary: 156 163 175;
+    --text-tertiary: 107 114 128;
+    --accent: 167 139 250;
+    --accent-2: 139 92 246;
+    --accent-soft: 76 29 149;
+  }
+  html, body {
+    background: rgb(var(--surface));
+    color: rgb(var(--text-primary));
+    font-family: 'Inter', ui-sans-serif, system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+  .serif { font-family: 'Source Serif 4', ui-serif, Georgia, serif; }
+  .ink  { color: rgb(var(--text-primary)); }
+  .ink2 { color: rgb(var(--text-secondary)); }
+  .ink3 { color: rgb(var(--text-tertiary)); }
+  .accent-text { color: rgb(var(--accent)); }
+  .accent-bg   { background: rgb(var(--accent)); }
+  .border1 { border-color: rgb(var(--border)); }
+  .surface-2-bg { background: rgb(var(--surface-2)); }
+  .surface-3-bg { background: rgb(var(--surface-3)); }
+  /* Eyebrow tag */
+  .eyebrow {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: rgb(var(--accent) / 0.10);
+    color: rgb(var(--accent));
+    font-size: 0.75rem;
+    font-weight: 500;
+    padding: 0.35rem 0.75rem;
+    border-radius: 999px;
+    letter-spacing: 0.02em;
+  }
+  /* Hero gradient background */
+  .hero-bg {
+    background:
+      radial-gradient(circle at 80% 20%, rgb(var(--accent) / 0.08) 0%, transparent 50%),
+      radial-gradient(circle at 20% 60%, rgb(var(--warm) / 0.05) 0%, transparent 50%),
+      rgb(var(--surface));
+  }
+  /* Big CTA */
+  .btn-primary {
+    background: linear-gradient(135deg, rgb(var(--accent)) 0%, rgb(var(--accent-2)) 100%);
+    color: white;
+    transition: transform 120ms ease, box-shadow 120ms ease;
+  }
+  .btn-primary:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 12px 32px rgb(var(--accent) / 0.35);
+  }
+  .btn-secondary {
+    border: 1px solid rgb(var(--border));
+    background: rgb(var(--surface));
+    color: rgb(var(--text-primary));
+  }
+  .btn-secondary:hover { border-color: rgb(var(--accent)); color: rgb(var(--accent)); }
+  /* Card */
+  .card {
+    background: rgb(var(--surface));
+    border: 1px solid rgb(var(--border));
+    border-radius: 18px;
+  }
+  .card-feature {
+    background: rgb(var(--surface));
+    border: 1px solid rgb(var(--border));
+    border-radius: 18px;
+    transition: transform 180ms ease, box-shadow 180ms ease, border-color 180ms ease;
+  }
+  .card-feature:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 14px 40px rgb(11 18 32 / 0.06);
+    border-color: rgb(var(--accent) / 0.4);
+  }
+  /* Section number badges */
+  .step-num {
+    background: rgb(var(--accent) / 0.10);
+    color: rgb(var(--accent));
+    border-radius: 999px;
+    width: 2rem;
+    height: 2rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Source Serif 4', serif;
+    font-weight: 600;
+    font-size: 1rem;
+  }
+  /* Mastery preview cells in hero */
+  .pm-cell {
+    width: 2.25rem;
+    height: 2.25rem;
+    border-radius: 0.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.7rem;
+    font-weight: 600;
+  }
+  .pm-1 { background: rgb(239 68 68); color: white; }
+  .pm-2 { background: rgb(251 146 60); color: rgb(17 24 39); }
+  .pm-3 { background: rgb(250 204 21); color: rgb(17 24 39); }
+  .pm-4 { background: rgb(132 204 22); color: rgb(17 24 39); }
+  .pm-5 { background: rgb(34 197 94); color: white; }
+  .pm-0 { background: rgb(226 232 240); color: rgb(138 146 162); }
+  /* Quote */
+  .quote::before {
+    content: "« ";
+    font-family: 'Source Serif 4', serif;
+    color: rgb(var(--accent));
+    font-size: 1.5rem;
+  }
+  .quote::after {
+    content: " »";
+    font-family: 'Source Serif 4', serif;
+    color: rgb(var(--accent));
+    font-size: 1.5rem;
+  }
+  /* FAQ */
+  details summary { cursor: pointer; list-style: none; }
+  details summary::-webkit-details-marker { display: none; }
+  details[open] .chevron { transform: rotate(180deg); }
+  .chevron { transition: transform 200ms ease; }
+  /* Subtle divider */
+  .divider {
+    height: 1px;
+    background: rgb(var(--border));
+  }
+  /* Curriculum tag */
+  .curr-tag {
+    background: rgb(var(--surface-3));
+    color: rgb(var(--text-primary));
+    border: 1px solid rgb(var(--border));
+    border-radius: 999px;
+    padding: 0.35rem 0.8rem;
+    font-size: 0.8rem;
+    font-weight: 500;
+  }
+  *:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 2px rgb(var(--surface)), 0 0 0 4px rgb(var(--accent));
+    border-radius: 12px;
+  }
+</style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════════════════════════════════════════
+   NAVIGATION
+═══════════════════════════════════════════════════════════════════════════ -->
+<nav class="sticky top-0 z-40 border-b border1" style="background: rgb(var(--surface) / 0.92); backdrop-filter: blur(10px);">
+  <div class="mx-auto flex max-w-[1200px] items-center justify-between px-6 py-4">
+    <a href="#" class="flex items-center gap-2">
+      <div class="flex h-8 w-8 items-center justify-center rounded-xl accent-bg text-white font-bold">M</div>
+      <span class="serif text-xl font-semibold ink">Maïa</span>
+    </a>
+    <div class="hidden items-center gap-7 text-sm md:flex">
+      <a href="#produit" class="ink2 hover:ink">Le produit</a>
+      <a href="#comment" class="ink2 hover:ink">Comment ça marche</a>
+      <a href="#programme" class="ink2 hover:ink">Programme</a>
+      <a href="#securite" class="ink2 hover:ink">Sécurité</a>
+      <a href="#pilote" class="ink2 hover:ink">Pilote école</a>
+      <a href="#faq" class="ink2 hover:ink">FAQ</a>
+    </div>
+    <div class="flex items-center gap-2">
+      <a href="#" class="hidden rounded-lg px-3 py-2 text-sm ink2 hover:ink md:inline">Connexion</a>
+      <a href="#pilote" class="btn-primary rounded-xl px-4 py-2 text-sm font-semibold">Demander une démo</a>
+    </div>
+  </div>
+</nav>
+
+<!-- ═══════════════════════════════════════════════════════════════════════════
+   1. HERO
+═══════════════════════════════════════════════════════════════════════════ -->
+<section class="hero-bg">
+  <div class="mx-auto max-w-[1200px] grid gap-12 px-6 py-20 lg:grid-cols-[1.1fr_1fr] lg:py-28">
+    <div>
+      <span class="eyebrow">
+        <span class="h-1.5 w-1.5 rounded-full" style="background: rgb(var(--green));"></span>
+        Plateforme d'apprentissage augmentée · Belgique FW-B
+      </span>
+      <h1 class="serif mt-6 text-5xl font-semibold leading-[1.05] tracking-tight ink sm:text-6xl">
+        Apprendre <em class="not-italic accent-text">ce qu'on ne sait pas</em> encore.
+      </h1>
+      <p class="mt-6 text-xl leading-relaxed ink2">
+        Maïa pose à chaque élève <em class="not-italic ink">les bonnes questions</em>
+        pour révéler ses lacunes — puis les combler.
+        Le prof voit sa classe d'un coup d'œil. L'élève sait quoi faire en 16 minutes.
+      </p>
+      <div class="mt-8 flex flex-wrap items-center gap-3">
+        <a href="#pilote" class="btn-primary rounded-xl px-5 py-3 text-base font-semibold inline-flex items-center gap-2">
+          Demander une démo
+          <i data-lucide="arrow-right" class="h-4 w-4"></i>
+        </a>
+        <a href="#produit" class="btn-secondary rounded-xl px-5 py-3 text-base font-medium inline-flex items-center gap-2">
+          Voir le produit en 2 min
+          <i data-lucide="play-circle" class="h-4 w-4"></i>
+        </a>
+      </div>
+      <div class="mt-10 flex flex-wrap items-center gap-5 text-sm ink3">
+        <span class="flex items-center gap-1.5"><i data-lucide="check-circle-2" class="h-4 w-4" style="color: rgb(var(--green));"></i> SSO Microsoft 365 + Google Workspace</span>
+        <span class="flex items-center gap-1.5"><i data-lucide="check-circle-2" class="h-4 w-4" style="color: rgb(var(--green));"></i> Données hébergées en UE</span>
+        <span class="flex items-center gap-1.5"><i data-lucide="check-circle-2" class="h-4 w-4" style="color: rgb(var(--green));"></i> RGPD mineurs</span>
+      </div>
+    </div>
+
+    <!-- Hero visual : aperçu de la heatmap -->
+    <div class="relative">
+      <div class="card overflow-hidden p-5 shadow-xl" style="box-shadow: 0 24px 60px rgb(11 18 32 / 0.10);">
+        <div class="mb-4 flex items-center justify-between">
+          <div>
+            <p class="ink3 text-[10px] uppercase tracking-wide">Vue prof — 4ème B chimie</p>
+            <p class="serif text-base font-semibold ink mt-0.5">Devoir #3 — Stœchiométrie</p>
+          </div>
+          <span class="rounded-md px-2 py-0.5 text-[10px] font-medium" style="background: rgb(37 99 235 / 0.10); color: rgb(37 99 235);">Chimie</span>
+        </div>
+        <div class="space-y-1.5">
+          <!-- 6 mini rows -->
+          <div class="grid grid-cols-[80px_repeat(8,1fr)] gap-1.5 text-[10px] items-center">
+            <span class="ink3 truncate">Moyenne</span>
+            <div class="pm-cell pm-4">78</div><div class="pm-cell pm-5">81</div><div class="pm-cell pm-4">72</div>
+            <div class="pm-cell pm-3">64</div><div class="pm-cell pm-3">58</div>
+            <div class="pm-cell pm-1">38</div><div class="pm-cell pm-2">47</div><div class="pm-cell pm-3">60</div>
+          </div>
+          <div class="grid grid-cols-[80px_repeat(8,1fr)] gap-1.5 text-[10px] items-center">
+            <span class="ink truncate font-medium">Mathéo V.</span>
+            <div class="pm-cell pm-2">55</div><div class="pm-cell pm-3">68</div><div class="pm-cell pm-1">42</div>
+            <div class="pm-cell pm-1">38</div><div class="pm-cell pm-1">32</div>
+            <div class="pm-cell pm-1">18</div><div class="pm-cell pm-1">22</div><div class="pm-cell pm-1">35</div>
+          </div>
+          <div class="grid grid-cols-[80px_repeat(8,1fr)] gap-1.5 text-[10px] items-center">
+            <span class="ink truncate font-medium">Kylian D.</span>
+            <div class="pm-cell pm-3">60</div><div class="pm-cell pm-3">72</div><div class="pm-cell pm-2">55</div>
+            <div class="pm-cell pm-2">48</div><div class="pm-cell pm-1">38</div>
+            <div class="pm-cell pm-1">22</div><div class="pm-cell pm-1">28</div><div class="pm-cell pm-2">42</div>
+          </div>
+          <div class="grid grid-cols-[80px_repeat(8,1fr)] gap-1.5 text-[10px] items-center">
+            <span class="ink truncate font-medium">Adèle L.</span>
+            <div class="pm-cell pm-5">88</div><div class="pm-cell pm-5">92</div><div class="pm-cell pm-4">84</div>
+            <div class="pm-cell pm-4">78</div><div class="pm-cell pm-4">82</div>
+            <div class="pm-cell pm-4">72</div><div class="pm-cell pm-3">68</div><div class="pm-cell pm-4">75</div>
+          </div>
+          <div class="grid grid-cols-[80px_repeat(8,1fr)] gap-1.5 text-[10px] items-center">
+            <span class="ink truncate font-medium">Zoé D.</span>
+            <div class="pm-cell pm-5">92</div><div class="pm-cell pm-5">95</div><div class="pm-cell pm-5">88</div>
+            <div class="pm-cell pm-5">85</div><div class="pm-cell pm-4">82</div>
+            <div class="pm-cell pm-4">72</div><div class="pm-cell pm-4">78</div><div class="pm-cell pm-4">82</div>
+          </div>
+          <div class="grid grid-cols-[80px_repeat(8,1fr)] gap-1.5 text-[10px] items-center">
+            <span class="ink3 truncate">Lou B.</span>
+            <div class="pm-cell pm-0">—</div><div class="pm-cell pm-0">—</div><div class="pm-cell pm-0">—</div>
+            <div class="pm-cell pm-0">—</div><div class="pm-cell pm-0">—</div>
+            <div class="pm-cell pm-0">—</div><div class="pm-cell pm-0">—</div><div class="pm-cell pm-0">—</div>
+          </div>
+        </div>
+        <div class="mt-4 flex items-center justify-between text-[10px] ink3">
+          <span>8 concepts · 25 élèves · programme FW-B</span>
+          <span class="accent-text font-medium">+ voir tous les élèves →</span>
+        </div>
+      </div>
+      <!-- Floating tag -->
+      <div class="absolute -right-2 -top-2 card p-2.5 text-xs" style="box-shadow: 0 8px 24px rgb(11 18 32 / 0.08);">
+        <p class="ink3 text-[10px] uppercase tracking-wide">Lacune classe</p>
+        <p class="serif font-semibold ink">Stœchiométrie</p>
+        <p class="text-[10px]" style="color: rgb(var(--red));">38% maîtrise</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════════════════
+   2. LE PROBLÈME
+═══════════════════════════════════════════════════════════════════════════ -->
+<section class="surface-2-bg py-20">
+  <div class="mx-auto max-w-[900px] px-6 text-center">
+    <span class="eyebrow" style="background: rgb(var(--red) / 0.10); color: rgb(var(--red));">Le constat</span>
+    <h2 class="serif mt-6 text-3xl font-semibold ink sm:text-4xl">
+      Un élève qui décroche, c'est presque toujours sur une <em class="not-italic">base</em> qu'il n'a jamais maîtrisée.
+    </h2>
+    <p class="mt-5 text-lg leading-relaxed ink2">
+      Le prof corrige 25 copies, met une note. L'élève voit "12/20" sans savoir
+      <strong class="ink">où</strong> il a perdu ses points. La fois suivante, même chapitre,
+      même erreur. Et après 3 chapitres, la lacune devient un trou.
+      L'élève finit par croire qu'il <em>n'est pas fait</em> pour la matière.
+    </p>
+    <div class="mt-10 grid gap-6 sm:grid-cols-3">
+      <div>
+        <p class="serif text-4xl font-semibold accent-text">87%</p>
+        <p class="ink2 mt-2 text-sm leading-snug">des profs disent que la remédiation par élève est<br />leur plus grosse difficulté</p>
+      </div>
+      <div>
+        <p class="serif text-4xl font-semibold accent-text">3 sur 10</p>
+        <p class="ink2 mt-2 text-sm leading-snug">élèves de 4ème secondaire en Belgique sont en<br />difficulté en mathématiques et sciences (PISA)</p>
+      </div>
+      <div>
+        <p class="serif text-4xl font-semibold accent-text">0 min</p>
+        <p class="ink2 mt-2 text-sm leading-snug">temps moyen consacré aux lacunes individuelles<br />dans un cours collectif standard</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════════════════
+   3. LES 3 PROMESSES
+═══════════════════════════════════════════════════════════════════════════ -->
+<section id="produit" class="py-24">
+  <div class="mx-auto max-w-[1200px] px-6">
+    <div class="text-center max-w-[700px] mx-auto">
+      <span class="eyebrow">Notre approche</span>
+      <h2 class="serif mt-6 text-3xl font-semibold ink sm:text-4xl">
+        Une plateforme. Trois personnes qui y gagnent.
+      </h2>
+      <p class="mt-5 text-lg ink2">
+        Maïa n'est pas un outil de plus pour le prof. C'est un système qui voit l'élève, montre au prof, et fait le travail répétitif.
+      </p>
+    </div>
+
+    <div class="mt-12 grid gap-5 lg:grid-cols-3">
+
+      <!-- L'élève -->
+      <article class="card-feature p-7">
+        <div class="flex h-12 w-12 items-center justify-center rounded-2xl" style="background: rgb(var(--accent) / 0.10); color: rgb(var(--accent));">
+          <i data-lucide="user-round" class="h-5 w-5"></i>
+        </div>
+        <h3 class="serif mt-5 text-xl font-semibold ink">Pour l'élève</h3>
+        <p class="serif mt-1 text-lg ink2 italic">"Je vois mes lacunes et je sais quoi faire."</p>
+        <ul class="mt-5 space-y-3 text-sm ink2">
+          <li class="flex items-start gap-2"><i data-lucide="check" class="mt-0.5 h-4 w-4 flex-shrink-0" style="color: rgb(var(--green));"></i> Carte personnelle de maîtrise par concept</li>
+          <li class="flex items-start gap-2"><i data-lucide="check" class="mt-0.5 h-4 w-4 flex-shrink-0" style="color: rgb(var(--green));"></i> Sessions ciblées de 15-20 min, pas 2h de blabla</li>
+          <li class="flex items-start gap-2"><i data-lucide="check" class="mt-0.5 h-4 w-4 flex-shrink-0" style="color: rgb(var(--green));"></i> Tuteur IA qui guide sans donner la réponse</li>
+          <li class="flex items-start gap-2"><i data-lucide="check" class="mt-0.5 h-4 w-4 flex-shrink-0" style="color: rgb(var(--green));"></i> Gamification dosée (streak, progrès — pas Candy Crush)</li>
+        </ul>
+      </article>
+
+      <!-- Le prof -->
+      <article class="card-feature p-7" style="border-color: rgb(var(--accent) / 0.4);">
+        <div class="flex h-12 w-12 items-center justify-center rounded-2xl accent-bg text-white">
+          <i data-lucide="presentation" class="h-5 w-5"></i>
+        </div>
+        <h3 class="serif mt-5 text-xl font-semibold ink">Pour le prof</h3>
+        <p class="serif mt-1 text-lg ink2 italic">"Je vois ma classe et je gagne 4h par semaine."</p>
+        <ul class="mt-5 space-y-3 text-sm ink2">
+          <li class="flex items-start gap-2"><i data-lucide="check" class="mt-0.5 h-4 w-4 flex-shrink-0" style="color: rgb(var(--green));"></i> Carte des lacunes par devoir et par élève</li>
+          <li class="flex items-start gap-2"><i data-lucide="check" class="mt-0.5 h-4 w-4 flex-shrink-0" style="color: rgb(var(--green));"></i> Génération de quiz à partir de votre syllabus PDF</li>
+          <li class="flex items-start gap-2"><i data-lucide="check" class="mt-0.5 h-4 w-4 flex-shrink-0" style="color: rgb(var(--green));"></i> Plan de remédiation IA suggéré pour chaque élève</li>
+          <li class="flex items-start gap-2"><i data-lucide="check" class="mt-0.5 h-4 w-4 flex-shrink-0" style="color: rgb(var(--green));"></i> Mode contrôle/examen verrouillé pour évaluations</li>
+        </ul>
+      </article>
+
+      <!-- L'école -->
+      <article class="card-feature p-7">
+        <div class="flex h-12 w-12 items-center justify-center rounded-2xl" style="background: rgb(var(--accent) / 0.10); color: rgb(var(--accent));">
+          <i data-lucide="building-2" class="h-5 w-5"></i>
+        </div>
+        <h3 class="serif mt-5 text-xl font-semibold ink">Pour l'école</h3>
+        <p class="serif mt-1 text-lg ink2 italic">"Conforme, intégré, sans IT."</p>
+        <ul class="mt-5 space-y-3 text-sm ink2">
+          <li class="flex items-start gap-2"><i data-lucide="check" class="mt-0.5 h-4 w-4 flex-shrink-0" style="color: rgb(var(--green));"></i> Déploiement SSO en 30 minutes (M365, Google)</li>
+          <li class="flex items-start gap-2"><i data-lucide="check" class="mt-0.5 h-4 w-4 flex-shrink-0" style="color: rgb(var(--green));"></i> Aligné programme FW-B officiel (FR à venir)</li>
+          <li class="flex items-start gap-2"><i data-lucide="check" class="mt-0.5 h-4 w-4 flex-shrink-0" style="color: rgb(var(--green));"></i> RGPD mineurs · audit log immuable · DPA fourni</li>
+          <li class="flex items-start gap-2"><i data-lucide="check" class="mt-0.5 h-4 w-4 flex-shrink-0" style="color: rgb(var(--green));"></i> Dashboard direction : progression par classe / matière</li>
+        </ul>
+      </article>
+
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════════════════
+   4. COMMENT ÇA MARCHE
+═══════════════════════════════════════════════════════════════════════════ -->
+<section id="comment" class="surface-2-bg py-24">
+  <div class="mx-auto max-w-[1200px] px-6">
+    <div class="text-center max-w-[700px] mx-auto">
+      <span class="eyebrow">En 4 étapes</span>
+      <h2 class="serif mt-6 text-3xl font-semibold ink sm:text-4xl">
+        Comment ça marche, concrètement.
+      </h2>
+      <p class="mt-5 text-lg ink2">
+        Pas d'IT, pas d'app à installer. Vos profs sont opérationnels en 1 heure.
+      </p>
+    </div>
+
+    <div class="mt-14 space-y-12">
+
+      <!-- Step 1 -->
+      <div class="grid gap-8 lg:grid-cols-[1fr_400px] items-center">
+        <div>
+          <div class="flex items-center gap-3">
+            <span class="step-num">1</span>
+            <span class="ink3 text-xs uppercase tracking-wide">Onboarding école — 30 min</span>
+          </div>
+          <h3 class="serif mt-4 text-2xl font-semibold ink">Votre admin IT configure le SSO une fois</h3>
+          <p class="mt-3 text-base ink2 leading-relaxed">
+            Maïa s'intègre à votre tenant Microsoft 365 ou Google Workspace.
+            Vos profs et élèves se connectent avec leurs comptes habituels.
+            Aucun mot de passe à gérer, aucune liste à uploader.
+          </p>
+        </div>
+        <div class="card p-5">
+          <div class="flex items-center gap-2 text-sm">
+            <i data-lucide="shield-check" class="h-4 w-4" style="color: rgb(var(--green));"></i>
+            <span class="ink">SSO configuré</span>
+          </div>
+          <div class="divider my-3"></div>
+          <div class="space-y-2 text-xs ink2">
+            <div class="flex items-center gap-2"><span class="text-base">🟦</span><span>Microsoft Entra ID — connecté</span></div>
+            <div class="flex items-center gap-2"><span class="text-base">🟥</span><span>Google Workspace — disponible</span></div>
+            <div class="flex items-center gap-2"><span class="text-base">🔐</span><span>SAML 2.0 — sur demande</span></div>
+          </div>
+          <div class="divider my-3"></div>
+          <p class="ink3 text-[10px]">218 élèves, 14 profs auto-provisionnés depuis l'annuaire</p>
+        </div>
+      </div>
+
+      <!-- Step 2 -->
+      <div class="grid gap-8 lg:grid-cols-[400px_1fr] items-center">
+        <div class="card p-5 order-2 lg:order-1">
+          <p class="ink3 text-[10px] uppercase tracking-wide mb-3">PDF importé</p>
+          <div class="rounded-lg border border1 p-3">
+            <div class="flex items-center gap-2">
+              <i data-lucide="file-text" class="h-4 w-4 ink3"></i>
+              <p class="ink text-sm font-medium truncate">chimie-4eme-stoechio.pdf</p>
+            </div>
+            <p class="ink3 mt-1 text-[10px]">12 pages · analysé en 8 sec</p>
+          </div>
+          <div class="divider my-3"></div>
+          <p class="ink3 text-[10px] uppercase tracking-wide mb-2">Questions générées</p>
+          <p class="serif text-xl font-semibold ink">25 questions</p>
+          <p class="ink3 text-xs mt-1">· 8 QCM · 4 V/F · 13 questions ouvertes</p>
+          <button class="mt-3 w-full rounded-lg accent-bg px-3 py-2 text-xs font-semibold text-white">
+            Valider et envoyer à la classe
+          </button>
+        </div>
+        <div class="order-1 lg:order-2">
+          <div class="flex items-center gap-3">
+            <span class="step-num">2</span>
+            <span class="ink3 text-xs uppercase tracking-wide">Création contenu — 5 min par devoir</span>
+          </div>
+          <h3 class="serif mt-4 text-2xl font-semibold ink">Le prof upload son syllabus. L'IA génère le quiz.</h3>
+          <p class="mt-3 text-base ink2 leading-relaxed">
+            Un PDF de cours, un thème — l'IA génère 25 questions alignées sur le programme officiel.
+            Le prof relit, ajuste si besoin, distribue à la classe. Pas besoin d'être un expert en pédagogie numérique.
+          </p>
+        </div>
+      </div>
+
+      <!-- Step 3 -->
+      <div class="grid gap-8 lg:grid-cols-[1fr_400px] items-center">
+        <div>
+          <div class="flex items-center gap-3">
+            <span class="step-num">3</span>
+            <span class="ink3 text-xs uppercase tracking-wide">Pratique élève — 15 à 20 min</span>
+          </div>
+          <h3 class="serif mt-4 text-2xl font-semibold ink">L'élève pratique. Le système apprend ses lacunes.</h3>
+          <p class="mt-3 text-base ink2 leading-relaxed">
+            Chaque réponse alimente le modèle de maîtrise par concept (algorithme SM-2 + tagging IA).
+            L'élève voit progresser sa carte des lacunes en temps réel.
+            Quand il bute, le tuteur IA pose une question Socratique — il ne donne jamais la réponse.
+          </p>
+        </div>
+        <div class="card p-5">
+          <p class="ink3 text-[10px] uppercase tracking-wide">Ma maîtrise chimie</p>
+          <div class="mt-3 grid grid-cols-4 gap-2">
+            <div class="pm-cell pm-2">55</div>
+            <div class="pm-cell pm-3">68</div>
+            <div class="pm-cell pm-1">42</div>
+            <div class="pm-cell pm-1">38</div>
+            <div class="pm-cell pm-1">32</div>
+            <div class="pm-cell pm-1">18</div>
+            <div class="pm-cell pm-1">22</div>
+            <div class="pm-cell pm-1">35</div>
+          </div>
+          <div class="divider my-3"></div>
+          <p class="ink3 text-[10px] uppercase tracking-wide">Plan IA suggéré</p>
+          <p class="serif mt-1 text-base font-semibold ink">16 min sur la stœchio</p>
+          <p class="ink3 text-xs mt-1">5 min théorie · 8 min exo · 3 min ancrage</p>
+        </div>
+      </div>
+
+      <!-- Step 4 -->
+      <div class="grid gap-8 lg:grid-cols-[400px_1fr] items-center">
+        <div class="card p-5 order-2 lg:order-1">
+          <p class="ink3 text-[10px] uppercase tracking-wide">Lacunes collectives</p>
+          <ul class="mt-3 space-y-2.5">
+            <li>
+              <div class="flex items-center justify-between text-xs">
+                <span class="ink font-medium">Stœchiométrie</span>
+                <span class="font-semibold" style="color: rgb(var(--red));">38%</span>
+              </div>
+              <div class="mt-1 h-1.5 rounded-full" style="background: rgb(var(--border));">
+                <div class="h-1.5 rounded-full" style="width: 38%; background: rgb(var(--red));"></div>
+              </div>
+            </li>
+            <li>
+              <div class="flex items-center justify-between text-xs">
+                <span class="ink font-medium">Solutions</span>
+                <span class="font-semibold" style="color: rgb(var(--warm));">47%</span>
+              </div>
+              <div class="mt-1 h-1.5 rounded-full" style="background: rgb(var(--border));">
+                <div class="h-1.5 rounded-full" style="width: 47%; background: rgb(var(--warm));"></div>
+              </div>
+            </li>
+          </ul>
+          <div class="divider my-3"></div>
+          <p class="ink3 text-xs">17 élèves &lt; 50% sur stœchio. Reprise en cours collectif suggérée.</p>
+        </div>
+        <div class="order-1 lg:order-2">
+          <div class="flex items-center gap-3">
+            <span class="step-num">4</span>
+            <span class="ink3 text-xs uppercase tracking-wide">Boucle continue</span>
+          </div>
+          <h3 class="serif mt-4 text-2xl font-semibold ink">Le prof voit ce que la classe rate. Il ajuste son cours.</h3>
+          <p class="mt-3 text-base ink2 leading-relaxed">
+            Avant la prochaine séance, le prof voit sur quel concept toute la classe galère.
+            Il reprend ce point en 10 min de cours collectif, puis Maïa teste à nouveau.
+            Le cycle se poursuit jusqu'à maîtrise.
+          </p>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════════════════
+   5. PROGRAMME OFFICIEL
+═══════════════════════════════════════════════════════════════════════════ -->
+<section id="programme" class="py-24">
+  <div class="mx-auto max-w-[1200px] px-6 grid gap-12 lg:grid-cols-2 items-center">
+    <div>
+      <span class="eyebrow">Aligné programme officiel</span>
+      <h2 class="serif mt-6 text-3xl font-semibold ink sm:text-4xl">
+        Conçu pour le programme belge.
+        Pas pour <em class="not-italic">tous les programmes</em>.
+      </h2>
+      <p class="mt-5 text-lg ink2 leading-relaxed">
+        Notre IA est entraînée sur le programme officiel de la
+        <strong class="ink">Fédération Wallonie-Bruxelles</strong>,
+        secondaire général et qualifiant.
+        Les concepts, les attendus, le vocabulaire — tout est calé sur ce que
+        vos profs enseignent et ce que l'élève voit à l'examen.
+      </p>
+      <p class="mt-4 ink2">
+        Couverture actuelle :
+      </p>
+      <div class="mt-3 flex flex-wrap gap-2">
+        <span class="curr-tag">Chimie 3-6e</span>
+        <span class="curr-tag">Physique 3-6e</span>
+        <span class="curr-tag">Mathématiques 3-6e</span>
+        <span class="curr-tag">Biologie 3-6e</span>
+        <span class="curr-tag">Histoire 3-6e</span>
+        <span class="curr-tag">Français · en bêta</span>
+        <span class="curr-tag" style="background: rgb(var(--accent) / 0.08); color: rgb(var(--accent));">Programme FR Éducation Nationale · 2027</span>
+      </div>
+      <p class="mt-6 text-sm ink3">
+        Validation pédagogique par un panel de profs en exercice (Province de Liège, BW, Brabant Wallon).
+      </p>
+    </div>
+
+    <!-- Visual : programme chimie en arborescence -->
+    <div class="card p-6">
+      <p class="ink3 text-[10px] uppercase tracking-wide mb-2">Exemple : Chimie · 4ème secondaire</p>
+      <p class="serif text-base font-semibold ink mb-4">8 thèmes officiels · 47 concepts atomiques</p>
+      <ul class="space-y-2 text-sm">
+        <li class="flex items-center gap-2 py-1.5 border-b border1">
+          <i data-lucide="atom" class="h-3.5 w-3.5 accent-text"></i>
+          <span class="ink">Atomes et structure atomique</span>
+          <span class="ml-auto ink3 text-xs">6 concepts</span>
+        </li>
+        <li class="flex items-center gap-2 py-1.5 border-b border1">
+          <i data-lucide="grid-3x3" class="h-3.5 w-3.5 accent-text"></i>
+          <span class="ink">Tableau périodique</span>
+          <span class="ml-auto ink3 text-xs">5 concepts</span>
+        </li>
+        <li class="flex items-center gap-2 py-1.5 border-b border1">
+          <i data-lucide="link-2" class="h-3.5 w-3.5 accent-text"></i>
+          <span class="ink">Liaisons chimiques</span>
+          <span class="ml-auto ink3 text-xs">7 concepts</span>
+        </li>
+        <li class="flex items-center gap-2 py-1.5 border-b border1">
+          <i data-lucide="type" class="h-3.5 w-3.5 accent-text"></i>
+          <span class="ink">Nomenclature</span>
+          <span class="ml-auto ink3 text-xs">5 concepts</span>
+        </li>
+        <li class="flex items-center gap-2 py-1.5 border-b border1">
+          <i data-lucide="equal" class="h-3.5 w-3.5 accent-text"></i>
+          <span class="ink">Équations chimiques</span>
+          <span class="ml-auto ink3 text-xs">4 concepts</span>
+        </li>
+        <li class="flex items-center gap-2 py-1.5 border-b border1">
+          <i data-lucide="calculator" class="h-3.5 w-3.5 accent-text"></i>
+          <span class="ink">Stœchiométrie</span>
+          <span class="ml-auto ink3 text-xs">8 concepts</span>
+        </li>
+        <li class="flex items-center gap-2 py-1.5 border-b border1">
+          <i data-lucide="droplets" class="h-3.5 w-3.5 accent-text"></i>
+          <span class="ink">Solutions et concentrations</span>
+          <span class="ml-auto ink3 text-xs">6 concepts</span>
+        </li>
+        <li class="flex items-center gap-2 py-1.5">
+          <i data-lucide="flask-conical" class="h-3.5 w-3.5 accent-text"></i>
+          <span class="ink">Acides et bases</span>
+          <span class="ml-auto ink3 text-xs">6 concepts</span>
+        </li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════════════════
+   6. SÉCURITÉ & RGPD
+═══════════════════════════════════════════════════════════════════════════ -->
+<section id="securite" class="surface-2-bg py-24">
+  <div class="mx-auto max-w-[1200px] px-6">
+    <div class="text-center max-w-[700px] mx-auto">
+      <span class="eyebrow">Conformité & sécurité</span>
+      <h2 class="serif mt-6 text-3xl font-semibold ink sm:text-4xl">
+        On gère des données de mineurs. On le prend au sérieux.
+      </h2>
+      <p class="mt-5 text-lg ink2">
+        RGPD strict, hébergement européen, audit log immuable, contrat DPA fourni au déploiement.
+      </p>
+    </div>
+
+    <div class="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div class="card p-5">
+        <i data-lucide="shield" class="h-5 w-5 accent-text"></i>
+        <h3 class="serif mt-3 text-base font-semibold ink">RGPD mineurs</h3>
+        <p class="ink2 mt-2 text-sm leading-relaxed">
+          Consentement parental géré par l'école. Pas de profilage commercial. Droit à l'oubli en 1 clic.
+        </p>
+      </div>
+      <div class="card p-5">
+        <i data-lucide="server" class="h-5 w-5 accent-text"></i>
+        <h3 class="serif mt-3 text-base font-semibold ink">Hébergement UE</h3>
+        <p class="ink2 mt-2 text-sm leading-relaxed">
+          Données stockées en Belgique et France (Supabase EU, Vercel Frankfurt). Pas de transfert hors UE sans DPA.
+        </p>
+      </div>
+      <div class="card p-5">
+        <i data-lucide="file-lock" class="h-5 w-5 accent-text"></i>
+        <h3 class="serif mt-3 text-base font-semibold ink">Audit log immuable</h3>
+        <p class="ink2 mt-2 text-sm leading-relaxed">
+          Toute action sensible (note modifiée, accès admin) loggée en append-only. Opposable en cas de litige.
+        </p>
+      </div>
+      <div class="card p-5">
+        <i data-lucide="key-round" class="h-5 w-5 accent-text"></i>
+        <h3 class="serif mt-3 text-base font-semibold ink">SSO entreprise</h3>
+        <p class="ink2 mt-2 text-sm leading-relaxed">
+          Pas de mot de passe stocké. Microsoft 365 + Google Workspace + SAML 2.0 sur demande.
+        </p>
+      </div>
+    </div>
+
+    <div class="mt-10 text-center">
+      <a href="#" class="inline-flex items-center gap-1.5 text-sm font-medium accent-text hover:underline">
+        Télécharger le DPIA + DPA complet
+        <i data-lucide="download" class="h-3.5 w-3.5"></i>
+      </a>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════════════════
+   7. PILOTE
+═══════════════════════════════════════════════════════════════════════════ -->
+<section id="pilote" class="py-24">
+  <div class="mx-auto max-w-[900px] px-6">
+    <div class="card overflow-hidden" style="background: linear-gradient(135deg, rgb(var(--accent-soft)) 0%, rgb(var(--surface)) 100%); border-color: rgb(var(--accent) / 0.3);">
+      <div class="p-10 lg:p-14">
+        <span class="eyebrow">Programme pilote · rentrée 2026</span>
+        <h2 class="serif mt-6 text-3xl font-semibold ink sm:text-4xl">
+          Nous cherchons <em class="not-italic accent-text">3 écoles pilotes</em>.
+        </h2>
+        <p class="mt-5 text-lg ink2 leading-relaxed">
+          Accompagnement personnalisé par notre équipe, gratuit pendant 6 mois.
+          On vous aide à intégrer Maïa dans 1 à 3 classes,
+          on co-construit avec vos profs, on mesure les résultats ensemble.
+        </p>
+
+        <div class="mt-8 grid gap-5 sm:grid-cols-3">
+          <div>
+            <p class="serif text-3xl font-semibold accent-text">6 mois</p>
+            <p class="ink2 mt-1 text-sm">Gratuit · pas d'engagement</p>
+          </div>
+          <div>
+            <p class="serif text-3xl font-semibold accent-text">1-3 classes</p>
+            <p class="ink2 mt-1 text-sm">Démarrage progressif</p>
+          </div>
+          <div>
+            <p class="serif text-3xl font-semibold accent-text">2h/sem</p>
+            <p class="ink2 mt-1 text-sm">Support direct par les fondateurs</p>
+          </div>
+        </div>
+
+        <div class="mt-10 flex flex-wrap items-center gap-3">
+          <a href="mailto:hello@schoolio.app" class="btn-primary rounded-xl px-6 py-3.5 text-base font-semibold inline-flex items-center gap-2">
+            Postuler comme école pilote
+            <i data-lucide="arrow-right" class="h-4 w-4"></i>
+          </a>
+          <a href="#" class="btn-secondary rounded-xl px-6 py-3.5 text-base font-medium inline-flex items-center gap-2">
+            Plus tard, juste me tenir au courant
+          </a>
+        </div>
+
+        <p class="mt-6 text-xs ink3">
+          Ou écrivez-nous directement : <a href="mailto:hello@schoolio.app" class="accent-text underline">hello@schoolio.app</a>
+        </p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════════════════
+   8. FAQ
+═══════════════════════════════════════════════════════════════════════════ -->
+<section id="faq" class="surface-2-bg py-24">
+  <div class="mx-auto max-w-[800px] px-6">
+    <div class="text-center">
+      <span class="eyebrow">FAQ</span>
+      <h2 class="serif mt-6 text-3xl font-semibold ink sm:text-4xl">
+        Questions fréquentes.
+      </h2>
+    </div>
+
+    <div class="mt-10 space-y-3">
+      <details class="card p-5 group">
+        <summary class="flex items-center justify-between">
+          <span class="serif text-lg font-medium ink">Mes profs doivent-ils créer leurs propres questions ?</span>
+          <i data-lucide="chevron-down" class="h-5 w-5 ink3 chevron"></i>
+        </summary>
+        <p class="ink2 mt-3 text-sm leading-relaxed">
+          Non. L'IA génère les questions à partir de votre syllabus PDF. Le prof relit, ajuste, valide — typiquement 5 minutes par devoir. Vous gardez le contrôle pédagogique, sans la charge.
+        </p>
+      </details>
+
+      <details class="card p-5 group">
+        <summary class="flex items-center justify-between">
+          <span class="serif text-lg font-medium ink">Combien de temps pour déployer dans mon école ?</span>
+          <i data-lucide="chevron-down" class="h-5 w-5 ink3 chevron"></i>
+        </summary>
+        <p class="ink2 mt-3 text-sm leading-relaxed">
+          30 minutes pour la config SSO côté IT. 1 heure de formation par prof. Vos élèves se connectent dès le premier jour avec leurs comptes Microsoft 365 ou Google habituels — pas de nouveau mot de passe à gérer.
+        </p>
+      </details>
+
+      <details class="card p-5 group">
+        <summary class="flex items-center justify-between">
+          <span class="serif text-lg font-medium ink">Et la RGPD pour les mineurs ?</span>
+          <i data-lucide="chevron-down" class="h-5 w-5 ink3 chevron"></i>
+        </summary>
+        <p class="ink2 mt-3 text-sm leading-relaxed">
+          On fournit un DPA complet et un DPIA. L'école reste responsable de traitement, Maïa est sous-traitant. Consentement parental géré par l'école (pas par nous). Hébergement en Belgique et France. Audit log immuable pour traçabilité.
+        </p>
+      </details>
+
+      <details class="card p-5 group">
+        <summary class="flex items-center justify-between">
+          <span class="serif text-lg font-medium ink">Ça remplace mes cours ?</span>
+          <i data-lucide="chevron-down" class="h-5 w-5 ink3 chevron"></i>
+        </summary>
+        <p class="ink2 mt-3 text-sm leading-relaxed">
+          Surtout pas. Maïa fait la <em>pratique répétée</em> que vous n'avez pas le temps de faire en cours collectif. Vous gardez votre pédagogie, vos exposés, vos manipulations. Maïa s'occupe du suivi individuel hors-temps de classe.
+        </p>
+      </details>
+
+      <details class="card p-5 group">
+        <summary class="flex items-center justify-between">
+          <span class="serif text-lg font-medium ink">Pricing après le pilote ?</span>
+          <i data-lucide="chevron-down" class="h-5 w-5 ink3 chevron"></i>
+        </summary>
+        <p class="ink2 mt-3 text-sm leading-relaxed">
+          Tarif transparent : par classe / par mois, dégressif au volume. On confirme avec vous pendant le pilote, sans surprise. Budget approximatif pour une école secondaire de 300 élèves : équivalent à 2-3 manuels scolaires par élève / an.
+        </p>
+      </details>
+
+      <details class="card p-5 group">
+        <summary class="flex items-center justify-between">
+          <span class="serif text-lg font-medium ink">Quelles matières sont couvertes ?</span>
+          <i data-lucide="chevron-down" class="h-5 w-5 ink3 chevron"></i>
+        </summary>
+        <p class="ink2 mt-3 text-sm leading-relaxed">
+          Chimie, physique, mathématiques, biologie, histoire en couverture complète FW-B 3e à 6e secondaire. Français en bêta. Programme français (Éducation Nationale) prévu en 2027. Si votre cas d'usage est spécifique, on en parle.
+        </p>
+      </details>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════════════════
+   9. CITATION
+═══════════════════════════════════════════════════════════════════════════ -->
+<section class="py-24">
+  <div class="mx-auto max-w-[900px] px-6 text-center">
+    <p class="quote serif text-2xl leading-relaxed ink sm:text-3xl">
+      L'apprentissage, c'est rendre simple ce qui était difficile — pas ajouter de la difficulté.
+    </p>
+    <div class="mt-6 flex items-center justify-center gap-3">
+      <div class="flex h-10 w-10 items-center justify-center rounded-full" style="background: rgb(var(--accent) / 0.15); color: rgb(var(--accent));">
+        <span class="text-sm font-semibold">GP</span>
+      </div>
+      <div class="text-left">
+        <p class="ink text-sm font-medium">Gaultier P.</p>
+        <p class="ink3 text-xs">Fondateur · Maïa</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════════════════
+   FOOTER
+═══════════════════════════════════════════════════════════════════════════ -->
+<footer class="border-t border1 py-12" style="background: rgb(var(--surface));">
+  <div class="mx-auto max-w-[1200px] px-6">
+    <div class="grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
+      <div>
+        <a href="#" class="flex items-center gap-2">
+          <div class="flex h-7 w-7 items-center justify-center rounded-xl accent-bg text-white text-xs font-bold">M</div>
+          <span class="serif text-lg font-semibold ink">Maïa</span>
+        </a>
+        <p class="ink2 mt-3 text-sm leading-relaxed">
+          Plateforme d'apprentissage augmentée pour le secondaire. Belgique · France.
+        </p>
+      </div>
+      <div>
+        <p class="ink3 text-xs uppercase tracking-wide font-semibold mb-3">Produit</p>
+        <ul class="space-y-2 text-sm ink2">
+          <li><a href="#produit" class="hover:ink">Pour les élèves</a></li>
+          <li><a href="#produit" class="hover:ink">Pour les profs</a></li>
+          <li><a href="#produit" class="hover:ink">Pour les écoles</a></li>
+          <li><a href="#programme" class="hover:ink">Programme couvert</a></li>
+        </ul>
+      </div>
+      <div>
+        <p class="ink3 text-xs uppercase tracking-wide font-semibold mb-3">Confiance</p>
+        <ul class="space-y-2 text-sm ink2">
+          <li><a href="#securite" class="hover:ink">Sécurité & RGPD</a></li>
+          <li><a href="#" class="hover:ink">Politique de confidentialité</a></li>
+          <li><a href="#" class="hover:ink">Conditions générales</a></li>
+          <li><a href="#" class="hover:ink">DPA & DPIA</a></li>
+        </ul>
+      </div>
+      <div>
+        <p class="ink3 text-xs uppercase tracking-wide font-semibold mb-3">Contact</p>
+        <ul class="space-y-2 text-sm ink2">
+          <li><a href="mailto:hello@schoolio.app" class="hover:ink">hello@schoolio.app</a></li>
+          <li><a href="#pilote" class="hover:ink">Postuler école pilote</a></li>
+          <li><a href="#" class="hover:ink">LinkedIn</a></li>
+          <li><a href="#" class="hover:ink">Status</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="divider mt-10"></div>
+    <div class="mt-6 flex flex-wrap items-center justify-between gap-3 text-xs ink3">
+      <p>© 2026 Maïa · Bruxelles, Belgique · TVA BE 0XXX.XXX.XXX</p>
+      <div class="flex items-center gap-4">
+        <button id="theme-toggle" class="hover:ink2 flex items-center gap-1">
+          <i data-lucide="moon" class="h-3.5 w-3.5"></i> Thème
+        </button>
+        <a href="#" class="hover:ink2">Mentions légales</a>
+        <a href="#" class="hover:ink2">Cookies</a>
+      </div>
+    </div>
+  </div>
+</footer>
+
+<script>
+  document.getElementById("theme-toggle").addEventListener("click", () => {
+    document.documentElement.classList.toggle("dark");
+    lucide.createIcons();
+  });
+  lucide.createIcons();
+</script>
+
+</body>
+</html>
