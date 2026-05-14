@@ -548,7 +548,6 @@ export async function POST(request: NextRequest) {
       teacher_id: user.id,
       school_id: typedCourse.school_id,
       course_id: courseId,
-      school_id: typedCourse.school_id ?? null,
       subject: null,
       subject_enum: typedCourse.subject_enum ?? null,
       level: typedCourse.level ?? null,
