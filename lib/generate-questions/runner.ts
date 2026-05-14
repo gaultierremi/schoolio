@@ -21,9 +21,15 @@ import { logError } from "@/lib/observability/log-error";
 // ── Constants exportées (utilisées aussi par route.ts pour calculs) ──────────
 
 export const MAX_PDF_BYTES = 20 * 1024 * 1024; // 20MB Gemini Vision limit
-export const MAX_WORKERS = 2;
+// 6 workers en parallèle sur Trigger.dev cloud, chacun reçoit une PARTITION
+// du PDF (pages distinctes). Avantages vs avant :
+//   - Anthropic Vision ~6x plus rapide sur 30p que sur 176p
+//   - 600 questions en ~60s parallèle (vs 4-5min pour 100q sur PDF entier)
+//   - Pas besoin de bump maxDuration (reste à 300s = free tier Trigger.dev)
+//   - Couverture du PDF garantie (worker N traite EXACTEMENT son segment)
+export const MAX_WORKERS = 6;
 export const QUESTIONS_PER_WORKER = 50;
-export const AUTO_TARGET_CAP_PER_CALL = 100;
+export const AUTO_TARGET_CAP_PER_CALL = 300; // 6 × 50
 export const MAX_QUESTIONS_PER_COURSE = 600;
 
 export function autoTargetQuestions(pagesCount: number | null): number {
@@ -341,12 +347,26 @@ async function generateQuestionsWithFallback(
   workerIndex: number,
   workerCount: number,
   questionsPerWorker: number,
+  workerPageRange: PageRange | null,
+  globalPageOffset: number,
 ): Promise<string> {
+  // Le PDF passé au worker est DÉJÀ partitionné (extrait de pages X-Y).
+  // On précise dans le prompt :
+  //   1) que le worker doit couvrir SES pages spécifiquement
+  //   2) que le concept_page_hint qu'il renvoie sera offset après-coup
+  //      pour pointer vers la bonne page dans le PDF complet original
+  const rangeClause = workerPageRange
+    ? ` Tu travailles sur les pages ${workerPageRange.start} a ${workerPageRange.end} du document complet. Le sous-PDF que tu vois ne contient QUE ces pages.`
+    : "";
+
   const fullPrompt =
     `${systemPrompt}\n\n` +
-    `Worker ${workerIndex + 1}/${workerCount}: genere ${questionsPerWorker} questions distinctes (mcq, numeric et/ou short_text selon la matiere). ` +
-    `Evite les doublons et couvre une partie differente du document. ` +
-    `IMPORTANT : pour chaque question, place dans le champ "period" le nom EXACT du chapitre, UAA, theme ou section du syllabus dont la question est tiree (ex: "UAA 2 : Cone", "Chapitre 3 - Reactions acides-bases", "Antiquite"). Ce champ sera utilise pour grouper les questions par theme dans l'interface prof.`;
+    `Worker ${workerIndex + 1}/${workerCount}: genere ${questionsPerWorker} questions distinctes (mcq, numeric et/ou short_text selon la matiere) UNIQUEMENT a partir du contenu du sous-PDF qui t'est fourni.${rangeClause}` +
+    ` Evite les doublons internes.` +
+    ` IMPORTANT : pour chaque question, place dans le champ "period" le nom EXACT du chapitre, UAA, theme ou section du syllabus dont la question est tiree (ex: "UAA 2 : Cone", "Chapitre 3 - Reactions acides-bases", "Antiquite"). Ce champ sera utilise pour grouper les questions par theme dans l'interface prof.` +
+    (globalPageOffset > 0
+      ? ` Pour concept_page_hint, indique le numero de page RELATIF au sous-PDF (1 = premiere page du sous-document que tu vois). L'offset global sera applique automatiquement cote serveur.`
+      : "");
 
   const response = await routeAIRequest("generate_questions", fullPrompt, {
     pdfBase64,
@@ -453,32 +473,71 @@ export async function runGenerationForJob(jobId: string): Promise<void> {
       : "";
     const promptWithRange = systemPrompt + pageRangePromptSuffix;
 
+    // ── Partitionnement du PDF par worker ────────────────────────────────────
+    // Chaque worker reçoit un SOUS-PDF distinct (pages séquentielles).
+    // Avantages : Anthropic Vision ~6x plus rapide sur 30p que sur 176p,
+    // pas de doublons inter-workers, couverture déterministe du document.
+    //
+    // Si pageRange est défini (le prof a explicitly limité la génération à
+    // une plage), on partitionne À L'INTÉRIEUR de cette plage. Sinon on
+    // partitionne sur le PDF entier.
+    const scopeStartPage = pageRange?.start ?? 1;
+    const scopeEndPage = pageRange?.end ?? course.pages_count ?? 1;
+    const totalPagesInScope = Math.max(1, scopeEndPage - scopeStartPage + 1);
+    const pagesPerWorker = Math.max(1, Math.ceil(totalPagesInScope / workerCount));
+
+    const workerRanges: PageRange[] = Array.from({ length: workerCount }, (_, i) => {
+      const localStart = i * pagesPerWorker + 1; // page locale dans `pdfBuffer`
+      const localEnd = Math.min((i + 1) * pagesPerWorker, totalPagesInScope);
+      return { start: localStart, end: localEnd };
+    });
+    // Seuls les workers avec au moins 1 page sont utiles (cas edge : few pages, many workers)
+    const activeWorkerRanges = workerRanges.filter((r) => r.start <= r.end);
+
     // ── PHASE: generating_workers (parallel Anthropic streaming) ─────────────
     await updateJob(jobId, { phase: "generating_workers", workers_completed: 0 });
 
     let workersDone = 0;
     const settled = await Promise.allSettled(
-      Array.from({ length: workerCount }, async (_, workerIndex) => {
+      activeWorkerRanges.map(async (localRange, workerIndex) => {
         const wt0 = Date.now();
+        // Range global (utile dans le prompt + offset post-traitement)
+        const globalRange: PageRange = {
+          start: scopeStartPage + localRange.start - 1,
+          end: scopeStartPage + localRange.end - 1,
+        };
         try {
+          // Extract le sous-PDF pour ce worker (rapide, in-process)
+          const subBuffer = await extractPagesFromPdf({
+            pdfBuffer,
+            startPage: localRange.start,
+            endPage: localRange.end,
+          });
+          const subBase64 = Buffer.from(subBuffer).toString("base64");
+
           const output = await generateQuestionsWithFallback(
-            pdfBase64,
+            subBase64,
             promptWithRange,
             workerIndex,
-            workerCount,
+            activeWorkerRanges.length,
             questionsPerWorker,
+            globalRange,
+            globalRange.start - 1, // offset à appliquer au concept_page_hint
           );
           workersDone++;
           await updateJob(jobId, { workers_completed: workersDone });
-          return output;
+          // Retourne aussi le globalRange pour offset les concept_page_hint
+          return { rawText: output, globalRange };
         } catch (err) {
           await logError(err, {
             source: "generate-questions.runner.worker",
             context: {
               jobId,
               workerIndex,
-              workerCount,
+              workerCount: activeWorkerRanges.length,
               questionsPerWorker,
+              localRange,
+              globalRange,
               durationMs: Date.now() - wt0,
               pdfSizeBytes: pdfBuffer.byteLength,
             },
@@ -488,23 +547,35 @@ export async function runGenerationForJob(jobId: string): Promise<void> {
       }),
     );
 
-    const workerOutputs: string[] = [];
+    type WorkerResult = { rawText: string; globalRange: PageRange };
+    const workerResults: WorkerResult[] = [];
     const workerErrors: string[] = [];
     settled.forEach((r, i) => {
-      if (r.status === "fulfilled") workerOutputs.push(r.value);
+      if (r.status === "fulfilled") workerResults.push(r.value);
       else workerErrors.push(`worker ${i}: ${r.reason instanceof Error ? r.reason.message : String(r.reason)}`);
     });
 
-    if (workerOutputs.length === 0) {
-      throw new Error(`Tous les workers ont échoué (${workerCount}) : ${workerErrors.slice(0, 2).join(" | ")}`);
+    if (workerResults.length === 0) {
+      throw new Error(`Tous les workers ont échoué (${activeWorkerRanges.length}) : ${workerErrors.slice(0, 2).join(" | ")}`);
     }
 
-    const parsedOutputs = workerOutputs.map((rawText) =>
-      parseJsonObject<{ questions: ExtractedQuestion[]; page_count?: number }>(rawText)
-    );
-    const rawQuestions = parsedOutputs.flatMap((output) =>
-      Array.isArray(output.questions) ? output.questions : []
-    );
+    // Parse + offset concept_page_hint par worker (le sub-PDF vu par Claude
+    // a des pages 1..N relatives, on remappe vers les pages globales du PDF complet).
+    const rawQuestions: ExtractedQuestion[] = [];
+    for (const { rawText, globalRange } of workerResults) {
+      const parsed = parseJsonObject<{ questions: ExtractedQuestion[]; page_count?: number }>(rawText);
+      const pageOffset = globalRange.start - 1; // page locale 1 → globalRange.start
+      const subPdfLength = globalRange.end - globalRange.start + 1;
+      for (const q of parsed.questions ?? []) {
+        if (typeof q.concept_page_hint === "number" && q.concept_page_hint >= 1) {
+          // Si Claude a renvoyé une page > taille du sub-PDF (improbable mais
+          // possible s'il a halluciné une page globale), on cap au range global.
+          const localPage = Math.min(q.concept_page_hint, subPdfLength);
+          q.concept_page_hint = pageOffset + localPage;
+        }
+        rawQuestions.push(q);
+      }
+    }
 
     // ── PHASE: validating ────────────────────────────────────────────────────
     await updateJob(jobId, { phase: "validating", questions_raw: rawQuestions.length });
