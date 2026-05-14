@@ -1,22 +1,24 @@
+/**
+ * Dashboard élève — vue heatmap progression (PR #27).
+ *
+ * Refonte basée sur docs/dashboard-eleve-heatmap-mockup.html (source de vérité).
+ * Le rendu est server-side pour la première peinture (data fetchée via la même
+ * logique que /api/student/dashboard/heatmap), puis le composant client gère
+ * l'interactivité (sélection sous-classe matière).
+ *
+ * CLAUDE.md règle 3 : role lu depuis app_metadata (server-trusted).
+ */
+
+import { redirect } from "next/navigation";
 import { createClient as createSupabaseAdminClient } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase-server";
-import { redirect } from "next/navigation";
 import { SUPER_ADMIN_EMAILS } from "@/lib/admin-config";
-import ExplorerFooter from "./_components/ExplorerFooter";
-import DashboardHeader from "./_components/DashboardHeader";
-import AssignmentList from "./_components/AssignmentList";
-import AIChallengeBanner from "./_components/AIChallengeBanner";
-import TodaySchedule from "./_components/TodaySchedule";
-import CourseList from "./_components/CourseList";
-import WeeklyStatsBanner from "./_components/WeeklyStatsBanner";
+import HeatmapDashboardClient from "./_components/HeatmapDashboardClient";
 import type {
-  DashboardData,
-  UpcomingAssignment,
-  RecentCompletion,
-  ScheduleSlot,
-  AvailableCourse,
-  WeeklyStats,
-  LetterGrade,
+  HeatmapData,
+  SubjectClass,
+  ConceptBucket,
+  DailyEffort,
 } from "@/lib/types/student-dashboard";
 
 export const dynamic = "force-dynamic";
@@ -28,10 +30,279 @@ function createAdminClient() {
   );
 }
 
-function scoreToLetter(avg: number): LetterGrade {
-  if (avg >= 70) return "D";
-  if (avg >= 50) return "C";
-  return "B";
+function masteryFor(correct: number, attempts: number): number {
+  if (attempts === 0) return 0;
+  return Math.max(0, Math.min(100, Math.round((correct / attempts) * 100)));
+}
+
+function isoDate(d: Date): string {
+  return d.toISOString().slice(0, 10);
+}
+
+async function fetchHeatmapData(userId: string): Promise<HeatmapData> {
+  const admin = createAdminClient();
+  const now = new Date();
+  const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+  const sevenDaysAgoIso = sevenDaysAgo.toISOString();
+
+  const { data: memberships } = await admin
+    .from("class_memberships")
+    .select("class_id, classes!inner(id, name, level, subject, parent_class_id)")
+    .eq("student_user_id", userId)
+    .eq("status", "active");
+
+  type MemberRow = {
+    class_id: string;
+    classes: {
+      id: string;
+      name: string;
+      level: string | null;
+      subject: string | null;
+      parent_class_id: string | null;
+    };
+  };
+  const memberRows = (memberships ?? []) as unknown as MemberRow[];
+
+  if (memberRows.length === 0) {
+    return {
+      subject_classes: [],
+      weekly_minutes: 0,
+      weekly_questions: 0,
+      weekly_correct_rate: null,
+      daily_effort: [],
+      streak_days: 0,
+    };
+  }
+
+  const parentIds = [
+    ...new Set(memberRows.map((r) => r.classes.parent_class_id).filter((v): v is string => !!v)),
+  ];
+  const parentNameMap: Record<string, string> = {};
+  if (parentIds.length > 0) {
+    const { data: parents } = await admin.from("classes").select("id, name").in("id", parentIds);
+    for (const p of (parents ?? []) as { id: string; name: string }[]) {
+      parentNameMap[p.id] = p.name;
+    }
+  }
+
+  const classIds = memberRows.map((r) => r.class_id);
+
+  const { data: assignments } = await admin
+    .from("assignments")
+    .select("id, title, class_id, resource_type, resource_id, due_date")
+    .in("class_id", classIds)
+    .is("archived_at", null);
+
+  type AssignRow = {
+    id: string;
+    title: string;
+    class_id: string;
+    resource_type: string;
+    resource_id: string;
+    due_date: string | null;
+  };
+  const assignRows = (assignments ?? []) as AssignRow[];
+  const assignmentIds = assignRows.map((a) => a.id);
+
+  type AnswerRow = {
+    assignment_id: string;
+    question_id: string;
+    is_correct: boolean;
+    created_at: string;
+  };
+  let answers: AnswerRow[] = [];
+  if (assignmentIds.length > 0) {
+    const { data } = await admin
+      .from("assignment_question_answers")
+      .select("assignment_id, question_id, is_correct, created_at")
+      .eq("student_user_id", userId)
+      .in("assignment_id", assignmentIds);
+    answers = (data ?? []) as AnswerRow[];
+  }
+
+  const questionIds = [...new Set(answers.map((a) => a.question_id))];
+  type TQRow = { id: string; concept_id: string | null };
+  let tqRows: TQRow[] = [];
+  if (questionIds.length > 0) {
+    const { data } = await admin
+      .from("teacher_questions")
+      .select("id, concept_id")
+      .in("id", questionIds);
+    tqRows = (data ?? []) as TQRow[];
+  }
+  const conceptByQuestion: Record<string, string | null> = {};
+  for (const tq of tqRows) conceptByQuestion[tq.id] = tq.concept_id;
+
+  const conceptIds = [
+    ...new Set(Object.values(conceptByQuestion).filter((v): v is string => !!v)),
+  ];
+  type ConceptRow = { id: string; name: string };
+  let conceptRows: ConceptRow[] = [];
+  if (conceptIds.length > 0) {
+    const { data } = await admin.from("concepts").select("id, name").in("id", conceptIds);
+    conceptRows = (data ?? []) as ConceptRow[];
+  }
+  const conceptNameMap: Record<string, string> = {};
+  for (const c of conceptRows) conceptNameMap[c.id] = c.name;
+
+  const classByAssignment: Record<string, string> = {};
+  for (const a of assignRows) classByAssignment[a.id] = a.class_id;
+  const assignTitleMap: Record<string, string> = {};
+  for (const a of assignRows) assignTitleMap[a.id] = a.title;
+
+  type Stat = { correct: number; attempts: number; last_seen: string | null };
+  const bucketStats: Record<string, Record<string, Stat>> = {};
+  const bucketLabels: Record<string, Record<string, string>> = {};
+  const bucketAssignSet: Record<string, Record<string, Set<string>>> = {};
+
+  const nowMs = now.getTime();
+  const horizonMs = 14 * 24 * 60 * 60 * 1000;
+  const futureAssignSet = new Set(
+    assignRows
+      .filter((a) => {
+        if (!a.due_date) return false;
+        const t = new Date(a.due_date).getTime();
+        return t > nowMs && t - nowMs < horizonMs;
+      })
+      .map((a) => a.id),
+  );
+
+  for (const ans of answers) {
+    const classId = classByAssignment[ans.assignment_id];
+    if (!classId) continue;
+    const conceptId = conceptByQuestion[ans.question_id];
+    const bucketKey = conceptId ?? `assign:${ans.assignment_id}`;
+    const label = conceptId
+      ? (conceptNameMap[conceptId] ?? "Concept")
+      : (assignTitleMap[ans.assignment_id] ?? "Devoir");
+
+    if (!bucketStats[classId]) bucketStats[classId] = {};
+    if (!bucketLabels[classId]) bucketLabels[classId] = {};
+    if (!bucketAssignSet[classId]) bucketAssignSet[classId] = {};
+
+    if (!bucketStats[classId][bucketKey]) {
+      bucketStats[classId][bucketKey] = { correct: 0, attempts: 0, last_seen: null };
+      bucketLabels[classId][bucketKey] = label;
+      bucketAssignSet[classId][bucketKey] = new Set();
+    }
+    const s = bucketStats[classId][bucketKey];
+    s.attempts += 1;
+    if (ans.is_correct) s.correct += 1;
+    if (!s.last_seen || ans.created_at > s.last_seen) s.last_seen = ans.created_at;
+    bucketAssignSet[classId][bucketKey].add(ans.assignment_id);
+  }
+
+  const subjectClasses: SubjectClass[] = memberRows.map((r) => {
+    const cls = r.classes;
+    const stats = bucketStats[cls.id] ?? {};
+    const labels = bucketLabels[cls.id] ?? {};
+    const assignSets = bucketAssignSet[cls.id] ?? {};
+
+    const concepts: ConceptBucket[] = Object.entries(stats).map(([key, s]) => {
+      const assignSet = assignSets[key] ?? new Set<string>();
+      let priority = false;
+      for (const aid of assignSet) {
+        if (futureAssignSet.has(aid)) {
+          priority = true;
+          break;
+        }
+      }
+      return {
+        key,
+        label: labels[key] ?? "Concept",
+        mastery: masteryFor(s.correct, s.attempts),
+        attempts: s.attempts,
+        correct: s.correct,
+        last_seen: s.last_seen,
+        priority,
+      };
+    });
+
+    concepts.sort((a, b) => {
+      if (a.priority !== b.priority) return a.priority ? -1 : 1;
+      return a.mastery - b.mastery;
+    });
+
+    let firstPriorityFound = false;
+    for (const c of concepts) {
+      if (c.priority) {
+        if (firstPriorityFound) c.priority = false;
+        else firstPriorityFound = true;
+      }
+    }
+    if (!firstPriorityFound && concepts.length > 0 && concepts[0].mastery < 50) {
+      concepts[0].priority = true;
+    }
+
+    const parentName = cls.parent_class_id ? (parentNameMap[cls.parent_class_id] ?? null) : null;
+
+    return {
+      class_id: cls.id,
+      class_name: cls.name,
+      subject: cls.subject,
+      level: cls.level,
+      parent_class_name: parentName,
+      concepts,
+    };
+  });
+
+  subjectClasses.sort((a, b) => {
+    const aIsSub = !!a.parent_class_name;
+    const bIsSub = !!b.parent_class_name;
+    if (aIsSub !== bIsSub) return aIsSub ? -1 : 1;
+    return a.class_name.localeCompare(b.class_name);
+  });
+
+  const weeklyAnswers = answers.filter((a) => a.created_at >= sevenDaysAgoIso);
+  const weeklyQuestionsSet = new Set(weeklyAnswers.map((a) => a.question_id));
+  const weeklyCorrect = weeklyAnswers.filter((a) => a.is_correct).length;
+  const weeklyTotal = weeklyAnswers.length;
+  const weeklyCorrectRate = weeklyTotal > 0 ? Math.round((weeklyCorrect / weeklyTotal) * 100) : null;
+  const weeklyMinutes = Math.round(weeklyTotal * 0.5);
+
+  const dailyMap: Record<string, number> = {};
+  for (let i = 6; i >= 0; i--) {
+    const d = new Date(now.getTime() - i * 24 * 60 * 60 * 1000);
+    dailyMap[isoDate(d)] = 0;
+  }
+  for (const ans of weeklyAnswers) {
+    const d = ans.created_at.slice(0, 10);
+    if (dailyMap[d] !== undefined) dailyMap[d] += 1;
+  }
+  const dailyEffort: DailyEffort[] = Object.entries(dailyMap).map(([date, n]) => ({
+    date,
+    questions_answered: n,
+  }));
+
+  let streakDays = 0;
+  for (let i = 0; i < 30; i++) {
+    const d = new Date(now.getTime() - i * 24 * 60 * 60 * 1000);
+    const day = isoDate(d);
+    const count = dailyMap[day];
+    if (count !== undefined) {
+      if (count > 0) streakDays += 1;
+      else if (i === 0) continue;
+      else break;
+    } else {
+      const dayStart = new Date(day + "T00:00:00.000Z").getTime();
+      const dayEnd = dayStart + 24 * 60 * 60 * 1000;
+      const hasActivity = answers.some((a) => {
+        const t = new Date(a.created_at).getTime();
+        return t >= dayStart && t < dayEnd;
+      });
+      if (hasActivity) streakDays += 1;
+      else break;
+    }
+  }
+
+  return {
+    subject_classes: subjectClasses,
+    weekly_minutes: weeklyMinutes,
+    weekly_questions: weeklyQuestionsSet.size,
+    weekly_correct_rate: weeklyCorrectRate,
+    daily_effort: dailyEffort,
+    streak_days: streakDays,
+  };
 }
 
 export default async function StudentPage() {
@@ -44,275 +315,64 @@ export default async function StudentPage() {
 
   // Rule 3: role lives in app_metadata (server-trusted), not user_metadata
   // (which is client-mutable and would let anyone self-promote).
-  // SUPER_ADMIN bypass : founders see every dashboard regardless of role.
   const role = (user.app_metadata as Record<string, unknown>)?.role;
   const isSuperAdmin =
     !!user.email && (SUPER_ADMIN_EMAILS as readonly string[]).includes(user.email.toLowerCase());
   if (role !== "student" && !isSuperAdmin) redirect("/school");
 
   const admin = createAdminClient();
-  const now = new Date();
-  const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000).toISOString();
-  const todayDow = now.getDay();
-
-  // ── Memberships ──────────────────────────────────────────────────────────────
-  const { data: memberships } = await admin
-    .from("class_memberships")
-    .select("class_id, classes!inner(name, teacher_id, level, subject)")
-    .eq("student_user_id", user.id)
-    .eq("status", "active");
-
-  type MemberRow = {
-    class_id: string;
-    classes: { name: string; teacher_id: string; level: string | null; subject: string | null };
-  };
-  const memberRows = (memberships ?? []) as unknown as MemberRow[];
-  const classIds = memberRows.map((r) => r.class_id);
-  const classNameMap: Record<string, string> = {};
-  for (const r of memberRows) classNameMap[r.class_id] = r.classes.name;
-  const teacherIds = [...new Set(memberRows.map((r) => r.classes.teacher_id))];
-
-  // ── Teacher names + user profile (display name) ───────────────────────────
-  const teacherNameMap: Record<string, string> = {};
-  const [teacherProfilesRes, ownProfileRes] = await Promise.all([
-    teacherIds.length > 0
-      ? admin
-          .from("user_profiles")
-          .select("id, user_name, first_name, last_name")
-          .in("id", teacherIds)
-      : Promise.resolve({ data: [] }),
-    admin
-      .from("user_profiles")
-      .select("first_name, pseudo, week_pattern_override")
-      .eq("id", user.id)
-      .maybeSingle(),
-  ]);
-
-  for (const p of teacherProfilesRes.data ?? []) {
-    teacherNameMap[p.id] =
-      p.first_name && p.last_name
-        ? `${p.first_name} ${p.last_name}`
-        : (p.first_name ?? p.user_name ?? "Prof");
-  }
-
-  const ownProfile = ownProfileRes.data as {
-    first_name: string | null;
-    pseudo: string | null;
-    week_pattern_override: string | null;
-  } | null;
+  const { data: ownProfile } = await admin
+    .from("user_profiles")
+    .select("first_name, pseudo")
+    .eq("id", user.id)
+    .maybeSingle();
 
   const meta = user.user_metadata as Record<string, unknown>;
   const displayName =
-    ownProfile?.first_name ??
+    (ownProfile as { first_name?: string | null; pseudo?: string | null } | null)?.first_name ??
     (meta?.firstName as string | undefined) ??
     (meta?.pseudo as string | undefined) ??
     user.email?.split("@")[0] ??
     "Élève";
 
-  const primaryClass = memberRows[0]?.classes.name ?? null;
-
-  // ── Parallel queries ──────────────────────────────────────────────────────
-  let dashboardData: DashboardData = {
-    upcoming_assignments: [],
-    recent_completions: [],
-    today_schedule: [],
-    available_courses: [],
-    weekly_stats: { assignments_completed: 0, questions_practiced: 0, avg_grade_letter: null },
-  };
-  let streak = 0;
-
-  if (classIds.length > 0) {
-    const [
-      assignmentsRes,
-      scheduleRes,
-      coursesRes,
-      completedCountRes,
-      questionsRes,
-      recentScoresRes,
-    ] = await Promise.allSettled([
-      admin
-        .from("assignments")
-        .select("id, title, resource_id, resource_type, due_date, class_id")
-        .in("class_id", classIds)
-        .is("archived_at", null)
-        .order("due_date", { ascending: true, nullsFirst: false }),
-
-      admin
-        .from("teacher_schedule_slots")
-        .select("start_time, end_time, subject_label, class_id, teacher_id, week_pattern")
-        .in("class_id", classIds)
-        .eq("day_of_week", todayDow),
-
-      admin
-        .from("courses")
-        .select("id, title, subject_enum, level, pdf_storage_path")
-        .in("teacher_id", teacherIds)
-        .not("pdf_storage_path", "is", null)
-        .order("created_at", { ascending: false })
-        .limit(20),
-
-      admin
-        .from("assignment_completions")
-        .select("id", { count: "exact", head: true })
-        .eq("student_user_id", user.id)
-        .eq("status", "completed")
-        .gte("completed_at", sevenDaysAgo),
-
-      admin
-        .from("assignment_question_answers")
-        .select("question_id")
-        .eq("student_user_id", user.id)
-        .gte("created_at", sevenDaysAgo),
-
-      admin
-        .from("assignment_completions")
-        .select("score")
-        .eq("student_user_id", user.id)
-        .eq("status", "completed")
-        .not("score", "is", null)
-        .gte("completed_at", sevenDaysAgo)
-        .order("completed_at", { ascending: false })
-        .limit(5),
-    ]);
-
-    // ── Assignments processing ────────────────────────────────────────────
-    type RawAssignment = { id: string; title: string; resource_id: string; resource_type: string; due_date: string | null; class_id: string };
-    const rawAssignments = assignmentsRes.status === "fulfilled" ? ((assignmentsRes.value.data ?? []) as RawAssignment[]) : [];
-    const assignmentIds = rawAssignments.map((a) => a.id);
-
-    const completionMap: Record<string, { status: string; score: number | null; completed_at: string | null }> = {};
-    if (assignmentIds.length > 0) {
-      const { data: completions } = await admin
-        .from("assignment_completions")
-        .select("assignment_id, status, score, completed_at")
-        .eq("student_user_id", user.id)
-        .in("assignment_id", assignmentIds);
-      for (const c of completions ?? []) completionMap[c.assignment_id] = c;
-    }
-
-    const resourceIds = [...new Set(rawAssignments.map((a) => a.resource_id))];
-    const courseTitleMap: Record<string, string> = {};
-    if (resourceIds.length > 0) {
-      const { data: ct } = await admin.from("courses").select("id, title").in("id", resourceIds);
-      for (const c of ct ?? []) courseTitleMap[c.id] = c.title ?? "Sans titre";
-    }
-
-    const upcomingAssignments: UpcomingAssignment[] = [];
-    const recentCompletions: RecentCompletion[] = [];
-
-    for (const a of rawAssignments) {
-      const c = completionMap[a.id];
-      const dbStatus = c?.status ?? "pending";
-      if (dbStatus === "completed") {
-        recentCompletions.push({
-          id: a.id, title: a.title, course_title: courseTitleMap[a.resource_id] ?? null,
-          class_name: classNameMap[a.class_id] ?? "—", completed_at: c!.completed_at!, score: c!.score,
-        });
-      } else {
-        const isOverdue = a.due_date != null && new Date(a.due_date) < now;
-        const status = isOverdue ? "overdue" : dbStatus === "in_progress" ? "in_progress" : "pending";
-        upcomingAssignments.push({
-          id: a.id, title: a.title, course_title: courseTitleMap[a.resource_id] ?? null,
-          class_name: classNameMap[a.class_id] ?? "—", deadline: a.due_date, estimated_minutes: null, status,
-        });
-      }
-    }
-
-    upcomingAssignments.sort((a, b) => {
-      if (a.status === "overdue" && b.status !== "overdue") return -1;
-      if (b.status === "overdue" && a.status !== "overdue") return 1;
-      if (!a.deadline) return 1;
-      if (!b.deadline) return -1;
-      return new Date(a.deadline).getTime() - new Date(b.deadline).getTime();
-    });
-    recentCompletions.sort((a, b) => new Date(b.completed_at).getTime() - new Date(a.completed_at).getTime());
-
-    // ── Schedule ──────────────────────────────────────────────────────────
-    const weekPatternOverride = ownProfile?.week_pattern_override ?? "auto";
-    const allowedPatterns = ["all"];
-    if (weekPatternOverride === "force_A") allowedPatterns.push("A");
-    if (weekPatternOverride === "force_B") allowedPatterns.push("B");
-
-    type SlotRow = { start_time: string; end_time: string; subject_label: string | null; class_id: string | null; teacher_id: string; week_pattern: string };
-    const rawSlots = scheduleRes.status === "fulfilled" ? ((scheduleRes.value.data ?? []) as SlotRow[]) : [];
-    const todaySlots: ScheduleSlot[] = rawSlots
-      .filter((s) => allowedPatterns.includes(s.week_pattern))
-      .sort((a, b) => a.start_time.localeCompare(b.start_time))
-      .map((s) => ({
-        time_start: s.start_time.slice(0, 5),
-        time_end: s.end_time.slice(0, 5),
-        course_title: s.subject_label ?? "Cours",
-        room: null,
-        teacher_name: teacherNameMap[s.teacher_id] ?? "Prof",
-      }));
-
-    // ── Courses ───────────────────────────────────────────────────────────
-    type CourseRow = { id: string; title: string; subject_enum: string | null; level: number | null; pdf_storage_path: string };
-    const availableCourses: AvailableCourse[] = coursesRes.status === "fulfilled"
-      ? ((coursesRes.value.data ?? []) as CourseRow[]).map((c) => ({
-          id: c.id, title: c.title, subject_enum: c.subject_enum, level: c.level, pdf_storage_path: c.pdf_storage_path,
-        }))
-      : [];
-
-    // ── Weekly stats ──────────────────────────────────────────────────────
-    const assignmentsCompleted = completedCountRes.status === "fulfilled" ? (completedCountRes.value.count ?? 0) : 0;
-    const uniqueQuestions = questionsRes.status === "fulfilled"
-      ? new Set((questionsRes.value.data ?? []).map((r: { question_id: string }) => r.question_id)).size
-      : 0;
-    const scores = recentScoresRes.status === "fulfilled"
-      ? (recentScoresRes.value.data ?? []).map((r: { score: number | null }) => r.score).filter((s): s is number => s !== null)
-      : [];
-    const avgScore = scores.length > 0 ? scores.reduce((a: number, b: number) => a + b, 0) / scores.length : null;
-    const avg_grade_letter: LetterGrade | null = avgScore !== null ? scoreToLetter(avgScore) : null;
-
-    const weeklyStats: WeeklyStats = {
-      assignments_completed: assignmentsCompleted,
-      questions_practiced: uniqueQuestions,
-      avg_grade_letter,
-    };
-
-    dashboardData = {
-      upcoming_assignments: upcomingAssignments,
-      recent_completions: recentCompletions.slice(0, 3),
-      today_schedule: todaySlots,
-      available_courses: availableCourses,
-      weekly_stats: weeklyStats,
-    };
-  }
+  const data = await fetchHeatmapData(user.id);
 
   return (
-    <main className="min-h-screen bg-[rgb(var(--surface-2))] px-4 py-8 text-[rgb(var(--ink))]">
-      <div className="mx-auto flex w-full max-w-2xl flex-col gap-6">
-
-        <DashboardHeader
-          displayName={displayName}
-          className={primaryClass}
-          streak={streak}
-        />
-
-        <AssignmentList
-          upcoming={dashboardData.upcoming_assignments}
-          recent={dashboardData.recent_completions}
-        />
-
-        <AIChallengeBanner />
-
-        <TodaySchedule slots={dashboardData.today_schedule} />
-
-        {/* Sprint 0 placeholder — mastery heatmaps rebuilt in Sprint 4 */}
-        <div className="rounded-2xl border border-[rgb(var(--border))] bg-[rgb(var(--surface))] px-5 py-4 text-center">
-          <p className="text-sm font-bold text-[rgb(var(--ink-2))]">
-            Tableau de bord en cours de construction (Sprint 4)
-          </p>
+    <main className="min-h-screen bg-[rgb(var(--surface-2))]">
+      {/* Top bar */}
+      <header
+        className="border-b border-[rgb(var(--border))]"
+        style={{ background: "rgb(var(--surface))" }}
+      >
+        <div className="mx-auto flex max-w-[1100px] items-center justify-between px-4 py-3 sm:px-6">
+          <div className="flex items-center gap-3">
+            <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-[rgb(var(--accent))] text-xs font-bold text-white">
+              M
+            </div>
+            <span className="serif text-lg font-semibold text-[rgb(var(--ink))]">Maïa</span>
+          </div>
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2 rounded-full border border-[rgb(var(--border))] px-2 py-1">
+              <div
+                className="flex h-7 w-7 items-center justify-center rounded-full text-xs font-semibold"
+                style={{
+                  background: "rgb(var(--accent) / 0.15)",
+                  color: "rgb(var(--accent))",
+                }}
+              >
+                {(displayName.charAt(0) ?? "?").toUpperCase()}
+              </div>
+              <div className="hidden sm:block">
+                <p className="text-xs font-medium leading-tight text-[rgb(var(--ink))]">
+                  {displayName}
+                </p>
+              </div>
+            </div>
+          </div>
         </div>
+      </header>
 
-        <CourseList courses={dashboardData.available_courses} />
-
-        <WeeklyStatsBanner stats={dashboardData.weekly_stats} />
-
-        <ExplorerFooter />
-
-      </div>
+      <HeatmapDashboardClient displayName={displayName} initialData={data} />
     </main>
   );
 }

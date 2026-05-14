@@ -11,7 +11,7 @@ function createAdminClient() {
   );
 }
 
-type MembershipRow = { class_id: string; classes: { name: string } };
+type MembershipRow = { class_id: string; classes: { name: string; subject: string | null } };
 type AssignmentRow = {
   id: string;
   title: string;
@@ -42,7 +42,7 @@ export async function GET() {
 
     const { data: memberships } = await admin
       .from("class_memberships")
-      .select("class_id, classes!inner(name)")
+      .select("class_id, classes!inner(name, subject)")
       .eq("student_user_id", user.id)
       .eq("status", "active");
 
@@ -53,7 +53,11 @@ export async function GET() {
     const rows = memberships as unknown as MembershipRow[];
     const classIds = rows.map((m) => m.class_id);
     const classNameMap: Record<string, string> = {};
-    for (const m of rows) classNameMap[m.class_id] = m.classes.name;
+    const classSubjectMap: Record<string, string | null> = {};
+    for (const m of rows) {
+      classNameMap[m.class_id] = m.classes.name;
+      classSubjectMap[m.class_id] = m.classes.subject;
+    }
 
     const { data: assignments } = await admin
       .from("assignments")
@@ -99,6 +103,7 @@ export async function GET() {
         course_title: courseMap[a.resource_id] ?? "—",
         class_id: a.class_id,
         class_name: classNameMap[a.class_id] ?? "—",
+        subject: classSubjectMap[a.class_id] ?? null,
         due_date: a.due_date,
         status: c?.status ?? "pending",
         score: c?.score ?? null,
