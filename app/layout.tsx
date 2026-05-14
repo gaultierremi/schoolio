@@ -1,25 +1,38 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
+import { Inter, Source_Serif_4 } from "next/font/google";
+import { NextIntlClientProvider } from "next-intl";
+import { getMessages } from "next-intl/server";
 import BetaFeedbackButton from "@/components/beta/BetaFeedbackButton";
 import "./globals.css";
 import "katex/dist/katex.min.css";
 
-const inter = Inter({ subsets: ["latin"] });
+const inter = Inter({
+  subsets: ["latin"],
+  variable: "--font-inter",
+  display: "swap",
+});
+
+const sourceSerif = Source_Serif_4({
+  subsets: ["latin"],
+  variable: "--font-serif",
+  display: "swap",
+});
 
 export const metadata: Metadata = {
-  title: "Schoolio · Apprends avec l'IA. Pas à sa place.",
-  description: "La plateforme qui révèle ton potentiel.",
+  title: "Maïa — Apprendre ce qu'on ne sait pas encore",
+  description: "Plateforme d'apprentissage augmentée pour le secondaire. Chaque élève voit ses lacunes, le prof voit sa classe, Maïa s'occupe du reste. Aligné programme FW-B.",
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
-}: Readonly<{
-  children: React.ReactNode;
-}>) {
+}: Readonly<{ children: React.ReactNode }>) {
+  const messages = await getMessages();
   return (
-    <html lang="en">
-      <body className={inter.className}>
-        {children}
+    <html lang="fr" className={`${inter.variable} ${sourceSerif.variable}`}>
+      <body>
+        <NextIntlClientProvider messages={messages}>
+          {children}
+        </NextIntlClientProvider>
         <BetaFeedbackButton />
       </body>
     </html>

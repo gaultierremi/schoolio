@@ -51,7 +51,7 @@ export async function sendDiscordNotification(action: "created" | "updated", car
       { name: "Statut", value: card.status, inline: true },
       { name: "Créée par", value: card.created_by, inline: false },
     ],
-    footer: { text: `Schoolio Admin Board · ${actionLabel}` },
+    footer: { text: `Maïa Admin Board · ${actionLabel}` },
     timestamp: card.updated_at || card.created_at,
   };
 

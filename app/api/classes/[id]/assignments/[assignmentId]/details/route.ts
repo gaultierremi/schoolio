@@ -76,22 +76,18 @@ export async function GET(
 
     // Get student names from user_profiles
     const studentIds = members.map((m) => m.student_user_id);
-    type ProfileRow = { id: string; first_name: string | null; last_name: string | null; pseudo: string | null; auth_mode: string | null; user_name: string | null };
+    type ProfileRow = { id: string; first_name: string | null; last_name: string | null; user_name: string | null };
     const profileMap = new Map<string, ProfileRow>();
     if (studentIds.length > 0) {
       const { data: profiles } = await admin
         .from("user_profiles")
-        .select("id, first_name, last_name, pseudo, auth_mode, user_name")
+        .select("id, first_name, last_name, user_name")
         .in("id", studentIds);
       for (const p of (profiles ?? []) as ProfileRow[]) profileMap.set(p.id, p);
     }
 
     function buildDisplayName(p: ProfileRow | undefined): string {
       if (!p) return "—";
-      if (p.auth_mode === "light") {
-        const parts = [p.first_name, p.last_name].filter(Boolean).join(" ");
-        return parts ? `${parts} (pseudo: ${p.pseudo ?? ""})` : (p.pseudo ?? "—");
-      }
       if (p.first_name) return [p.first_name, p.last_name].filter(Boolean).join(" ");
       return p.user_name ?? "—";
     }

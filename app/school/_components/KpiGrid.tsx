@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import { BookOpen, Users, School, PencilLine, CheckCircle2, type LucideIcon } from "lucide-react";
 
 type Stats = {
   total_courses: number;
@@ -41,16 +42,16 @@ function useCountUp(target: number, active: boolean) {
 type KpiDef = {
   key: keyof Stats;
   label: string;
-  icon: string;
+  Icon: LucideIcon;
   href: string;
 };
 
 const KPI_DEFS: KpiDef[] = [
-  { key: "total_courses",       label: "Cours importés",    icon: "📚", href: "/school/courses"   },
-  { key: "active_students",     label: "Élèves actifs",      icon: "👩‍🎓", href: "/school/classes"   },
-  { key: "active_classes",      label: "Classes actives",    icon: "🏫", href: "/school/classes"   },
-  { key: "total_assignments",   label: "Devoirs créés",       icon: "📝", href: "/school/classes"   },
-  { key: "validated_questions", label: "Questions validées",  icon: "✅", href: "/school/questions" },
+  { key: "total_courses",       label: "Cours importés",    Icon: BookOpen,       href: "/school/courses"   },
+  { key: "active_students",     label: "Élèves actifs",      Icon: Users,          href: "/school/classes"   },
+  { key: "active_classes",      label: "Classes actives",    Icon: School,         href: "/school/classes"   },
+  { key: "total_assignments",   label: "Devoirs créés",       Icon: PencilLine,     href: "/school/classes"   },
+  { key: "validated_questions", label: "Questions validées",  Icon: CheckCircle2,   href: "/school/questions" },
 ];
 
 function KpiCard({
@@ -66,11 +67,11 @@ function KpiCard({
   return (
     <Link
       href={def.href}
-      className="rounded-2xl border border-gray-800 bg-gray-900 p-5 transition-all hover:border-purple-500/50 hover:bg-gray-800/80"
+      className="rounded-2xl border border-[rgb(var(--border))] bg-[rgb(var(--surface))] p-5 transition-all hover:border-[rgb(var(--accent))]/50 hover:bg-[rgb(var(--surface-3))]"
     >
-      <div className="mb-2 text-2xl">{def.icon}</div>
-      <div className="tabular-nums text-3xl font-black text-white">{displayed}</div>
-      <div className="mt-1 text-xs text-gray-500">{def.label}</div>
+      <def.Icon className="mb-2 h-5 w-5 text-[rgb(var(--accent))]" aria-hidden />
+      <div className="serif tabular-nums text-3xl font-black text-[rgb(var(--ink))]">{displayed}</div>
+      <div className="mt-1 text-xs text-[rgb(var(--ink-3))]">{def.label}</div>
     </Link>
   );
 }
@@ -86,7 +87,7 @@ export default function KpiGrid({
     return (
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
         {[...Array(5)].map((_, i) => (
-          <div key={i} className="h-28 animate-pulse rounded-2xl bg-gray-800" />
+          <div key={i} className="h-28 animate-pulse rounded-2xl bg-[rgb(var(--surface-3))]" />
         ))}
       </div>
     );
@@ -94,7 +95,7 @@ export default function KpiGrid({
 
   return (
     <section>
-      <h2 className="mb-3 text-xs font-black uppercase tracking-widest text-gray-500">
+      <h2 className="mb-3 text-xs font-black uppercase tracking-widest text-[rgb(var(--ink-3))]">
         Vue d&apos;ensemble
       </h2>
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">

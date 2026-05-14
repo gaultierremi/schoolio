@@ -8,6 +8,7 @@ import { GroqLlamaProvider, GroqGemmaProvider } from "./ai-providers/groq";
 import { SambanovaProvider } from "./ai-providers/sambanova";
 import { OpenRouterProvider } from "./ai-providers/openrouter";
 import { CloudflareProvider } from "./ai-providers/cloudflare";
+import { AnthropicClaudeProvider } from "./ai-providers/anthropic";
 
 export type { AIResponse } from "./ai-providers/types";
 
@@ -37,6 +38,7 @@ export interface RouteOptions {
 }
 
 const ALL_PROVIDERS: AIProvider[] = [
+  AnthropicClaudeProvider(),
   GeminiProProvider(),
   GeminiFlashProvider(),
   MistralProvider(),

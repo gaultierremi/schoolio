@@ -117,16 +117,16 @@ function GenerateModal({
         {state === "loading" ? (
           <div className="flex flex-col items-center gap-4 py-4">
             <div className="h-10 w-10 animate-spin rounded-full border-4 border-gray-700 border-t-purple-500" />
-            <p className="font-black text-white">Génération en cours via Schoolio…</p>
+            <p className="font-black text-white">Génération en cours via Maïa…</p>
             <p className="text-sm text-gray-400 text-center">
-              Patience, ~60s en moyenne. L&apos;IA analyse le PDF et génère {count} exercices avec résolutions détaillées.
+              Patience, ~60s en moyenne. Maïa analyse le PDF et génère {count} exercices avec résolutions détaillées.
             </p>
           </div>
         ) : (
           <>
             <h2 className="text-lg font-black text-white">Générer des exercices</h2>
             <p className="mt-1 text-sm text-gray-400">
-              L&apos;IA va créer des exercices avec résolutions étape par étape depuis le PDF du cours.
+              Maïa va créer des exercices avec résolutions étape par étape depuis le PDF du cours.
             </p>
 
             <div className="mt-5">
@@ -187,30 +187,88 @@ function PageRangeBadge({ start, end }: { start: number; end: number }) {
 function ExerciseCard({
   exercise,
   courseId,
+  onChanged,
 }: {
   exercise: Exercise;
   courseId: string;
+  onChanged: () => void;
 }) {
+  const [busy, setBusy] = useState(false);
+  const canArchive = exercise.status === "validated";
+  const canRestore = exercise.status === "archived" || exercise.status === "rejected";
+
+  async function handleArchive(e: React.MouseEvent) {
+    e.preventDefault();
+    e.stopPropagation();
+    if (busy) return;
+    setBusy(true);
+    try {
+      await fetch(`/api/courses/${courseId}/exercises/${exercise.id}/archive`, { method: "POST" });
+      onChanged();
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function handleRestore(e: React.MouseEvent) {
+    e.preventDefault();
+    e.stopPropagation();
+    if (busy) return;
+    setBusy(true);
+    try {
+      await fetch(`/api/courses/${courseId}/exercises/${exercise.id}/restore`, { method: "POST" });
+      onChanged();
+    } finally {
+      setBusy(false);
+    }
+  }
+
   return (
-    <Link
-      href={`/school/courses/${courseId}/exercises/${exercise.id}`}
-      className="block rounded-2xl border border-gray-700 bg-gray-900 p-4 hover:border-purple-500/50 hover:bg-gray-800/80 transition-all"
-    >
-      <div className="flex flex-wrap items-center gap-2 mb-2">
-        {exercise.exercise_type && <TypeBadge type={exercise.exercise_type} />}
-        {exercise.status === "validated" && <Stars count={exercise.difficulty} />}
-        {exercise.page_range_start !== null && exercise.page_range_end !== null && (
-          <PageRangeBadge start={exercise.page_range_start} end={exercise.page_range_end} />
+    <div className="rounded-2xl border border-gray-700 bg-gray-900 p-4 transition-all hover:border-purple-500/50 hover:bg-gray-800/80">
+      <Link
+        href={`/school/courses/${courseId}/exercises/${exercise.id}`}
+        className="block"
+      >
+        <div className="flex flex-wrap items-center gap-2 mb-2">
+          {exercise.exercise_type && <TypeBadge type={exercise.exercise_type} />}
+          {exercise.status === "validated" && <Stars count={exercise.difficulty} />}
+          {exercise.page_range_start !== null && exercise.page_range_end !== null && (
+            <PageRangeBadge start={exercise.page_range_start} end={exercise.page_range_end} />
+          )}
+          <span className="ml-auto text-xs text-gray-600">
+            {exercise.exercise_steps.length} étape{exercise.exercise_steps.length > 1 ? "s" : ""}
+          </span>
+        </div>
+        <p className="font-bold text-white leading-snug">{exercise.title}</p>
+        {exercise.generated_by_model && (
+          <p className="mt-2 text-xs text-gray-600">Généré par Maïa</p>
         )}
-        <span className="ml-auto text-xs text-gray-600">
-          {exercise.exercise_steps.length} étape{exercise.exercise_steps.length > 1 ? "s" : ""}
-        </span>
-      </div>
-      <p className="font-bold text-white leading-snug">{exercise.title}</p>
-      {exercise.generated_by_model && (
-        <p className="mt-2 text-xs text-gray-600">Généré par Schoolio</p>
+      </Link>
+      {(canArchive || canRestore) && (
+        <div className="mt-3 flex justify-end gap-2 border-t border-gray-800 pt-3">
+          {canArchive && (
+            <button
+              type="button"
+              onClick={handleArchive}
+              disabled={busy}
+              className="rounded-full border border-gray-700 px-3 py-1 text-xs font-bold text-gray-400 transition hover:border-amber-500/60 hover:text-amber-300 disabled:opacity-50"
+            >
+              {busy ? "…" : "Désactiver"}
+            </button>
+          )}
+          {canRestore && (
+            <button
+              type="button"
+              onClick={handleRestore}
+              disabled={busy}
+              className="rounded-full border border-gray-700 px-3 py-1 text-xs font-bold text-gray-400 transition hover:border-green-500/60 hover:text-green-300 disabled:opacity-50"
+            >
+              {busy ? "…" : "Réactiver"}
+            </button>
+          )}
+        </div>
       )}
-    </Link>
+    </div>
   );
 }
 
@@ -329,7 +387,7 @@ export default function ExercisesListPage() {
 
         <div className="mt-4 flex flex-wrap items-start justify-between gap-3">
           <div>
-            <h1 className="text-3xl font-black">Exercices</h1>
+            <h1 className="text-3xl font-black">Gérer les exercices</h1>
             {course?.title && (
               <p className="mt-1 text-gray-400 text-sm">{course.title}</p>
             )}
@@ -418,7 +476,7 @@ export default function ExercisesListPage() {
           ) : (
             <div className="space-y-3">
               {currentList.map((ex) => (
-                <ExerciseCard key={ex.id} exercise={ex} courseId={courseId} />
+                <ExerciseCard key={ex.id} exercise={ex} courseId={courseId} onChanged={loadData} />
               ))}
             </div>
           )}

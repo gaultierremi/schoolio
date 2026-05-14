@@ -1,39 +1,37 @@
+import { CheckCircle2, Trophy, Brain } from "lucide-react";
 import { GRADE_LABEL } from "@/lib/grading";
 import type { WeeklyStats } from "@/lib/types/student-dashboard";
 
 type Props = { stats: WeeklyStats };
 
-const STATS = [
-  { key: "assignments_completed", label: "Devoirs", emoji: "✅" },
-  { key: "questions_practiced",   label: "Questions", emoji: "🧠" },
-  { key: "live_participations",   label: "Lives", emoji: "🎤" },
-] as const;
-
 export default function WeeklyStatsBanner({ stats }: Props) {
   return (
     <section>
-      <h2 className="mb-3 text-xs font-bold uppercase tracking-widest text-purple-400">
+      <h2 className="mb-3 text-xs font-bold uppercase tracking-widest text-[rgb(var(--accent))]">
         Cette semaine
       </h2>
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-        {STATS.map(({ key, label, emoji }) => (
-          <div
-            key={key}
-            className="flex flex-col gap-1 rounded-xl border border-zinc-800 bg-zinc-900 px-4 py-3"
-          >
-            <span className="text-xl leading-none">{emoji}</span>
-            <span className="text-2xl font-black text-white">{stats[key]}</span>
-            <span className="text-xs text-zinc-500">{label}</span>
-          </div>
-        ))}
 
-        <div className="flex flex-col gap-1 rounded-xl border border-zinc-800 bg-zinc-900 px-4 py-3">
-          <span className="text-xl leading-none">🏆</span>
-          <span className="text-2xl font-black text-white">
+        <div className="flex flex-col gap-1 rounded-xl border border-[rgb(var(--border))] bg-[rgb(var(--surface))] px-4 py-3">
+          <CheckCircle2 className="h-5 w-5 text-[rgb(var(--green))]" aria-hidden />
+          <span className="serif text-2xl font-black text-[rgb(var(--ink))]">{stats.assignments_completed}</span>
+          <span className="text-xs text-[rgb(var(--ink-3))]">Devoirs</span>
+        </div>
+
+        <div className="flex flex-col gap-1 rounded-xl border border-[rgb(var(--border))] bg-[rgb(var(--surface))] px-4 py-3">
+          <Brain className="h-5 w-5 text-[rgb(var(--accent))]" aria-hidden />
+          <span className="serif text-2xl font-black text-[rgb(var(--ink))]">{stats.questions_practiced}</span>
+          <span className="text-xs text-[rgb(var(--ink-3))]">Questions</span>
+        </div>
+
+        <div className="flex flex-col gap-1 rounded-xl border border-[rgb(var(--border))] bg-[rgb(var(--surface))] px-4 py-3">
+          <Trophy className="h-5 w-5 text-[rgb(var(--warm))]" aria-hidden />
+          <span className="serif text-2xl font-black text-[rgb(var(--ink))]">
             {stats.avg_grade_letter ? GRADE_LABEL[stats.avg_grade_letter] : "—"}
           </span>
-          <span className="text-xs text-zinc-500">Note moyenne</span>
+          <span className="text-xs text-[rgb(var(--ink-3))]">Note moyenne</span>
         </div>
+
       </div>
     </section>
   );

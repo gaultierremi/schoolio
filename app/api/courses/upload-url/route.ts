@@ -141,6 +141,21 @@ export async function POST(req: NextRequest) {
     }
 
     const admin = createAdminClient();
+
+    // courses.school_id devenu NOT NULL via migration multi-tenant
+    // (20260513140100 + 20260513160000_seed_foundertestground). Le route
+    // handler ne l'incluait pas dans l'insert — root cause "Erreur lors de
+    // la création du cours" sur /school/import.
+    const { data: profile } = await supabase
+      .from("user_profiles")
+      .select("school_id")
+      .eq("id", user.id)
+      .maybeSingle();
+    const schoolId = (profile?.school_id as string | null | undefined) ?? null;
+    if (!schoolId) {
+      return NextResponse.json({ error: "Aucune école associée à ton compte" }, { status: 403 });
+    }
+
     const parsedOrganizationTags = parseOrganizationTags(organization_tags);
     if ("error" in parsedOrganizationTags) {
       return NextResponse.json({ error: parsedOrganizationTags.error }, { status: 400 });
@@ -270,6 +285,7 @@ export async function POST(req: NextRequest) {
       .insert({
         id: courseId,
         teacher_id: user.id,
+        school_id: schoolId,
         title,
         pdf_hash: fileHash,
         pdf_size_bytes: fileSize,

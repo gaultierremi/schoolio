@@ -17,7 +17,7 @@ export default async function JoinTokenPage({
 
   const { data: cls } = await admin
     .from("classes")
-    .select("id, name, auth_mode, archived_at, teacher_id")
+    .select("id, name, archived_at, teacher_id")
     .eq("invite_link_token", params.token)
     .maybeSingle();
 
@@ -52,7 +52,6 @@ export default async function JoinTokenPage({
     <JoinTokenClient
       classId={cls.id}
       className={cls.name}
-      authMode={cls.auth_mode as "full" | "light"}
       teacherName={teacherProfile?.user_name ?? undefined}
     />
   );

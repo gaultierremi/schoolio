@@ -7,7 +7,7 @@ export function ClearCacheButton() {
   const [done, setDone] = useState(false);
 
   async function handleClear() {
-    if (!confirm("Vider tout le cache IA ? Les prochaines requêtes identiques repasseront par les providers.")) return;
+    if (!confirm("Vider tout le cache Maïa ? Les prochaines requêtes identiques repasseront par les providers.")) return;
     setLoading(true);
     try {
       await fetch("/api/admin/ai-router/cache", { method: "DELETE" });

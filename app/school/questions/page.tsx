@@ -1,5 +1,6 @@
 "use client";
 
+import { useMemo, useState } from "react";
 import { BLANK_FORM } from "./_types";
 import { useQuestionsPage } from "./_hooks/useQuestionsPage";
 import { FilterBar } from "./_components/FilterBar";
@@ -11,6 +12,7 @@ import { PendingCard } from "./_components/PendingCard";
 import { ValidatedCard } from "./_components/ValidatedCard";
 import { RejectedCard } from "./_components/RejectedCard";
 import { TypeBadge } from "./_components/TypeBadge";
+import { SubjectSidebar } from "./_components/SubjectSidebar";
 
 export default function SchoolQuestionsPage() {
   const {
@@ -29,7 +31,6 @@ export default function SchoolQuestionsPage() {
     sortBy, setSortBy,
     filterStars, setFilterStars,
     fadingIds, validatingId, rejectingId,
-    pendingStars, setPendingStars,
     valToast, isBusy,
     proposeStatuses,
     pdfLoading, pdfError, pdfWarning, pdfProgress, pdfStats,
@@ -46,9 +47,26 @@ export default function SchoolQuestionsPage() {
     hasValidatedFilter, filteredValidated, sortedValidated, filteredPublic,
     resetForm, startEdit, saveQuestion, deleteQuestion,
     togglePublic, duplicateQuestion, generateExplanation,
-    validateQuestion, rejectQuestion, callUnvalidate, proposeQuestion,
+    validateQuestion, rejectQuestion, callUnvalidate, updateQuestionDifficulty, proposeQuestion,
     handlePdfUpload, saveDrafts, addPublicQuestion,
   } = useQuestionsPage();
+
+  // Filtre sidebar matière + thème, scoped à l'onglet "à valider".
+  // Permet de naviguer dans des centaines de questions sur gros syllabus.
+  const [pendingSubjectFilter, setPendingSubjectFilter] = useState<string | null>(null);
+  const [pendingThemeFilter, setPendingThemeFilter] = useState<string | null>(null);
+  const filteredPendingBySubject = useMemo(() => {
+    return pendingQuestions.filter((q) => {
+      if (pendingSubjectFilter !== null) {
+        const s = (q.subject_enum ?? q.subject ?? "autre") as string;
+        if (s !== pendingSubjectFilter) return false;
+      }
+      if (pendingThemeFilter !== null) {
+        if ((q.period ?? "").trim() !== pendingThemeFilter) return false;
+      }
+      return true;
+    });
+  }, [pendingQuestions, pendingSubjectFilter, pendingThemeFilter]);
 
   // ── Guards ──
 
@@ -187,29 +205,47 @@ export default function SchoolQuestionsPage() {
                 <div>
                   {pendingQuestions.length === 0 ? (
                     <div className="rounded-2xl border border-dashed border-gray-800 p-10 text-center text-gray-500">
-                      Aucune question IA en attente de validation.
+                      Aucune question générée par Maïa en attente de validation.
                     </div>
                   ) : (
-                    <div className="space-y-4">
-                      {pendingQuestions
-                        .filter((q) => !(editingId === q.id && showForm))
-                        .map((q) => (
-                          <PendingCard
-                            key={q.id}
-                            q={q}
-                            isFading={fadingIds.has(q.id)}
-                            isValidating={validatingId === q.id}
-                            isRejecting={rejectingId === q.id}
-                            isBusy={isBusy}
-                            selectedStars={pendingStars[q.id] ?? null}
-                            onStarChange={(v) =>
-                              setPendingStars((prev) => ({ ...prev, [q.id]: v }))
-                            }
-                            onValidate={() => validateQuestion(q.id)}
-                            onReject={() => rejectQuestion(q.id)}
-                            onEdit={() => startEdit(q)}
-                          />
-                        ))}
+                    <div className="flex flex-col gap-6 lg:flex-row">
+                      <SubjectSidebar
+                        questions={pendingQuestions}
+                        selectedSubject={pendingSubjectFilter}
+                        selectedTheme={pendingThemeFilter}
+                        onSelectSubject={(s) => {
+                          setPendingSubjectFilter(s);
+                          // Reset theme quand on change de matière (les thèmes diffèrent)
+                          setPendingThemeFilter(null);
+                        }}
+                        onSelectTheme={setPendingThemeFilter}
+                      />
+                      <div className="flex-1 space-y-4 min-w-0">
+                        {filteredPendingBySubject.length === 0 ? (
+                          <div className="rounded-2xl border border-dashed border-gray-800 p-8 text-center text-sm text-gray-500">
+                            Aucune question pour cette matière.
+                          </div>
+                        ) : (
+                          filteredPendingBySubject
+                            .filter((q) => !(editingId === q.id && showForm))
+                            .map((q) => (
+                              <PendingCard
+                                key={q.id}
+                                q={q}
+                                isFading={fadingIds.has(q.id)}
+                                isValidating={validatingId === q.id}
+                                isRejecting={rejectingId === q.id}
+                                isBusy={isBusy}
+                                onDifficultyChange={(v) =>
+                                  updateQuestionDifficulty(q.id, v)
+                                }
+                                onValidate={() => validateQuestion(q.id)}
+                                onReject={() => rejectQuestion(q.id)}
+                                onEdit={() => startEdit(q)}
+                              />
+                            ))
+                        )}
+                      </div>
                     </div>
                   )}
                 </div>
@@ -304,7 +340,7 @@ export default function SchoolQuestionsPage() {
                   {sortedValidated.length === 0 ? (
                     <div className="rounded-2xl border border-dashed border-gray-800 p-10 text-center text-gray-500">
                       {validatedQuestionsBase.length === 0
-                        ? "Aucune question validée. Valide des questions IA ou crée-en une."
+                        ? "Aucune question validée. Valide des questions générées par Maïa ou crée-en une."
                         : "Aucun résultat pour ces filtres."}
                     </div>
                   ) : (
@@ -323,6 +359,9 @@ export default function SchoolQuestionsPage() {
                             onUnvalidate={() => callUnvalidate(q.id)}
                             onPropose={() => proposeQuestion(q.id)}
                             onForcePropose={() => proposeQuestion(q.id, true)}
+                            onDifficultyChange={(v) =>
+                              updateQuestionDifficulty(q.id, v)
+                            }
                           />
                         ))}
                     </div>

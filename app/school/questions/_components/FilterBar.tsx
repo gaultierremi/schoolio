@@ -60,7 +60,7 @@ export function FilterBar({
           className="rounded-xl border border-gray-700 bg-gray-900 px-3 py-2 text-sm text-white outline-none focus:border-purple-500"
         >
           <option value="">Toutes les origines</option>
-          <option value="ai_generated">🤖 IA</option>
+          <option value="ai_generated">Maïa</option>
           <option value="extracted_from_pdf">📄 PDF</option>
         </select>
       )}

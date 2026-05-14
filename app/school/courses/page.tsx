@@ -510,7 +510,7 @@ function EmptyState() {
       </svg>
       <div>
         <p className="text-white/50 font-medium">Tu n&apos;as pas encore importé de cours</p>
-        <p className="text-white/30 text-sm mt-1">Glisse des PDF pour que l&apos;IA les analyse automatiquement</p>
+        <p className="text-white/30 text-sm mt-1">Glisse des PDF pour que Maïa les analyse automatiquement</p>
       </div>
       <Link
         href="/school/import"

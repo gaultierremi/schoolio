@@ -2,6 +2,7 @@
 
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { CalendarDays } from "lucide-react";
 
 type Props = {
   firstName: string;
@@ -34,24 +35,24 @@ export function WelcomeScheduleOnboarding({ firstName, onDismiss }: Props) {
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm"
       onClick={(e) => { if (e.target === e.currentTarget) void handleLater(); }}
     >
-      <div className="bg-gray-900 border border-gray-700 rounded-2xl shadow-2xl w-full max-w-sm mx-4 p-7 text-center">
-        <div className="text-4xl mb-3">🗓️</div>
-        <h2 className="text-xl font-bold text-white mb-2">
-          👋 Bienvenue{firstName ? `, ${firstName}` : ""} !
+      <div className="mx-4 w-full max-w-sm rounded-2xl border border-[rgb(var(--border))] bg-[rgb(var(--surface))] p-7 text-center shadow-xl">
+        <CalendarDays className="mx-auto mb-3 h-10 w-10 text-[rgb(var(--accent))]" aria-hidden />
+        <h2 className="serif mb-2 text-xl font-bold text-[rgb(var(--ink))]">
+          Bienvenue{firstName ? `, ${firstName}` : ""} !
         </h2>
-        <p className="text-gray-400 text-sm mb-6">
-          Configure ton emploi du temps pour que Schoolio affiche tes cours du moment et t'aide à mieux t'organiser.
+        <p className="mb-6 text-sm text-[rgb(var(--ink-2))]">
+          Configure ton horaire pour que Maïa affiche tes cours du moment et t&apos;aide à mieux t&apos;organiser.
         </p>
         <div className="flex flex-col gap-2">
           <button
             onClick={handleNow}
-            className="w-full py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold rounded-xl transition-colors"
+            className="w-full rounded-xl bg-[rgb(var(--accent))] py-2.5 text-sm font-semibold text-white transition hover:opacity-90"
           >
             Configurer maintenant
           </button>
           <button
             onClick={() => void handleLater()}
-            className="w-full py-2 text-gray-500 hover:text-gray-300 text-sm transition-colors"
+            className="w-full py-2 text-sm text-[rgb(var(--ink-3))] transition hover:text-[rgb(var(--ink-2))]"
           >
             Plus tard
           </button>

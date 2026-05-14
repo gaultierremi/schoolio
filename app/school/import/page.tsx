@@ -3,6 +3,7 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import type { SchoolLevel } from "@/lib/subjects";
+import GenerationProgress from "./_components/GenerationProgress";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -43,6 +44,7 @@ type FileItem = {
   progress: number;
   hash: string | null;
   courseId: string | null;
+  jobId: string | null;
   storagePath: string | null;
   inference: Inference | null;
   editSubject: CourseSubject;
@@ -344,7 +346,7 @@ function FileRow({ item, onRetry, onToggleEdit, onSubject, onLevel, onTitle, onV
     pending:   <span className="text-white/40 text-xs">En attente</span>,
     hashing:   <span className="flex items-center gap-1 text-white/60 text-xs"><Spinner />Calcul hash…</span>,
     uploading: <span className="flex items-center gap-1 text-white/60 text-xs"><Spinner />Upload {item.progress}%</span>,
-    inferring: <span className="flex items-center gap-1 text-white/60 text-xs"><Spinner />Analyse IA…</span>,
+    inferring: <span className="flex items-center gap-1 text-white/60 text-xs"><Spinner />Analyse Maïa…</span>,
     ready:     null,
     validated: (
       <span className="flex items-center gap-1 text-green-400 text-xs">
@@ -394,12 +396,11 @@ function FileRow({ item, onRetry, onToggleEdit, onSubject, onLevel, onTitle, onV
       {(item.status === "ready" || (item.status === "validated" && item.editing)) && item.inference && (
         <div className="flex flex-col gap-0.5">
           <p className="text-xs text-white/50">
-            Confiance IA : {item.inference.confidence}% ·{" "}
             <button
               onClick={() => onToggleEdit(item.id)}
               className="text-purple-400 hover:text-purple-300 underline underline-offset-2 transition-colors"
             >
-              {item.editing ? "Annuler" : "Modifier"}
+              {item.editing ? "Annuler" : "Modifier matière/niveau/titre"}
             </button>
           </p>
           {item.editing ? (
@@ -468,7 +469,7 @@ function GeminiQueueBanner({ state }: { state: NonNullable<GeminiQueueState> }) 
           </>
         ) : (
           <>
-            Analyse IA{" "}
+            Analyse Maïa{" "}
             <span className="text-white font-medium">{current}/{total}</span>
           </>
         )}
@@ -487,6 +488,14 @@ function GeminiQueueBanner({ state }: { state: NonNullable<GeminiQueueState> }) 
 export default function ImportPage() {
   const [items, setItems] = useState<FileItem[]>([]);
   const [toast, setToast] = useState<string | null>(null);
+
+  // Upfront defaults : matière + niveau obligatoires AVANT upload.
+  // Évite des appels Claude inutiles pour inférer ces champs quand le prof
+  // les connaît déjà, et donne à Maïa un signal fort pour mieux nommer
+  // le titre du cours.
+  const [defaultSubject, setDefaultSubject] = useState<CourseSubject | "">("");
+  const [defaultLevel, setDefaultLevel] = useState<SchoolLevel | null>(null);
+  const upfrontReady = defaultSubject !== "" && defaultLevel !== null;
 
   // Tag picker state
   const [teacherTags, setTeacherTags] = useState<TeacherTag[]>([]);
@@ -567,7 +576,7 @@ export default function ImportPage() {
       if (!res.ok || !data.inference) {
         patchItem(id, {
           status: "error",
-          error: data.error ?? "Erreur lors de l'analyse IA",
+          error: data.error ?? "Erreur lors de l'analyse Maïa",
           retryFrom: "infer",
         });
         return "error";
@@ -802,11 +811,27 @@ export default function ImportPage() {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ courseId: item.courseId }),
         });
-        const data = (await res.json()) as { success?: boolean; questionsGenerated?: number; error?: string };
-        if (!res.ok || !data.success) throw new Error(data.error ?? "Erreur de génération");
-        patchItem(item.id, { status: "generated" });
-        totalQ += data.questionsGenerated ?? 0;
-        setGenProgress((p) => ({ ...p, done: p.done + 1 }));
+        const data = (await res.json()) as {
+          // New async contract
+          jobId?: string;
+          // Legacy sync contract (kept for backward compat)
+          success?: boolean;
+          questionsGenerated?: number;
+          error?: string;
+        };
+        if (!res.ok) throw new Error(data.error ?? "Erreur de génération");
+
+        if (data.jobId) {
+          // Async job: store jobId so the GenerationProgress component can poll
+          patchItem(item.id, { jobId: data.jobId });
+          // onComplete/onError fired by the polling component will finalize this item
+        } else {
+          // Legacy sync response
+          if (!data.success) throw new Error(data.error ?? "Erreur de génération");
+          patchItem(item.id, { status: "generated" });
+          totalQ += data.questionsGenerated ?? 0;
+          setGenProgress((p) => ({ ...p, done: p.done + 1 }));
+        }
       } catch (err) {
         patchItem(item.id, {
           status: "error",
@@ -818,9 +843,58 @@ export default function ImportPage() {
 
     await runWithPool(tasks, 3);
 
-    setIsGenerating(false);
-    setGenDone(true);
-    setTotalQGenerated(totalQ);
+    // If all items went through the legacy sync path (no jobId issued), we can
+    // close the banner immediately. If any item received a jobId, the
+    // handleJobComplete/handleJobError callbacks will finalize the banner once
+    // polling resolves for every item.
+    setItems((prev) => {
+      const anyPolling = prev.some((i) => i.status === "generating" && i.jobId !== null);
+      if (!anyPolling) {
+        // All resolved synchronously
+        setIsGenerating(false);
+        setGenDone(true);
+        setTotalQGenerated(totalQ);
+      }
+      return prev;
+    });
+  }
+
+  // ── Async job completion handlers ─────────────────────────────────────────
+
+  function handleJobComplete(itemId: string, questionsInserted: number) {
+    setTotalQGenerated((prev) => prev + questionsInserted);
+    setGenProgress((p) => ({ ...p, done: p.done + 1 }));
+    setItems((prev) => {
+      const next = prev.map((i) =>
+        i.id === itemId ? { ...i, status: "generated" as const, jobId: null } : i
+      );
+      const anyStillPolling = next.some((i) => i.status === "generating" && i.jobId !== null);
+      if (!anyStillPolling) {
+        // Use a micro-task so React can flush this setItems before the next setters
+        Promise.resolve().then(() => {
+          setIsGenerating(false);
+          setGenDone(true);
+        });
+      }
+      return next;
+    });
+  }
+
+  function handleJobError(itemId: string, msg: string) {
+    setGenProgress((p) => ({ ...p, done: p.done + 1, failed: p.failed + 1 }));
+    setItems((prev) => {
+      const next = prev.map((i) =>
+        i.id === itemId ? { ...i, status: "error" as const, error: msg, jobId: null } : i
+      );
+      const anyStillPolling = next.some((i) => i.status === "generating" && i.jobId !== null);
+      if (!anyStillPolling) {
+        Promise.resolve().then(() => {
+          setIsGenerating(false);
+          setGenDone(true);
+        });
+      }
+      return next;
+    });
   }
 
   // ── File addition ──────────────────────────────────────────────────────────
@@ -836,10 +910,11 @@ export default function ImportPage() {
       progress: 0,
       hash: null,
       courseId: null,
+      jobId: null,
       storagePath: null,
       inference: null,
-      editSubject: "autre",
-      editLevel: null,
+      editSubject: defaultSubject || "autre",
+      editLevel: defaultLevel,
       editTitle: file.name.replace(/\.pdf$/i, "").trim().slice(0, 60),
       editing: false,
       error: null,
@@ -891,8 +966,51 @@ export default function ImportPage() {
           </Link>
           <h1 className="text-2xl font-bold text-white">Import en masse</h1>
           <p className="text-sm text-white/50 mt-1">
-            Déposez vos PDF — l&apos;IA détecte automatiquement matière, niveau et titre.
+            Choisis d&apos;abord la matière et l&apos;année, puis dépose tes PDF.
           </p>
+        </div>
+
+        {/* Defaults obligatoires AVANT upload — Maïa s'en sert pour mieux
+            comprendre le contenu et économise des appels d'inférence. */}
+        <div className="rounded-2xl border border-white/10 bg-white/5 p-4 space-y-3">
+          <p className="text-xs font-semibold uppercase tracking-widest text-white/40">
+            Pour quels cours ?
+          </p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <label className="text-xs text-white/60 flex flex-col gap-1">
+              Matière <span className="text-red-400">*</span>
+              <select
+                value={defaultSubject}
+                onChange={(e) => setDefaultSubject(e.target.value as CourseSubject | "")}
+                disabled={isGenerating}
+                className="bg-gray-900 border border-white/15 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-purple-400 disabled:opacity-50"
+              >
+                <option value="">Choisis une matière…</option>
+                {SUBJECT_OPTIONS.map((s) => (
+                  <option key={s} value={s}>{SUBJECT_LABELS[s]}</option>
+                ))}
+              </select>
+            </label>
+            <label className="text-xs text-white/60 flex flex-col gap-1">
+              Année d&apos;étude <span className="text-red-400">*</span>
+              <select
+                value={defaultLevel ?? ""}
+                onChange={(e) => setDefaultLevel(e.target.value ? (Number(e.target.value) as SchoolLevel) : null)}
+                disabled={isGenerating}
+                className="bg-gray-900 border border-white/15 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-purple-400 disabled:opacity-50"
+              >
+                <option value="">Choisis une année…</option>
+                {[1, 2, 3, 4, 5, 6].map((l) => (
+                  <option key={l} value={l}>{l}e année secondaire</option>
+                ))}
+              </select>
+            </label>
+          </div>
+          {!upfrontReady && (
+            <p className="text-xs text-amber-300">
+              Choisis la matière et l&apos;année pour activer le dépôt de PDF.
+            </p>
+          )}
         </div>
 
         <TagPicker
@@ -902,7 +1020,7 @@ export default function ImportPage() {
           onToggle={toggleTag}
         />
 
-        <DropZone onFiles={addFiles} disabled={isGenerating} />
+        <DropZone onFiles={addFiles} disabled={isGenerating || !upfrontReady} />
 
         {/* Gemini queue progress banner */}
         {geminiQueueState !== null && (
@@ -912,16 +1030,26 @@ export default function ImportPage() {
         {items.length > 0 && (
           <div className="flex flex-col gap-2">
             {items.map((item) => (
-              <FileRow
-                key={item.id}
-                item={item}
-                onRetry={retryItem}
-                onToggleEdit={(id) => patchItem(id, { editing: !items.find((i) => i.id === id)?.editing })}
-                onSubject={(id, v) => patchItem(id, { editSubject: v })}
-                onLevel={(id, v) => patchItem(id, { editLevel: v })}
-                onTitle={(id, v) => patchItem(id, { editTitle: v })}
-                onValidate={handleValidate}
-              />
+              <div key={item.id} className="flex flex-col gap-0">
+                <FileRow
+                  item={item}
+                  onRetry={retryItem}
+                  onToggleEdit={(id) => patchItem(id, { editing: !items.find((i) => i.id === id)?.editing })}
+                  onSubject={(id, v) => patchItem(id, { editSubject: v })}
+                  onLevel={(id, v) => patchItem(id, { editLevel: v })}
+                  onTitle={(id, v) => patchItem(id, { editTitle: v })}
+                  onValidate={handleValidate}
+                />
+                {item.status === "generating" && item.jobId && (
+                  <div className="rounded-b-xl border border-t-0 border-white/10 bg-white/3 px-4 pb-3">
+                    <GenerationProgress
+                      jobId={item.jobId}
+                      onComplete={(n) => handleJobComplete(item.id, n)}
+                      onError={(msg) => handleJobError(item.id, msg)}
+                    />
+                  </div>
+                )}
+              </div>
             ))}
           </div>
         )}
@@ -931,18 +1059,30 @@ export default function ImportPage() {
           <div className="rounded-2xl border border-purple-500/30 bg-purple-500/10 px-5 py-4">
 
             {isGenerating && (
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <Spinner />
-                  <p className="text-sm text-white/80">
-                    <span className="font-semibold text-white">{genProgress.done}</span>
-                    <span className="text-white/50">/{genProgress.total}</span>
-                    {" "}cours traité{genProgress.done > 1 ? "s" : ""}…
-                  </p>
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <Spinner />
+                    <p className="text-sm text-white/80">
+                      <span className="font-semibold text-white">{genProgress.done}</span>
+                      <span className="text-white/50">/{genProgress.total}</span>
+                      {" "}cours traité{genProgress.done > 1 ? "s" : ""} ·{" "}
+                      <span className="text-white/60">{genProgress.total > 0 ? Math.round((genProgress.done / genProgress.total) * 100) : 0}%</span>
+                    </p>
+                  </div>
+                  <button disabled className="px-5 py-2 rounded-xl bg-purple-600 opacity-40 cursor-not-allowed text-white text-sm font-semibold">
+                    En cours…
+                  </button>
                 </div>
-                <button disabled className="px-5 py-2 rounded-xl bg-purple-600 opacity-40 cursor-not-allowed text-white text-sm font-semibold">
-                  En cours…
-                </button>
+                <div className="h-2 w-full rounded-full bg-white/10 overflow-hidden">
+                  <div
+                    className="h-full bg-gradient-to-r from-purple-500 to-purple-400 transition-all duration-300"
+                    style={{ width: `${genProgress.total > 0 ? (genProgress.done / genProgress.total) * 100 : 0}%` }}
+                  />
+                </div>
+                <p className="text-xs text-white/40">
+                  Maïa analyse votre cours et génère jusqu&apos;à 600 questions par syllabus (~3 questions par page), catégorisées par chapitre/UAA. Formats variés : QCM, réponse libre courte, calcul. Compter ~2-4min pour un gros syllabus (10 workers Anthropic en parallèle).
+                </p>
               </div>
             )}
 

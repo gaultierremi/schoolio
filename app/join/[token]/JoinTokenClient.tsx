@@ -8,14 +8,12 @@ import type { JoinClassFormSubmitData } from "@/components/classes/JoinClassForm
 type Props = {
   classId: string;
   className: string;
-  authMode: "full" | "light";
   teacherName?: string;
 };
 
 export default function JoinTokenClient({
   classId,
   className,
-  authMode,
   teacherName,
 }: Props) {
   const router = useRouter();
@@ -26,25 +24,15 @@ export default function JoinTokenClient({
     setLoading(true);
     setError(null);
 
-    const endpoint =
-      data.mode === "full"
-        ? `/api/classes/${classId}/join-full`
-        : `/api/classes/${classId}/join-light`;
-
-    const body =
-      data.mode === "full"
-        ? {
-            email: data.email,
-            password: data.password,
-            firstName: data.firstName,
-            lastName: data.lastName,
-          }
-        : { pseudo: data.pseudo, firstName: data.firstName, lastName: data.lastName };
-
-    const res = await fetch(endpoint, {
+    const res = await fetch(`/api/classes/${classId}/join-full`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(body),
+      body: JSON.stringify({
+        email: data.email,
+        password: data.password,
+        firstName: data.firstName,
+        lastName: data.lastName,
+      }),
     });
 
     const json = (await res.json()) as {
@@ -65,7 +53,6 @@ export default function JoinTokenClient({
     <main className="flex min-h-screen flex-col items-center justify-center bg-gray-950 px-4 py-12">
       <div className="w-full max-w-[480px]">
         <JoinClassForm
-          authMode={authMode}
           className={className}
           teacherName={teacherName}
           loading={loading}

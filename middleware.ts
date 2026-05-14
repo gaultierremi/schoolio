@@ -1,40 +1,12 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextRequest, NextResponse } from "next/server";
-import { ADMIN_EMAILS } from "@/lib/admin-config";
-
-// Paths accessible to authenticated users even without beta clearance
-const BETA_EXEMPT = new Set(["/beta-pending", "/join"]);
+import { SUPER_ADMIN_EMAILS } from "@/lib/admin-config";
 
 // Paths accessible to anyone (auth or not)
+// Note : /join est passé en auth-required — c'est désormais une feature
+// post-login côté élève (le QR code mène à /join?code=X → si non connecté,
+// /login?next=/join?code=X → après auth, retour ici).
 const PUBLIC_PATHS = new Set(["/", "/login", "/signup"]);
-
-async function checkBetaWhitelist(email: string): Promise<boolean> {
-  const base = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-  const key = process.env.SUPABASE_SERVICE_ROLE_KEY!;
-  const headers = { apikey: key, Authorization: `Bearer ${key}` };
-
-  try {
-    // Check if this email is whitelisted (case-insensitive)
-    const emailRes = await fetch(
-      `${base}/rest/v1/beta_whitelist?select=id&email=ilike.${encodeURIComponent(email)}&limit=1`,
-      { headers },
-    );
-    if (!emailRes.ok) return true; // fail open on DB error
-    const emailData = (await emailRes.json()) as unknown[];
-    if (emailData.length > 0) return true;
-
-    // Kill switch: if table is empty → let everyone through
-    const anyRes = await fetch(
-      `${base}/rest/v1/beta_whitelist?select=id&limit=1`,
-      { headers },
-    );
-    if (!anyRes.ok) return true;
-    const anyData = (await anyRes.json()) as unknown[];
-    return anyData.length === 0;
-  } catch {
-    return true; // fail open on network error
-  }
-}
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
@@ -74,50 +46,59 @@ export async function middleware(request: NextRequest) {
 
   // ── Unauthenticated ────────────────────────────────────────────────────────
   if (!user) {
-    if (PUBLIC_PATHS.has(pathname) || BETA_EXEMPT.has(pathname)) {
+    if (PUBLIC_PATHS.has(pathname)) {
       return supabaseResponse;
     }
+    // Auth-required routes : envoie sur /login avec ?next préservé (préserve
+    // le code de classe dans /join?code=X, le slug d'un /student/... etc.)
     if (
       pathname.startsWith("/student") ||
       pathname.startsWith("/school") ||
-      pathname.startsWith("/admin")
+      pathname.startsWith("/admin") ||
+      pathname.startsWith("/join") ||
+      pathname.startsWith("/onboarding")
     ) {
-      return redirect("/");
+      const next = pathname + request.nextUrl.search;
+      const url = request.nextUrl.clone();
+      url.pathname = "/login";
+      url.search = `?next=${encodeURIComponent(next)}`;
+      return NextResponse.redirect(url);
     }
     return supabaseResponse;
   }
 
   // ── Authenticated ──────────────────────────────────────────────────────────
-  const email = user.email?.toLowerCase() ?? "";
-  const meta = (user.user_metadata ?? {}) as Record<string, unknown>;
-  const isStudent = meta.role === "student";
+  // Rule 3: role must come from app_metadata (server-trusted), NOT user_metadata (client-mutable).
+  const appMeta = (user.app_metadata ?? {}) as Record<string, unknown>;
+  const isStudent = appMeta.role === "student";
 
-  // /beta-pending always accessible to authenticated users
-  if (BETA_EXEMPT.has(pathname)) return supabaseResponse;
+  // SUPER_ADMIN bypass for /admin/* — solves the founder_teachers chicken-and-egg :
+  // Alex/Gaultier must be able to reach /admin/founders to seed the whitelist
+  // even though their initial role is "student" (until they add themselves).
+  const isSuperAdmin =
+    !!user.email && (SUPER_ADMIN_EMAILS as readonly string[]).includes(user.email.toLowerCase());
 
-  // Admins bypass the beta whitelist entirely
-  const isAdmin = (ADMIN_EMAILS as readonly string[]).includes(email);
-
-  if (!isAdmin) {
-    // Check 1-hour cache cookie (keyed by email to prevent cross-account reuse)
-    const cached = request.cookies.get("beta-checked")?.value;
-    const betaCached = cached === email;
-
-    if (!betaCached) {
-      const allowed = await checkBetaWhitelist(email);
-      if (!allowed) return redirect("/beta-pending");
-
-      // Set cache cookie on the response
-      supabaseResponse.cookies.set("beta-checked", email, {
-        httpOnly: true,
-        sameSite: "lax",
-        maxAge: 3600,
-        path: "/",
-      });
-    }
+  // SUPER_ADMIN bypass for all role-gated areas — see everything as a founder,
+  // independent of the role assigned in the whitelist (which determines the
+  // DEFAULT landing page, not the access).
+  if (
+    isSuperAdmin &&
+    (pathname.startsWith("/admin") ||
+      pathname.startsWith("/student") ||
+      pathname.startsWith("/school"))
+  ) {
+    return supabaseResponse;
   }
 
-  // Role-based redirects (unchanged from previous middleware)
+  // Authenticated user landing on "/" → push to their dashboard. Without this,
+  // returning visitors see the marketing page with no obvious way into the
+  // product (the marketing CTA points to /login, but they're already in).
+  // To see the marketing page again, log out (or use incognito).
+  if (pathname === "/") {
+    return redirect(isStudent ? "/student" : "/school");
+  }
+
+  // Role-based redirects
   if (isStudent && (pathname.startsWith("/school") || pathname.startsWith("/admin"))) {
     return redirect("/student");
   }

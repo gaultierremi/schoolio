@@ -31,7 +31,8 @@ export default function InvitePageClient({
 
   const baseUrl = initialJoinUrl.replace(/\/join.*/, "");
   const joinUrl = `${baseUrl}/join?code=${code}`;
-  const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=256x256&format=svg&data=${encodeURIComponent(joinUrl)}`;
+  // QR generated server-side via our own API (rule 15: no third-party image services)
+  const qrUrl = `/api/classes/${classId}/invite-qr`;
 
   async function handleCopy() {
     try {
@@ -123,15 +124,24 @@ export default function InvitePageClient({
         <div className="flex flex-col items-center gap-6 sm:flex-row sm:items-start">
 
           {/* QR Code */}
-          <div className="shrink-0 rounded-xl border border-gray-700 bg-white p-3">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={qrUrl}
-              alt={`QR Code pour rejoindre ${className}`}
-              width={180}
-              height={180}
-              className="block"
-            />
+          <div className="flex shrink-0 flex-col items-center gap-2">
+            <div className="rounded-xl border border-gray-700 bg-white p-3">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={qrUrl}
+                alt={`QR Code pour rejoindre ${className}`}
+                width={180}
+                height={180}
+                className="block"
+              />
+            </div>
+            <a
+              href={qrUrl}
+              download={`qr-${code}.png`}
+              className="text-xs text-zinc-500 hover:text-zinc-300 underline underline-offset-2"
+            >
+              Telecharger le QR
+            </a>
           </div>
 
           {/* Code + actions */}

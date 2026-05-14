@@ -48,7 +48,7 @@ export async function GET() {
 
     const { data: classes, error } = await admin
       .from("classes")
-      .select("id, name, level, subject, auth_mode, invite_code, archived_at, created_at")
+      .select("id, name, level, subject, auth_mode, invite_code, parent_class_id, archived_at, created_at")
       .eq("teacher_id", user.id)
       .order("created_at", { ascending: false });
 
@@ -88,11 +88,25 @@ export async function POST(req: NextRequest) {
     const { data: isTeacher } = await supabase.rpc("is_current_user_school_teacher");
     if (isTeacher !== true) return NextResponse.json({ error: "Accès refusé" }, { status: 403 });
 
+    // classes.school_id est NOT NULL via la migration multi-tenant
+    // (20260513140100 + 20260513160000_seed_foundertestground). Le route
+    // handler ne l'incluait pas dans l'insert — bug 500 corrigé ici.
+    const { data: profile } = await supabase
+      .from("user_profiles")
+      .select("school_id")
+      .eq("id", user.id)
+      .maybeSingle();
+    const schoolId = profile?.school_id as string | null | undefined;
+    if (!schoolId) {
+      return NextResponse.json({ error: "Aucune école associée à ton compte" }, { status: 403 });
+    }
+
     const body = await req.json() as {
       name?: string;
       level?: string | null;
       subject?: string | null;
-      auth_mode?: string;
+      parent_class_id?: string | null;
+      invitation_expires_at?: string | null;
     };
 
     const name = (body.name ?? "").trim();
@@ -100,20 +114,76 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Nom de classe invalide (2–80 caractères)" }, { status: 400 });
     }
 
+    // Validation expiration optionnelle
+    let inviteExpiresAt: string | null = null;
+    if (body.invitation_expires_at !== undefined && body.invitation_expires_at !== null && body.invitation_expires_at !== "") {
+      const parsed = new Date(body.invitation_expires_at);
+      if (isNaN(parsed.getTime())) {
+        return NextResponse.json({ error: "Date d'expiration invalide" }, { status: 400 });
+      }
+      if (parsed.getTime() <= Date.now()) {
+        return NextResponse.json({ error: "La date d'expiration doit être dans le futur" }, { status: 400 });
+      }
+      // Cap raisonnable : pas plus de 10 ans dans le futur (anti-poke)
+      if (parsed.getTime() > Date.now() + 10 * 365 * 24 * 60 * 60 * 1000) {
+        return NextResponse.json({ error: "Expiration trop lointaine (max 10 ans)" }, { status: 400 });
+      }
+      inviteExpiresAt = parsed.toISOString();
+    }
+
     const admin = createAdminClient();
+
+    // Validation parent_class_id : si fourni, doit être une cohorte (parent_class_id NULL)
+    // de la même école, owned par le même prof (anti cross-tenant).
+    let parentClassId: string | null = null;
+    let parentAcademicYear: string | null = null;
+    if (body.parent_class_id !== undefined && body.parent_class_id !== null) {
+      if (typeof body.parent_class_id !== "string" || !/^[0-9a-f-]{36}$/i.test(body.parent_class_id)) {
+        return NextResponse.json({ error: "parent_class_id invalide" }, { status: 400 });
+      }
+      const { data: parent } = await admin
+        .from("classes")
+        .select("id, teacher_id, school_id, parent_class_id, academic_year")
+        .eq("id", body.parent_class_id)
+        .maybeSingle();
+      if (!parent) {
+        return NextResponse.json({ error: "Cohorte parente introuvable" }, { status: 404 });
+      }
+      const p = parent as { teacher_id: string; school_id: string; parent_class_id: string | null; academic_year: string | null };
+      if (p.school_id !== schoolId) {
+        return NextResponse.json({ error: "Cohorte parente d'une autre école" }, { status: 403 });
+      }
+      if (p.parent_class_id !== null) {
+        return NextResponse.json({ error: "On ne peut pas créer une sous-classe sous une sous-classe (profondeur max 1)" }, { status: 400 });
+      }
+      parentClassId = body.parent_class_id;
+      parentAcademicYear = p.academic_year;
+      // Note : on autorise d'utiliser la cohorte d'un autre prof de la même école
+      // pour permettre plusieurs profs de matières de se rattacher au même groupe-année.
+    }
+
+    // Année académique : héritée du parent si présent (cohérence du modèle),
+    // sinon calculée selon la date courante (cf. lib/dates.ts).
+    const { currentAcademicYear } = await import("@/lib/dates");
+    const academicYear = parentAcademicYear ?? currentAcademicYear();
+
     const invite_code = await uniqueCode(admin);
 
     const { data: newClass, error } = await admin
       .from("classes")
       .insert({
         teacher_id: user.id,
+        school_id: schoolId,
         name,
         level: body.level ?? null,
         subject: body.subject ?? null,
-        auth_mode: body.auth_mode === "light" ? "light" : "full",
+        auth_mode: "full",
         invite_code,
+        invitation_expires_at: inviteExpiresAt,
+        parent_class_id: parentClassId,
+        academic_year: academicYear,
       })
-      .select("id, name, level, subject, auth_mode, invite_code, invite_link_token, archived_at, created_at")
+      .select("id, name, level, subject, auth_mode, invite_code, invite_link_token, invitation_expires_at, parent_class_id, academic_year, archived_at, created_at")
       .single();
 
     if (error) throw error;

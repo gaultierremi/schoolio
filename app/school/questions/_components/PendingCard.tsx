@@ -1,6 +1,6 @@
 import type { TeacherQuestion } from "../_types";
 import { TypeBadge } from "./TypeBadge";
-import { StarSelector } from "./StarSelector";
+import { DifficultyStarsEditor } from "./DifficultyStarsEditor";
 
 export function PendingCard({
   q,
@@ -8,8 +8,7 @@ export function PendingCard({
   isValidating,
   isRejecting,
   isBusy,
-  selectedStars,
-  onStarChange,
+  onDifficultyChange,
   onValidate,
   onReject,
   onEdit,
@@ -19,8 +18,7 @@ export function PendingCard({
   isValidating: boolean;
   isRejecting: boolean;
   isBusy: boolean;
-  selectedStars: 1 | 2 | 3 | null;
-  onStarChange: (v: 1 | 2 | 3) => void;
+  onDifficultyChange?: (newValue: 1 | 2 | 3 | null) => void;
   onValidate: () => void;
   onReject: () => void;
   onEdit: () => void;
@@ -35,11 +33,11 @@ export function PendingCard({
         <TypeBadge type={q.type} />
         {q.origin === "extracted_from_pdf" ? (
           <span className="rounded-full bg-cyan-500/20 px-2 py-0.5 text-xs font-black text-cyan-300">
-            📄 PDF
+            PDF
           </span>
         ) : (
           <span className="rounded-full bg-indigo-500/20 px-2 py-0.5 text-xs font-black text-indigo-300">
-            🤖 IA
+            Maïa
           </span>
         )}
         {q.period && (
@@ -76,7 +74,11 @@ export function PendingCard({
       <div className="mt-4 flex flex-wrap items-center gap-3 border-t border-gray-800 pt-3">
         <div className="flex items-center gap-2">
           <span className="text-xs text-gray-500">Difficulté :</span>
-          <StarSelector value={selectedStars} onChange={onStarChange} />
+          <DifficultyStarsEditor
+            questionId={q.id}
+            value={q.difficulty_stars}
+            onChange={onDifficultyChange}
+          />
         </div>
         <div className="flex gap-2 ml-auto">
           <button

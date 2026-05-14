@@ -168,7 +168,7 @@ export function QuestionForm({
                 disabled={generatingExpl || !form.question.trim()}
                 className="rounded-lg bg-purple-500/20 px-3 py-1 text-xs font-black text-purple-300 transition hover:bg-purple-500/30 disabled:opacity-40"
               >
-                {generatingExpl ? "Génération…" : "✨ Générer via IA"}
+                {generatingExpl ? "Génération…" : "Générer via Maïa"}
               </button>
             </div>
             <input

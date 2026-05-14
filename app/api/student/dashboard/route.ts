@@ -84,7 +84,6 @@ export async function GET() {
         weekly_stats: {
           assignments_completed: 0,
           questions_practiced: 0,
-          live_participations: 0,
           avg_grade_letter: null,
         },
       };
@@ -98,7 +97,6 @@ export async function GET() {
       coursesRes,
       completedCountRes,
       questionsRes,
-      livePicksRes,
       recentScoresRes,
       userProfileRes,
     ] = await Promise.all([
@@ -140,14 +138,6 @@ export async function GET() {
         .select("question_id")
         .eq("student_user_id", user.id)
         .gte("created_at", sevenDaysAgo),
-
-      // Weekly: live participations
-      admin
-        .from("student_random_picks")
-        .select("id", { count: "exact", head: true })
-        .eq("student_user_id", user.id)
-        .eq("was_cancelled", false)
-        .gte("picked_at", sevenDaysAgo),
 
       // Weekly: last 5 scores for avg grade
       admin
@@ -288,7 +278,6 @@ export async function GET() {
     const uniqueQuestions = new Set(
       (questionsRes.data ?? []).map((r: { question_id: string }) => r.question_id),
     ).size;
-    const liveParticipations = livePicksRes.count ?? 0;
 
     const scores = (recentScoresRes.data ?? [])
       .map((r: { score: number | null }) => r.score)
@@ -299,7 +288,6 @@ export async function GET() {
     const weeklyStats: WeeklyStats = {
       assignments_completed: assignmentsCompleted,
       questions_practiced: uniqueQuestions,
-      live_participations: liveParticipations,
       avg_grade_letter: avgGradeLetter,
     };
 

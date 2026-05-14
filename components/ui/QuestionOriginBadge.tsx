@@ -24,12 +24,12 @@ const originClasses: Record<QuestionOrigin, string> = {
 };
 
 const originLabels: Record<QuestionOrigin, string> = {
-  ai_generated: "IA",
+  ai_generated: "Maïa",
   extracted_from_pdf: "PDF prof",
 };
 
 const originAriaLabels: Record<QuestionOrigin, string> = {
-  ai_generated: "Question générée par IA",
+  ai_generated: "Question générée par Maïa",
   extracted_from_pdf: "Question extraite du PDF du professeur",
 };
 
