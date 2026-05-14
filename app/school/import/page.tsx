@@ -1053,7 +1053,7 @@ export default function ImportPage() {
                   />
                 </div>
                 <p className="text-xs text-[rgb(var(--ink-3))]">
-                  Maïa analyse votre cours et génère jusqu&apos;à 600 questions par syllabus (~3 questions par page), catégorisées par chapitre/UAA. Formats variés : QCM, réponse libre courte, calcul. Compter ~2-4min pour un gros syllabus (10 workers Anthropic en parallèle).
+                  Maïa identifie d&apos;abord les chapitres de ton syllabus, puis génère ~10-20 questions par chapitre (QCM, réponse libre, calcul). Les questions sont automatiquement classées par chapitre dans ta bibliothèque. Compter ~1-3 min selon la taille du PDF.
                 </p>
               </div>
             )}

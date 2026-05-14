@@ -53,15 +53,19 @@ function stepLabel(stepIndex: number, data: JobStatusResponse): string {
     case 0:
       return "Extraction PDF";
     case 1: {
-      if (data.worker_count > 0) {
-        return `Workers 1-${data.worker_count} en cours (${data.workers_completed}/${data.worker_count} terminés, ~${data.questions_raw} questions générées)`;
+      // worker_count == 1 (placeholder) → on est encore dans la pré-pass TOC,
+      // sinon worker_count = nombre de chapitres identifiés par Maïa.
+      if (data.worker_count <= 1) {
+        return data.workers_completed === 0
+          ? "Identification des chapitres…"
+          : `Génération en cours (${data.questions_raw} questions générées)`;
       }
-      return "Génération workers";
+      return `Chapitre ${Math.min(data.workers_completed + 1, data.worker_count)}/${data.worker_count} (${data.questions_raw} questions générées)`;
     }
     case 2:
       return "Validation";
     case 3:
-      return "Insertion DB";
+      return "Insertion en bibliothèque";
     default:
       return "";
   }
@@ -69,9 +73,9 @@ function stepLabel(stepIndex: number, data: JobStatusResponse): string {
 
 const STEP_DEFAULT_LABELS = [
   "Extraction PDF",
-  "Génération workers",
+  "Génération par chapitre",
   "Validation",
-  "Insertion DB",
+  "Insertion en bibliothèque",
 ] as const;
 
 function formatEta(seconds: number): string {
