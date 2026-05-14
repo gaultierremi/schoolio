@@ -42,6 +42,28 @@ export const MAX_QUESTIONS_PER_COURSE = 600;
 // autres, et continue avec les questions disponibles.
 const WORKERS_DEADLINE_MS = 260_000; // 260s
 
+// Serialize n'importe quel error type vers une string lisible.
+// `String(err)` sur un PostgrestError ou {} → "[object Object]" (useless).
+// On essaye dans l'ordre : err.message, JSON.stringify, fallback String.
+function serializeErrorMessage(err: unknown): string {
+  if (err instanceof Error) return err.message;
+  if (err && typeof err === "object") {
+    const e = err as Record<string, unknown>;
+    const parts: string[] = [];
+    if (typeof e.message === "string") parts.push(e.message);
+    if (typeof e.code === "string" || typeof e.code === "number") parts.push(`code=${e.code}`);
+    if (typeof e.details === "string") parts.push(`details=${e.details}`);
+    if (typeof e.hint === "string") parts.push(`hint=${e.hint}`);
+    if (parts.length > 0) return parts.join(" ");
+    try {
+      return JSON.stringify(err);
+    } catch {
+      return String(err);
+    }
+  }
+  return String(err);
+}
+
 export function autoTargetQuestions(pagesCount: number | null): number {
   if (!pagesCount || pagesCount < 1) return 30;
   return Math.min(AUTO_TARGET_CAP_PER_CALL, Math.ceil(pagesCount * 3));
@@ -702,7 +724,18 @@ export async function runGenerationForJob(jobId: string): Promise<void> {
     }));
 
     const { error: insertError } = await admin.from("teacher_questions").insert(rows);
-    if (insertError) throw insertError;
+    if (insertError) {
+      // PostgrestError n'est PAS un Error class instance → String(err) renvoie
+      // "[object Object]". On re-throw une vraie Error avec tous les détails
+      // pour que le catch global puisse les sérialiser correctement.
+      throw new Error(
+        `Insert teacher_questions failed: ${insertError.message ?? ""}${
+          insertError.code ? ` (code=${insertError.code})` : ""
+        }${insertError.details ? ` details=${insertError.details}` : ""}${
+          insertError.hint ? ` hint=${insertError.hint}` : ""
+        }`
+      );
+    }
 
     if (pageRange !== null) {
       await logActivity({
@@ -728,7 +761,7 @@ export async function runGenerationForJob(jobId: string): Promise<void> {
     await updateJob(jobId, {
       status: "failed",
       phase: "failed",
-      error_message: err instanceof Error ? err.message.slice(0, 500) : String(err).slice(0, 500),
+      error_message: serializeErrorMessage(err).slice(0, 500),
       completed_at: new Date().toISOString(),
     });
   }
