@@ -52,7 +52,12 @@ function makeAnthropicProvider(modelName: string, id: string): AIProvider {
       }
       userContent.push({ type: "text", text: finalPrompt });
 
-      const completion = await client.messages.create({
+      // Anthropic exige streaming pour les ops > 10min (max_tokens élevé +
+      // PDF Vision = lent). Sinon SDK throw :
+      // "Streaming is required for operations that may take longer than 10 minutes".
+      // Pattern identique à lib/pdf/extract-markdown.ts qui collecte via
+      // .finalMessage() pour récupérer la même shape que messages.create().
+      const stream = client.messages.stream({
         model: modelName,
         max_tokens: req.maxTokens ?? 4096,
         temperature: req.temperature ?? 0.7,
@@ -60,6 +65,7 @@ function makeAnthropicProvider(modelName: string, id: string): AIProvider {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         messages: [{ role: "user", content: userContent as any }],
       });
+      const completion = await stream.finalMessage();
 
       const firstBlock = completion.content[0];
       const text = firstBlock && firstBlock.type === "text" ? firstBlock.text : "";
