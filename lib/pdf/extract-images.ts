@@ -37,16 +37,22 @@ function sha256(buf: Buffer): string {
  * Dedups by SHA-256 hash : same image used twice in PDF = 1 returned entry.
  */
 export async function extractImagesFromPdf(pdfBuffer: Buffer): Promise<ExtractedImage[]> {
-  // Dynamic imports : pdfjs-dist + canvas only loaded if pipeline B enabled.
+  // On utilise unpdf (meme lib que extract-text.ts) pour eviter le conflit
+  // de version pdfjs : unpdf bundle pdfjs 5.x, pdfjs-dist@4 installe
+  // separement causait "API version 4.10.38 does not match Worker 5.6.205".
+  // unpdf expose getDocumentProxy qui retourne un PDFDocumentProxy standard.
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const pdfjsLib: any = await import("pdfjs-dist/legacy/build/pdf.mjs");
+  const unpdf: any = await import("unpdf");
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const canvasMod: any = await import("canvas");
   const createCanvas = canvasMod.createCanvas ?? canvasMod.default?.createCanvas;
 
   const data = new Uint8Array(pdfBuffer.buffer, pdfBuffer.byteOffset, pdfBuffer.byteLength);
-  const loadingTask = pdfjsLib.getDocument({ data });
-  const pdf = await loadingTask.promise;
+  const pdf = await unpdf.getDocumentProxy(data);
+  // OPS enum (paintImageXObject = 85, paintInlineImageXObject = 86) :
+  // unpdf bundle pdfjs interne, on importe OPS via le proxy ou en dur.
+  // Constantes stables depuis pdfjs v2.
+  const OPS = { paintImageXObject: 85, paintInlineImageXObject: 86 };
 
   const images: ExtractedImage[] = [];
   const seenHashes = new Set<string>();
@@ -62,8 +68,8 @@ export async function extractImagesFromPdf(pdfBuffer: Buffer): Promise<Extracted
 
       // paintImageXObject / paintInlineImageXObject opcodes
       if (
-        fnId !== pdfjsLib.OPS.paintImageXObject &&
-        fnId !== pdfjsLib.OPS.paintInlineImageXObject
+        fnId !== OPS.paintImageXObject &&
+        fnId !== OPS.paintInlineImageXObject
       ) {
         continue;
       }

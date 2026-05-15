@@ -22,10 +22,50 @@ type JobRow = {
 type CourseRow = {
   id: string;
   teacher_id: string;
+  title?: string | null;
   subject_enum?: string | null;
   level?: number | null;
   organization_tags?: string[] | null;
 };
+
+// Map d'un range de pages → period (chapter title). Construit en lisant
+// les questions deja inserees par pipeline A. Permet aux questions image-aware
+// d'etre regroupees sous le meme chapter que les questions texte.
+type ChapterMap = Array<{ pageStart: number; pageEnd: number; period: string }>;
+
+async function fetchChapterMap(courseId: string): Promise<ChapterMap> {
+  return withAdminClient(async (admin) => {
+    const { data } = await admin
+      .from("teacher_questions")
+      .select("period, page_range_start, page_range_end")
+      .eq("course_id", courseId)
+      .not("period", "is", null)
+      .not("page_range_start", "is", null);
+    if (!data) return [];
+    const seen = new Set<string>();
+    const out: ChapterMap = [];
+    for (const r of data as Array<{ period: string; page_range_start: number; page_range_end: number }>) {
+      const key = `${r.period}|${r.page_range_start}|${r.page_range_end}`;
+      if (seen.has(key)) continue;
+      seen.add(key);
+      out.push({
+        pageStart: r.page_range_start,
+        pageEnd: r.page_range_end,
+        period: r.period,
+      });
+    }
+    return out;
+  });
+}
+
+function chapterFor(pageNumber: number, chapters: ChapterMap, fallback: string): string {
+  const match = chapters.find((c) => pageNumber >= c.pageStart && pageNumber <= c.pageEnd);
+  if (match) return match.period;
+  // Si aucun match exact, on prend le premier chapter qui chevauche le plus,
+  // sinon le fallback (course.title typiquement).
+  if (chapters.length === 1) return chapters[0].period;
+  return fallback;
+}
 
 async function updateJob(jobId: string, patch: Record<string, unknown>): Promise<void> {
   await withAdminClient(async (admin) => {
@@ -41,6 +81,8 @@ async function uploadAndInsertBatch(
   job: JobRow,
   course: CourseRow,
   batch: ExtractedImage[],
+  chapters: ChapterMap,
+  fallbackPeriod: string,
 ): Promise<void> {
   for (const img of batch) {
     const storagePath = `${course.id}/images/${img.hash}.png`;
@@ -98,16 +140,21 @@ async function uploadAndInsertBatch(
 
         // PR 6 : generate 1 image-aware question for non-skip types.
         if (!isSkipType(classification.type)) {
-          // Get a signed URL for the image (1h expiry) so question can reference it.
-          const { data: signedData } = await admin.storage
+          // Public URL (bucket course-uploads est public depuis 2026-05-15) :
+          // pas d'expiry contrairement aux signed URLs (qui breakaient apres 1h).
+          const { data: publicData } = admin.storage
             .from("course-uploads")
-            .createSignedUrl(storagePath, 3600);
-          const signedUrl = signedData?.signedUrl ?? null;
+            .getPublicUrl(storagePath);
+          const publicUrl = publicData?.publicUrl ?? null;
 
-          if (signedUrl) {
+          if (publicUrl) {
+            // Lookup chapter par page_number depuis les questions deja inserees
+            // par pipeline A. Si aucune correspondance, fallback course.title.
+            const chapter = chapterFor(img.pageNumber, chapters, fallbackPeriod);
+
             const question = await generateImageQuestion({
               imageHash: img.hash,
-              imageUrl: signedUrl,
+              imageUrl: publicUrl,
               visionType: classification.type,
               description: classification.description,
               ocrText: classification.ocr_text,
@@ -116,8 +163,7 @@ async function uploadAndInsertBatch(
               smilesIfMolecule: classification.smiles_if_molecule,
               topojsonRegionHint: classification.topojson_region_hint,
               pageNumber: img.pageNumber,
-              // TODO: match actual chapter from text pipeline TOC (future enhancement)
-              chapterTitle: "Images du PDF",
+              chapterTitle: chapter,
               // Best-effort context: description until full chapter threading landed
               chapterContext: classification.description,
               job: { teacher_id: job.teacher_id, school_id: job.school_id },
@@ -145,7 +191,27 @@ export async function runImagePipeline(
   course: CourseRow,
   pdfBuffer: Buffer,
 ): Promise<{ imagesExtracted: number; imagesUploaded: number }> {
-  const images = await extractImagesFromPdf(pdfBuffer);
+  // Wrapper top-level : si extractImagesFromPdf throw (pdfjs/canvas issue),
+  // l'erreur etait avalee par Promise.allSettled dans orchestrator. On log
+  // explicitement + on marque image_batches_total=0 pour ne pas bloquer le
+  // trigger DB done coordinator.
+  let images: ExtractedImage[];
+  try {
+    images = await extractImagesFromPdf(pdfBuffer);
+  } catch (extractErr) {
+    await logError(extractErr, {
+      source: "image-pipeline.extractImagesFromPdf",
+      context: { jobId, pdfBytes: pdfBuffer.byteLength },
+    });
+    // Marquer pipeline B comme termine avec 0 images pour debloquer le trigger
+    // DB. Sinon image_batches_total reste NULL et le job ne sera jamais marque
+    // done si pipeline A finit avant qu'on update.
+    await updateJob(jobId, {
+      image_batches_total: 0,
+      image_batches_completed: 0,
+    });
+    return { imagesExtracted: 0, imagesUploaded: 0 };
+  }
 
   if (images.length === 0) {
     // Mark pipeline B done immediately (image_batches_total=0 satisfies trigger)
@@ -168,10 +234,16 @@ export async function runImagePipeline(
     image_batches_completed: 0,
   });
 
+  // Lookup une fois (en debut) le mapping page->chapter via les questions
+  // deja inserees par pipeline A. Si pipeline A pas encore commence, le map
+  // sera vide et on utilisera course.title comme fallback.
+  const chapters = await fetchChapterMap(course.id);
+  const fallbackPeriod = course.title ?? "Document complet";
+
   let uploaded = 0;
   let batchesDone = 0;
   for (const batch of batches) {
-    await uploadAndInsertBatch(jobId, job, course, batch);
+    await uploadAndInsertBatch(jobId, job, course, batch, chapters, fallbackPeriod);
     uploaded += batch.length;
     batchesDone++;
     await updateJob(jobId, { image_batches_completed: batchesDone });

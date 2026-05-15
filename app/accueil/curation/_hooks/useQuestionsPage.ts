@@ -94,7 +94,11 @@ export function useQuestionsPage() {
         "subject, subject_enum, level, period, is_public, is_ai_generated, " +
         "course_id, created_at, validated_at, rejected_at, is_active, " +
         "difficulty_stars, origin, expected_numeric_answer, numeric_tolerance, " +
-        "numeric_unit, expected_text_answers"
+        "numeric_unit, expected_text_answers, " +
+        // Pipeline B image fields (PR 7+) — sans ces colonnes la <figure>
+        // dans PendingCard ne render jamais car q.image_url est undefined.
+        "image_url, image_description_md, vision_type, image_confidence, " +
+        "formula_mathml, molecule_smiles, geo_topojson_path, needs_review"
       )
       .eq("teacher_id", user.id)
       .order("created_at", { ascending: false });
