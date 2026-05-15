@@ -62,17 +62,17 @@ export default async function ParametresHubPage() {
           title="Code PIN"
           description="Modifier ou réinitialiser ton PIN (via PIN oublié)."
         />
-        <SettingCardDisabled
+        <SettingCard
+          href="/accueil/parametres/export-donnees"
           Icon={Download}
           title="Exporter mes données"
           description="Télécharger toutes tes données en JSON (RGPD Art. 20)."
-          badge="Sprint 1B"
         />
-        <SettingCardDisabled
+        <SettingCard
+          href="/accueil/parametres/suppression-compte"
           Icon={Trash2}
           title="Supprimer mon compte"
           description="Effacer ton compte et anonymiser tes données (RGPD Art. 17)."
-          badge="Sprint 1B"
         />
       </nav>
     </div>
@@ -110,33 +110,3 @@ function SettingCard({
   );
 }
 
-function SettingCardDisabled({
-  Icon,
-  title,
-  description,
-  badge,
-}: {
-  Icon: typeof UserCircle;
-  title: string;
-  description: string;
-  badge: string;
-}) {
-  return (
-    <div className="flex items-start gap-4 rounded-xl border border-dashed border-slate-200 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-900/40">
-      <span className="mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-slate-400 dark:bg-slate-800 dark:text-slate-500">
-        <Icon size={18} strokeWidth={1.75} />
-      </span>
-      <div className="min-w-0 flex-1">
-        <p className="text-sm font-semibold text-slate-500 dark:text-slate-400">
-          {title}
-        </p>
-        <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-500">
-          {description}
-        </p>
-      </div>
-      <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-amber-700 dark:bg-amber-950/40 dark:text-amber-300">
-        {badge}
-      </span>
-    </div>
-  );
-}
