@@ -70,6 +70,17 @@ export default function LoginClient() {
           <MicrosoftIcon />
           {loading === "azure" ? "Redirection…" : "Continuer avec Microsoft"}
         </button>
+
+        <button
+          type="button"
+          disabled
+          title="SmartSchool — bientôt disponible"
+          aria-label="SmartSchool, bientôt disponible"
+          className="flex w-full items-center justify-center gap-3 rounded-2xl border border-[rgb(var(--border))] bg-[rgb(var(--surface-2))] px-5 py-3 text-sm font-bold text-[rgb(var(--ink-3))] opacity-60 cursor-not-allowed"
+        >
+          <SmartSchoolIcon />
+          Continuer avec SmartSchool · Bientôt
+        </button>
       </div>
 
       {error && (
@@ -111,5 +122,17 @@ function MicrosoftIcon() {
       <rect x="1" y="11" width="9" height="9" fill="#00a4ef" />
       <rect x="11" y="11" width="9" height="9" fill="#ffb900" />
     </svg>
+  );
+}
+
+function SmartSchoolIcon() {
+  // SmartSchool is not yet integrated — placeholder badge until brand assets land.
+  return (
+    <span
+      aria-hidden="true"
+      className="flex h-[18px] w-[18px] items-center justify-center rounded-md bg-slate-400 text-[10px] font-bold text-white"
+    >
+      S
+    </span>
   );
 }
