@@ -2,10 +2,11 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import { useTheme } from "next-themes";
 import type { User } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase-browser";
 import Avatar from "@/components/Avatar";
-import { ChevronDown, LogOut, UserCircle } from "lucide-react";
+import { ChevronDown, LogOut, Monitor, Moon, Sun, UserCircle } from "lucide-react";
 
 /**
  * Menu utilisateur dropdown en top-right du Header (Sprint 1.5).
@@ -18,11 +19,25 @@ import { ChevronDown, LogOut, UserCircle } from "lucide-react";
  *
  * Conforme design-system MASTER §Composants + Lucide-only.
  */
+type ThemeOption = "light" | "dark" | "system";
+
+const THEME_OPTIONS: { value: ThemeOption; label: string; Icon: typeof Sun }[] = [
+  { value: "light", label: "Clair", Icon: Sun },
+  { value: "dark", label: "Sombre", Icon: Moon },
+  { value: "system", label: "Système", Icon: Monitor },
+];
+
 export default function UserMenu() {
   const [user, setUser] = useState<User | null>(null);
   const [open, setOpen] = useState(false);
   const [signingOut, setSigningOut] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
+  const { theme, setTheme } = useTheme();
+  const [mounted, setMounted] = useState(false);
+
+  // next-themes anti-hydration : ne pas render le toggle tant qu'on n'est pas
+  // mounted côté client (sinon mismatch SSR / CSR sur la classe `.dark`)
+  useEffect(() => setMounted(true), []);
 
   useEffect(() => {
     const supabase = createClient();
@@ -120,12 +135,43 @@ export default function UserMenu() {
             Mon compte
           </Link>
 
+          {mounted && (
+            <div className="my-1 border-t border-slate-100 pt-1 dark:border-slate-800">
+              <p className="px-3 pb-1 pt-2 text-[10px] font-semibold uppercase tracking-wide text-slate-400">
+                Apparence
+              </p>
+              <div className="grid grid-cols-3 gap-1 px-2 pb-1">
+                {THEME_OPTIONS.map((opt) => {
+                  const active = theme === opt.value;
+                  return (
+                    <button
+                      key={opt.value}
+                      type="button"
+                      role="menuitemradio"
+                      aria-checked={active}
+                      onClick={() => setTheme(opt.value)}
+                      title={opt.label}
+                      className={`flex flex-col items-center gap-1 rounded-md px-1 py-2 text-[11px] font-medium transition ${
+                        active
+                          ? "bg-indigo-50 text-indigo-700 dark:bg-indigo-950/40 dark:text-indigo-300"
+                          : "text-slate-600 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800"
+                      }`}
+                    >
+                      <opt.Icon size={14} strokeWidth={active ? 2 : 1.75} />
+                      {opt.label}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
           <button
             type="button"
             role="menuitem"
             onClick={handleSignOut}
             disabled={signingOut}
-            className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-slate-700 transition hover:bg-slate-100 disabled:opacity-50 dark:text-slate-200 dark:hover:bg-slate-800"
+            className="mt-1 flex w-full items-center gap-2 rounded-lg border-t border-slate-100 px-3 py-2 pt-2 text-sm text-slate-700 transition hover:bg-slate-100 disabled:opacity-50 dark:border-slate-800 dark:text-slate-200 dark:hover:bg-slate-800"
           >
             <LogOut size={16} strokeWidth={1.75} className="text-slate-500" />
             {signingOut ? "Déconnexion…" : "Se déconnecter"}

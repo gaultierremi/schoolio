@@ -3,6 +3,7 @@ import { Inter, Source_Serif_4 } from "next/font/google";
 import { NextIntlClientProvider } from "next-intl";
 import { getMessages } from "next-intl/server";
 import BetaFeedbackButton from "@/components/beta/BetaFeedbackButton";
+import ThemeProvider from "@/components/ThemeProvider";
 import "./globals.css";
 import "katex/dist/katex.min.css";
 
@@ -28,12 +29,18 @@ export default async function RootLayout({
 }: Readonly<{ children: React.ReactNode }>) {
   const messages = await getMessages();
   return (
-    <html lang="fr" className={`${inter.variable} ${sourceSerif.variable}`}>
+    <html
+      lang="fr"
+      className={`${inter.variable} ${sourceSerif.variable}`}
+      suppressHydrationWarning
+    >
       <body>
-        <NextIntlClientProvider messages={messages}>
-          {children}
-        </NextIntlClientProvider>
-        <BetaFeedbackButton />
+        <ThemeProvider>
+          <NextIntlClientProvider messages={messages}>
+            {children}
+          </NextIntlClientProvider>
+          <BetaFeedbackButton />
+        </ThemeProvider>
       </body>
     </html>
   );
