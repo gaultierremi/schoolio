@@ -2,8 +2,8 @@ import { describe, it, expect } from "vitest";
 import { IMAGE_TYPES, SKIP_TYPES, isSkipType, isValidImageType } from "@/lib/pdf/image-types";
 
 describe("IMAGE_TYPES taxonomy", () => {
-  it("has exactly 71 entries (64 pedagogical + 7 skip)", () => {
-    expect(IMAGE_TYPES.length).toBe(71);
+  it("has exactly 81 entries (74 pedagogical + 7 skip)", () => {
+    expect(IMAGE_TYPES.length).toBe(81);
   });
 
   it("SKIP_TYPES is exactly 7 entries", () => {
