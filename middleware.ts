@@ -1,6 +1,7 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextRequest, NextResponse } from "next/server";
 import { SUPER_ADMIN_EMAILS } from "@/lib/admin-config";
+import { verifyPinUnlockCookie, PIN_COOKIE_NAME } from "@/lib/auth/pin-cookie";
 
 // Paths accessible to anyone (auth or not)
 // Note : /join est passé en auth-required — c'est désormais une feature
@@ -93,14 +94,53 @@ export async function middleware(request: NextRequest) {
     return redirect("/accueil");
   }
 
-  // /accueil is role-aware via server components — both roles authorized here.
-  // No additional middleware logic needed for /accueil itself.
-
   // Catch-all for legacy /student/* and /school/* (post-Sprint-0 deletion).
-  // Both trees are deleted from source, but bookmarks / search-engine cached
-  // URLs may still hit them — redirect transparently to /accueil.
   if (pathname.startsWith("/student") || pathname.startsWith("/school")) {
     return redirect("/accueil");
+  }
+
+  // ── PIN re-auth check (Sprint 1A) ───────────────────────────────────────────
+  // Architecture : cookie HttpOnly signé maia_pin_unlocked porte la fraîcheur
+  // du dernier unlock. Le middleware lit juste ce cookie (0 DB, 0 bcrypt).
+  // app_metadata.has_pin (set par /api/auth/pin/setup, cleared par DELETE)
+  // indique si le user a déjà configuré son PIN.
+  //
+  // Exclusions (le check PIN ne s'applique PAS à ces paths) :
+  // - /onboarding/* : le user est en train de setup son PIN, ne pas boucler
+  // - /legal/* : pages publiques (CGU, confidentialité, etc.), accessibles
+  //   même avant unlock
+  // - /join, /admin : restent gardés par leurs propres logiques
+  //
+  // Les chemins /auth/* et /api/* sont déjà exclus par le matcher en bas du fichier.
+  const isPinGatedPath =
+    pathname.startsWith("/accueil") ||
+    (pathname.startsWith("/admin") && !isSuperAdmin);
+
+  if (isPinGatedPath) {
+    const hasPin = appMeta.has_pin === true;
+    const nextQuery = `?next=${encodeURIComponent(pathname + request.nextUrl.search)}`;
+
+    if (!hasPin) {
+      // Premier login post-SSO sans PIN encore configuré → setup
+      const url = request.nextUrl.clone();
+      url.pathname = "/onboarding/pin-setup";
+      url.search = nextQuery;
+      return NextResponse.redirect(url);
+    }
+
+    // Has PIN → verifier le cookie de fraîcheur
+    const cookieToken = request.cookies.get(PIN_COOKIE_NAME)?.value;
+    const cookieClaims = cookieToken
+      ? await verifyPinUnlockCookie(cookieToken)
+      : null;
+
+    if (!cookieClaims || cookieClaims.userId !== user.id) {
+      // Cookie absent, expiré, ou pour un autre user (rotation auth) → unlock
+      const url = request.nextUrl.clone();
+      url.pathname = "/auth/pin-unlock";
+      url.search = nextQuery;
+      return NextResponse.redirect(url);
+    }
   }
 
   void isStudent; // app_metadata.role still read above for future role logic
