@@ -8,9 +8,9 @@ import Header from "@/components/Header";
  * `requireStudentPage()` / `requireTeacherPage()` / `getRoleOrNull()`
  * depuis `@/lib/auth/role`.
  *
- * Le branding Header (Schoolio → Maïa) est traité en Sprint 0 Phase F (F1).
- * La nav role-aware sidebar desktop + bottom nav mobile arrivera dans un
- * sprint ultérieur, selon design-system/MASTER.md.
+ * Le Header global est branded Maïa (rebrand F1). La nav role-aware sidebar
+ * desktop + bottom nav mobile arrivera dans un sprint ultérieur, selon
+ * design-system/MASTER.md.
  */
 export default function AccueilLayout({ children }: { children: ReactNode }) {
   return (

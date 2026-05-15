@@ -37,9 +37,9 @@ export default function Header() {
     <header className="sticky top-0 z-50 flex h-14 shrink-0 items-center justify-between border-b border-gray-800 bg-gray-900 px-4">
       <Link
         href="/"
-        className="text-lg font-black tracking-tight text-white transition-colors hover:text-purple-400"
+        className="text-lg font-bold tracking-tight text-white transition-colors hover:text-indigo-400"
       >
-        School<span className="text-purple-400">io</span>
+        Maïa
       </Link>
 
       <div className="flex items-center gap-3">
