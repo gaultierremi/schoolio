@@ -4,18 +4,16 @@
  * UX : 3 sections — Devoirs à faire (deadline future), En retard, Terminés.
  * Mockup source : docs/dashboard-eleve-session-mockup.html (header session
  * adaptive) — mais ici on est sur la vue index, pas la vue exercice. La vue
- * exercice (session adaptive) reste sur /student/assignments/[id]/quiz.
+ * exercice (session adaptive) reste sur /accueil/devoirs/[id]/quiz.
  *
  * CLAUDE.md règle 3 : role lu depuis app_metadata.
  */
 
 import Link from "next/link";
-import { redirect } from "next/navigation";
 import { createClient as createSupabaseAdminClient } from "@supabase/supabase-js";
-import { createClient } from "@/lib/supabase-server";
-import { SUPER_ADMIN_EMAILS } from "@/lib/admin-config";
+import { requireStudentPage } from "@/lib/auth/role";
 import { ArrowLeft, CheckCircle2, AlertTriangle, ListChecks } from "lucide-react";
-import AssignmentCard from "../_components/AssignmentCard";
+import AssignmentCard from "@/app/student/_components/AssignmentCard";
 import type { AssignmentItem } from "@/lib/types/student-dashboard";
 
 export const dynamic = "force-dynamic";
@@ -126,17 +124,8 @@ async function fetchAssignments(userId: string): Promise<AssignmentItem[]> {
   return items;
 }
 
-export default async function StudentAssignmentsIndexPage() {
-  const supabase = createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) redirect("/");
-
-  const role = (user.app_metadata as Record<string, unknown>)?.role;
-  const isSuperAdmin =
-    !!user.email && (SUPER_ADMIN_EMAILS as readonly string[]).includes(user.email.toLowerCase());
-  if (role !== "student" && !isSuperAdmin) redirect("/school");
+export default async function DevoirsIndexPage() {
+  const { user } = await requireStudentPage();
 
   const items = await fetchAssignments(user.id);
 
@@ -168,7 +157,7 @@ export default async function StudentAssignmentsIndexPage() {
       >
         <div className="mx-auto flex max-w-[1100px] items-center justify-between px-4 py-3 sm:px-6">
           <Link
-            href="/student"
+            href="/accueil"
             className="flex items-center gap-2 rounded-lg border border-[rgb(var(--border))] px-3 py-1.5 text-xs font-medium text-[rgb(var(--ink-2))] hover:text-[rgb(var(--ink))]"
           >
             <ArrowLeft className="h-3 w-3" aria-hidden />
@@ -247,7 +236,7 @@ export default async function StudentAssignmentsIndexPage() {
                 tableau de bord pour anticiper.
               </p>
               <Link
-                href="/student"
+                href="/accueil"
                 className="btn-primary mt-2 inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold"
               >
                 Voir mon tableau de bord

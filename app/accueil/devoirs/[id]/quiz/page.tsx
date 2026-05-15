@@ -252,7 +252,7 @@ export default function AssignmentQuizPage() {
         <p className="mt-4 text-lg font-black text-white">Impossible de lancer le quiz</p>
         <p className="mt-2 text-sm text-red-400">{errorMsg}</p>
         <button
-          onClick={() => router.push(`/student/assignments/${id}`)}
+          onClick={() => router.push(`/accueil/devoirs/${id}`)}
           className="mt-6 rounded-2xl border border-gray-700 px-5 py-2.5 text-sm font-bold text-gray-300 transition hover:text-white"
         >
           ← Retour au devoir
@@ -279,13 +279,13 @@ export default function AssignmentQuizPage() {
         {submitting && <p className="mt-3 text-xs text-gray-400">Sauvegarde…</p>}
         <div className="mt-8 flex gap-3">
           <button
-            onClick={() => router.push(`/student/assignments/${id}`)}
+            onClick={() => router.push(`/accueil/devoirs/${id}`)}
             className="rounded-2xl border border-gray-700 px-5 py-2.5 text-sm font-bold text-gray-300 transition hover:text-white"
           >
             ← Retour au devoir
           </button>
           <button
-            onClick={() => router.push("/student")}
+            onClick={() => router.push("/accueil")}
             className="rounded-2xl bg-purple-500 px-5 py-2.5 text-sm font-black text-gray-950 transition hover:bg-purple-400"
           >
             Mon espace

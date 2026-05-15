@@ -77,7 +77,7 @@ export default function StudentAssignmentPage() {
   }
 
   function handleStartQuiz() {
-    router.push(`/student/assignments/${id}/quiz`);
+    router.push(`/accueil/devoirs/${id}/quiz`);
   }
 
   if (loading) {
@@ -93,7 +93,7 @@ export default function StudentAssignmentPage() {
       <main className="flex min-h-screen flex-col items-center justify-center bg-gray-950 px-4 text-center">
         <p className="text-4xl">🔍</p>
         <p className="mt-4 text-lg font-black text-white">Devoir introuvable</p>
-        <a href="/student" className="mt-4 text-sm text-purple-400 hover:text-purple-300">← Retour au dashboard</a>
+        <a href="/accueil" className="mt-4 text-sm text-purple-400 hover:text-purple-300">← Retour au dashboard</a>
       </main>
     );
   }
@@ -104,7 +104,7 @@ export default function StudentAssignmentPage() {
     <main className="min-h-screen bg-gray-950 px-4 py-8 text-white">
       <div className="mx-auto w-full max-w-xl">
 
-        <a href="/student" className="text-xs text-gray-500 hover:text-gray-400">← Mon espace</a>
+        <a href="/accueil" className="text-xs text-gray-500 hover:text-gray-400">← Mon espace</a>
 
         {/* Header */}
         <div className="mt-4">
