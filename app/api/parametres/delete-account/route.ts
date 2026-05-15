@@ -125,13 +125,20 @@ export async function POST(request: Request) {
   // ── 6. Clear app_metadata.has_pin + invalidate l'email pour bloquer re-login ──
   // On garde le row auth.users (FK événementielles cascadent → conservation)
   // mais on remplace l'email par un placeholder + désactive le user.
+  //
+  // L'email placeholder utilise un sous-domaine que Maïa contrôle :
+  // - `deleted.maia.app` : zone DNS configurée en MX null (aucun mail entrant)
+  // - Évite le risque qu'un tiers register un domaine arbitraire et intercepte
+  //   les emails Supabase admin liés à ces comptes désactivés.
+  // - Le sous-domaine doit être configuré côté DNS Cloudflare/registrar :
+  //     deleted.maia.app  IN MX  0  .   (null MX, RFC 7505)
   const nextAppMeta: Record<string, unknown> = { ...(user.app_metadata ?? {}) };
   delete nextAppMeta.has_pin;
   nextAppMeta.deleted = true;
   nextAppMeta.deleted_at = new Date().toISOString();
 
   await admin.auth.admin.updateUserById(user.id, {
-    email: `deleted-${user.id}@anonymized.local`,
+    email: `deleted-${user.id}@deleted.maia.app`,
     app_metadata: nextAppMeta,
     user_metadata: {}, // wipe user_metadata complète
     ban_duration: "876000h", // ~100 ans
