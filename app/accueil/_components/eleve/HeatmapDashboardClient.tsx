@@ -86,7 +86,7 @@ export default function HeatmapDashboardClient({ displayName, initialData }: Pro
       <header className="mt-2 flex flex-wrap items-end justify-between gap-4 pt-2">
         <div>
           <h1 className="serif text-3xl font-semibold text-[rgb(var(--ink))] sm:text-4xl">
-            Salut {displayName}.
+            Bonjour {displayName}.
           </h1>
           <p className="mt-2 text-base text-[rgb(var(--ink-2))]">
             {priorityConcept ? (
