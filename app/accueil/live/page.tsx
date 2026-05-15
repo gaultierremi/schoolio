@@ -32,7 +32,7 @@ export default function StudentLiveEntryPage() {
         setJoining(false);
         return;
       }
-      router.push(`/student/live/${cleaned}`);
+      router.push(`/accueil/rejoindre/${cleaned}`);
     } catch {
       setError("Erreur réseau. Réessaie.");
       setJoining(false);
@@ -42,7 +42,7 @@ export default function StudentLiveEntryPage() {
   return (
     <main className="min-h-screen bg-gray-950 px-4 py-8 text-white">
       <div className="mx-auto w-full max-w-md">
-        <Link href="/student" className="text-sm text-gray-500 hover:text-gray-300">
+        <Link href="/accueil" className="text-sm text-gray-500 hover:text-gray-300">
           ← Mon espace
         </Link>
 
