@@ -10,6 +10,7 @@ import { PendingCard } from "./_components/PendingCard";
 import { ValidatedCard } from "./_components/ValidatedCard";
 import { RejectedCard } from "./_components/RejectedCard";
 import { SubjectSidebar, type QuestionType } from "./_components/SubjectSidebar";
+import { AlertTriangle } from "lucide-react";
 
 export default function SchoolQuestionsPage() {
   const {
@@ -186,6 +187,14 @@ export default function SchoolQuestionsPage() {
               {/* ── Pending tab ── */}
               {valTab === "pending" && (
                 <div>
+                  {pendingQuestions.some(q => q.needs_review) && (
+                    <div className="mb-4 flex items-center gap-3 rounded-lg border border-orange-200 bg-orange-50 p-4 dark:border-orange-900 dark:bg-orange-950">
+                      <AlertTriangle className="h-5 w-5 shrink-0 text-orange-600 dark:text-orange-400" />
+                      <p className="flex-1 text-sm text-orange-900 dark:text-orange-200">
+                        {pendingQuestions.filter(q => q.needs_review).length} question(s) extraite(s) d&apos;images sont à vérifier avant publication.
+                      </p>
+                    </div>
+                  )}
                   {pendingQuestions.length === 0 ? (
                     <div className="rounded-2xl border border-dashed border-[rgb(var(--border))] p-10 text-center text-[rgb(var(--ink-3))]">
                       Aucune question générée par Maïa en attente de validation.

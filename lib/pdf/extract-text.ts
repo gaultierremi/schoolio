@@ -65,6 +65,19 @@ export async function extractTextFromPdf(
   const pdf = await getDocumentProxy(data);
   const { totalPages, text } = await extractText(pdf, { mergePages: false });
 
+  // Surveillance silent-failure : si unpdf retourne moins d'entrées que totalPages,
+  // on perd des pages (PDF avec page protégée, font exotique, scan-only). On warn
+  // pour ne pas que ça passe inaperçu en prod. Le defensive fill ?? "" en dessous
+  // transforme les pages manquantes en strings vides — sans ce warn, les profs
+  // recevraient des syllabi traités à moitié sans le savoir.
+  if (text.length !== totalPages) {
+    const lost = totalPages - text.length;
+    // eslint-disable-next-line no-console
+    console.warn(
+      `[extract-text] PDF declares ${totalPages} pages but unpdf extracted ${text.length}. ${lost} pages lost.`,
+    );
+  }
+
   // Defensive : trim et garantit qu'on a exactement totalPages entrées
   // (au cas où unpdf retournerait une longueur différente).
   const pagesText: string[] = [];

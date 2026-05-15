@@ -3,7 +3,7 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import type { SchoolLevel } from "@/lib/subjects";
-import GenerationProgress from "./_components/GenerationProgress";
+import { JobProgressStepper } from "@/app/_components/JobProgressStepper";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -480,6 +480,99 @@ function GeminiQueueBanner({ state }: { state: NonNullable<GeminiQueueState> }) 
           </span>
         )}
       </p>
+    </div>
+  );
+}
+
+// ── JobPollingProgress ────────────────────────────────────────────────────────
+// Thin polling wrapper — fetches job status every 2s, renders JobProgressStepper.
+
+type PipelineJobData = {
+  status: string;
+  phase: string;
+  questions_inserted: number | null;
+  error_message: string | null;
+  text_chapters_total: number | null;
+  text_chapters_completed: number;
+  image_batches_total: number | null;
+  image_batches_completed: number;
+};
+
+function JobPollingProgress({
+  jobId,
+  onComplete,
+  onError,
+  onRetry,
+}: {
+  jobId: string;
+  onComplete: (questionsInserted: number) => void;
+  onError: (msg: string) => void;
+  onRetry?: () => void;
+}) {
+  const [jobData, setJobData] = useState<PipelineJobData | null>(null);
+  const onCompleteRef = useRef(onComplete);
+  const onErrorRef = useRef(onError);
+  useEffect(() => { onCompleteRef.current = onComplete; }, [onComplete]);
+  useEffect(() => { onErrorRef.current = onError; }, [onError]);
+
+  useEffect(() => {
+    let stopped = false;
+
+    async function poll() {
+      try {
+        const res = await fetch(`/api/courses/generate-questions/${jobId}/status`);
+        if (!res.ok) return;
+        const json = (await res.json()) as PipelineJobData & { status: string; questions_inserted: number };
+        if (stopped) return;
+        setJobData({
+          status: json.status,
+          phase: json.phase,
+          questions_inserted: json.questions_inserted ?? null,
+          error_message: json.error_message ?? null,
+          text_chapters_total: json.text_chapters_total ?? null,
+          text_chapters_completed: json.text_chapters_completed ?? 0,
+          image_batches_total: json.image_batches_total ?? null,
+          image_batches_completed: json.image_batches_completed ?? 0,
+        });
+        if (json.status === "done") {
+          stopped = true;
+          onCompleteRef.current(json.questions_inserted ?? 0);
+        } else if (json.status === "failed") {
+          stopped = true;
+          onErrorRef.current(json.error_message ?? "Erreur de génération");
+        }
+      } catch {
+        // network error — keep polling
+      }
+    }
+
+    void poll();
+    const interval = setInterval(() => {
+      if (!stopped) void poll();
+      else clearInterval(interval);
+    }, 2000);
+
+    return () => {
+      stopped = true;
+      clearInterval(interval);
+    };
+  }, [jobId]);
+
+  if (!jobData) {
+    return (
+      <div className="mt-2 flex items-center gap-2 text-xs text-gray-500">
+        <svg className="h-4 w-4 animate-spin" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+        </svg>
+        Connexion au job…
+      </div>
+    );
+  }
+
+  return (
+    <div className="mt-2">
+      <JobProgressStepper job={jobData} onRetry={onRetry} />
     </div>
   );
 }
@@ -1018,10 +1111,11 @@ export default function ImportPage() {
                 />
                 {item.status === "generating" && item.jobId && (
                   <div className="rounded-b-xl border border-t-0 border-[rgb(var(--border))] bg-[rgb(var(--surface-2))] px-4 pb-3">
-                    <GenerationProgress
+                    <JobPollingProgress
                       jobId={item.jobId}
                       onComplete={(n) => handleJobComplete(item.id, n)}
                       onError={(msg) => handleJobError(item.id, msg)}
+                      onRetry={() => retryItem(item.id)}
                     />
                   </div>
                 )}

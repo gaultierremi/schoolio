@@ -89,11 +89,17 @@ export function useQuestionsPage() {
 
     const { data } = await supabase
       .from("teacher_questions")
-      .select("*")
+      .select(
+        "id, teacher_id, type, question, options, answer_index, explanation, " +
+        "subject, subject_enum, level, period, is_public, is_ai_generated, " +
+        "course_id, created_at, validated_at, rejected_at, " +
+        "difficulty_stars, origin, expected_numeric_answer, numeric_tolerance, " +
+        "numeric_unit, expected_text_answers"
+      )
       .eq("teacher_id", user.id)
       .order("created_at", { ascending: false });
 
-    const loaded = (data ?? []) as TeacherQuestion[];
+    const loaded = (data ?? []) as unknown as TeacherQuestion[];
     setMyQuestions(loaded);
 
     if (opts?.autoTab && !hasAutoSetTab.current) {

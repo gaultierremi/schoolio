@@ -1,6 +1,10 @@
 import type { TeacherQuestion } from "../_types";
 import { TypeBadge } from "./TypeBadge";
 import { DifficultyStarsEditor } from "./DifficultyStarsEditor";
+import { Image as ImageIcon, AlertTriangle } from "lucide-react";
+import { FormulaRenderer } from "@/app/_components/FormulaRenderer";
+import { MoleculeRenderer } from "@/app/_components/MoleculeRenderer";
+import { GeoMap } from "@/app/_components/GeoMap";
 
 export function PendingCard({
   q,
@@ -48,9 +52,39 @@ export function PendingCard({
         {q.subject_enum && (
           <span className="text-xs text-[rgb(var(--ink-3))]">{q.subject_enum}</span>
         )}
+        {q.image_url && (
+          <span className="flex items-center gap-1 rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-600">
+            <ImageIcon className="h-3 w-3" />
+            Image
+          </span>
+        )}
+        {q.needs_review && (
+          <span className="flex items-center gap-1 rounded-full bg-orange-100 px-2 py-0.5 text-xs font-medium text-orange-700">
+            <AlertTriangle className="h-3 w-3" />
+            À vérifier
+          </span>
+        )}
       </div>
 
       <p className="font-bold text-[rgb(var(--ink))]">{q.question}</p>
+
+      {q.image_url && (
+        <figure className="my-3">
+          {q.formula_mathml ? (
+            <FormulaRenderer mathml={q.formula_mathml} />
+          ) : q.molecule_smiles ? (
+            <MoleculeRenderer smiles={q.molecule_smiles} description={q.image_description_md ?? undefined} />
+          ) : q.geo_topojson_path ? (
+            <GeoMap topojsonPath={q.geo_topojson_path} />
+          ) : (
+            <img
+              src={q.image_url}
+              alt={q.image_description_md ?? "Illustration de l'exercice"}
+              className="mx-auto max-h-80 rounded-lg border"
+            />
+          )}
+        </figure>
+      )}
 
       <div className="mt-2 flex flex-wrap gap-1">
         {q.type === "numeric" ? (
