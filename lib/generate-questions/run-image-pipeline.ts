@@ -145,7 +145,27 @@ export async function runImagePipeline(
   course: CourseRow,
   pdfBuffer: Buffer,
 ): Promise<{ imagesExtracted: number; imagesUploaded: number }> {
-  const images = await extractImagesFromPdf(pdfBuffer);
+  // Wrapper top-level : si extractImagesFromPdf throw (pdfjs/canvas issue),
+  // l'erreur etait avalee par Promise.allSettled dans orchestrator. On log
+  // explicitement + on marque image_batches_total=0 pour ne pas bloquer le
+  // trigger DB done coordinator.
+  let images: ExtractedImage[];
+  try {
+    images = await extractImagesFromPdf(pdfBuffer);
+  } catch (extractErr) {
+    await logError(extractErr, {
+      source: "image-pipeline.extractImagesFromPdf",
+      context: { jobId, pdfBytes: pdfBuffer.byteLength },
+    });
+    // Marquer pipeline B comme termine avec 0 images pour debloquer le trigger
+    // DB. Sinon image_batches_total reste NULL et le job ne sera jamais marque
+    // done si pipeline A finit avant qu'on update.
+    await updateJob(jobId, {
+      image_batches_total: 0,
+      image_batches_completed: 0,
+    });
+    return { imagesExtracted: 0, imagesUploaded: 0 };
+  }
 
   if (images.length === 0) {
     // Mark pipeline B done immediately (image_batches_total=0 satisfies trigger)
