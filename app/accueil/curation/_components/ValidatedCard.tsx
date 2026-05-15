@@ -1,6 +1,7 @@
 import type { TeacherQuestion, ProposeState } from "../_types";
 import { TypeBadge } from "./TypeBadge";
 import { DifficultyStarsEditor } from "./DifficultyStarsEditor";
+import { IsActiveToggle } from "./IsActiveToggle";
 
 export function ValidatedCard({
   q,
@@ -138,6 +139,16 @@ export function ValidatedCard({
             ✕
           </button>
         </div>
+      </div>
+
+      {/* Sprint 2A — Slider on/off Active (mémoire project_curation_concept_view) */}
+      <div className="mt-3 flex items-center justify-between border-t border-[rgb(var(--border))] pt-3">
+        <span className="text-xs text-[rgb(var(--ink-3))]">
+          {q.is_active
+            ? "Visible pour les élèves dans les devoirs"
+            : "Désactivée — non utilisée dans les devoirs"}
+        </span>
+        <IsActiveToggle questionId={q.id} isActive={q.is_active} />
       </div>
 
       <div className="mt-3 border-t border-[rgb(var(--border))] pt-3">
