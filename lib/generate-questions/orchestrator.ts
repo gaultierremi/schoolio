@@ -6,7 +6,7 @@
 // les 2 pipelines ont terminé.
 //
 // Pipeline B est derrière PIPELINE_B_ENABLED (feature flag env var).
-// En PR 3 : seul pipeline A est dispatché. PR 4 branchera runImagePipeline.
+// En PR 4 : pipeline B (runImagePipeline) branché derrière PIPELINE_B_ENABLED.
 
 import { logError } from "@/lib/observability/log-error";
 import { withAdminClient } from "@/lib/db/admin-client";
@@ -15,6 +15,7 @@ import { isValidSubject, isValidLevel, SUBJECTS_BY_ID } from "@/lib/subjects";
 import type { SubjectId, SchoolLevel } from "@/lib/subjects";
 import { PIPELINE_B_ENABLED } from "@/lib/feature-flags";
 import { runTextPipeline } from "./run-text-pipeline";
+import { runImagePipeline } from "./run-image-pipeline";
 import { MAX_PDF_BYTES } from "./extract-content";
 import type { JobRow, CourseRow } from "./run-text-pipeline";
 
@@ -120,13 +121,13 @@ export async function runOrchestrator(jobId: string): Promise<void> {
     }
 
     // Dispatch pipelines en parallèle.
-    // Pipeline B sera ajouté en PR 4 derrière PIPELINE_B_ENABLED.
+    // Pipeline B (images) tourne derrière PIPELINE_B_ENABLED. Vision en PR 5.
     const promises: Promise<unknown>[] = [
       runTextPipeline(jobId, job, course, pagesText, workingPagesCount, subjectLabel, level, pageRange),
     ];
 
     if (PIPELINE_B_ENABLED) {
-      // PR 4 ajoutera : promises.push(runImagePipeline(jobId, job, course, pdfBuffer));
+      promises.push(runImagePipeline(jobId, job, course, pdfBuffer));
     }
 
     await Promise.allSettled(promises);
