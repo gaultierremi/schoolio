@@ -128,6 +128,19 @@ export async function runOrchestrator(jobId: string): Promise<void> {
 
     // Dispatch pipelines en parallèle.
     // Pipeline B (images) tourne derrière PIPELINE_B_ENABLED. Vision en PR 5.
+    // DIAGNOSTIC : log la valeur reelle de PIPELINE_B_ENABLED + env var brute
+    // pour distinguer "var non injectee" vs "code path non emprunte".
+    await logError(
+      new Error(
+        `[diag] PIPELINE_B_ENABLED constant=${PIPELINE_B_ENABLED} env=${process.env.PIPELINE_B_ENABLED ?? "undefined"}`,
+      ),
+      {
+        source: "orchestrator.diagnostic",
+        severity: "info",
+        context: { jobId, pipelineBEnabledConst: PIPELINE_B_ENABLED, envVarRaw: process.env.PIPELINE_B_ENABLED ?? null },
+      },
+    );
+
     const promises: Promise<unknown>[] = [
       runTextPipeline(jobId, job, course, pagesText, workingPagesCount, subjectLabel, level, pageRange),
     ];
