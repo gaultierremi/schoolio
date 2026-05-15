@@ -10,7 +10,7 @@
 
 import { createClient as createSupabaseAdminClient } from "@supabase/supabase-js";
 import { requireStudentPage } from "@/lib/auth/role";
-import HeatmapDashboardClient from "@/app/student/_components/HeatmapDashboardClient";
+import HeatmapDashboardClient from "@/app/accueil/_components/eleve/HeatmapDashboardClient";
 import type {
   HeatmapData,
   SubjectClass,

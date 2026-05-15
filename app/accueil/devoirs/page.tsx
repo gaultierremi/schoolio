@@ -13,7 +13,7 @@ import Link from "next/link";
 import { createClient as createSupabaseAdminClient } from "@supabase/supabase-js";
 import { requireStudentPage } from "@/lib/auth/role";
 import { ArrowLeft, CheckCircle2, AlertTriangle, ListChecks } from "lucide-react";
-import AssignmentCard from "@/app/student/_components/AssignmentCard";
+import AssignmentCard from "@/app/accueil/_components/eleve/AssignmentCard";
 import type { AssignmentItem } from "@/lib/types/student-dashboard";
 
 export const dynamic = "force-dynamic";
