@@ -105,6 +105,12 @@ export async function runOrchestrator(jobId: string): Promise<void> {
       throw new Error(`PDF de ${sizeMB}MB trop volumineux (max 20MB)`);
     }
 
+    // CRITIQUE : extractTextFromPdf passe pdfBuffer a unpdf/pdfjs qui transfere
+    // l'ArrayBuffer sous-jacent vers son worker interne -> le buffer original
+    // devient "detached" (byteLength=0) et inutilisable apres l'appel.
+    // On clone AVANT le premier appel pour preserver le contenu pour pipeline B.
+    const pdfBufferForImages = PIPELINE_B_ENABLED ? Buffer.from(pdfBuffer) : null;
+
     const extracted = await extractTextFromPdf(pdfBuffer);
     // eslint-disable-next-line no-console
     console.log(
@@ -139,8 +145,9 @@ export async function runOrchestrator(jobId: string): Promise<void> {
       runTextPipeline(jobId, job, course, pagesText, workingPagesCount, subjectLabel, level, pageRange),
     ];
 
-    if (PIPELINE_B_ENABLED) {
-      promises.push(runImagePipeline(jobId, job, course, pdfBuffer));
+    if (PIPELINE_B_ENABLED && pdfBufferForImages) {
+      // Buffer clone fait AVANT extractTextFromPdf (qui detache l'original).
+      promises.push(runImagePipeline(jobId, job, course, pdfBufferForImages));
     }
 
     await Promise.allSettled(promises);
