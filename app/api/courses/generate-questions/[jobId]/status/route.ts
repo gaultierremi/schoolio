@@ -29,7 +29,7 @@ export async function GET(_req: NextRequest, { params }: { params: { jobId: stri
 
     const { data: job, error } = await admin()
       .from("question_generation_jobs")
-      .select("id, status, phase, total_target, worker_count, workers_completed, questions_raw, questions_inserted, pages_count, page_range_start, page_range_end, started_at, phase_changed_at, completed_at, error_message, teacher_id")
+      .select("id, status, phase, total_target, worker_count, workers_completed, questions_raw, questions_inserted, pages_count, page_range_start, page_range_end, started_at, phase_changed_at, completed_at, error_message, teacher_id, text_chapters_total, text_chapters_completed, image_batches_total, image_batches_completed")
       .eq("id", params.jobId)
       .maybeSingle();
 

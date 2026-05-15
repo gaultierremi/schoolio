@@ -9,6 +9,7 @@
 import Anthropic from "@anthropic-ai/sdk";
 import type { ImageType } from "@/lib/pdf/image-types";
 import type { TeacherQuestionInsertRow } from "@/lib/db/teacher-questions";
+import { latexToMathML } from "@/lib/katex-render";
 
 export const REVIEW_CONFIDENCE_THRESHOLD = 0.8;
 
@@ -272,7 +273,7 @@ export async function generateImageQuestion(
     image_confidence: args.confidence,
     vision_type: args.visionType,
     formula_latex: args.latexIfFormula,
-    formula_mathml: null, // Filled UI-side via KaTeX in PR 7
+    formula_mathml: args.latexIfFormula ? latexToMathML(args.latexIfFormula) : null,
     molecule_smiles: args.smilesIfMolecule,
     geo_topojson_path: mapRegionToTopoJson(args.topojsonRegionHint),
     needs_review: args.confidence < REVIEW_CONFIDENCE_THRESHOLD,
