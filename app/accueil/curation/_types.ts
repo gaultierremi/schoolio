@@ -29,6 +29,13 @@ export type TeacherQuestion = {
   use_count?: number;
   validated_at: string | null;
   rejected_at: string | null;
+  /**
+   * Sprint 2A — toggle on/off (slider) qui remplacera progressivement le
+   * multi-état dérivé (validated_at / rejected_at). Migration backfillée :
+   * is_active = TRUE pour les questions déjà validated_at NOT NULL.
+   * Cf. mémoire `project_curation_concept_view`.
+   */
+  is_active: boolean;
   difficulty_stars: 1 | 2 | 3 | null;
   origin: "ai_generated" | "extracted_from_pdf" | null;
   // Champs spécifiques par type (NULL si non-applicable).
