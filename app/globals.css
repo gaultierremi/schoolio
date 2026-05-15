@@ -1,5 +1,12 @@
 @import "tailwindcss";
 
+/**
+ * Dark mode strategy : class-based via next-themes (Sprint 1.5).
+ * The `dark` variant matches `.dark` selector or any descendant.
+ * Toggled by next-themes setting `class="dark"` on <html>.
+ */
+@variant dark (&:where(.dark, .dark *));
+
 :root {
   /* Maïa palette — light theme default, sourced from landing-page-mockup.html */
   --surface: 255 255 255;
@@ -43,6 +50,39 @@ html, body {
 
 .serif {
   font-family: var(--font-serif), ui-serif, Georgia, serif;
+}
+
+/**
+ * Densité role-aware (Sprint 1.5) — cf. design-system/MASTER.md §Spacing.
+ * Le `data-density` est positionné sur le wrapper `/accueil` selon le rôle.
+ * Les utilitaires .density-* permettent aux composants d'ajuster leur padding
+ * et leur line-height sans dupliquer la logique par classe Tailwind.
+ *
+ * Usage : <section className="density-card density-text">…</section>
+ */
+[data-density="aere"] .density-card {
+  padding: 1.5rem; /* p-6 */
+}
+[data-density="compact"] .density-card {
+  padding: 1rem; /* p-4 */
+}
+[data-density="aere"] .density-section-gap {
+  gap: 1.5rem; /* gap-6 */
+}
+[data-density="compact"] .density-section-gap {
+  gap: 1rem; /* gap-4 */
+}
+[data-density="aere"] .density-text {
+  line-height: 1.625; /* leading-relaxed */
+}
+[data-density="compact"] .density-text {
+  line-height: 1.5; /* leading-normal */
+}
+[data-density="aere"] .density-touch {
+  min-height: 3rem; /* 48px */
+}
+[data-density="compact"] .density-touch {
+  min-height: 2.5rem; /* 40px */
 }
 
 @keyframes fade-slide-down {
