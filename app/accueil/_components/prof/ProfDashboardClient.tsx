@@ -1,18 +1,17 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import Link from "next/link";
 import type { User } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase-browser";
 import { SUPER_ADMIN_EMAILS } from "@/lib/admin-config";
-import DashboardHeader from "./_components/DashboardHeader";
-import ToHandleSection from "./_components/ToHandleSection";
-import KpiGrid from "./_components/KpiGrid";
-import ClassesPreview from "./_components/ClassesPreview";
-import QuickActions from "./_components/QuickActions";
-import ActivityTimeline from "./_components/ActivityTimeline";
-import { CurrentClassBanner } from "./_components/CurrentClassBanner";
-import { WelcomeScheduleOnboarding } from "./_components/WelcomeScheduleOnboarding";
+import DashboardHeader from "@/app/school/_components/DashboardHeader";
+import ToHandleSection from "@/app/school/_components/ToHandleSection";
+import KpiGrid from "@/app/school/_components/KpiGrid";
+import ClassesPreview from "@/app/school/_components/ClassesPreview";
+import QuickActions from "@/app/school/_components/QuickActions";
+import ActivityTimeline from "@/app/school/_components/ActivityTimeline";
+import { CurrentClassBanner } from "@/app/school/_components/CurrentClassBanner";
+import { WelcomeScheduleOnboarding } from "@/app/school/_components/WelcomeScheduleOnboarding";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -93,7 +92,7 @@ function SkeletonPage() {
 
 // ── Page ──────────────────────────────────────────────────────────────────────
 
-export default function SchoolDashboardPage() {
+export default function ProfDashboardClient() {
   const supabase = useMemo(() => createClient(), []);
 
   const [user, setUser] = useState<User | null>(null);
@@ -196,13 +195,6 @@ export default function SchoolDashboardPage() {
   return (
     <main className="min-h-screen bg-[rgb(var(--surface-2))] px-4 py-8 text-[rgb(var(--ink))]">
       <div className="mx-auto w-full max-w-4xl">
-        <Link
-          href="/"
-          className="mb-6 inline-block text-sm font-bold text-[rgb(var(--ink-3))] transition-colors hover:text-[rgb(var(--accent))]"
-        >
-          ← Retour à l&apos;accueil
-        </Link>
-
         <div className="space-y-10">
           <DashboardHeader displayName={displayName} />
           {scheduleSlots.length > 0 && (

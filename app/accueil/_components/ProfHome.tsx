@@ -1,19 +1,15 @@
+import { requireTeacherPage } from "@/lib/auth/role";
+import ProfDashboardClient from "./prof/ProfDashboardClient";
+
 /**
- * Placeholder pour le dashboard professeur sur `/accueil`.
+ * Dashboard professeur — migré depuis /school/page.tsx (Sprint 0 Task D1).
  *
- * Le contenu réel (KPI, à traiter, classes preview, activity timeline) sera
- * migré depuis `/school/page.tsx` en Sprint 0 Task D1. Densité compact prof
- * appliquée d'office.
+ * Server component qui valide le rôle teacher avec sécurité béton (Q3) puis
+ * rend le client component qui fetch les data du dashboard côté navigateur.
+ *
+ * Densité compact prof (max-w-4xl, p-4) déjà appliquée dans le client.
  */
-export default function ProfHome() {
-  return (
-    <div className="mx-auto max-w-7xl px-4 py-8 lg:px-8">
-      <h1 className="text-3xl font-semibold tracking-tight text-slate-900 dark:text-slate-100">
-        Bonjour
-      </h1>
-      <p className="mt-2 text-sm leading-normal text-slate-600 dark:text-slate-400">
-        Votre tableau de bord arrive — migration en cours.
-      </p>
-    </div>
-  );
+export default async function ProfHome() {
+  await requireTeacherPage();
+  return <ProfDashboardClient />;
 }
