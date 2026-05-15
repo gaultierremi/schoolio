@@ -1090,7 +1090,10 @@ export default function ImportPage() {
           onToggle={toggleTag}
         />
 
-        <DropZone onFiles={addFiles} disabled={isGenerating || !upfrontReady} />
+        {/* Hide DropZone during generation — visually cleaner, evite confusion. */}
+        {!isGenerating && (
+          <DropZone onFiles={addFiles} disabled={!upfrontReady} />
+        )}
 
         {geminiQueueState !== null && (
           <GeminiQueueBanner state={geminiQueueState} />
@@ -1124,37 +1127,12 @@ export default function ImportPage() {
           </div>
         )}
 
-        {/* Bottom generation banner */}
-        {(validatedCount > 0 || isGenerating || genDone) && (
+        {/* Bottom generation banner — masque pendant isGenerating (le JobProgressStepper
+            au-dessus de chaque fichier expose deja le detail des etapes + sub-info). */}
+        {(validatedCount > 0 || genDone) && (
           <div className="rounded-2xl border border-[rgb(var(--accent))]/30 bg-[rgb(var(--accent))]/5 px-5 py-4">
 
-            {isGenerating && (
-              <div className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <Spinner />
-                    <p className="text-sm text-[rgb(var(--ink))]">
-                      <span className="font-semibold text-[rgb(var(--ink))]">{genProgress.done}</span>
-                      <span className="text-[rgb(var(--ink-3))]">/{genProgress.total}</span>
-                      {" "}cours traité{genProgress.done > 1 ? "s" : ""} ·{" "}
-                      <span className="text-[rgb(var(--ink-2))]">{genProgress.total > 0 ? Math.round((genProgress.done / genProgress.total) * 100) : 0}%</span>
-                    </p>
-                  </div>
-                  <button disabled className="cursor-not-allowed rounded-xl bg-[rgb(var(--accent))] px-5 py-2 text-sm font-semibold text-white opacity-40">
-                    En cours…
-                  </button>
-                </div>
-                <div className="h-2 w-full overflow-hidden rounded-full bg-[rgb(var(--border))]">
-                  <div
-                    className="h-full bg-gradient-to-r from-[rgb(var(--accent))] to-[rgb(var(--accent-2))] transition-all duration-300"
-                    style={{ width: `${genProgress.total > 0 ? (genProgress.done / genProgress.total) * 100 : 0}%` }}
-                  />
-                </div>
-                <p className="text-xs text-[rgb(var(--ink-3))]">
-                  Maïa identifie d&apos;abord les chapitres de ton syllabus, puis génère ~10-20 questions par chapitre (QCM, réponse libre, calcul). Les questions sont automatiquement classées par chapitre dans ta bibliothèque. Compter ~1-3 min selon la taille du PDF.
-                </p>
-              </div>
-            )}
+            {/* (banner "0/N cours · X%" retire — redondant avec Stepper) */}
 
             {genDone && !isGenerating && (
               <div className="flex items-center justify-between gap-4">
