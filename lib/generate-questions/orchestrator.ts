@@ -66,7 +66,7 @@ export async function runOrchestrator(jobId: string): Promise<void> {
 
       const { data: courseRaw, error: courseErr } = await admin
         .from("courses")
-        .select("id, teacher_id, school_id, subject_enum, level, pdf_storage_path, organization_tags, pages_count")
+        .select("id, teacher_id, school_id, title, subject_enum, level, pdf_storage_path, organization_tags, pages_count")
         .eq("id", (jobRaw as JobRow).course_id)
         .single();
       return { jobRaw, jobErr, courseRaw, courseErr };

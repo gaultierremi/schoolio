@@ -79,6 +79,7 @@ export type CourseRow = {
   id: string;
   teacher_id: string;
   school_id: string;
+  title: string | null;
   subject_enum: string | null;
   level: number | null;
   pdf_storage_path: string | null;
