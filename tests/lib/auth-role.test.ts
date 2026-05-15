@@ -17,6 +17,7 @@ vi.mock("next/navigation", () => ({
 // Imports AFTER mocks so the mocked modules are used.
 import {
   getRoleOrNull,
+  getUserWithRole,
   requireStudentPage,
   requireTeacherPage,
 } from "@/lib/auth/role";
@@ -66,6 +67,39 @@ describe("getRoleOrNull", () => {
     });
     const role = await getRoleOrNull();
     expect(role).toBeNull();
+  });
+});
+
+describe("getUserWithRole", () => {
+  it("returns { user, role } for an authenticated student", async () => {
+    const user = { id: "u1", app_metadata: { role: "student" } };
+    mockGetUser.mockResolvedValueOnce({ data: { user }, error: null });
+    const result = await getUserWithRole();
+    expect(result.user).toEqual(user);
+    expect(result.role).toBe("student");
+  });
+
+  it("returns { user, role: null } for authenticated but unknown role", async () => {
+    const user = { id: "u1", app_metadata: { role: "admin" } };
+    mockGetUser.mockResolvedValueOnce({ data: { user }, error: null });
+    const result = await getUserWithRole();
+    expect(result.user).toEqual(user);
+    expect(result.role).toBeNull();
+  });
+
+  it("returns { user, role: null } for authenticated with missing role", async () => {
+    const user = { id: "u1", app_metadata: {} };
+    mockGetUser.mockResolvedValueOnce({ data: { user }, error: null });
+    const result = await getUserWithRole();
+    expect(result.user).toEqual(user);
+    expect(result.role).toBeNull();
+  });
+
+  it("returns { user: null, role: null } when not authenticated", async () => {
+    mockGetUser.mockResolvedValueOnce({ data: { user: null }, error: null });
+    const result = await getUserWithRole();
+    expect(result.user).toBeNull();
+    expect(result.role).toBeNull();
   });
 });
 

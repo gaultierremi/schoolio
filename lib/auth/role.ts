@@ -28,6 +28,27 @@ export async function getRoleOrNull(): Promise<AppRole | null> {
 }
 
 /**
+ * Returns both the user and their role, distinguishing between three cases:
+ * - `{ user: null, role: null }` : not authenticated
+ * - `{ user: <User>, role: null }` : authenticated but role unknown/missing
+ *   (≠ "student" et ≠ "teacher" — e.g. legacy admin, or app_metadata absent)
+ * - `{ user: <User>, role: "student" | "teacher" }` : authenticated + known role
+ *
+ * Use this when you need to handle the "authenticated but unknown role" case
+ * separately (e.g. show a support contact screen instead of looping to /login).
+ */
+export async function getUserWithRole(): Promise<{
+  user: User | null;
+  role: AppRole | null;
+}> {
+  const supabase = createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  return { user, role: readRole(user) };
+}
+
+/**
  * Guard for student-only server component pages. Calls redirect() on failure
  * (throws internally — never returns on failure path).
  */

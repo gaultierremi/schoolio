@@ -1,23 +1,28 @@
 import { redirect } from "next/navigation";
-import { getRoleOrNull } from "@/lib/auth/role";
+import { getUserWithRole } from "@/lib/auth/role";
 import EleveHome from "./_components/EleveHome";
 import ProfHome from "./_components/ProfHome";
+import UnknownRoleScreen from "./_components/UnknownRoleScreen";
 
 export const dynamic = "force-dynamic";
 
 /**
  * Page d'accueil rôle-aware sur `/accueil`.
  *
- * - Élève (`app_metadata.role === "student"`) → <EleveHome />
- * - Prof (`app_metadata.role === "teacher"`) → <ProfHome />
- * - Non authentifié OU rôle inconnu → redirect /login
+ * Trois branches :
+ * - Non authentifié → redirect /login
+ * - Authentifié + rôle = "student" → <EleveHome />
+ * - Authentifié + rôle = "teacher" → <ProfHome />
+ * - Authentifié + rôle inconnu (manquant, "admin", legacy...) → <UnknownRoleScreen />
+ *   (évite la boucle /accueil ↔ /login pour les comptes mal configurés)
  *
- * Server-side check via `getRoleOrNull()` (lit `app_metadata`, jamais
+ * Server-side check via `getUserWithRole()` (lit `app_metadata`, jamais
  * `user_metadata` — règle interne #1 CLAUDE.md).
  */
 export default async function AccueilPage() {
-  const role = await getRoleOrNull();
-  if (!role) redirect("/login");
+  const { user, role } = await getUserWithRole();
+  if (!user) redirect("/login");
   if (role === "student") return <EleveHome />;
-  return <ProfHome />;
+  if (role === "teacher") return <ProfHome />;
+  return <UnknownRoleScreen email={user.email} />;
 }

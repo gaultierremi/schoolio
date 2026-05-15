@@ -7,7 +7,7 @@ import { createClient } from "@/lib/supabase-browser";
 export default function LoginClient() {
   const searchParams = useSearchParams();
   const nextParam = searchParams.get("next");
-  const [loading, setLoading] = useState<null | "google" | "azure">(null);
+  const [loading, setLoading] = useState<null | "google">(null);
   const [error, setError] = useState<string | null>(null);
 
   function callbackUrl(): string {
@@ -18,16 +18,13 @@ export default function LoginClient() {
     return base;
   }
 
-  async function signIn(provider: "google" | "azure") {
+  async function signIn(provider: "google") {
     setLoading(provider);
     setError(null);
     const supabase = createClient();
     const { error: oauthError } = await supabase.auth.signInWithOAuth({
       provider,
-      options: {
-        redirectTo: callbackUrl(),
-        ...(provider === "azure" ? { scopes: "email profile openid" } : {}),
-      },
+      options: { redirectTo: callbackUrl() },
     });
     if (oauthError) {
       setError(oauthError.message);
@@ -63,12 +60,13 @@ export default function LoginClient() {
 
         <button
           type="button"
-          onClick={() => signIn("azure")}
-          disabled={loading !== null}
-          className="flex w-full items-center justify-center gap-3 rounded-2xl border border-[rgb(var(--border))] bg-white px-5 py-3 text-sm font-bold text-[rgb(var(--ink))] transition hover:border-[rgb(var(--ink-3))] disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
+          disabled
+          title="Microsoft — bientôt disponible"
+          aria-label="Microsoft, bientôt disponible"
+          className="flex w-full items-center justify-center gap-3 rounded-2xl border border-[rgb(var(--border))] bg-[rgb(var(--surface-2))] px-5 py-3 text-sm font-bold text-[rgb(var(--ink-3))] opacity-60 cursor-not-allowed"
         >
           <MicrosoftIcon />
-          {loading === "azure" ? "Redirection…" : "Continuer avec Microsoft"}
+          Continuer avec Microsoft · Bientôt
         </button>
 
         <button
