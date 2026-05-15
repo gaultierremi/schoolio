@@ -1,11 +1,14 @@
 // Pipeline B : extract images locales -> upload Supabase Storage -> INSERT pdf_extracted_images.
-// Vision Haiku classification wired in PR 5 (best-effort, rows sans classification skipées en PR 6).
+// Vision Haiku classification wired in PR 5, question generation wired in PR 6.
 // Toujours derriere PIPELINE_B_ENABLED feature flag (cf orchestrator).
 
 import { extractImagesFromPdf, type ExtractedImage } from "@/lib/pdf/extract-images";
 import { withAdminClient } from "@/lib/db/admin-client";
 import { logError } from "@/lib/observability/log-error";
 import { classifyImage } from "./vision-classify";
+import { generateImageQuestion } from "./image-questions";
+import { insertTeacherQuestions } from "@/lib/db/teacher-questions";
+import { isSkipType } from "@/lib/pdf/image-types";
 
 type JobRow = {
   id: string;
@@ -14,9 +17,14 @@ type JobRow = {
   school_id: string;
 };
 
+// TODO: thread subject_enum, level, organization_tags from caller (runImagePipeline args)
+// for richer question metadata. For PR 6 these are stubbed to null.
 type CourseRow = {
   id: string;
   teacher_id: string;
+  subject_enum?: string | null;
+  level?: number | null;
+  organization_tags?: string[] | null;
 };
 
 async function updateJob(jobId: string, patch: Record<string, unknown>): Promise<void> {
@@ -30,6 +38,7 @@ async function updateJob(jobId: string, patch: Record<string, unknown>): Promise
 
 async function uploadAndInsertBatch(
   jobId: string,
+  job: JobRow,
   course: CourseRow,
   batch: ExtractedImage[],
 ): Promise<void> {
@@ -71,7 +80,7 @@ async function uploadAndInsertBatch(
       }
 
       // Vision classification — best-effort: if it fails the row stays
-      // without classification; PR 6 will skip unclassified rows.
+      // without classification and question generation is skipped.
       const classification = await classifyImage(img.pngBuffer).catch(() => null);
       if (classification) {
         await admin
@@ -86,6 +95,45 @@ async function uploadAndInsertBatch(
           })
           .eq("hash", img.hash)
           .eq("course_id", course.id);
+
+        // PR 6 : generate 1 image-aware question for non-skip types.
+        if (!isSkipType(classification.type)) {
+          // Get a signed URL for the image (1h expiry) so question can reference it.
+          const { data: signedData } = await admin.storage
+            .from("course-uploads")
+            .createSignedUrl(storagePath, 3600);
+          const signedUrl = signedData?.signedUrl ?? null;
+
+          if (signedUrl) {
+            const question = await generateImageQuestion({
+              imageHash: img.hash,
+              imageUrl: signedUrl,
+              visionType: classification.type,
+              description: classification.description,
+              ocrText: classification.ocr_text,
+              confidence: classification.confidence,
+              latexIfFormula: classification.latex_if_formula,
+              smilesIfMolecule: classification.smiles_if_molecule,
+              topojsonRegionHint: classification.topojson_region_hint,
+              pageNumber: img.pageNumber,
+              // TODO: match actual chapter from text pipeline TOC (future enhancement)
+              chapterTitle: "Images du PDF",
+              // Best-effort context: description until full chapter threading landed
+              chapterContext: classification.description,
+              job: { teacher_id: job.teacher_id, school_id: job.school_id },
+              course: {
+                id: course.id,
+                subject_enum: course.subject_enum ?? null,
+                level: course.level ?? null,
+                organization_tags: course.organization_tags ?? null,
+              },
+            });
+
+            if (question) {
+              await insertTeacherQuestions([question]);
+            }
+          }
+        }
       }
     });
   }
@@ -93,7 +141,7 @@ async function uploadAndInsertBatch(
 
 export async function runImagePipeline(
   jobId: string,
-  _job: JobRow,
+  job: JobRow,
   course: CourseRow,
   pdfBuffer: Buffer,
 ): Promise<{ imagesExtracted: number; imagesUploaded: number }> {
@@ -123,7 +171,7 @@ export async function runImagePipeline(
   let uploaded = 0;
   let batchesDone = 0;
   for (const batch of batches) {
-    await uploadAndInsertBatch(jobId, course, batch);
+    await uploadAndInsertBatch(jobId, job, course, batch);
     uploaded += batch.length;
     batchesDone++;
     await updateJob(jobId, { image_batches_completed: batchesDone });
