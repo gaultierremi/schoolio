@@ -30,6 +30,24 @@ export default async function PinSetupPage({
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE_KEY!,
   );
+
+  // Consent RGPD doit être donné AVANT le setup PIN (ordre d'onboarding)
+  const { data: consent } = await admin
+    .from("consent_records")
+    .select("id")
+    .eq("student_user_id", user.id)
+    .not("signed_at", "is", null)
+    .is("revoked_at", null)
+    .limit(1)
+    .maybeSingle();
+  if (!consent) {
+    const nextParam =
+      searchParams.next && searchParams.next.startsWith("/")
+        ? searchParams.next
+        : "/accueil";
+    redirect(`/onboarding/consent-rgpd?next=${encodeURIComponent(nextParam)}`);
+  }
+
   const { data: pinRow } = await admin
     .from("user_pin")
     .select("user_id")
