@@ -1,10 +1,11 @@
 // Pipeline B : extract images locales -> upload Supabase Storage -> INSERT pdf_extracted_images.
-// Vision Haiku classification arrive en PR 5. Cette PR garde Vision OFF.
+// Vision Haiku classification wired in PR 5 (best-effort, rows sans classification skipées en PR 6).
 // Toujours derriere PIPELINE_B_ENABLED feature flag (cf orchestrator).
 
 import { extractImagesFromPdf, type ExtractedImage } from "@/lib/pdf/extract-images";
 import { withAdminClient } from "@/lib/db/admin-client";
 import { logError } from "@/lib/observability/log-error";
+import { classifyImage } from "./vision-classify";
 
 type JobRow = {
   id: string;
@@ -60,13 +61,31 @@ async function uploadAndInsertBatch(
         hash: img.hash,
         width: img.width,
         height: img.height,
-        // description_md, confidence, vision_type filled by PR 5 (Vision classification)
       });
       if (insertErr && !insertErr.message?.includes("duplicate")) {
         await logError(insertErr, {
           source: "image-pipeline.insert",
           context: { jobId, hash: img.hash },
         });
+        return;
+      }
+
+      // Vision classification — best-effort: if it fails the row stays
+      // without classification; PR 6 will skip unclassified rows.
+      const classification = await classifyImage(img.pngBuffer).catch(() => null);
+      if (classification) {
+        await admin
+          .from("pdf_extracted_images")
+          .update({
+            description_md: classification.description,
+            confidence: classification.confidence,
+            vision_type: classification.type,
+            latex_if_formula: classification.latex_if_formula,
+            smiles_if_molecule: classification.smiles_if_molecule,
+            topojson_region_hint: classification.topojson_region_hint,
+          })
+          .eq("hash", img.hash)
+          .eq("course_id", course.id);
       }
     });
   }
