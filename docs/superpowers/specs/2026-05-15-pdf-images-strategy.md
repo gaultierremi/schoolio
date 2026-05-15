@@ -1,39 +1,54 @@
-# PDF Images Extraction Strategy — Design Spec
+# PDF Images Extraction Strategy — Design Spec v2
 
-**Date** : 2026-05-15
-**Status** : Draft
+**Date** : 2026-05-15 (v2 update même jour)
+**Status** : Draft v2
 **Author** : Alex Bourdouxhe + Claudy
 **Related** : `2026-05-14-pdf-extraction-design.md` (pipeline text-only existant)
+
+## Changelog v1 → v2
+
+- ✅ **MathML inclus phase 2** (KaTeX server-side, lib open source MIT — pas un sous-processeur).
+- ✅ **Géo SVG cartes muettes inclus phase 2** (d3-geo + Natural Earth + OSM — tout libre de droits, sources européennes).
+- ✅ **Imago Toolkit WASM inclus phase 2** (chimie organique côté client, MIT, EPAM Europe).
+- ✅ **Taxonomy enrichie** : passe de 9 → 71 types pédagogiques (64 catégorisés + 7 à filtrer).
+- ⏳ **Sonnet image-aware** : 3 options à benchmarker comme tâche 1 du plan d'implémentation.
+- ⏳ **Confidence threshold** : 0.8 par défaut, recalibrage après 100 syllabi (curseur produit, pas vérité scientifique).
 
 ---
 
 ## 1. Contexte
 
-Le pipeline actuel d'extraction PDF (livré 2026-05-14, PRs #50-#59) est **text-only** : on extrait le texte via `unpdf`, on génère un TOC via Haiku 4.5, puis on génère 5-15 questions par chapitre via Sonnet 4.6. **Aucune image n'est traitée** — schémas cellulaires, scènes historiques, formules chimiques, cartes géographiques, structures moléculaires sont tous ignorés.
+Le pipeline actuel d'extraction PDF (livré 2026-05-14, PRs #50-#59) est **text-only** : `unpdf` extrait le texte, Haiku 4.5 génère un TOC, Sonnet 4.6 génère 5-15 questions par chapitre. **Aucune image n'est traitée** — schémas cellulaires, scènes historiques, formules chimiques, cartes géographiques, structures moléculaires sont tous ignorés.
 
 Les founders ont remonté ce gap :
 
 - **Laurent** : sigles math/intégrales/matrices, chimie organique, schémas biologie (cellule), notation physique.
 - **Christophe** : scènes historiques, reconnaissance personnages, cartes géo (topographie, courbes de niveau, hygrométrie), schémas cellulaires, iconographie religieuse.
 
-L'usage couvert correspond au niveau **CESS Belgique FWB** (16-18 ans) — secondaire supérieur, pas université. Les formules sont simples (équations 2nd degré, log/exp, dérivées élémentaires, réactions chimiques équilibrées, F=ma). Les scènes/cartes/schémas sont typiques du programme : pas de besoin spécialisé exotique.
+L'usage couvert correspond au niveau **CESS Belgique FWB** (16-18 ans) — secondaire supérieur, pas université. Les formules sont simples (équations 2nd degré, log/exp, dérivées élémentaires, réactions chimiques équilibrées). Les scènes/cartes/schémas sont typiques du programme.
 
 ## 2. Goals & Non-goals
 
-### Goals
+### Goals (phase 2)
 
 - **Extraire les images** de chaque syllabus PDF et les attacher aux questions / snippets pertinents.
 - **Générer des questions image-aware** : "Identifie le personnage", "Quelle scène biblique est représentée ?", "Identifie l'organite cellulaire pointé".
-- **Préserver le pipeline texte existant** (pas de régression sur les questions text-only qui marchent déjà).
-- **Asynchrone** : pas de slowdown perçu sur l'upload PDF (le prof voit ses questions texte arriver pendant que le pipeline images tourne en parallèle).
-- **A11y native** : SVG accessibles, alt-text généré, MathML pour les rares formules complexes.
+- **Préserver le pipeline texte existant** (aucune régression sur les questions text-only).
+- **Asynchrone** : pas de slowdown perçu sur l'upload PDF (pipeline B parallèle au A).
+- **A11y native (WCAG 2.2 AA)** :
+  - Alt-text généré pour chaque image (depuis description Haiku, éditable par le prof)
+  - **MathML rendu** pour les formules (via KaTeX) — screen readers lisent la formule sémantiquement
+  - **SVG sémantique** pour cartes (zoom 400% sans pixellisation, `<title>`/`<desc>` par région)
+- **Géo SVG cartes muettes** (phase 2 basique) : afficher cartes vectorielles de Belgique/Wallonie/régions FWB pour les questions de géographie (rendu net même en zoom + a11y).
+- **Imago Toolkit WASM** : afficher structures moléculaires 2D côté client à partir de SMILES.
 
 ### Non-goals (explicitement)
 
-- **Pas de Mathpix / OCR tiers spécialisé** en phase 2. Décision YAGNI : pour le niveau CESS, Vision Haiku 4.5 suffit à 90-95%. Les 5-10% d'erreurs sont **rattrapés par la review prof** (déjà en place). Cf section 8 "Future work" pour le seuil de reconsidération.
-- **Pas de reconnaissance facial automatique** sur les images historiques (RGPD + ethique). Le prof identifie manuellement si besoin.
-- **Pas de PDF Convert Mathpix** (replacement total du pipeline) : 2× plus cher pour gain marginal vu notre workflow validation-prof.
-- **Pas de quiz géo SVG interactif** en phase 2 — repoussé phase 3 (cf section 8).
+- **Pas de Mathpix / OCR tiers spécialisé**. Décision YAGNI confirmée : niveau CESS, Vision Haiku 4.5 suffit à 90-95%, validation prof rattrape les 5-10%. Pas de sous-processeur US supplémentaire. Reconsidération possible phase 3 si benchmark prouve > 20% d'échec sur formules sciences.
+- **Pas de reconnaissance faciale automatique** sur images historiques (RGPD + éthique).
+- **Pas de quiz géo SVG interactif avancé** (clic région, scoring temps réel) en phase 2 — repoussé phase 3. Phase 2 = affichage SVG vectoriel uniquement.
+- **Pas de PDF Convert Mathpix** (replacement total) : 2× plus cher pour gain marginal vu validation prof.
+- **Pas de mécanique physique** (forces, dynamique) en phase 2 — pas encore prioritaire.
 
 ## 3. Architecture
 
@@ -46,7 +61,7 @@ L'usage couvert correspond au niveau **CESS Belgique FWB** (16-18 ans) — secon
                                      │
                   ┌──────────────────┴──────────────────────────┐
                   │  Trigger.dev task: generate-questions       │
-                  │  (existing, on l'enrichit)                   │
+                  │  (existing, on l'enrichit)                  │
                   └──────────────────┬──────────────────────────┘
                                      │
                     ┌────────────────┴────────────────┐
@@ -61,8 +76,8 @@ L'usage couvert correspond au niveau **CESS Belgique FWB** (16-18 ans) — secon
         │  Sonnet par chapitre │          │  Upload Supabase Storage│
         │  → teacher_questions │          │  Haiku Vision describe  │
         │                      │          │  Sonnet image-aware Q   │
-        │  ~5 min              │          │  → teacher_questions    │
-        │                      │          │     (avec image_url)    │
+        │                      │          │  → teacher_questions    │
+        │  ~5 min              │          │     (avec image_url)    │
         │                      │          │  ~3 min (parallèle)     │
         └──────────────────────┘          └─────────────────────────┘
                     │                                  │
@@ -72,54 +87,58 @@ L'usage couvert correspond au niveau **CESS Belgique FWB** (16-18 ans) — secon
                   │  Toutes les questions visibles en validation │
                   │  prof. Badge "à vérifier" sur les questions  │
                   │  image-extraites confidence < 0.8.           │
+                  │  Render UI :                                 │
+                  │   - Formules : KaTeX → MathML (a11y)         │
+                  │   - Molécules : Imago WASM client            │
+                  │   - Cartes : SVG d3-geo / Natural Earth      │
                   └─────────────────────────────────────────────┘
 ```
 
 ### Pourquoi deux pipelines parallèles ?
 
-- **UX perception** : le prof voit les premières questions texte ~30s après l'upload (chapitre 1 inséré). Si on attendait que les images soient traitées avant d'INSERT, on perdrait 3 min de perception.
-- **Failure isolation** : si le pipeline images plante (image corrompue, Vision quota, etc.), les questions texte sont déjà persistées. Le prof a quelque chose à valider même si la moitié du job échoue.
-- **Re-run sélectif** : on peut relancer **uniquement** le pipeline images sur un job déjà partiellement réussi, sans regénérer les questions texte.
+- **UX perception** : prof voit les premières questions texte ~30s après upload. Si on attendait les images, on perdrait 3 min de perception.
+- **Failure isolation** : si pipeline images plante (image corrompue, Vision quota, etc.), les questions texte sont déjà persistées.
+- **Re-run sélectif** : relancer uniquement pipeline B sur job partiellement réussi.
 
 ## 4. Pipeline B — Composants détaillés
 
-### 4.1 Extraction des images locales
+### 4.1 Extraction des images locales (pdfjs canvas)
 
 **Lib** : `pdfjs-dist` (déjà en dep client, on l'utilise server-side via `canvas` polyfill sur Trigger.dev).
 
 **Stratégie** :
 - Itérer chaque page du PDF
 - Pour chaque page, render à 150 DPI sur un canvas
-- Détecter les régions image via les **PDFObject `getOperatorList()`** → opcodes `paintImageXObject` et `paintInlineImageXObject`
+- Détecter régions image via `PDFPageProxy.getOperatorList()` → opcodes `paintImageXObject` et `paintInlineImageXObject`
 - Extraire chaque image en PNG buffer (avec bounding box + page number)
 
 **Filtres anti-bruit** :
-- Skip images < 100×100 px (probablement decoration/icon)
-- Skip images > 4000×4000 px (probablement page entière scannée — gérer séparément)
-- Skip images avec ratio aberrant (>10:1, lignes décoratives)
+- Skip images < 100×100 px (decoration/icon probable)
+- Skip images > 4000×4000 px (page entière scannée — gestion séparée)
+- Skip ratio aberrant (>10:1, lignes décoratives)
 
-**Output** : tableau d'objets `{ pageNumber, bboxX, bboxY, width, height, pngBuffer, hash }` où `hash` = SHA-256 du buffer (dedup si la même image apparaît plusieurs fois).
+**Output** : tableau `{ pageNumber, bboxX, bboxY, width, height, pngBuffer, hash }` où `hash` = SHA-256 du buffer (dedup).
 
-**Performance attendue** : ~10s pour un PDF 200p avec 80 images (CPU-bound, canvas render).
+**Performance attendue** : ~10s pour PDF 200p avec 80 images.
 
 ### 4.2 Storage Supabase
 
-Upload chaque image PNG dans le bucket existant `course-uploads/{courseId}/images/{hash}.png`.
+Upload chaque image dans `course-uploads/{courseId}/images/{hash}.png`.
 
-- **Pourquoi `hash` et pas séquentiel** : dedup automatique. Une même image utilisée 5 fois dans le syllabus = 1 fichier.
-- **Bucket privé** + RLS : seuls les utilisateurs avec accès au cours peuvent voir l'image.
-- **Signed URLs** générées côté server à chaque affichage (expiration 1h).
+- **Hash naming** : dedup automatique transverse au syllabus
+- **Bucket privé** + RLS (seuls les users avec accès au cours)
+- **Signed URLs** server-side, expiration 1h
 
-Estimation stockage : 80 images × 200 KB moyenne = **16 MB par syllabus**. Supabase free tier = 1 GB → ~60 syllabi avant escalade. Pricing storage ensuite : $0.021/GB/mois — négligeable.
+Estimation : 80 images × 200 KB = ~16 MB par syllabus. Free tier 1 GB → ~60 syllabi. Pricing au-delà : $0.021/GB/mois — négligeable.
 
 ### 4.3 Description Vision Haiku 4.5
 
-Pour chaque image, on call Anthropic Messages API avec :
+Appel Anthropic Messages API avec image + prompt structuré :
 
 ```typescript
 {
   model: "claude-haiku-4-5",
-  max_tokens: 800,
+  max_tokens: 1000,
   messages: [{
     role: "user",
     content: [
@@ -130,85 +149,285 @@ Pour chaque image, on call Anthropic Messages API avec :
 }
 ```
 
-**`VISION_DESCRIBE_PROMPT`** (à raffiner après tests) :
+**`VISION_DESCRIBE_PROMPT`** (skeleton, raffiné après tests) :
 
 ```
-Tu es un expert pédagogique. Décris cette image extraite d'un syllabus scolaire CESS belge.
+Tu es un expert pédagogique CESS Belgique FWB (5ème/6ème, 16-18 ans).
+Décris cette image extraite d'un syllabus scolaire.
 
 Réponds en JSON strict :
 {
-  "type": "formula" | "diagram" | "scene_historical" | "map" | "molecule" | "cell_bio" | "religious_icon" | "photo" | "other",
-  "subject_hint": "chimie" | "math" | "physique" | "biologie" | "histoire" | "geo" | "religion" | "francais" | "autre",
-  "description": "Description factuelle en 2-4 phrases. Pour une scène : composition, époque, personnages visibles. Pour une formule : transcription textuelle. Pour une carte : type de carte, région, éléments légendés. Pour un schéma : ce qui est représenté, parties annotées.",
+  "type": "<un type de la taxonomy ci-dessous>",
+  "subject_hint": "chimie" | "math" | "physique" | "biologie" | "histoire" |
+                  "geographie" | "religion" | "philosophie" | "francais" |
+                  "neerlandais" | "anglais" | "allemand" | "latin" |
+                  "economie" | "arts" | "musique" | "autre",
+  "description": "Description factuelle en 2-4 phrases. Si formule : transcription textuelle (LaTeX si applicable). Si scène : composition, époque, personnages visibles. Si carte : type, région, éléments légendés. Si schéma : ce qui est représenté, parties annotées.",
   "key_elements": ["liste", "des", "éléments", "identifiables"],
   "pedagogical_use": "Quel type de question pédagogique cette image permet (ex: 'identifier organites cellulaires', 'reconnaître scène historique', 'lire courbes de niveau').",
   "confidence": 0.0-1.0,
-  "ocr_text": "Texte présent dans l'image, transcrit fidèlement (légendes, labels, formules)."
+  "ocr_text": "Texte présent dans l'image, transcrit fidèlement (légendes, labels, formules en LaTeX si math).",
+  "latex_if_formula": "Pour type=formula_* : transcription LaTeX. Sinon null.",
+  "smiles_if_molecule": "Pour type=molecule_organic : notation SMILES si identifiable. Sinon null.",
+  "topojson_region_hint": "Pour type=map_* : nom région principale identifiée (ex: 'Belgique', 'Wallonie', 'Europe'). Sinon null."
 }
+
+Types disponibles (taxonomy CESS 71 entrées) : [LISTE ICI — cf section 4.4]
 ```
 
-**Coût** : ~$0.001-0.002 par image (Haiku 4.5 vision). Pour 80 images × 100 syllabi/mois = **~$15/mois**. Acceptable.
+**Coût** : ~$0.001-0.002 par image (Haiku 4.5 vision). 80 images × 100 syllabi/mois = **~$15/mois**.
 
 **Confidence usage** :
-- `confidence >= 0.8` → questions générées sans flag review
-- `confidence < 0.8` → flag `needs_review = true`, badge orange UI prof
+- `confidence >= 0.8` → questions sans flag
+- `confidence < 0.8` → `needs_review = true`, badge orange UI prof
 
-### 4.4 Génération de questions image-aware (Sonnet 4.6)
+### 4.4 Taxonomy 71 types
 
-Pour chaque image décrite, on génère 1-3 questions via Sonnet :
+Constante TypeScript partagée (`lib/pdf/image-types.ts`) :
 
 ```typescript
-{
-  model: "claude-sonnet-4-6",
-  max_tokens: 2000,
-  messages: [{
-    role: "user",
-    content: [
-      { type: "image", source: { type: "base64", data: pngBase64 } },
-      { type: "text", text: IMAGE_QUESTION_PROMPT(imageMeta, chapterContext) }
-    ]
-  }]
-}
+export const IMAGE_TYPES = [
+  // === Sciences exactes ===
+  "formula_math",                  // équation/intégrale/expression
+  "graph_function",                // courbe f(x), nuage de points
+  "geometric_figure",              // triangle, cercle, solide 3D
+  "formula_physics_electric",      // loi d'Ohm, P=UI
+  "circuit_diagram",               // schéma électrique
+  "wave_graph",                    // onde, signal, oscillation
+  "optics_diagram",                // rayon lumineux, lentille, miroir
+  "thermodynamic_diagram",         // état gazeux, cycle thermique
+  "formula_chemical_equation",     // réaction équilibrée
+  "molecule_organic",              // structure 2D (benzène, alcane...)
+  "molecule_inorganic",            // structure 3D, ions
+  "lewis_structure",               // schéma de Lewis
+  "periodic_table_excerpt",        // extrait ou complet
+  "lab_apparatus",                 // bécher, distillation...
+
+  // === Sciences du vivant ===
+  "cell_diagram",                  // cellule + organites
+  "anatomy_human",                 // corps humain (organe, système)
+  "anatomy_animal",                // anatomie animale
+  "anatomy_plant",                 // plante (racine, feuille, fleur)
+  "chromosome_diagram",            // ADN, chromosome, mitose/méiose
+  "family_tree_genetic",           // arbre généalogique génétique
+  "ecosystem_diagram",             // chaîne alimentaire, biotope
+  "food_chain",                    // réseau trophique
+  "microscopic_image",             // photo microscope (cellule, tissu)
+  "photo_animal",                  // photo animal en contexte
+  "photo_plant",                   // photo plante en contexte
+  "photo_mineral",                 // roche, minéral
+
+  // === Histoire ===
+  "scene_historical_painting",     // peinture représentant scène
+  "scene_historical_photo",        // photo d'époque XIXe-XXIe
+  "portrait_historical",           // portrait personnage
+  "battle_scene",                  // bataille / guerre
+  "daily_life_scene",              // vie quotidienne d'une époque
+  "monument_architectural",        // bâtiment historique
+  "archaeological_artifact",       // objet (poterie, arme, bijou)
+  "document_historical",           // manuscrit, charte, traité, affiche
+  "timeline_historical",           // frise chronologique
+
+  // === Géographie ===
+  "map_political",                 // frontières, pays
+  "map_physical",                  // relief, altitude
+  "map_climate",                   // zones climatiques
+  "map_demographic",               // densité, migrations
+  "map_economic",                  // flux, ressources, industries
+  "map_topographic",               // courbes de niveau
+  "map_hydrographic",              // réseau hydrographique, embouchure
+  "map_historical",                // territoires d'époque
+  "map_world",                     // planisphère
+  "satellite_image",               // image satellite
+  "geological_section",            // coupe géologique
+  "weather_diagram",               // anticyclone, front
+  "urban_diagram",                 // plan urbain
+
+  // === Religion / philosophie ===
+  "religious_painting",            // peinture religieuse
+  "religious_icon",                // icône orthodoxe
+  "biblical_scene",                // scène biblique
+  "religious_symbol",              // croix, croissant, étoile
+  "sacred_text_excerpt",           // extrait texte sacré
+  "philosophical_portrait",        // portrait philosophe
+
+  // === Langues / lettres ===
+  "linguistic_table",              // conjugaison, déclinaisons
+  "literary_excerpt",              // extrait texte littéraire
+  "author_portrait",               // portrait écrivain
+  "etymology_diagram",             // origine mot
+
+  // === Arts ===
+  "art_painting",                  // œuvre picturale non religieuse
+  "art_sculpture",                 // sculpture
+  "art_architecture",              // style architectural
+  "music_score",                   // partition
+  "musical_instrument",            // image instrument
+
+  // === Économie / sociales ===
+  "economic_chart",                // PIB, inflation, courbes
+  "economic_flow_diagram",         // circuit économique
+  "statistical_graph",             // histogramme, camembert, courbe stats
+  "sociological_graph",            // pyramide des âges
+  "legal_document_excerpt",        // extrait juridique
+
+  // === Transversal / structurel ===
+  "table_data",                    // tableau de mesures/données
+  "concept_map",                   // carte conceptuelle
+  "flowchart",                     // diagramme processus / décision
+  "venn_diagram",                  // diagramme de Venn
+  "tree_diagram",                  // arbre logique
+  "pyramid_diagram",               // pyramide (Maslow, alimentaire)
+
+  // === À skip (filtrer) ===
+  "logo",
+  "decoration",
+  "icon",
+  "header_footer",
+  "qr_code",
+  "barcode",
+  "cover_page_element",
+] as const;
+
+export type ImageType = (typeof IMAGE_TYPES)[number];
+
+export const SKIP_TYPES: ImageType[] = [
+  "logo", "decoration", "icon", "header_footer",
+  "qr_code", "barcode", "cover_page_element",
+];
+
+export const isSkipType = (t: ImageType): boolean => SKIP_TYPES.includes(t);
 ```
 
-**`IMAGE_QUESTION_PROMPT`** prend en input :
-- La description Haiku (section 4.3)
-- Le contexte du chapitre où l'image apparaît (texte des pages voisines)
-- Le profil pédagogique (matière, niveau CESS)
+**Total** : **64 types pédagogiques + 7 types à skip = 71**.
 
-**Stratégie anti-hallucination** : on force des questions **MCQ avec choix canoniques** pour les cas à risque (identification personnage/scène/lieu) :
+### 4.5 Génération de questions image-aware (Sonnet 4.6) — À BENCHMARKER
 
-- Pour une scène historique : 4 choix d'événements canoniques (Bastille, Révolution russe, Mai 68...)
-- Pour un personnage : 4 figures de l'époque
-- Pour une carte : 4 régions/concepts géo
+3 options à comparer dans la **tâche 1 du plan d'implémentation** :
 
-Ça évite les questions ouvertes où l'élève répond "Napoléon" mais Sonnet attendait "Bonaparte" (faux négatif). MCQ verrouille la validation.
+| Option | Pipeline | Coût/image | Qualité attendue |
+|---|---|---|---|
+| **A** (spec v1) | Haiku decrit + Sonnet text-only avec description en input | ~$0.006 | Bonne, mais Sonnet ne voit pas l'image |
+| **B** | Sonnet 4.6 vision direct (1 call image+question) | ~$0.015 | Optimale (Sonnet voit + raisonne) |
+| **C** | Haiku seul (vision + question en 1 call) | ~$0.002 | Faible (Haiku moins bon en pédagogie) |
 
-**Types possibles selon `type` Haiku** :
-- `formula` → `numeric` ou `mcq` (calcul à partir de la formule)
-- `diagram` / `cell_bio` → `mcq` (identifier élément annoté)
-- `scene_historical` → `mcq` (événement / époque)
-- `map` → `mcq` (lecture cartographique) ou `short_text` (nom propre)
-- `molecule` → `mcq` (nom de la molécule / type de fonction)
-- `religious_icon` → `mcq` (scène biblique)
-- `photo` / `other` → MCQ générique sur le contenu visible
+**Méthodologie benchmark** :
+- 10 images variées (formula_math, scene_historical_painting, cell_diagram, map_topographic, molecule_organic, religious_painting, lab_apparatus, statistical_graph, monument_architectural, anatomy_human)
+- Générer questions avec chaque option
+- Évaluation aveugle par Alex + 1 prof (matières concernées) sur 3 axes : (a) pertinence pédagogique, (b) qualité des distracteurs MCQ, (c) absence d'hallucination
+- Score 1-5 par axe, moyenne pondérée
+- Choix de l'option pour le pipeline final
 
-**Coût** : ~$0.01-0.02 par image × 80 images × 100 syllabi/mois = **~$120/mois Year 1**. Acceptable mais à monitorer.
+**Décision provisoire (à confirmer par benchmark)** : option A si écart qualité < 20% vs B. Sinon option B.
 
-**Optimisation** : ne pas générer de questions pour les images très simples (logos école, icônes décoratives). Le tag `type: "other"` + `confidence < 0.5` → on skip.
+**Stratégie anti-hallucination universelle** (toutes options) : forcer **MCQ avec choix canoniques** pour identification :
+- Scène historique : 4 événements canoniques de la période
+- Personnage : 4 figures de l'époque
+- Carte : 4 régions/concepts géo
+- Œuvre d'art : 4 styles/auteurs
 
-### 4.5 Insertion en base
+Type de question selon `vision_type` :
 
-Chaque question image-aware est insérée dans `teacher_questions` avec les champs additionnels :
+| Vision type | Type question privilégié |
+|---|---|
+| `formula_*`, `geometric_figure` | `numeric` ou `mcq` (calcul/identification) |
+| `*_diagram`, `cell_diagram`, `anatomy_*` | `mcq` (identifier élément annoté) |
+| `scene_*`, `battle_scene`, `*_painting`, `*_icon` | `mcq` (événement/époque/scène) |
+| `portrait_*`, `author_portrait`, `*_artifact` | `mcq` (personnage/objet/époque) |
+| `map_*` | `mcq` ou `short_text` (lecture cartographique) |
+| `molecule_*`, `lewis_structure` | `mcq` (nom de molécule, fonction) |
+| `*_graph`, `*_chart`, `table_data` | `numeric` ou `short_text` (lecture de valeur) |
+| `linguistic_table` | `short_text` (conjugaison/déclinaison) |
+
+**Coût provisoire** (option A) : ~$0.005 × 80 images × 100 syllabi/mois = **~$40/mois**.
+**Coût provisoire** (option B) : ~$0.015 × 80 × 100 = **~$120/mois**.
+
+### 4.6 KaTeX server-side — LaTeX → MathML conversion
+
+**Lib** : `katex` (MIT license, npm, lib pure, pas de service externe).
+
+**Flow** :
+- Haiku retourne `latex_if_formula` pour `vision_type ∈ {formula_math, formula_physics_electric, formula_chemical_equation}`
+- Au save de la question, on convertit LaTeX → MathML server-side :
+  ```typescript
+  import katex from "katex";
+
+  const mathml = katex.renderToString(latex, {
+    output: "mathml",     // important : pas "html"
+    throwOnError: false,  // fallback gracieux si LaTeX invalide
+    displayMode: true,
+  });
+  ```
+- Stockage `formula_latex` + `formula_mathml` en DB
+- UI quiz : render directement `dangerouslySetInnerHTML={{ __html: mathml }}` (MathML est natif HTML5, safe)
+
+**A11y bonus** : screen readers (NVDA, VoiceOver, JAWS) lisent MathML comme "intégrale de zéro à un de x au carré dx" au lieu d'une image opaque.
+
+**Coût** : 0$, 0 dépendance externe, 0 sous-processeur.
+
+### 4.7 Imago Toolkit WASM — chimie organique côté client
+
+**Lib** : `@iqg/indigo-ketcher` (port WASM du toolkit Indigo, MIT license, EPAM).
+
+**Flow** :
+- Haiku retourne `smiles_if_molecule` pour `vision_type == "molecule_organic"` ou `lewis_structure`
+- Stockage `molecule_smiles` en DB
+- UI quiz : composant React `<MoleculeRenderer smiles={...} />` qui :
+  - Lazy-load le module WASM Imago (~500 KB gzipped, une seule fois)
+  - Render la structure 2D dans un `<svg>` cliquable
+  - Alt-text auto-généré : "Structure moléculaire : {imageDescription}"
+
+**Privacy** : SMILES + render reste **côté client uniquement**. Aucune molécule transmise à un service tiers.
+
+**Coût** : 0$, 0 dépendance externe.
+
+### 4.8 SVG géo cartes muettes (phase 2 basique)
+
+**Sources** :
+- `natural-earth-vector` npm (public domain, Natural Earth)
+- TopoJSON FWB / Belgique extraits OSM (OdbL, commercial OK)
+- d3-geo (BSD-3) pour projection / manipulation
+
+**Stratégie phase 2** (minimal viable) :
+- Haiku retourne `topojson_region_hint` pour `vision_type == map_*`
+- Mapping côté server :
+  ```typescript
+  const REGION_TOPOJSON = {
+    "Belgique": "/topojson/belgium.json",
+    "Wallonie": "/topojson/wallonia.json",
+    "Bruxelles": "/topojson/brussels.json",
+    "Europe": "/topojson/europe.json",
+    "Monde": "/topojson/world.json",
+    // ...
+  };
+  ```
+- Stockage `geo_topojson_path` (string) sur la question
+- UI quiz : composant `<GeoMap topojsonPath={...} />` qui render SVG vectoriel via `react-simple-maps` (wrapper d3-geo)
+
+**Phase 2 minimal** : affichage statique vectoriel uniquement (pas d'interaction clic).
+**Phase 3** : interaction clic région, scoring, drag-drop labels.
+
+**Privacy** : tous les TopoJSON servis depuis `public/topojson/` (statique). Aucun appel tiers à runtime.
+
+**Coût** : 0$ (libs + données libres).
+
+### 4.9 Insertion en base
+
+Chaque question image-aware insérée dans `teacher_questions` avec champs additionnels :
 
 - `image_url` : signed URL Supabase Storage
-- `image_hash` : SHA-256 pour dedup côté DB
-- `image_page_number` : page du PDF où l'image apparaît (debug/audit)
-- `image_description_md` : description Haiku stockée (utilisée comme alt-text + contexte futur ré-génération)
+- `image_hash` : SHA-256 pour dedup
+- `image_page_number` : page PDF source
+- `image_description_md` : description Haiku (alt-text + contexte ré-génération)
 - `image_confidence` : score Haiku
+- `vision_type` : un des 71 types taxonomy
+- `formula_latex` : nullable, LaTeX si formule
+- `formula_mathml` : nullable, MathML rendu par KaTeX
+- `molecule_smiles` : nullable, SMILES si molécule organique
+- `geo_topojson_path` : nullable, chemin TopoJSON si carte
 - `needs_review` : `image_confidence < 0.8`
 
-Le snippet correspondant dans `content_snippets` reçoit aussi `image_url` (pour usage par le tuteur socratique futur).
+Le snippet correspondant dans `content_snippets` reçoit aussi `image_url` (tuteur socratique futur).
 
 ## 5. Data Model — Migrations
 
@@ -222,16 +441,24 @@ alter table public.teacher_questions
   add column image_page_number int,
   add column image_description_md text,
   add column image_confidence numeric(3,2),
+  add column vision_type text,
+  add column formula_latex text,
+  add column formula_mathml text,
+  add column molecule_smiles text,
+  add column geo_topojson_path text,
   add column needs_review boolean not null default false;
 
--- Index pour la liste "questions à vérifier" dans l'UI prof
+-- Pas de CHECK constraint sur vision_type : la validation est cote app
+-- (IMAGE_TYPES constante TS, evolutive sans migration). Comment cle pour audit.
+comment on column public.teacher_questions.vision_type is
+  'Un des 71 types definis dans lib/pdf/image-types.ts (IMAGE_TYPES).';
+
+comment on column public.teacher_questions.needs_review is
+  'Set true quand image_confidence < 0.8 lors de la generation. Le prof doit valider la question avant publication aux eleves.';
+
 create index idx_teacher_questions_needs_review
   on public.teacher_questions (teacher_id, needs_review)
   where needs_review = true;
-
--- Comment d'audit
-comment on column public.teacher_questions.needs_review is
-  'Set true quand image_confidence < 0.8 lors de la generation. Le prof doit valider la question avant publication aux eleves.';
 ```
 
 ### Migration 2 : `content_snippets` enrichie
@@ -241,13 +468,9 @@ comment on column public.teacher_questions.needs_review is
 alter table public.content_snippets
   add column image_url text,
   add column image_hash text;
-
--- Pas d'index needed : on filtre via source_kind déjà indexé
 ```
 
-### Migration 3 : `pdf_extracted_images` (nouvelle table)
-
-Table d'audit/dedup au niveau syllabus.
+### Migration 3 : `pdf_extracted_images` (nouvelle table audit/dedup)
 
 ```sql
 -- 2026-05-15-create-pdf-extracted-images.sql
@@ -262,7 +485,10 @@ create table public.pdf_extracted_images (
   height int not null,
   description_md text,
   confidence numeric(3,2),
-  vision_type text check (vision_type in ('formula','diagram','scene_historical','map','molecule','cell_bio','religious_icon','photo','other')),
+  vision_type text,
+  latex_if_formula text,
+  smiles_if_molecule text,
+  topojson_region_hint text,
   created_at timestamptz not null default now()
 );
 
@@ -274,7 +500,7 @@ create index idx_pdf_extracted_images_job
 
 alter table public.pdf_extracted_images enable row level security;
 
--- Service role only INSERT/UPDATE (cf CLAUDE.md règle 8)
+-- Service role only INSERT/UPDATE (cf CLAUDE.md regle 8)
 create policy "service_role only writes"
   on public.pdf_extracted_images
   for all
@@ -282,7 +508,7 @@ create policy "service_role only writes"
   using (true)
   with check (true);
 
--- Prof peut lire les images de ses propres cours
+-- Prof lit les images de ses propres cours
 create policy "teacher reads own course images"
   on public.pdf_extracted_images
   for select
@@ -298,46 +524,65 @@ create policy "teacher reads own course images"
 
 ### 6.1 Page `/school/questions` — liste
 
-- **Nouveau badge** sur la card question : `📷 Image` si `image_url is not null`
-- **Nouveau filtre** dans la sidebar : "Avec image" (checkbox), à côté du filtre type
-- **Bandeau "À vérifier"** en haut de la liste si `count(needs_review = true) > 0`, avec call-to-action "Vérifier N questions extraites d'images"
+- **Badge image** sur card question : `📷 Image` si `image_url is not null`
+- **Filtre "Avec image"** dans sidebar (checkbox), à côté du filtre type
+- **Bandeau "À vérifier"** en haut de liste si `count(needs_review = true) > 0`, CTA "Vérifier N questions extraites d'images"
 
-### 6.2 Formulaire d'édition question — quand `image_url` présent
+### 6.2 Formulaire d'édition — quand image présente
 
-- **Affichage de l'image** en haut du formulaire (largeur fluide, max 400px de haut, cliquable pour zoom modal)
-- **Alt-text auto-généré** (`image_description_md`) affiché dans un champ éditable — le prof peut le corriger
-- **Badge "Auto-extrait du PDF"** en gris avec date d'extraction
-- **Si `needs_review = true`** : badge orange "Vérifier la transcription" en haut + bouton "Marquer comme vérifiée" qui passe `needs_review = false`
+- **Affichage image** en haut du formulaire (max 400px haut, cliquable pour zoom modal)
+- **Alt-text auto-généré** (`image_description_md`) en champ éditable
+- **Badge "Auto-extrait du PDF"** gris + date
+- **Si `needs_review = true`** : badge orange "Vérifier la transcription" + bouton "Marquer comme vérifiée"
+- **Render selon `vision_type`** :
+  - `formula_*` → render KaTeX (preview MathML) sous l'image
+  - `molecule_organic` → render Imago WASM (preview SMILES)
+  - `map_*` → render SVG TopoJSON (preview géo)
 
 ### 6.3 Quiz élève — affichage image dans question
 
-Cf mockup `dashboard-eleve-session-mockup.html`. Insertion d'une `<figure>` dans le bloc "Énoncé" :
+Cf mockup `dashboard-eleve-session-mockup.html`. Insertion `<figure>` dans bloc "Énoncé" :
 
 ```tsx
 {question.image_url && (
   <figure className="my-4">
-    <img
-      src={question.image_url}
-      alt={question.image_description_md ?? "Illustration de l'exercice"}
-      className="rounded-lg border border1 max-h-80 mx-auto"
-    />
-    {/* Caption optionnelle si description courte */}
+    {question.formula_mathml && (
+      <div
+        className="my-2 text-center"
+        dangerouslySetInnerHTML={{ __html: question.formula_mathml }}
+      />
+    )}
+    {question.molecule_smiles && (
+      <MoleculeRenderer smiles={question.molecule_smiles} className="mx-auto" />
+    )}
+    {question.geo_topojson_path && (
+      <GeoMap topojsonPath={question.geo_topojson_path} className="mx-auto max-w-md" />
+    )}
+    {!question.formula_mathml && !question.molecule_smiles && !question.geo_topojson_path && (
+      <img
+        src={question.image_url}
+        alt={question.image_description_md ?? "Illustration de l'exercice"}
+        className="rounded-lg border border1 max-h-80 mx-auto"
+      />
+    )}
   </figure>
 )}
 ```
 
-Pas de modification structurale du mockup — on ajoute juste le slot image dans le composant `<QuizQuestion>`.
+Pas de modification structurale du mockup — slot image dans `<QuizQuestion>`.
 
 ## 7. Failure Modes & Mitigations
 
 | Failure | Probabilité | Impact | Mitigation |
 |---|---|---|---|
-| pdfjs canvas crash sur PDF corrompu | Moyenne | Pipeline B fail, A continue | try/catch par page, skip page foireuse, log error |
-| Vision Haiku rate limit (Tier 1) | Faible (Tier 2 maintenant) | Slowdown 3 → 5 min | concurrency cap 3, backoff exponentiel |
+| pdfjs canvas crash sur PDF corrompu | Moyenne | Pipeline B fail, A continue | try/catch par page, skip, log |
+| Vision Haiku rate limit | Faible (Tier 2) | Slowdown 3 → 5 min | concurrency cap 3, backoff exponentiel |
 | Image > 5 MB (limite Anthropic) | Rare | Skip image | resize si > 4 MB avant call |
-| Sonnet hallucine personnage/scène | Moyenne | Question incorrecte | MCQ canonique (cf 4.4) + needs_review si conf < 0.8 |
-| Supabase Storage quota dépassé | Long terme | Upload échoue | alerte à 80% quota, plan upgrade Pro ($25/mois pour 100 GB) |
-| Image corrompue / format exotique | Rare | Vision retourne null | skip + log, ne bloque pas le job |
+| Sonnet hallucine identification | Moyenne | Question incorrecte | MCQ canoniques (cf 4.5) + needs_review si conf < 0.8 |
+| KaTeX échoue sur LaTeX invalide | Faible | Pas de MathML rendu | `throwOnError: false`, fallback alt-text |
+| Imago WASM ne reconnaît pas SMILES | Moyenne | Pas de render molécule | fallback affichage image PNG originale |
+| TopoJSON région non mappée | Moyenne | Pas de SVG géo | fallback affichage image PNG originale |
+| Supabase Storage quota dépassé | Long terme | Upload échoue | alerte à 80%, plan upgrade Pro ($25/mois pour 100 GB) |
 
 ## 8. Cost Analysis
 
@@ -346,18 +591,23 @@ Pas de modification structurale du mockup — on ajoute juste le slot image dans
 | Item | Coût/mois | Notes |
 |---|---|---|
 | Vision Haiku 4.5 (descriptions) | ~$15 | 80 images × 100 syllabi × $0.0015 |
-| Sonnet 4.6 (questions image-aware) | ~$120 | 80 × 100 × $0.015 |
+| Sonnet image-aware (option A provisoire) | ~$40 | À confirmer post-benchmark |
 | Supabase Storage incrémental | ~$0.50 | 1.6 GB additionnels × $0.021/GB |
-| **TOTAL pipeline B** | **~$135/mois** | $1 620/an |
+| KaTeX server-side | $0 | Lib npm |
+| Imago WASM client-side | $0 | Lib npm |
+| Géo SVG (libs + TopoJSON) | $0 | Public domain / open source |
+| **TOTAL pipeline B (option A)** | **~$55/mois** | $660/an |
+| **TOTAL pipeline B (option B)** | **~$135/mois** | $1 620/an (à confirmer benchmark) |
 
-À comparer au pipeline A actuel (~$50/mois). **Pipeline complet = ~$185/mois Year 1**.
+À comparer pipeline A actuel (~$50/mois). **Pipeline complet (A + B option A) = ~$105/mois Year 1**.
 
 ### Coûts non récurrents
 
-- Dev pipeline B : **~3 jours** (extraction, Vision, Sonnet, migrations, UI)
+- Dev pipeline B : **~5 jours** (extraction + Vision + Sonnet + KaTeX + Imago + géo SVG + migrations + UI)
+- Benchmark Sonnet image-aware (3 options) : **~1 jour**
 - Tests sur 5 syllabi multi-matières : **~0.5 jour**
 
-### Coûts évités
+### Coûts évités (justification YAGNI)
 
 - **Pas de Mathpix** : -$22/an (Image API) ou -$1 200/an (PDF Convert)
 - **Pas de RDKit/OSRA hosting** : -$24/an
@@ -365,34 +615,37 @@ Pas de modification structurale du mockup — on ajoute juste le slot image dans
 
 ### Cost ceiling à monitorer
 
-- Si Sonnet image-aware dépasse **$200/mois Year 1**, on review : (a) baisse de la qualité prompt, (b) skip plus d'images "decoration", (c) batch les images dans une seule call Sonnet.
+- Si Sonnet image-aware dépasse **$200/mois Year 1** (option B sustained), on review : (a) baisse qualité prompt, (b) skip plus d'images decoration, (c) batch 5 images dans 1 call Sonnet.
 
 ## 9. Open Questions / Future Work
 
-### Phase 3 (post-MVP, après benchmark sur 10 syllabi)
+### Phase 3 (post-MVP, après benchmark sur 100 syllabi)
 
-1. **Mathpix Image API ($22/an)** : à reconsidérer si >20% des questions sciences sont jugées fausses par les profs sur les formules. Seuil mesurable.
-2. **MathML accessibilité native** : intégrable même sans Mathpix via KaTeX server-side qui convertit LaTeX (inline dans `image_description_md`) en MathML. ~0.5 jour dev.
-3. **Géo SVG interactif** (d3-geo + TopoJSON FWB) : permettre quiz "clique sur la province" sur cartes muettes. ~2 jours dev, $0 coût récurrent.
-4. **Imago Toolkit WASM** (chimie organique) : si Vision Haiku se plante mesurablement sur structures organiques complexes. Open source, hébergé client-side.
-5. **Dédup transverse** : si deux syllabi de la même matière partagent des images (manuel commun), dedup au niveau `school_id` plutôt que `course_id`.
+1. **Mathpix Image API ($22/an)** : reconsidération si >20% des questions sciences sont jugées fausses sur formules.
+2. **Géo SVG interactif avancé** : clic région, scoring temps réel, drag-drop labels.
+3. **Dédup transverse `school_id`** : si deux syllabi de la même matière partagent images (manuel commun).
+4. **OSRA / MolScribe** : si Imago échoue mesurablement sur structures organiques complexes.
+5. **Mécanique physique** (forces, dynamique) : ajout taxonomie + types adaptés.
 
-### Cas exclus volontairement
+### Cas exclus définitivement
 
-- **Reconnaissance faciale automatique** sur images historiques : interdit pour Maïa (RGPD + ethique). Le prof identifie manuellement.
-- **OCR de manuscrit** : pas notre cas (syllabi typographiés).
-- **Vidéo / GIF** : pas dans le scope PDF.
+- **Reconnaissance faciale automatique** : RGPD + éthique.
+- **OCR de manuscrit élève** : pas notre cas.
+- **Vidéo / GIF** : hors scope PDF.
 
-## 10. Self-Review
+## 10. Self-Review v2
 
-- ✅ **Placeholder scan** : aucun "TBD" ou "à compléter" dans le spec
-- ✅ **Internal consistency** : pipeline B utilise les mêmes prompts + DB schema cités en sections 4-5-6
-- ✅ **Scope check** : un seul livrable cohérent (pipeline images-aware) — pas de découpage en sous-projets nécessaire
-- ✅ **Ambiguity check** : le seuil `confidence < 0.8` est explicite et chiffré, les types Haiku enum sont listés
-- ✅ **Référence mockup** : section 6.3 cite explicitement `dashboard-eleve-session-mockup.html`
-- ✅ **Règles CLAUDE.md** : migration 3 a `enable row level security` + service role policy (règle 8)
-- ✅ **Never-DELETE principle** : aucun DELETE prévu — les `pdf_extracted_images` se cascadent via `course delete` mais c'est le `course` lui-même qui est supprimé (cas RGPD prévu)
+- ✅ **Placeholder scan** : aucun "TBD"
+- ✅ **Internal consistency** : tous les composants (4.6 KaTeX, 4.7 Imago, 4.8 géo SVG) référencés dans data model (5) et UI (6)
+- ✅ **Scope check** : un seul livrable cohérent (pipeline images-aware phase 2)
+- ✅ **Ambiguity check** : seuils chiffrés, types enum listés, benchmark méthodologie explicite
+- ✅ **Référence mockup** : section 6.3 cite `dashboard-eleve-session-mockup.html`
+- ✅ **Règles CLAUDE.md** : migration 3 a RLS + service role policy (règle 8), CHECK constraint replacé par comment + validation côté app pour évolutivité taxonomy (justification doc)
+- ✅ **Never-DELETE principle** : `pdf_extracted_images` cascade via course delete uniquement (RGPD prévu)
+- ✅ **Distinction lib vs API** : KaTeX/Imago/d3-geo sont libs embarquées (pas sous-processeur), Mathpix exclu (était la seule vraie API US payante)
 
 ---
 
-**Validation prof requise avant implementation plan** : section 9 (future work) est-elle bien acceptable ou faut-il intégrer dès phase 2 (a) MathML ou (b) géo SVG ? Réponse attendue avant de générer le plan d'implémentation détaillé.
+**Validation prof requise avant implementation plan** :
+- Tâche 1 du plan = benchmark Sonnet image-aware (3 options) sur 10 images
+- Tu valides la méthodologie benchmark (section 4.5) avant qu'on génère le plan ?
