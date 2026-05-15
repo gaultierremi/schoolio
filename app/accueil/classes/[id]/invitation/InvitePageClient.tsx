@@ -85,7 +85,7 @@ export default function InvitePageClient({
       {/* Header */}
       <div>
         <a
-          href={`/school/classes/${classId}`}
+          href={`/accueil/classes/${classId}`}
           className="text-xs text-[rgb(var(--ink-3))] hover:text-[rgb(var(--ink-2))]"
         >
           ← {className}

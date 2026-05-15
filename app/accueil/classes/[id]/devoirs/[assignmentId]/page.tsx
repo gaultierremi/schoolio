@@ -113,7 +113,7 @@ export default function AssignmentDetailPage() {
         setTopErrors(j.top_errors ?? []);
         setLoading(false);
       })
-      .catch(() => { setLoading(false); router.replace(`/school/classes/${classId}`); });
+      .catch(() => { setLoading(false); router.replace(`/accueil/classes/${classId}`); });
   }, [classId, assignmentId, router]);
 
   async function handleSave() {
@@ -138,7 +138,7 @@ export default function AssignmentDetailPage() {
 
   async function handleArchive() {
     await fetch(`/api/classes/${classId}/assignments/${assignmentId}`, { method: "DELETE" });
-    router.push(`/school/classes/${classId}`);
+    router.push(`/accueil/classes/${classId}`);
   }
 
   async function handleExport() {
@@ -210,7 +210,7 @@ export default function AssignmentDetailPage() {
     <main className="min-h-screen bg-[rgb(var(--surface-2))] px-4 py-8 text-[rgb(var(--ink))]">
       <div className="mx-auto w-full max-w-4xl space-y-6">
 
-        <a href={`/school/classes/${classId}`} className="text-xs text-[rgb(var(--ink-3))] hover:text-[rgb(var(--ink-2))]">
+        <a href={`/accueil/classes/${classId}`} className="text-xs text-[rgb(var(--ink-3))] hover:text-[rgb(var(--ink-2))]">
           ← Retour à la classe
         </a>
 

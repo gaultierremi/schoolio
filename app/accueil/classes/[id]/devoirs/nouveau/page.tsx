@@ -117,7 +117,7 @@ export default function NewAssignmentPage() {
       return;
     }
 
-    router.push(`/school/classes/${classId}?tab=devoirs`);
+    router.push(`/accueil/classes/${classId}?tab=devoirs`);
   }
 
   function courseLabel(c: CourseOption): string {
@@ -135,7 +135,7 @@ export default function NewAssignmentPage() {
     <main className="min-h-screen bg-[rgb(var(--surface-2))] px-4 py-8 text-[rgb(var(--ink))]">
       <div className="mx-auto w-full max-w-xl">
         <a
-          href={`/school/classes/${classId}`}
+          href={`/accueil/classes/${classId}`}
           className="text-xs text-[rgb(var(--ink-3))] hover:text-[rgb(var(--ink-2))]"
         >
           ← Retour à la classe

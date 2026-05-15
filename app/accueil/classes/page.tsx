@@ -55,7 +55,7 @@ function ClassCard({ cls, onArchiveToggle }: { cls: ClassItem; onArchiveToggle: 
           ? "border-[rgb(var(--border))] bg-[rgb(var(--surface-2))] opacity-70"
           : "cursor-pointer border-[rgb(var(--border))] bg-[rgb(var(--surface))] hover:border-[rgb(var(--accent))]/40 hover:bg-[rgb(var(--surface-3))]"
       }`}
-      onClick={() => !isArchived && router.push(`/school/classes/${cls.id}`)}
+      onClick={() => !isArchived && router.push(`/accueil/classes/${cls.id}`)}
     >
       {/* Header */}
       <div className="flex items-start justify-between gap-2">
@@ -101,7 +101,7 @@ function ClassCard({ cls, onArchiveToggle }: { cls: ClassItem; onArchiveToggle: 
             <button
               onClick={(e) => {
                 e.stopPropagation();
-                router.push(`/school/classes/${cls.id}`);
+                router.push(`/accueil/classes/${cls.id}`);
               }}
               className="rounded-lg border border-[rgb(var(--accent))]/30 bg-[rgb(var(--accent))]/5 px-2 py-1 text-xs font-bold text-[rgb(var(--accent))] transition hover:border-[rgb(var(--accent))]/60 hover:bg-[rgb(var(--accent))]/10"
             >
@@ -169,11 +169,11 @@ export default function ClassesPage() {
         {/* Header */}
         <div className="flex items-center justify-between gap-4">
           <div>
-            <a href="/school" className="text-xs text-[rgb(var(--ink-3))] hover:text-[rgb(var(--ink-2))]">← Espace enseignant</a>
+            <a href="/accueil" className="text-xs text-[rgb(var(--ink-3))] hover:text-[rgb(var(--ink-2))]">← Espace enseignant</a>
             <h1 className="serif mt-1 text-3xl font-black text-[rgb(var(--ink))]">🏫 Mes classes</h1>
           </div>
           <a
-            href="/school/classes/new"
+            href="/accueil/classes/nouvelle"
             className="shrink-0 rounded-2xl bg-[rgb(var(--accent))] px-5 py-2.5 font-black text-white transition hover:opacity-90"
           >
             + Nouvelle classe
@@ -211,7 +211,7 @@ export default function ClassesPage() {
               </p>
               {tab === "active" && (
                 <a
-                  href="/school/classes/new"
+                  href="/accueil/classes/nouvelle"
                   className="mt-4 inline-block rounded-2xl bg-[rgb(var(--accent))] px-6 py-2.5 font-black text-white transition hover:opacity-90"
                 >
                   Créer ma première classe

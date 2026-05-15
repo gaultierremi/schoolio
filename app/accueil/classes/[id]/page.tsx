@@ -292,7 +292,7 @@ function AssignmentsTab({ classId }: { classId: string }) {
             {exporting ? "Export..." : "📥 Exporter CSV"}
           </button>
           <a
-            href={`/school/classes/${classId}/assignments/new`}
+            href={`/accueil/classes/${classId}/devoirs/nouveau`}
             className="rounded-2xl bg-[rgb(var(--accent))] px-4 py-2 text-sm font-black text-white transition hover:opacity-90"
           >
             + Créer un devoir
@@ -314,7 +314,7 @@ function AssignmentsTab({ classId }: { classId: string }) {
               <div
                 key={a.id}
                 className="group flex cursor-pointer flex-col gap-3 rounded-2xl border border-[rgb(var(--border))] bg-[rgb(var(--surface))] p-4 transition hover:border-[rgb(var(--accent))]/40 hover:bg-[rgb(var(--surface-3))]"
-                onClick={() => router.push(`/school/classes/${classId}/assignments/${a.id}`)}
+                onClick={() => router.push(`/accueil/classes/${classId}/devoirs/${a.id}`)}
               >
                 <div className="flex items-start justify-between gap-2">
                   <div className="min-w-0">
@@ -390,7 +390,7 @@ export default function ClassDetailPage() {
     if (!userData.user || rpcData !== true) { router.replace("/"); return; }
 
     const res = await fetch(`/api/classes/${id}`);
-    if (!res.ok) { router.replace("/school/classes"); return; }
+    if (!res.ok) { router.replace("/accueil/classes"); return; }
     const json = await res.json() as { class: ClassDetail; members: Member[] };
     setCls(json.class);
     setMembers(json.members ?? []);
@@ -452,7 +452,7 @@ export default function ClassDetailPage() {
     setDeleting(true);
     const res = await fetch(`/api/classes/${cls.id}`, { method: "DELETE" });
     if (res.ok) {
-      router.push("/school/classes");
+      router.push("/accueil/classes");
     } else {
       setDeleting(false);
       setShowDelete(false);
@@ -498,7 +498,7 @@ export default function ClassDetailPage() {
       <div className="mx-auto w-full max-w-3xl space-y-6">
 
         {/* Nav */}
-        <a href="/school/classes" className="text-xs text-[rgb(var(--ink-3))] hover:text-[rgb(var(--ink-2))]">
+        <a href="/accueil/classes" className="text-xs text-[rgb(var(--ink-3))] hover:text-[rgb(var(--ink-2))]">
           ← Mes classes
         </a>
 
@@ -556,7 +556,7 @@ export default function ClassDetailPage() {
           <div className="flex items-center justify-between gap-3">
             <h2 className="font-black text-[rgb(var(--ink))]">🔗 Inviter des élèves</h2>
             <a
-              href={`/school/classes/${cls.id}/invite`}
+              href={`/accueil/classes/${cls.id}/invitation`}
               className="shrink-0 rounded-xl bg-[rgb(var(--accent))] px-3 py-1.5 text-xs font-bold text-white transition hover:opacity-90"
             >
               Page d&apos;invitation →

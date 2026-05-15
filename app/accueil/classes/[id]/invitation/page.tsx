@@ -39,14 +39,14 @@ export default async function ClassInvitePage({
     .eq("teacher_id", user.id)
     .maybeSingle();
 
-  if (!cls) redirect("/school/classes");
+  if (!cls) redirect("/accueil/classes");
 
   // If no invitation_code yet (migration not run), show placeholder
   if (!cls.invitation_code) {
     return (
       <main className="min-h-screen bg-[rgb(var(--surface-2))] px-4 py-10 text-[rgb(var(--ink))]">
         <div className="mx-auto max-w-2xl">
-          <a href={`/school/classes/${params.id}`} className="text-xs text-[rgb(var(--ink-3))] hover:text-[rgb(var(--ink-2))]">
+          <a href={`/accueil/classes/${params.id}`} className="text-xs text-[rgb(var(--ink-3))] hover:text-[rgb(var(--ink-2))]">
             ← {cls.name}
           </a>
           <div className="mt-8 rounded-2xl border border-[rgb(var(--warm))]/30 bg-[rgb(var(--warm))]/10 px-5 py-6 text-center">

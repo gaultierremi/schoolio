@@ -115,14 +115,14 @@ export default function NewClassPage() {
       return;
     }
 
-    router.push(`/school/classes/${json.class.id}`);
+    router.push(`/accueil/classes/${json.class.id}`);
   }
 
   return (
     <main className="min-h-screen bg-[rgb(var(--surface-2))] px-4 py-8 text-[rgb(var(--ink))]">
       <div className="mx-auto w-full max-w-lg">
 
-        <a href="/school/classes" className="text-xs text-[rgb(var(--ink-3))] hover:text-[rgb(var(--ink-2))]">
+        <a href="/accueil/classes" className="text-xs text-[rgb(var(--ink-3))] hover:text-[rgb(var(--ink-2))]">
           ← Mes classes
         </a>
         <h1 className="serif mt-2 text-3xl font-black text-[rgb(var(--ink))]">Nouvelle classe</h1>
