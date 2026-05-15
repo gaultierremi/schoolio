@@ -36,6 +36,14 @@ export type TeacherQuestion = {
   numeric_tolerance?: number | null;
   numeric_unit?: string | null;
   expected_text_answers?: string[] | null;
+  // Pipeline B image fields (NULL si question texte uniquement).
+  image_url?: string | null;
+  image_description_md?: string | null;
+  formula_mathml?: string | null;
+  molecule_smiles?: string | null;
+  geo_topojson_path?: string | null;
+  needs_review?: boolean | null;
+  vision_type?: string | null;
 };
 
 export type ValTab = "pending" | "validated" | "rejected";
