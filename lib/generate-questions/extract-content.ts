@@ -16,9 +16,8 @@
 //   4. Chaque worker INSERT immédiatement ses snippets + questions
 
 import { SchemaType, type ResponseSchema } from "@google/generative-ai";
-import { createClient as createSupabaseAdminClient } from "@supabase/supabase-js";
-import WebSocket from "ws";
 import { routeAIRequest } from "@/lib/ai-router";
+import { withAdminClient } from "@/lib/db/admin-client";
 import { isValidSubject, isValidLevel, SUBJECTS_BY_ID } from "@/lib/subjects";
 import type { SubjectId, SchoolLevel } from "@/lib/subjects";
 import { extractTextFromPdf, joinPagesAsMarkdown } from "@/lib/pdf/extract-text";
@@ -92,24 +91,13 @@ type CourseRow = {
 
 // ── Supabase admin + helpers ────────────────────────────────────────────────
 
-function createAdminClient() {
-  return createSupabaseAdminClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!,
-    {
-      auth: { persistSession: false, autoRefreshToken: false },
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      realtime: { transport: WebSocket as any },
-    },
-  );
-}
-
 async function updateJob(jobId: string, patch: Record<string, unknown>): Promise<void> {
-  const admin = createAdminClient();
-  await admin
-    .from("question_generation_jobs")
-    .update({ ...patch, phase_changed_at: new Date().toISOString() })
-    .eq("id", jobId);
+  await withAdminClient(async (admin) => {
+    await admin
+      .from("question_generation_jobs")
+      .update({ ...patch, phase_changed_at: new Date().toISOString() })
+      .eq("id", jobId);
+  });
 }
 
 function serializeError(err: unknown): string {
@@ -343,8 +331,6 @@ async function processChapter(
     );
   }
 
-  const admin = createAdminClient();
-
   // INSERT snippets (best-effort, on continue si fail pour ne pas perdre les questions)
   let snippetsInserted = 0;
   if (validSnippets.length > 0) {
@@ -360,9 +346,9 @@ async function processChapter(
         source_page: s.source_page,
       },
     }));
-    const { error: snipErr, count } = await admin
-      .from("content_snippets")
-      .insert(snippetRows, { count: "exact" });
+    const { error: snipErr, count } = await withAdminClient(async (admin) => {
+      return admin.from("content_snippets").insert(snippetRows, { count: "exact" });
+    });
     if (snipErr) {
       await logError(new Error(`Snippet insert failed for chapter '${chapter.title}': ${snipErr.message ?? ""}`), {
         source: "extract-content.processChapter.snippets",
@@ -403,9 +389,9 @@ async function processChapter(
       page_range_end: chapter.pageEnd,
       concept_page_hint: q.concept_page ?? chapter.pageStart,
     }));
-    const { error: qErr, count } = await admin
-      .from("teacher_questions")
-      .insert(questionRows, { count: "exact" });
+    const { error: qErr, count } = await withAdminClient(async (admin) => {
+      return admin.from("teacher_questions").insert(questionRows, { count: "exact" });
+    });
     if (qErr) {
       await logError(new Error(`Question insert failed for chapter '${chapter.title}': ${qErr.message ?? ""}`), {
         source: "extract-content.processChapter.questions",
@@ -455,23 +441,27 @@ async function runConcurrent<T>(
  * Ne THROW jamais — le statut DB est le seul source of truth côté UI.
  */
 export async function runExtractionForJob(jobId: string): Promise<void> {
-  const admin = createAdminClient();
-
   try {
     // Load job + course
-    const { data: jobRaw, error: jobErr } = await admin
-      .from("question_generation_jobs")
-      .select("id, course_id, teacher_id, school_id, total_target, pages_count, page_range_start, page_range_end")
-      .eq("id", jobId)
-      .single();
+    const { jobRaw, jobErr } = await withAdminClient(async (admin) => {
+      const { data, error } = await admin
+        .from("question_generation_jobs")
+        .select("id, course_id, teacher_id, school_id, total_target, pages_count, page_range_start, page_range_end")
+        .eq("id", jobId)
+        .single();
+      return { jobRaw: data, jobErr: error };
+    });
     if (jobErr || !jobRaw) throw new Error(`Job ${jobId} introuvable: ${jobErr?.message ?? "no row"}`);
     const job = jobRaw as JobRow;
 
-    const { data: courseRaw, error: courseErr } = await admin
-      .from("courses")
-      .select("id, teacher_id, school_id, subject_enum, level, pdf_storage_path, organization_tags, pages_count")
-      .eq("id", job.course_id)
-      .single();
+    const { courseRaw, courseErr } = await withAdminClient(async (admin) => {
+      const { data, error } = await admin
+        .from("courses")
+        .select("id, teacher_id, school_id, subject_enum, level, pdf_storage_path, organization_tags, pages_count")
+        .eq("id", job.course_id)
+        .single();
+      return { courseRaw: data, courseErr: error };
+    });
     if (courseErr || !courseRaw) throw new Error(`Course ${job.course_id} introuvable`);
     const course = courseRaw as CourseRow;
     if (!course.pdf_storage_path) throw new Error("Course sans pdf_storage_path");
@@ -487,9 +477,9 @@ export async function runExtractionForJob(jobId: string): Promise<void> {
     // Phase: extracting_pdf
     await updateJob(jobId, { status: "running", phase: "extracting_pdf" });
 
-    const { data: pdfBlob, error: downloadError } = await admin.storage
-      .from("course-pdfs")
-      .download(course.pdf_storage_path);
+    const { data: pdfBlob, error: downloadError } = await withAdminClient(async (admin) => {
+      return admin.storage.from("course-pdfs").download(course.pdf_storage_path!);
+    });
     if (downloadError || !pdfBlob) {
       throw new Error(`PDF download failed: ${downloadError?.message ?? "no blob"}`);
     }
