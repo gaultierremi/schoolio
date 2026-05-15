@@ -4,14 +4,14 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import type { User } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase-browser";
 import { SUPER_ADMIN_EMAILS } from "@/lib/admin-config";
-import DashboardHeader from "@/app/school/_components/DashboardHeader";
-import ToHandleSection from "@/app/school/_components/ToHandleSection";
-import KpiGrid from "@/app/school/_components/KpiGrid";
-import ClassesPreview from "@/app/school/_components/ClassesPreview";
-import QuickActions from "@/app/school/_components/QuickActions";
-import ActivityTimeline from "@/app/school/_components/ActivityTimeline";
-import { CurrentClassBanner } from "@/app/school/_components/CurrentClassBanner";
-import { WelcomeScheduleOnboarding } from "@/app/school/_components/WelcomeScheduleOnboarding";
+import DashboardHeader from "@/app/accueil/_components/prof/DashboardHeader";
+import ToHandleSection from "@/app/accueil/_components/prof/ToHandleSection";
+import KpiGrid from "@/app/accueil/_components/prof/KpiGrid";
+import ClassesPreview from "@/app/accueil/_components/prof/ClassesPreview";
+import QuickActions from "@/app/accueil/_components/prof/QuickActions";
+import ActivityTimeline from "@/app/accueil/_components/prof/ActivityTimeline";
+import { CurrentClassBanner } from "@/app/accueil/_components/prof/CurrentClassBanner";
+import { WelcomeScheduleOnboarding } from "@/app/accueil/_components/prof/WelcomeScheduleOnboarding";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
