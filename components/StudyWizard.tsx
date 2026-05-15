@@ -107,7 +107,7 @@ export default function StudyWizard() {
 
         const { data, error: err } = await supabase
           .from("teacher_questions")
-          .select("*")
+          .select("id, type, question, options, answer_index, explanation, period, difficulty, created_at")
           .eq("user_id", user.id)
           .limit(200);
 
@@ -147,7 +147,7 @@ export default function StudyWizard() {
       } else {
         const { data, error: err } = await supabase
           .from("quiz_questions")
-          .select("*")
+          .select("id, type, question, options, answer_index, explanation, period, difficulty, status, rejection_reason, created_at")
           .eq("status", "approved")
           .limit(300);
 
