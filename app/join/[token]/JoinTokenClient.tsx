@@ -46,7 +46,7 @@ export default function JoinTokenClient({
       return;
     }
 
-    router.push(json.redirectUrl ?? "/student");
+    router.push(json.redirectUrl ?? "/accueil");
   }
 
   return (

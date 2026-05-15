@@ -156,7 +156,7 @@ export async function POST(
       });
     }
 
-    return NextResponse.json({ redirectUrl: "/student" });
+    return NextResponse.json({ redirectUrl: "/accueil" });
   } catch (err) {
     console.error("[join-full:POST]", err);
     return NextResponse.json({ error: "Erreur serveur" }, { status: 500 });

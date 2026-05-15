@@ -7,7 +7,7 @@ import { createClient } from "@/lib/supabase-browser";
 export default function LoginClient() {
   const searchParams = useSearchParams();
   const nextParam = searchParams.get("next");
-  const [loading, setLoading] = useState<null | "google" | "azure">(null);
+  const [loading, setLoading] = useState<null | "google">(null);
   const [error, setError] = useState<string | null>(null);
 
   function callbackUrl(): string {
@@ -18,16 +18,13 @@ export default function LoginClient() {
     return base;
   }
 
-  async function signIn(provider: "google" | "azure") {
+  async function signIn(provider: "google") {
     setLoading(provider);
     setError(null);
     const supabase = createClient();
     const { error: oauthError } = await supabase.auth.signInWithOAuth({
       provider,
-      options: {
-        redirectTo: callbackUrl(),
-        ...(provider === "azure" ? { scopes: "email profile openid" } : {}),
-      },
+      options: { redirectTo: callbackUrl() },
     });
     if (oauthError) {
       setError(oauthError.message);
@@ -63,12 +60,24 @@ export default function LoginClient() {
 
         <button
           type="button"
-          onClick={() => signIn("azure")}
-          disabled={loading !== null}
-          className="flex w-full items-center justify-center gap-3 rounded-2xl border border-[rgb(var(--border))] bg-white px-5 py-3 text-sm font-bold text-[rgb(var(--ink))] transition hover:border-[rgb(var(--ink-3))] disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
+          disabled
+          title="Microsoft — bientôt disponible"
+          aria-label="Microsoft, bientôt disponible"
+          className="flex w-full items-center justify-center gap-3 rounded-2xl border border-[rgb(var(--border))] bg-[rgb(var(--surface-2))] px-5 py-3 text-sm font-bold text-[rgb(var(--ink-3))] opacity-60 cursor-not-allowed"
         >
           <MicrosoftIcon />
-          {loading === "azure" ? "Redirection…" : "Continuer avec Microsoft"}
+          Continuer avec Microsoft · Bientôt
+        </button>
+
+        <button
+          type="button"
+          disabled
+          title="SmartSchool — bientôt disponible"
+          aria-label="SmartSchool, bientôt disponible"
+          className="flex w-full items-center justify-center gap-3 rounded-2xl border border-[rgb(var(--border))] bg-[rgb(var(--surface-2))] px-5 py-3 text-sm font-bold text-[rgb(var(--ink-3))] opacity-60 cursor-not-allowed"
+        >
+          <SmartSchoolIcon />
+          Continuer avec SmartSchool · Bientôt
         </button>
       </div>
 
@@ -111,5 +120,17 @@ function MicrosoftIcon() {
       <rect x="1" y="11" width="9" height="9" fill="#00a4ef" />
       <rect x="11" y="11" width="9" height="9" fill="#ffb900" />
     </svg>
+  );
+}
+
+function SmartSchoolIcon() {
+  // SmartSchool is not yet integrated — placeholder badge until brand assets land.
+  return (
+    <span
+      aria-hidden="true"
+      className="flex h-[18px] w-[18px] items-center justify-center rounded-md bg-slate-400 text-[10px] font-bold text-white"
+    >
+      S
+    </span>
   );
 }

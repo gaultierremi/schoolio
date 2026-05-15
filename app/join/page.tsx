@@ -44,7 +44,7 @@ export default async function JoinPage({
         </div>
 
         <p className="text-center text-xs text-[rgb(var(--ink-3))]">
-          <Link href="/student" className="hover:text-[rgb(var(--ink-2))]">
+          <Link href="/accueil" className="hover:text-[rgb(var(--ink-2))]">
             ← Retour à mon espace
           </Link>
         </p>

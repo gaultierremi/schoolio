@@ -50,10 +50,9 @@ export async function middleware(request: NextRequest) {
       return supabaseResponse;
     }
     // Auth-required routes : envoie sur /login avec ?next préservé (préserve
-    // le code de classe dans /join?code=X, le slug d'un /student/... etc.)
+    // le code de classe dans /join?code=X, le slug d'une page /accueil/... etc.)
     if (
-      pathname.startsWith("/student") ||
-      pathname.startsWith("/school") ||
+      pathname.startsWith("/accueil") ||
       pathname.startsWith("/admin") ||
       pathname.startsWith("/join") ||
       pathname.startsWith("/onboarding")
@@ -83,29 +82,28 @@ export async function middleware(request: NextRequest) {
   // DEFAULT landing page, not the access).
   if (
     isSuperAdmin &&
-    (pathname.startsWith("/admin") ||
-      pathname.startsWith("/student") ||
-      pathname.startsWith("/school"))
+    (pathname.startsWith("/admin") || pathname.startsWith("/accueil"))
   ) {
     return supabaseResponse;
   }
 
-  // Authenticated user landing on "/" → push to their dashboard. Without this,
-  // returning visitors see the marketing page with no obvious way into the
-  // product (the marketing CTA points to /login, but they're already in).
+  // Authenticated user landing on "/" → /accueil (role-aware dispatcher).
   // To see the marketing page again, log out (or use incognito).
   if (pathname === "/") {
-    return redirect(isStudent ? "/student" : "/school");
+    return redirect("/accueil");
   }
 
-  // Role-based redirects
-  if (isStudent && (pathname.startsWith("/school") || pathname.startsWith("/admin"))) {
-    return redirect("/student");
-  }
-  if (!isStudent && pathname.startsWith("/student")) {
-    return redirect("/school");
+  // /accueil is role-aware via server components — both roles authorized here.
+  // No additional middleware logic needed for /accueil itself.
+
+  // Catch-all for legacy /student/* and /school/* (post-Sprint-0 deletion).
+  // Both trees are deleted from source, but bookmarks / search-engine cached
+  // URLs may still hit them — redirect transparently to /accueil.
+  if (pathname.startsWith("/student") || pathname.startsWith("/school")) {
+    return redirect("/accueil");
   }
 
+  void isStudent; // app_metadata.role still read above for future role logic
   return supabaseResponse;
 }
 
