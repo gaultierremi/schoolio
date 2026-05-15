@@ -65,7 +65,7 @@ export default function ToHandleSection({
         )}
         {(toHandle?.overdue_assignments ?? 0) > 0 && (
           <Link
-            href="/school/classes"
+            href="/accueil/classes"
             className="flex items-center gap-2 rounded-xl border border-[rgb(var(--red))]/30 bg-[rgb(var(--red))]/10 px-4 py-2 text-sm font-black text-[rgb(var(--red))] transition hover:bg-[rgb(var(--red))]/20"
           >
             <span className="inline-flex h-5 min-w-[20px] items-center justify-center rounded-full bg-[rgb(var(--red))] px-1.5 text-[10px] font-black text-white">

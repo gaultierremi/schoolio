@@ -205,7 +205,7 @@ export default function StatusClient({ jobId, initialStatus, programId }: Props)
               <code className="block whitespace-pre-wrap break-words">{data.errorMessage}</code>
             </p>
             <Link
-              href="/school/syllabus/upload"
+              href="/accueil/import"
               className="mt-3 inline-flex items-center gap-2 rounded-xl border border-[rgb(var(--border))] bg-white px-3 py-1.5 text-xs font-bold text-[rgb(var(--ink))] transition hover:border-[rgb(var(--ink-3))]"
             >
               Relancer un upload <ArrowRight className="h-3 w-3" />

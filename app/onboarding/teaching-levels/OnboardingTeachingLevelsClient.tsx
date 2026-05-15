@@ -54,7 +54,7 @@ export default function OnboardingTeachingLevelsClient({ academicYear }: Props) 
         setSaving(false);
         return;
       }
-      const destination = nextParam && nextParam.startsWith("/") ? nextParam : "/school";
+      const destination = nextParam && nextParam.startsWith("/") ? nextParam : "/accueil";
       router.push(destination);
     } catch {
       setError("Connexion impossible, réessaie.");

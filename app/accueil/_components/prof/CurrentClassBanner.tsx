@@ -108,7 +108,7 @@ export function CurrentClassBanner({ slots, weekPatternOverride }: Props) {
     const slot = ctx.slot;
     const label = slot.classes?.name ?? slot.subject_label ?? "Cours";
     const subject = slot.classes?.subject ?? null;
-    const classHref = slot.class_id ? `/school/classes/${slot.class_id}` : "/accueil/horaire";
+    const classHref = slot.class_id ? `/accueil/classes/${slot.class_id}` : "/accueil/horaire";
 
     return (
       <div className="flex items-center gap-4 rounded-xl border border-[rgb(var(--green))]/30 bg-[rgb(var(--green))]/5 px-5 py-4">
@@ -140,7 +140,7 @@ export function CurrentClassBanner({ slots, weekPatternOverride }: Props) {
   if (ctx.state === "imminent" && ctx.nextSlot) {
     const next = ctx.nextSlot;
     const label = next.classes?.name ?? next.subject_label ?? "Cours";
-    const classHref = next.class_id ? `/school/classes/${next.class_id}` : "/accueil/horaire";
+    const classHref = next.class_id ? `/accueil/classes/${next.class_id}` : "/accueil/horaire";
 
     return (
       <div className="flex items-center gap-4 rounded-xl border border-[rgb(var(--warm))]/30 bg-[rgb(var(--warm))]/5 px-5 py-4">

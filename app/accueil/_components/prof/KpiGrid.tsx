@@ -48,9 +48,9 @@ type KpiDef = {
 
 const KPI_DEFS: KpiDef[] = [
   { key: "total_courses",       label: "Cours importés",    Icon: BookOpen,       href: "/accueil/cours"   },
-  { key: "active_students",     label: "Élèves actifs",      Icon: Users,          href: "/school/classes"   },
-  { key: "active_classes",      label: "Classes actives",    Icon: School,         href: "/school/classes"   },
-  { key: "total_assignments",   label: "Devoirs créés",       Icon: PencilLine,     href: "/school/classes"   },
+  { key: "active_students",     label: "Élèves actifs",      Icon: Users,          href: "/accueil/classes"   },
+  { key: "active_classes",      label: "Classes actives",    Icon: School,         href: "/accueil/classes"   },
+  { key: "total_assignments",   label: "Devoirs créés",       Icon: PencilLine,     href: "/accueil/classes"   },
   { key: "validated_questions", label: "Questions validées",  Icon: CheckCircle2,   href: "/accueil/curation" },
 ];
 

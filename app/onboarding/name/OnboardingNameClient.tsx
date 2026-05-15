@@ -36,7 +36,7 @@ export default function OnboardingNameClient() {
         return;
       }
       // Destination : ?next= (e.g. /join?code=ABC123) ou par défaut /student
-      const destination = nextParam && nextParam.startsWith("/") ? nextParam : "/student";
+      const destination = nextParam && nextParam.startsWith("/") ? nextParam : "/accueil";
       router.push(destination);
     } catch {
       setError("Connexion impossible, réessaie.");

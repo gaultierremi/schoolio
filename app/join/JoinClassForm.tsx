@@ -71,7 +71,7 @@ export default function JoinClassForm({ initialCode }: Props) {
       }
 
       // Force hard redirect to /student so session state refreshes.
-      window.location.href = "/student";
+      window.location.href = "/accueil";
     } catch {
       setJoinError("Erreur réseau, réessaie.");
       setJoining(false);

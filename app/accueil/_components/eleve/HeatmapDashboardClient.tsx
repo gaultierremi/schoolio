@@ -68,7 +68,7 @@ export default function HeatmapDashboardClient({ displayName, initialData }: Pro
           Tu n&apos;es pas encore inscrit·e à une classe. Demande à ton prof son code d&apos;invitation pour rejoindre une matière.
         </p>
         <Link
-          href="/student/classes/join"
+          href="/join"
           className="btn-primary mt-6 inline-flex items-center gap-2 rounded-2xl px-5 py-3 text-sm font-semibold"
         >
           Rejoindre une classe
@@ -193,7 +193,7 @@ export default function HeatmapDashboardClient({ displayName, initialData }: Pro
               </div>
 
               <Link
-                href="/student/assignments"
+                href="/accueil/devoirs"
                 className="btn-primary mt-6 flex w-full items-center justify-center gap-2 rounded-2xl px-6 py-4 text-base font-semibold"
               >
                 Aller à mes devoirs
@@ -304,7 +304,7 @@ export default function HeatmapDashboardClient({ displayName, initialData }: Pro
             Tes devoirs en cours
           </h2>
           <Link
-            href="/student/assignments"
+            href="/accueil/devoirs"
             className="text-xs text-[rgb(var(--ink-3))] hover:text-[rgb(var(--ink-2))]"
           >
             Tout voir <ChevronRight className="ml-0.5 inline h-3 w-3" aria-hidden />
@@ -313,7 +313,7 @@ export default function HeatmapDashboardClient({ displayName, initialData }: Pro
 
         <div className="rounded-2xl border border-[rgb(var(--border))] bg-[rgb(var(--surface))] p-5 text-center text-sm text-[rgb(var(--ink-2))]">
           <Link
-            href="/student/assignments"
+            href="/accueil/devoirs"
             className="inline-flex items-center gap-2 text-[rgb(var(--accent))] hover:underline"
           >
             Voir mes devoirs

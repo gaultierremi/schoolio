@@ -25,7 +25,7 @@ const ACTIONS: Action[] = [
   {
     label: "Créer une classe",
     Icon: School,
-    href: "/school/classes/new",
+    href: "/accueil/classes/nouvelle",
     containerClass: "border-blue-400/20 bg-blue-50 hover:bg-blue-100",
     iconClass: "text-blue-600",
     textClass: "text-blue-700",
@@ -41,7 +41,7 @@ const ACTIONS: Action[] = [
   {
     label: "Gérer les devoirs",
     Icon: PencilLine,
-    href: "/school/classes",
+    href: "/accueil/classes",
     containerClass: "border-[rgb(var(--warm))]/20 bg-[rgb(var(--warm))]/5 hover:bg-[rgb(var(--warm))]/10",
     iconClass: "text-[rgb(var(--warm))]",
     textClass: "text-[rgb(var(--warm))]",

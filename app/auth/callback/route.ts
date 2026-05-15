@@ -112,9 +112,9 @@ export async function GET(request: NextRequest) {
   if (next && next.startsWith("/")) {
     destination = next;
   } else if (finalRole === "teacher") {
-    destination = "/school";
+    destination = "/accueil";
   } else {
-    destination = "/student";
+    destination = "/accueil";
   }
 
   // Onboarding name gate : si le profil n'a pas first_name + last_name, on

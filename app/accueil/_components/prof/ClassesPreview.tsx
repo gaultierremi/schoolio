@@ -27,7 +27,7 @@ export default function ClassesPreview({
           Classes récentes
         </h2>
         <Link
-          href="/school/classes"
+          href="/accueil/classes"
           className="text-xs font-bold text-[rgb(var(--ink-3))] transition hover:text-[rgb(var(--accent))]"
         >
           Voir tout →
@@ -44,7 +44,7 @@ export default function ClassesPreview({
         <div className="rounded-2xl border border-dashed border-[rgb(var(--border))] p-8 text-center text-sm text-[rgb(var(--ink-3))]">
           Aucune classe créée.{" "}
           <Link
-            href="/school/classes/new"
+            href="/accueil/classes/nouvelle"
             className="text-[rgb(var(--accent))] hover:opacity-80"
           >
             Créer une classe →
@@ -55,7 +55,7 @@ export default function ClassesPreview({
           {classes.map((cls) => (
             <Link
               key={cls.id}
-              href={`/school/classes/${cls.id}`}
+              href={`/accueil/classes/${cls.id}`}
               className="flex items-center justify-between rounded-2xl border border-[rgb(var(--border))] bg-[rgb(var(--surface))] px-4 py-3 transition-all hover:border-[rgb(var(--accent))]/50 hover:bg-[rgb(var(--surface-3))]"
             >
               <div>

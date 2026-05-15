@@ -24,7 +24,7 @@ export default async function IngestionStatusPage({ params }: { params: { jobId:
   if (!user) redirect("/login");
 
   const appMeta = (user.app_metadata ?? {}) as Record<string, unknown>;
-  if (appMeta.role !== "teacher" && appMeta.role !== "admin") redirect("/student");
+  if (appMeta.role !== "teacher" && appMeta.role !== "admin") redirect("/accueil");
 
   const schoolId = await requireSchoolMembership(supabase);
 

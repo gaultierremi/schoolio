@@ -53,8 +53,6 @@ export async function middleware(request: NextRequest) {
     // le code de classe dans /join?code=X, le slug d'une page /accueil/... etc.)
     if (
       pathname.startsWith("/accueil") ||
-      pathname.startsWith("/student") ||
-      pathname.startsWith("/school") ||
       pathname.startsWith("/admin") ||
       pathname.startsWith("/join") ||
       pathname.startsWith("/onboarding")
@@ -84,10 +82,7 @@ export async function middleware(request: NextRequest) {
   // DEFAULT landing page, not the access).
   if (
     isSuperAdmin &&
-    (pathname.startsWith("/admin") ||
-      pathname.startsWith("/accueil") ||
-      pathname.startsWith("/student") ||
-      pathname.startsWith("/school"))
+    (pathname.startsWith("/admin") || pathname.startsWith("/accueil"))
   ) {
     return supabaseResponse;
   }
@@ -101,15 +96,14 @@ export async function middleware(request: NextRequest) {
   // /accueil is role-aware via server components — both roles authorized here.
   // No additional middleware logic needed for /accueil itself.
 
-  // Legacy role-based redirects (Sprint 0 transitional, removed in E1 once
-  // /student and /school trees are fully deleted in Phase C-D).
-  if (isStudent && (pathname.startsWith("/school") || pathname.startsWith("/admin"))) {
-    return redirect("/accueil");
-  }
-  if (!isStudent && pathname.startsWith("/student")) {
+  // Catch-all for legacy /student/* and /school/* (post-Sprint-0 deletion).
+  // Both trees are deleted from source, but bookmarks / search-engine cached
+  // URLs may still hit them — redirect transparently to /accueil.
+  if (pathname.startsWith("/student") || pathname.startsWith("/school")) {
     return redirect("/accueil");
   }
 
+  void isStudent; // app_metadata.role still read above for future role logic
   return supabaseResponse;
 }
 
