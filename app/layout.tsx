@@ -4,6 +4,7 @@ import { NextIntlClientProvider } from "next-intl";
 import { getMessages } from "next-intl/server";
 import BetaFeedbackButton from "@/components/beta/BetaFeedbackButton";
 import ThemeProvider from "@/components/ThemeProvider";
+import SkipLink from "@/components/a11y/SkipLink";
 import "./globals.css";
 import "katex/dist/katex.min.css";
 
@@ -35,6 +36,9 @@ export default async function RootLayout({
       suppressHydrationWarning
     >
       <body>
+        {/* Sprint 1.5 polish (a11y) — WCAG 2.4.1 Bypass Blocks. Premier
+            élément focusable, sr-only puis visible au focus. */}
+        <SkipLink />
         <ThemeProvider>
           <NextIntlClientProvider messages={messages}>
             {children}

@@ -33,7 +33,19 @@ export default async function AccueilLayout({ children }: { children: ReactNode 
     >
       <Header />
       {user && role && <NavSidebar role={role} />}
-      <main className={user && role ? "lg:pl-64 pb-16 lg:pb-0" : ""}>{children}</main>
+      {/*
+        Sprint 1.5 polish (a11y) : id="main-content" est la cible du skip link
+        global dans app/layout.tsx. tabIndex={-1} permet au focus de s'y poser
+        après activation du skip link (sinon le focus n'est pas réceptif sur un
+        <main> sans tabindex).
+      */}
+      <main
+        id="main-content"
+        tabIndex={-1}
+        className={user && role ? "lg:pl-64 pb-16 lg:pb-0 outline-none" : "outline-none"}
+      >
+        {children}
+      </main>
       {user && role && <NavBottom role={role} />}
     </div>
   );
