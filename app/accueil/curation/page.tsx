@@ -10,7 +10,8 @@ import { PendingCard } from "./_components/PendingCard";
 import { ValidatedCard } from "./_components/ValidatedCard";
 import { RejectedCard } from "./_components/RejectedCard";
 import { SubjectSidebar, type QuestionType } from "./_components/SubjectSidebar";
-import { AlertTriangle } from "lucide-react";
+import ConceptsList from "./_components/ConceptsList";
+import { AlertTriangle, BookOpen, ListChecks } from "lucide-react";
 
 export default function SchoolQuestionsPage() {
   const {
@@ -37,6 +38,12 @@ export default function SchoolQuestionsPage() {
     togglePublic, duplicateQuestion, generateExplanation,
     validateQuestion, rejectQuestion, callUnvalidate, updateQuestionDifficulty, proposeQuestion,
   } = useQuestionsPage();
+
+  // Sprint 2B PR B : top-level tab "Par concept" (default) vs vue legacy par
+  // état (pending/validated/rejected). Permet d'introduire la vue concept-unifiée
+  // progressivement sans casser le workflow existant.
+  // Mémoire : project_curation_concept_view.
+  const [topTab, setTopTab] = useState<"concepts" | "questions">("concepts");
 
   // Filtre sidebar matière + thème + type, scoped à l'onglet "à valider".
   // Permet de naviguer dans des centaines de questions sur gros syllabus, et
@@ -117,8 +124,52 @@ export default function SchoolQuestionsPage() {
         </p>
 
         <div className="mt-6">
-          {/* ── My questions ── */}
-          <div>
+          {/* ── Sprint 2B PR B : Top-level tabs "Par concept" (default) / "Par état" (legacy) ── */}
+          <div
+            role="tablist"
+            aria-label="Mode de curation"
+            className="mb-6 inline-flex rounded-xl border border-[rgb(var(--border))] bg-[rgb(var(--surface))] p-1"
+          >
+            <button
+              type="button"
+              role="tab"
+              aria-selected={topTab === "concepts"}
+              aria-controls="curation-panel-concepts"
+              onClick={() => setTopTab("concepts")}
+              className={`inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 focus-visible:ring-offset-[rgb(var(--surface-2))] motion-reduce:transition-none ${
+                topTab === "concepts"
+                  ? "bg-[rgb(var(--accent))] text-white shadow-sm"
+                  : "text-[rgb(var(--ink-2))] hover:text-[rgb(var(--ink))]"
+              }`}
+            >
+              <BookOpen size={14} strokeWidth={2} aria-hidden="true" />
+              Par concept
+            </button>
+            <button
+              type="button"
+              role="tab"
+              aria-selected={topTab === "questions"}
+              aria-controls="curation-panel-questions"
+              onClick={() => setTopTab("questions")}
+              className={`inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 focus-visible:ring-offset-[rgb(var(--surface-2))] motion-reduce:transition-none ${
+                topTab === "questions"
+                  ? "bg-[rgb(var(--accent))] text-white shadow-sm"
+                  : "text-[rgb(var(--ink-2))] hover:text-[rgb(var(--ink))]"
+              }`}
+            >
+              <ListChecks size={14} strokeWidth={2} aria-hidden="true" />
+              Par état (legacy)
+            </button>
+          </div>
+
+          {topTab === "concepts" ? (
+            <div role="tabpanel" id="curation-panel-concepts" aria-labelledby="curation-tab-concepts">
+              <ConceptsList />
+            </div>
+          ) : null}
+
+          {topTab === "questions" ? (
+          <div role="tabpanel" id="curation-panel-questions" aria-labelledby="curation-tab-questions">
               {showForm ? (
                 <QuestionForm
                   form={form}
@@ -385,6 +436,7 @@ export default function SchoolQuestionsPage() {
                 </div>
               )}
             </div>
+          ) : null}
         </div>
       </div>
 
