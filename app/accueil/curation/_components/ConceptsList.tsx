@@ -145,6 +145,9 @@ export default function ConceptsList() {
     );
   }
 
+  // Sprint 2B PR B — hierarchy fix : la page parent a h1 "Mes questions",
+  // donc on rend les concepts en h2 (pas h3) pour ne pas skipper de niveau
+  // (WCAG 1.3.1 Info and Relationships).
   return (
     <ul role="list" className="grid gap-3">
       {concepts.map((c) => {
@@ -167,9 +170,9 @@ export default function ConceptsList() {
             >
               <div className="flex items-start justify-between gap-4">
                 <div className="min-w-0 flex-1">
-                  <h3 className="text-base font-semibold text-slate-900 dark:text-slate-100">
+                  <h2 className="text-base font-semibold text-slate-900 dark:text-slate-100">
                     {c.name}
-                  </h3>
+                  </h2>
                   {c.description ? (
                     <p className="mt-1 line-clamp-2 text-xs text-slate-600 dark:text-slate-400">
                       {c.description}
