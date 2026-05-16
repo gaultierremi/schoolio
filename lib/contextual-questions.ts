@@ -58,8 +58,11 @@ export async function getContextualQuestions(
     .from("teacher_questions")
     .select("id, question, options, answer_index, explanation, origin, page_range_start, page_range_end")
     .eq("course_id", courseId)
+    // Sprint 2B : double-gate (validated_at + is_active). Le validation route
+    // maintient les deux en parallèle. Sprint 2C dropera validated_at.
     .not("validated_at", "is", null)
     .is("rejected_at", null)
+    .eq("is_active", true)
     .or(`page_range_start.is.null,and(page_range_start.lte.${hi},page_range_end.gte.${lo})`)
     .order("page_range_start", { ascending: true, nullsFirst: false })
     .limit(30);
@@ -149,6 +152,9 @@ export async function generateLiveQuestions(
     is_public: false,
     origin: "ai_live",
     validated_at: now,
+    // Sprint 2B : les questions ai_live insérées via ce flow sont déjà
+    // implicitement validées (le prof a déclenché un live), donc is_active=true.
+    is_active: true,
     page_range_start: q.page_start ?? currentPage,
     page_range_end: q.page_end ?? currentPage,
   }));

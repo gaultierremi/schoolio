@@ -220,8 +220,10 @@ export async function POST(
         .from("teacher_questions")
         .select("id", { count: "exact", head: true })
         .eq("course_id", resource_id)
+        // Sprint 2B : double-gate is_active + validated_at.
         .not("validated_at", "is", null)
-        .is("rejected_at", null);
+        .is("rejected_at", null)
+        .eq("is_active", true);
 
       if ((count ?? 0) === 0) {
         return NextResponse.json(
@@ -260,8 +262,10 @@ export async function POST(
         .from("teacher_questions")
         .select("id, page_range_start")
         .eq("course_id", resource_id)
+        // Sprint 2B : double-gate is_active + validated_at.
         .not("validated_at", "is", null)
-        .is("rejected_at", null);
+        .is("rejected_at", null)
+        .eq("is_active", true);
 
       const allQuestions = (allQs ?? []) as ValidatedQuestion[];
 

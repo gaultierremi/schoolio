@@ -78,8 +78,12 @@ export async function POST(
         .from("teacher_questions")
         .select("id, question, options, answer_index, type, difficulty_stars, explanation, concept_page_hint, page_range_start, correction_steps, concept_id, expected_numeric_answer, numeric_tolerance, numeric_unit, expected_text_answers")
         .in("id", ids)
+        // Sprint 2B : double-gate. Si le prof désactive une question
+        // après création du devoir, elle disparaît du quiz (même sémantique
+        // qu'avant avec validated_at).
         .not("validated_at", "is", null)
-        .is("rejected_at", null);
+        .is("rejected_at", null)
+        .eq("is_active", true);
       if (qErr) throw qErr;
       questions = qs;
     } else {
@@ -87,8 +91,10 @@ export async function POST(
         .from("teacher_questions")
         .select("id, question, options, answer_index, type, difficulty_stars, explanation, concept_page_hint, page_range_start, correction_steps, concept_id, expected_numeric_answer, numeric_tolerance, numeric_unit, expected_text_answers")
         .eq("course_id", assignment.resource_id)
+        // Sprint 2B : double-gate is_active + validated_at.
         .not("validated_at", "is", null)
         .is("rejected_at", null)
+        .eq("is_active", true)
         .order("created_at", { ascending: true });
       if (qErr) throw qErr;
       questions = qs;
