@@ -143,10 +143,11 @@ export default function NewSchoolSessionPage() {
 
           {/* Title */}
           <div className="mt-6">
-            <label className="text-sm font-bold text-[rgb(var(--ink))]">
+            <label htmlFor="nouvelle-session-title" className="text-sm font-bold text-[rgb(var(--ink))]">
               Titre de la session
             </label>
             <input
+              id="nouvelle-session-title"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               className="mt-2 w-full rounded-2xl border border-[rgb(var(--border))] bg-[rgb(var(--surface))] px-4 py-3 text-[rgb(var(--ink))] outline-none placeholder:text-[rgb(var(--ink-3))] focus:border-[rgb(var(--accent))]"
@@ -157,9 +158,9 @@ export default function NewSchoolSessionPage() {
           {/* Question selection */}
           <div className="mt-6">
             <div className="flex items-center justify-between">
-              <label className="text-sm font-bold text-[rgb(var(--ink))]">
+              <span className="text-sm font-bold text-[rgb(var(--ink))]">
                 Questions
-              </label>
+              </span>
               {selectedIds.length > 0 && (
                 <span className="rounded-full bg-[rgb(var(--accent))]/15 px-3 py-1 text-xs font-black text-[rgb(var(--accent))]">
                   {selectedIds.length} sélectionnée(s)

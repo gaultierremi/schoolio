@@ -90,11 +90,12 @@ export default function FoundersClient({ initialFounders, currentUserId }: Props
           onSubmit={handleAdd}
           className="mb-8 rounded-3xl border border-[rgb(var(--border))] bg-[rgb(var(--surface))] p-5"
         >
-          <label className="block text-xs font-bold uppercase tracking-wider text-[rgb(var(--ink-2))]">
+          <label htmlFor="founder-email" className="block text-xs font-bold uppercase tracking-wider text-[rgb(var(--ink-2))]">
             Ajouter un founder
           </label>
           <div className="mt-3 flex flex-col gap-3 sm:flex-row">
             <input
+              id="founder-email"
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
@@ -108,6 +109,7 @@ export default function FoundersClient({ initialFounders, currentUserId }: Props
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
               placeholder="Notes (optionnel)"
+              aria-label="Notes (optionnel)"
               maxLength={200}
               className="flex-1 rounded-2xl border border-[rgb(var(--border))] bg-white px-4 py-2.5 text-sm text-[rgb(var(--ink))] outline-none focus:border-[rgb(var(--accent))] focus:ring-2 focus:ring-[rgb(var(--accent))]/20"
             />

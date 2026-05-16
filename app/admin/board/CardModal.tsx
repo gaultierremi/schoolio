@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useId, useState } from "react";
 import type {
   BoardCard,
   BoardCardPriority,
@@ -47,6 +47,14 @@ export function CardModal({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [confirmDelete, setConfirmDelete] = useState(false);
+
+  const typeId = useId();
+  const priorityId = useId();
+  const titleId = useId();
+  const descriptionId = useId();
+  const statusId = useId();
+  const assignedToId = useId();
+  const tagsId = useId();
 
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
@@ -175,8 +183,8 @@ export function CardModal({
           {/* Type + Priority */}
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className={labelCls}>Type</label>
-              <select value={type} onChange={(e) => setType(e.target.value as BoardCardType)} className={selectCls}>
+              <label htmlFor={typeId} className={labelCls}>Type</label>
+              <select id={typeId} value={type} onChange={(e) => setType(e.target.value as BoardCardType)} className={selectCls}>
                 <option value="task">✅ Tâche</option>
                 <option value="bug">🐛 Bug</option>
                 <option value="feature">✨ Feature</option>
@@ -185,8 +193,8 @@ export function CardModal({
               </select>
             </div>
             <div>
-              <label className={labelCls}>Priorité</label>
-              <select value={priority} onChange={(e) => setPriority(e.target.value as BoardCardPriority)} className={selectCls}>
+              <label htmlFor={priorityId} className={labelCls}>Priorité</label>
+              <select id={priorityId} value={priority} onChange={(e) => setPriority(e.target.value as BoardCardPriority)} className={selectCls}>
                 <option value="low">Low</option>
                 <option value="medium">Medium</option>
                 <option value="high">High</option>
@@ -197,8 +205,9 @@ export function CardModal({
 
           {/* Title */}
           <div>
-            <label className={labelCls}>Titre *</label>
+            <label htmlFor={titleId} className={labelCls}>Titre *</label>
             <input
+              id={titleId}
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               maxLength={200}
@@ -210,8 +219,9 @@ export function CardModal({
 
           {/* Description */}
           <div>
-            <label className={labelCls}>Description</label>
+            <label htmlFor={descriptionId} className={labelCls}>Description</label>
             <textarea
+              id={descriptionId}
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               rows={3}
@@ -223,8 +233,8 @@ export function CardModal({
           {/* Status — edit mode only */}
           {mode === "edit" && (
             <div>
-              <label className={labelCls}>Statut</label>
-              <select value={status} onChange={(e) => setStatus(e.target.value as BoardCardStatus)} className={selectCls}>
+              <label htmlFor={statusId} className={labelCls}>Statut</label>
+              <select id={statusId} value={status} onChange={(e) => setStatus(e.target.value as BoardCardStatus)} className={selectCls}>
                 <option value="backlog">Backlog</option>
                 <option value="in_progress">In Progress</option>
                 <option value="review">Review</option>
@@ -235,8 +245,8 @@ export function CardModal({
 
           {/* Assigned to */}
           <div>
-            <label className={labelCls}>Assigné à</label>
-            <select value={assignedTo} onChange={(e) => setAssignedTo(e.target.value)} className={selectCls}>
+            <label htmlFor={assignedToId} className={labelCls}>Assigné à</label>
+            <select id={assignedToId} value={assignedTo} onChange={(e) => setAssignedTo(e.target.value)} className={selectCls}>
               <option value="">Non assigné</option>
               {ADMIN_EMAILS.map((email) => (
                 <option key={email} value={email}>{email.split("@")[0]}</option>
@@ -246,8 +256,9 @@ export function CardModal({
 
           {/* Tags */}
           <div>
-            <label className={labelCls}>Tags</label>
+            <label htmlFor={tagsId} className={labelCls}>Tags</label>
             <input
+              id={tagsId}
               value={tags}
               onChange={(e) => setTags(e.target.value)}
               placeholder="ux, backend, urgent…"

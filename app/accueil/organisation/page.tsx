@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useId, useMemo, useState } from "react";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase-browser";
 
@@ -402,6 +402,12 @@ function TagModal({ mode, initialTag, onClose, onSaved }: TagModalProps) {
   const [formError, setFormError] = useState<string | null>(null);
   const [saving, setSaving]       = useState(false);
 
+  const nameId            = useId();
+  const emojiLabelId      = useId();
+  const emojiInputId      = useId();
+  const colorLabelId      = useId();
+  const descriptionId     = useId();
+
   const previewTag: Partial<Tag> & { name: string; color: TagColor } = {
     name:        form.name,
     emoji:       form.emoji || null,
@@ -487,7 +493,7 @@ function TagModal({ mode, initialTag, onClose, onSaved }: TagModalProps) {
               {/* Nom */}
               <div>
                 <div className="flex items-center justify-between mb-1.5">
-                  <label className="text-xs font-black uppercase tracking-widest text-[rgb(var(--ink-3))]">
+                  <label htmlFor={nameId} className="text-xs font-black uppercase tracking-widest text-[rgb(var(--ink-3))]">
                     Nom du tag *
                   </label>
                   <span className={`text-xs ${form.name.length > 40 ? "text-[rgb(var(--warm))]" : "text-[rgb(var(--ink-3))]"}`}>
@@ -495,6 +501,7 @@ function TagModal({ mode, initialTag, onClose, onSaved }: TagModalProps) {
                   </span>
                 </div>
                 <input
+                  id={nameId}
                   type="text"
                   value={form.name}
                   onChange={(e) => {
@@ -516,10 +523,10 @@ function TagModal({ mode, initialTag, onClose, onSaved }: TagModalProps) {
               </div>
 
               {/* Emoji */}
-              <div>
-                <label className="mb-2 block text-xs font-black uppercase tracking-widest text-[rgb(var(--ink-3))]">
+              <div role="group" aria-labelledby={emojiLabelId}>
+                <span id={emojiLabelId} className="mb-2 block text-xs font-black uppercase tracking-widest text-[rgb(var(--ink-3))]">
                   Emoji
-                </label>
+                </span>
                 <div className="grid grid-cols-8 gap-1.5 mb-2">
                   {PRESET_EMOJIS.map((em) => (
                     <button
@@ -538,6 +545,8 @@ function TagModal({ mode, initialTag, onClose, onSaved }: TagModalProps) {
                   ))}
                 </div>
                 <input
+                  id={emojiInputId}
+                  aria-label="Emoji personnalisé"
                   type="text"
                   value={form.emoji}
                   onChange={(e) => setForm({ ...form, emoji: e.target.value.trim().slice(0, 8) })}
@@ -547,10 +556,10 @@ function TagModal({ mode, initialTag, onClose, onSaved }: TagModalProps) {
               </div>
 
               {/* Couleur */}
-              <div>
-                <label className="mb-2 block text-xs font-black uppercase tracking-widest text-[rgb(var(--ink-3))]">
+              <div role="group" aria-labelledby={colorLabelId}>
+                <span id={colorLabelId} className="mb-2 block text-xs font-black uppercase tracking-widest text-[rgb(var(--ink-3))]">
                   Couleur
-                </label>
+                </span>
                 <div className="flex flex-wrap gap-2">
                   {VALID_COLORS.map((c) => {
                     const cs = COLOR_STYLES[c];
@@ -577,7 +586,7 @@ function TagModal({ mode, initialTag, onClose, onSaved }: TagModalProps) {
               {/* Description */}
               <div>
                 <div className="flex items-center justify-between mb-1.5">
-                  <label className="text-xs font-black uppercase tracking-widest text-[rgb(var(--ink-3))]">
+                  <label htmlFor={descriptionId} className="text-xs font-black uppercase tracking-widest text-[rgb(var(--ink-3))]">
                     Description <span className="normal-case font-normal text-[rgb(var(--ink-3))]">(optionnel)</span>
                   </label>
                   <span className={`text-xs ${form.description.length > 160 ? "text-[rgb(var(--warm))]" : "text-[rgb(var(--ink-3))]"}`}>
@@ -585,6 +594,7 @@ function TagModal({ mode, initialTag, onClose, onSaved }: TagModalProps) {
                   </span>
                 </div>
                 <textarea
+                  id={descriptionId}
                   value={form.description}
                   onChange={(e) => setForm({ ...form, description: e.target.value.slice(0, 200) })}
                   placeholder="À quoi sert ce tag ? Ex. Pour les classes en filière approfondie…"

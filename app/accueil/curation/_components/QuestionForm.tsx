@@ -59,10 +59,11 @@ export function QuestionForm({
               comme nom de chapitre) mais n'est plus éditable par le prof.
               Cf. PR ux/sidebar-and-form-cleanup pour le rationale. */}
           <div>
-            <label className="text-xs font-black uppercase tracking-widest text-[rgb(var(--ink-3))]">
+            <label htmlFor="question-type" className="text-xs font-black uppercase tracking-widest text-[rgb(var(--ink-3))]">
               Type
             </label>
             <select
+              id="question-type"
               value={form.type}
               onChange={(e) => {
                 const nextType = e.target.value as QuestionType;
@@ -93,10 +94,11 @@ export function QuestionForm({
 
           {/* Question text */}
           <div>
-            <label className="text-xs font-black uppercase tracking-widest text-[rgb(var(--ink-3))]">
+            <label htmlFor="question-text" className="text-xs font-black uppercase tracking-widest text-[rgb(var(--ink-3))]">
               Question
             </label>
             <textarea
+              id="question-text"
               value={form.question}
               onChange={(e) => setForm({ ...form, question: e.target.value })}
               rows={2}
@@ -107,12 +109,12 @@ export function QuestionForm({
 
           {/* Rendu spécifique par type */}
           {(isMcq || isTrueFalse) && (
-            <div>
-              <label className="text-xs font-black uppercase tracking-widest text-[rgb(var(--ink-3))]">
+            <div role="group" aria-labelledby="question-options-label">
+              <span id="question-options-label" className="text-xs font-black uppercase tracking-widest text-[rgb(var(--ink-3))]">
                 {isTrueFalse
                   ? "Réponse correcte"
                   : "Options — clique sur le cercle pour marquer la bonne réponse"}
-              </label>
+              </span>
               <div
                 className={`mt-2 grid gap-2 ${
                   isTrueFalse ? "grid-cols-2" : "grid-cols-1 sm:grid-cols-2"
@@ -163,10 +165,11 @@ export function QuestionForm({
           {isNumeric && (
             <div className="space-y-3">
               <div>
-                <label className="text-xs font-black uppercase tracking-widest text-[rgb(var(--ink-3))]">
+                <label htmlFor="question-numeric-answer" className="text-xs font-black uppercase tracking-widest text-[rgb(var(--ink-3))]">
                   Réponse attendue (nombre)
                 </label>
                 <input
+                  id="question-numeric-answer"
                   type="text"
                   inputMode="decimal"
                   value={form.expected_numeric_answer}
@@ -179,10 +182,11 @@ export function QuestionForm({
               </div>
               <div className="grid gap-3 sm:grid-cols-2">
                 <div>
-                  <label className="text-xs font-black uppercase tracking-widest text-[rgb(var(--ink-3))]">
+                  <label htmlFor="question-numeric-tolerance" className="text-xs font-black uppercase tracking-widest text-[rgb(var(--ink-3))]">
                     Tolérance ± (optionnel, défaut 0.01)
                   </label>
                   <input
+                    id="question-numeric-tolerance"
                     type="text"
                     inputMode="decimal"
                     value={form.numeric_tolerance}
@@ -194,10 +198,11 @@ export function QuestionForm({
                   />
                 </div>
                 <div>
-                  <label className="text-xs font-black uppercase tracking-widest text-[rgb(var(--ink-3))]">
+                  <label htmlFor="question-numeric-unit" className="text-xs font-black uppercase tracking-widest text-[rgb(var(--ink-3))]">
                     Unité (optionnel)
                   </label>
                   <input
+                    id="question-numeric-unit"
                     type="text"
                     value={form.numeric_unit}
                     onChange={(e) =>
@@ -212,10 +217,10 @@ export function QuestionForm({
           )}
 
           {isShortText && (
-            <div>
-              <label className="text-xs font-black uppercase tracking-widest text-[rgb(var(--ink-3))]">
+            <div role="group" aria-labelledby="question-short-text-label">
+              <span id="question-short-text-label" className="text-xs font-black uppercase tracking-widest text-[rgb(var(--ink-3))]">
                 Réponses acceptables (1-5 variantes orthographiques)
-              </label>
+              </span>
               <div className="mt-2 space-y-2">
                 {form.expected_text_answers.map((ans, i) => (
                   <input
@@ -244,7 +249,7 @@ export function QuestionForm({
           {/* Explanation + AI button */}
           <div>
             <div className="flex items-center justify-between">
-              <label className="text-xs font-black uppercase tracking-widest text-[rgb(var(--ink-3))]">
+              <label htmlFor="question-explanation" className="text-xs font-black uppercase tracking-widest text-[rgb(var(--ink-3))]">
                 Explication (optionnel)
               </label>
               <button
@@ -257,6 +262,7 @@ export function QuestionForm({
               </button>
             </div>
             <input
+              id="question-explanation"
               value={form.explanation}
               onChange={(e) => setForm({ ...form, explanation: e.target.value })}
               placeholder="Explication affichée après la réponse..."

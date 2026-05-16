@@ -82,10 +82,11 @@ export default function JoinClassForm({ initialCode }: Props) {
     <div className="space-y-5">
       {/* Code input */}
       <div>
-        <label className="mb-2 block text-xs font-bold uppercase tracking-widest text-[rgb(var(--ink-3))]">
+        <label htmlFor="join-class-code" className="mb-2 block text-xs font-bold uppercase tracking-widest text-[rgb(var(--ink-3))]">
           Code de classe
         </label>
         <input
+          id="join-class-code"
           type="text"
           value={code}
           maxLength={8}

@@ -149,10 +149,11 @@ export default function NewAssignmentPage() {
         >
           {/* Title */}
           <div>
-            <label className="block text-sm font-bold text-[rgb(var(--ink))]">
+            <label htmlFor="nouveau-devoir-title" className="block text-sm font-bold text-[rgb(var(--ink))]">
               Titre <span className="text-[rgb(var(--red))]">*</span>
             </label>
             <input
+              id="nouveau-devoir-title"
               type="text"
               value={title}
               maxLength={120}
@@ -164,10 +165,11 @@ export default function NewAssignmentPage() {
 
           {/* Description */}
           <div>
-            <label className="block text-sm font-bold text-[rgb(var(--ink))]">
+            <label htmlFor="nouveau-devoir-description" className="block text-sm font-bold text-[rgb(var(--ink))]">
               Description <span className="font-normal text-[rgb(var(--ink-3))]">(optionnel)</span>
             </label>
             <textarea
+              id="nouveau-devoir-description"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               rows={2}
@@ -177,10 +179,10 @@ export default function NewAssignmentPage() {
           </div>
 
           {/* Type */}
-          <div>
-            <label className="block text-sm font-bold text-[rgb(var(--ink))]">
+          <div role="group" aria-labelledby="nouveau-devoir-type-label">
+            <span id="nouveau-devoir-type-label" className="block text-sm font-bold text-[rgb(var(--ink))]">
               Type de devoir <span className="text-[rgb(var(--red))]">*</span>
-            </label>
+            </span>
             <div className="mt-2 flex gap-2">
               {(["pdf", "quiz"] as const).map((t) => (
                 <button
@@ -201,7 +203,7 @@ export default function NewAssignmentPage() {
 
           {/* Course selector */}
           <div>
-            <label className="block text-sm font-bold text-[rgb(var(--ink))]">
+            <label htmlFor="nouveau-devoir-course" className="block text-sm font-bold text-[rgb(var(--ink))]">
               Cours <span className="text-[rgb(var(--red))]">*</span>
             </label>
             {coursesLoading ? (
@@ -214,6 +216,7 @@ export default function NewAssignmentPage() {
               </div>
             ) : (
               <select
+                id="nouveau-devoir-course"
                 value={resourceId}
                 onChange={(e) => setResourceId(e.target.value)}
                 className="mt-2 w-full rounded-xl border border-[rgb(var(--border))] bg-[rgb(var(--surface))] px-4 py-3 text-sm text-[rgb(var(--ink))] outline-none focus:border-[rgb(var(--accent))]"
@@ -235,11 +238,12 @@ export default function NewAssignmentPage() {
 
               {/* Questions count */}
               <div>
-                <label className="block text-sm font-bold text-[rgb(var(--ink))]">
+                <label htmlFor="nouveau-devoir-questions-count" className="block text-sm font-bold text-[rgb(var(--ink))]">
                   Nombre de questions
                 </label>
                 <div className="mt-2 flex items-center gap-3">
                   <input
+                    id="nouveau-devoir-questions-count"
                     type="range"
                     min={5}
                     max={30}
@@ -253,10 +257,10 @@ export default function NewAssignmentPage() {
               </div>
 
               {/* Chapter page range */}
-              <div>
-                <label className="block text-sm font-bold text-[rgb(var(--ink))]">
+              <div role="group" aria-labelledby="nouveau-devoir-pages-label">
+                <span id="nouveau-devoir-pages-label" className="block text-sm font-bold text-[rgb(var(--ink))]">
                   Pages du chapitre <span className="font-normal text-[rgb(var(--ink-3))]">(optionnel)</span>
-                </label>
+                </span>
                 <div className="mt-2 flex items-center gap-2">
                   <input
                     type="number"
@@ -264,6 +268,7 @@ export default function NewAssignmentPage() {
                     value={chapterPageStart}
                     onChange={(e) => setChapterPageStart(e.target.value)}
                     placeholder="De"
+                    aria-label="Page de début"
                     className="w-24 rounded-xl border border-[rgb(var(--border))] bg-[rgb(var(--surface))] px-3 py-2 text-sm text-[rgb(var(--ink))] outline-none focus:border-[rgb(var(--accent))]"
                   />
                   <span className="text-[rgb(var(--ink-3))]">à</span>
@@ -273,6 +278,7 @@ export default function NewAssignmentPage() {
                     value={chapterPageEnd}
                     onChange={(e) => setChapterPageEnd(e.target.value)}
                     placeholder="À"
+                    aria-label="Page de fin"
                     className="w-24 rounded-xl border border-[rgb(var(--border))] bg-[rgb(var(--surface))] px-3 py-2 text-sm text-[rgb(var(--ink))] outline-none focus:border-[rgb(var(--accent))]"
                   />
                 </div>
@@ -285,9 +291,9 @@ export default function NewAssignmentPage() {
               <div>
                 <div className="flex items-center justify-between">
                   <div>
-                    <label className="text-sm font-bold text-[rgb(var(--ink))]">
+                    <span id="nouveau-devoir-recall-label" className="text-sm font-bold text-[rgb(var(--ink))]">
                       Rappel des chapitres précédents
-                    </label>
+                    </span>
                     {recallDisabled ? (
                       <p className="mt-0.5 text-xs text-[rgb(var(--ink-3))]">
                         {priorCountLoading ? "Vérification…" : "Disponible dès le 2ème devoir sur ce cours"}
@@ -318,11 +324,12 @@ export default function NewAssignmentPage() {
 
                 {enableRecall && (
                   <div className="mt-3">
-                    <label className="text-xs text-[rgb(var(--ink-2))]">
+                    <label htmlFor="nouveau-devoir-recall-pct" className="text-xs text-[rgb(var(--ink-2))]">
                       Part de rappel : <span className="font-black text-[rgb(var(--accent))]">{recallPct}%</span>
                       <span className="ml-2 text-[rgb(var(--ink-3))]">({100 - recallPct}% chapitre)</span>
                     </label>
                     <input
+                      id="nouveau-devoir-recall-pct"
                       type="range"
                       min={5}
                       max={30}
@@ -339,10 +346,11 @@ export default function NewAssignmentPage() {
 
           {/* Due date */}
           <div>
-            <label className="block text-sm font-bold text-[rgb(var(--ink))]">
+            <label htmlFor="nouveau-devoir-due-date" className="block text-sm font-bold text-[rgb(var(--ink))]">
               Date limite <span className="font-normal text-[rgb(var(--ink-3))]">(optionnel)</span>
             </label>
             <input
+              id="nouveau-devoir-due-date"
               type="datetime-local"
               value={dueDate}
               onChange={(e) => setDueDate(e.target.value)}

@@ -61,10 +61,14 @@ export default function OnboardingNameClient() {
 
         <form onSubmit={handleSubmit} className="mt-8 space-y-4">
           <div>
-            <label className="mb-1 block text-xs font-bold text-[rgb(var(--ink-2))]">
+            <label
+              htmlFor="onboarding-firstname"
+              className="mb-1 block text-xs font-bold text-[rgb(var(--ink-2))]"
+            >
               Prénom <span className="text-[rgb(var(--red))]">*</span>
             </label>
             <input
+              id="onboarding-firstname"
               type="text"
               value={firstName}
               onChange={(e) => setFirstName(e.target.value)}
@@ -77,10 +81,14 @@ export default function OnboardingNameClient() {
             />
           </div>
           <div>
-            <label className="mb-1 block text-xs font-bold text-[rgb(var(--ink-2))]">
+            <label
+              htmlFor="onboarding-lastname"
+              className="mb-1 block text-xs font-bold text-[rgb(var(--ink-2))]"
+            >
               Nom <span className="text-[rgb(var(--red))]">*</span>
             </label>
             <input
+              id="onboarding-lastname"
               type="text"
               value={lastName}
               onChange={(e) => setLastName(e.target.value)}

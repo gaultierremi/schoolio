@@ -256,8 +256,9 @@ export default function AssignmentDetailPage() {
           <div className="space-y-4 rounded-2xl border border-[rgb(var(--accent))]/30 bg-[rgb(var(--surface))] p-5">
             <h3 className="font-black text-[rgb(var(--ink))]">Modifier le devoir</h3>
             <div>
-              <label className="text-xs font-bold text-[rgb(var(--ink-2))]">Titre</label>
+              <label htmlFor="edit-assignment-title" className="text-xs font-bold text-[rgb(var(--ink-2))]">Titre</label>
               <input
+                id="edit-assignment-title"
                 type="text"
                 value={editTitle}
                 onChange={(e) => setEditTitle(e.target.value)}
@@ -265,8 +266,9 @@ export default function AssignmentDetailPage() {
               />
             </div>
             <div>
-              <label className="text-xs font-bold text-[rgb(var(--ink-2))]">Description</label>
+              <label htmlFor="edit-assignment-description" className="text-xs font-bold text-[rgb(var(--ink-2))]">Description</label>
               <textarea
+                id="edit-assignment-description"
                 value={editDesc}
                 onChange={(e) => setEditDesc(e.target.value)}
                 rows={2}
@@ -274,8 +276,9 @@ export default function AssignmentDetailPage() {
               />
             </div>
             <div>
-              <label className="text-xs font-bold text-[rgb(var(--ink-2))]">Date limite</label>
+              <label htmlFor="edit-assignment-due-date" className="text-xs font-bold text-[rgb(var(--ink-2))]">Date limite</label>
               <input
+                id="edit-assignment-due-date"
                 type="datetime-local"
                 value={editDue}
                 onChange={(e) => setEditDue(e.target.value)}

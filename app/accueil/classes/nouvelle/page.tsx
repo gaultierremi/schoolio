@@ -160,10 +160,11 @@ export default function NewClassPage() {
         <form onSubmit={handleSubmit} className="mt-6 space-y-5">
           {/* Nom */}
           <div>
-            <label className="block text-sm font-bold text-[rgb(var(--ink-2))]">
+            <label htmlFor="nouvelle-classe-name" className="block text-sm font-bold text-[rgb(var(--ink-2))]">
               Nom <span className="text-[rgb(var(--red))]">*</span>
             </label>
             <input
+              id="nouvelle-classe-name"
               type="text"
               value={name}
               onChange={(e) => setName(e.target.value)}
@@ -177,10 +178,11 @@ export default function NewClassPage() {
           {/* Cohorte parente — sous-classe uniquement */}
           {type === "subject_class" && (
             <div>
-              <label className="block text-sm font-bold text-[rgb(var(--ink-2))]">
+              <label htmlFor="nouvelle-classe-parent" className="block text-sm font-bold text-[rgb(var(--ink-2))]">
                 Cohorte parente <span className="text-[rgb(var(--red))]">*</span>
               </label>
               <select
+                id="nouvelle-classe-parent"
                 value={parentClassId}
                 onChange={(e) => setParentClassId(e.target.value)}
                 disabled={submitting || loadingCohortes}
@@ -200,8 +202,9 @@ export default function NewClassPage() {
 
           {/* Niveau */}
           <div>
-            <label className="block text-sm font-bold text-[rgb(var(--ink-2))]">Niveau</label>
+            <label htmlFor="nouvelle-classe-level" className="block text-sm font-bold text-[rgb(var(--ink-2))]">Niveau</label>
             <select
+              id="nouvelle-classe-level"
               value={level}
               onChange={(e) => setLevel(e.target.value)}
               disabled={submitting}
@@ -218,10 +221,11 @@ export default function NewClassPage() {
 
           {/* Matière */}
           <div>
-            <label className="block text-sm font-bold text-[rgb(var(--ink-2))]">
+            <label htmlFor="nouvelle-classe-subject" className="block text-sm font-bold text-[rgb(var(--ink-2))]">
               Matière {type === "subject_class" && <span className="text-[rgb(var(--red))]">*</span>}
             </label>
             <select
+              id="nouvelle-classe-subject"
               value={subject}
               onChange={(e) => setSubject(e.target.value)}
               disabled={submitting}
@@ -238,11 +242,12 @@ export default function NewClassPage() {
 
           {/* Expiration du code d'invitation */}
           <div>
-            <label className="block text-sm font-bold text-[rgb(var(--ink-2))]">
+            <label htmlFor="nouvelle-classe-expires" className="block text-sm font-bold text-[rgb(var(--ink-2))]">
               Code d&apos;invitation valide jusqu&apos;au
               <span className="ml-1 text-xs font-normal text-[rgb(var(--ink-3))]">(optionnel)</span>
             </label>
             <input
+              id="nouvelle-classe-expires"
               type="date"
               value={expiresAt}
               onChange={(e) => setExpiresAt(e.target.value)}
