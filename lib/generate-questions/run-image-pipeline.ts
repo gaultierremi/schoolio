@@ -3,12 +3,17 @@
 // Toujours derriere PIPELINE_B_ENABLED feature flag (cf orchestrator).
 
 import { extractImagesFromPdf, type ExtractedImage } from "@/lib/pdf/extract-images";
+import { joinPagesAsMarkdown } from "@/lib/pdf/extract-text";
 import { withAdminClient } from "@/lib/db/admin-client";
 import { logError } from "@/lib/observability/log-error";
 import { classifyImage } from "./vision-classify";
 import { generateImageQuestion } from "./image-questions";
 import { insertTeacherQuestions } from "@/lib/db/teacher-questions";
 import { isSkipType } from "@/lib/pdf/image-types";
+
+// Combien de pages de contexte autour de l'image on passe a Sonnet
+// (image_page - WINDOW, image_page + WINDOW). 1 = la page de l'image + adjacentes.
+const CONTEXT_PAGE_WINDOW = 1;
 
 type JobRow = {
   id: string;
@@ -83,6 +88,7 @@ async function uploadAndInsertBatch(
   batch: ExtractedImage[],
   chapters: ChapterMap,
   fallbackPeriod: string,
+  pagesText: string[],
 ): Promise<void> {
   for (const img of batch) {
     const storagePath = `${course.id}/images/${img.hash}.png`;
@@ -152,6 +158,14 @@ async function uploadAndInsertBatch(
             // par pipeline A. Si aucune correspondance, fallback course.title.
             const chapter = chapterFor(img.pageNumber, chapters, fallbackPeriod);
 
+            // Vrai contexte texte du chapitre : pages ±CONTEXT_PAGE_WINDOW
+            // autour de la page de l'image. Permet a Sonnet de comprendre le
+            // sujet pedagogique reel (evite hallucinations "tour medievale dans
+            // cours math" cf bug 2026-05-15).
+            const pageStart = Math.max(1, img.pageNumber - CONTEXT_PAGE_WINDOW);
+            const pageEnd = Math.min(pagesText.length, img.pageNumber + CONTEXT_PAGE_WINDOW);
+            const realChapterContext = joinPagesAsMarkdown(pagesText, pageStart, pageEnd);
+
             const question = await generateImageQuestion({
               imageHash: img.hash,
               imageUrl: publicUrl,
@@ -164,8 +178,7 @@ async function uploadAndInsertBatch(
               topojsonRegionHint: classification.topojson_region_hint,
               pageNumber: img.pageNumber,
               chapterTitle: chapter,
-              // Best-effort context: description until full chapter threading landed
-              chapterContext: classification.description,
+              chapterContext: realChapterContext,
               job: { teacher_id: job.teacher_id, school_id: job.school_id },
               course: {
                 id: course.id,
@@ -190,6 +203,7 @@ export async function runImagePipeline(
   job: JobRow,
   course: CourseRow,
   pdfBuffer: Buffer,
+  pagesText: string[],
 ): Promise<{ imagesExtracted: number; imagesUploaded: number }> {
   // Wrapper top-level : si extractImagesFromPdf throw (pdfjs/canvas issue),
   // l'erreur etait avalee par Promise.allSettled dans orchestrator. On log
@@ -243,7 +257,7 @@ export async function runImagePipeline(
   let uploaded = 0;
   let batchesDone = 0;
   for (const batch of batches) {
-    await uploadAndInsertBatch(jobId, job, course, batch, chapters, fallbackPeriod);
+    await uploadAndInsertBatch(jobId, job, course, batch, chapters, fallbackPeriod, pagesText);
     uploaded += batch.length;
     batchesDone++;
     await updateJob(jobId, { image_batches_completed: batchesDone });

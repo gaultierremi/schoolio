@@ -134,7 +134,10 @@ export async function runOrchestrator(jobId: string): Promise<void> {
 
     if (PIPELINE_B_ENABLED && pdfBufferForImages) {
       // Buffer clone fait AVANT extractTextFromPdf (qui detache l'original).
-      promises.push(runImagePipeline(jobId, job, course, pdfBufferForImages));
+      // pagesText passe pour que pipeline B puisse donner le vrai contexte
+      // texte du chapitre a Sonnet (evite hallucinations type "tour medievale
+      // dans cours de math sur le cone" cf bug observe 2026-05-15).
+      promises.push(runImagePipeline(jobId, job, course, pdfBufferForImages, pagesText));
     }
 
     await Promise.allSettled(promises);

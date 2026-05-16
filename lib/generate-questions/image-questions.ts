@@ -10,8 +10,40 @@ import Anthropic from "@anthropic-ai/sdk";
 import type { ImageType } from "@/lib/pdf/image-types";
 import type { TeacherQuestionInsertRow } from "@/lib/db/teacher-questions";
 import { latexToMathML } from "@/lib/katex-render";
+import { reviewThresholdFor, isVisionTypeInDomain } from "@/lib/pdf/subject-affinity";
 
+// Backward-compat export — pour anciens consommateurs. Threshold reel calcule
+// dynamiquement par reviewThresholdFor(visionType, subject).
 export const REVIEW_CONFIDENCE_THRESHOLD = 0.8;
+
+// Labels lisibles pour les subject_enum (utilises dans le prompt Sonnet).
+const SUBJECT_LABELS: Record<string, string> = {
+  mathematiques: "mathématiques",
+  chimie: "chimie",
+  physique: "physique",
+  biologie: "biologie",
+  histoire: "histoire",
+  geographie: "géographie",
+  religion: "religion",
+  francais: "français",
+  neerlandais: "néerlandais",
+  anglais: "anglais",
+  allemand: "allemand",
+  latin: "latin",
+  economie: "économie",
+  arts: "arts plastiques",
+  musique: "musique",
+};
+
+function subjectLabel(subjectEnum: string | null): string {
+  if (!subjectEnum) return "matière inconnue";
+  return SUBJECT_LABELS[subjectEnum] ?? subjectEnum;
+}
+
+function levelLabel(level: number | null): string {
+  if (level === null) return "secondaire";
+  return `${level}e année secondaire`;
+}
 
 type QuestionTypeForVision = "mcq" | "numeric" | "short_text";
 
@@ -39,22 +71,47 @@ function buildPrompt(
   ocrText: string,
   chapterContext: string,
   preferredType: QuestionTypeForVision,
+  subjectEnum: string | null,
+  level: number | null,
+  chapterTitle: string,
 ): string {
-  return `Tu es un createur de questions pedagogique CESS Belgique FWB (16-18 ans).
+  const subj = subjectLabel(subjectEnum);
+  const lvl = levelLabel(level);
+  const inDomain = isVisionTypeInDomain(visionType, subjectEnum);
 
-Image type=${visionType}, description :
+  // Note critique anti-hallucination : Vision Haiku peut se tromper sur le type
+  // d'image (cas observe : tour avec toit conique dans cours de math classee
+  // "monument_architectural"). Si le type detecte est hors-domaine pour la
+  // matiere, on dit a Sonnet de retourner null plutot que de generer une
+  // question hors-sujet.
+  const domainNote = inDomain
+    ? ""
+    : `\n\n⚠️ ATTENTION : Vision a classifie cette image comme "${visionType}" mais le cours est de ${subj}. C'est probablement une erreur de classification (Vision a vu une forme visuelle qui ressemble a ${visionType} mais le PDF traite un autre sujet). PRIORITE : si tu peux generer une question pertinente pour le chapitre ${subj} a partir de cette image, fais-le. Sinon retourne {"skip": true, "reason": "image hors-sujet ${visionType} dans cours ${subj}"} (objet JSON, pas null).`;
+
+  return `Tu es un createur de questions pedagogique CESS Belgique FWB (${lvl}).
+Matiere : ${subj}.
+Chapitre : "${chapterTitle}".
+
+Image type detecte par Vision : ${visionType}
+Description Vision :
 ${description}
 
-OCR : ${ocrText}
+OCR (texte present dans l'image) :
+${ocrText}
 
-Contexte chapitre (extraits) :
-${chapterContext.slice(0, 800)}
+Contexte du chapitre (extrait du texte autour de l'image dans le PDF) :
+${chapterContext.slice(0, 1500)}
+${domainNote}
 
-Genere 1 question pedagogique image-aware. Type prefere : ${preferredType}.
+Genere 1 question pedagogique image-aware ALIGNEE SUR LE CHAPITRE et la MATIERE (${subj}). Type prefere : ${preferredType}.
+
+Regle d'or anti-hallucination : la question DOIT etre pertinente pour un cours de ${subj} au niveau ${lvl}. Si l'image (selon description Vision) ne se prete pas a une question ${subj} pertinente pour ce chapitre, retourne {"skip": true, "reason": "..."} (JSON court). Ne genere PAS une question hors-sujet.
 
 Pour les types identification (scene/portrait/map/molecule/diagram) : OBLIGATOIREMENT MCQ avec 4 choix CANONIQUES (4 evenements/personnages/regions/molecules plausibles de la periode/matiere). Pas de question ouverte. Cela bloque les hallucinations.
 
-Reponds en JSON strict (aucun texte hors JSON, pas de code fence) :
+Reponds en JSON strict (aucun texte hors JSON, pas de code fence). Soit :
+
+A) Question generee :
 {
   "type": "${preferredType}",
   "question": "...",
@@ -68,7 +125,13 @@ Reponds en JSON strict (aucun texte hors JSON, pas de code fence) :
   "difficulty": 2
 }
 
-Regles selon type :
+B) Skip explicit (image hors-sujet) :
+{
+  "skip": true,
+  "reason": "Briefe explication de pourquoi cette image ne convient pas a une question ${subj}"
+}
+
+Regles selon type (cas A) :
 - mcq : remplir "options" (4 strings) + "answer_index" (0-3). Laisser expected_numeric_answer/text_answers a null.
 - numeric : remplir expected_numeric_answer + numeric_tolerance (defaut 0.01) + numeric_unit. Laisser options vide.
 - short_text : remplir expected_text_answers (1-5 variantes). Laisser options vide.
@@ -87,6 +150,9 @@ type AnyParsed = {
   expected_text_answers?: unknown;
   explanation?: unknown;
   difficulty?: unknown;
+  // Skip path : Sonnet retourne {skip: true, reason: "..."} si image hors-sujet
+  skip?: unknown;
+  reason?: unknown;
 };
 
 function parseJson(raw: string): AnyParsed | null {
@@ -155,6 +221,9 @@ export async function generateImageQuestion(
     args.ocrText,
     args.chapterContext,
     preferredType,
+    args.course.subject_enum ?? null,
+    args.course.level ?? null,
+    args.chapterTitle,
   );
 
   let text: string;
@@ -173,7 +242,20 @@ export async function generateImageQuestion(
   }
 
   const parsed = parseJson(text);
-  if (!parsed || typeof parsed.question !== "string" || !parsed.question.trim()) {
+  if (!parsed) return null;
+
+  // Sonnet a explicitement skip cette image (hors-sujet pour la matiere).
+  // C'est le bon comportement : pas de question hors-sujet inseree, prof
+  // ne voit meme pas l'image en question.
+  if (parsed.skip === true) {
+    // eslint-disable-next-line no-console
+    console.log(
+      `[image-questions] Sonnet skip image (page ${args.pageNumber}, type ${args.visionType}, subject ${args.course.subject_enum}) : ${typeof parsed.reason === "string" ? parsed.reason : "no reason"}`,
+    );
+    return null;
+  }
+
+  if (typeof parsed.question !== "string" || !parsed.question.trim()) {
     return null;
   }
 
@@ -276,6 +358,9 @@ export async function generateImageQuestion(
     formula_mathml: args.latexIfFormula ? latexToMathML(args.latexIfFormula) : null,
     molecule_smiles: args.smilesIfMolecule,
     geo_topojson_path: mapRegionToTopoJson(args.topojsonRegionHint),
-    needs_review: args.confidence < REVIEW_CONFIDENCE_THRESHOLD,
+    // Threshold dynamique : 0.95 pour types hors-domaine (ex: religious_symbol
+    // dans cours math), 0.80 pour types in-domaine. Force needs_review sur les
+    // images douteuses meme avec confidence Vision moderement haute.
+    needs_review: args.confidence < reviewThresholdFor(args.visionType, args.course.subject_enum ?? null),
   };
 }
