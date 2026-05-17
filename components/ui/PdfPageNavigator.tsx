@@ -152,6 +152,9 @@ export function PdfPageNavigator({
   }
 
   return (
+    // Sprint 1.5 polish (a11y) : role="navigation" + onKeyDown intentionnel
+    // pour fournir un raccourci clavier ←/→ aux pages PDF (utile aux SR users).
+    // eslint-disable-next-line jsx-a11y/no-noninteractive-element-interactions
     <div
       aria-label="Navigation du PDF"
       className={cx(

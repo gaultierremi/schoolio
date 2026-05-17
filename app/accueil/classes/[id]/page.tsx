@@ -316,8 +316,17 @@ function AssignmentsTab({ classId }: { classId: string }) {
             return (
               <div
                 key={a.id}
-                className="group flex cursor-pointer flex-col gap-3 rounded-2xl border border-[rgb(var(--border))] bg-[rgb(var(--surface))] p-4 transition hover:border-[rgb(var(--accent))]/40 hover:bg-[rgb(var(--surface-3))]"
+                role="button"
+                tabIndex={0}
+                aria-label={`Ouvrir le devoir ${a.title}`}
+                className="group flex cursor-pointer flex-col gap-3 rounded-2xl border border-[rgb(var(--border))] bg-[rgb(var(--surface))] p-4 transition hover:border-[rgb(var(--accent))]/40 hover:bg-[rgb(var(--surface-3))] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgb(var(--accent))] focus-visible:ring-offset-2 focus-visible:ring-offset-[rgb(var(--surface-2))]"
                 onClick={() => router.push(`/accueil/classes/${classId}/devoirs/${a.id}`)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    router.push(`/accueil/classes/${classId}/devoirs/${a.id}`);
+                  }
+                }}
               >
                 <div className="flex items-start justify-between gap-2">
                   <div className="min-w-0">

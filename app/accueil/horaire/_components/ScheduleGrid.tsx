@@ -92,6 +92,15 @@ export function ScheduleGrid({ slots, weekFilter, onCellClick, onSlotClick }: Pr
                 const snapped = Math.round(clickedMin / 15) * 15;
                 onCellClick(dow, minutesToHHMM(snapped));
               }}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                  e.preventDefault();
+                  onCellClick(dow, minutesToHHMM(HOUR_START * 60));
+                }
+              }}
+              role="button"
+              tabIndex={0}
+              aria-label={`Créer un créneau pour ${label}`}
             >
               {/* Hour grid lines */}
               {hours.map((h) => (
@@ -121,6 +130,16 @@ export function ScheduleGrid({ slots, weekFilter, onCellClick, onSlotClick }: Pr
                       e.stopPropagation();
                       onSlotClick(slot);
                     }}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" || e.key === " ") {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        onSlotClick(slot);
+                      }
+                    }}
+                    role="button"
+                    tabIndex={0}
+                    aria-label={`Créneau ${label} ${slot.start_time} - ${slot.end_time}`}
                   >
                     <div className="px-1 py-0.5 h-full flex flex-col justify-start">
                       <span className="text-white text-[10px] font-semibold leading-tight truncate">{label}</span>

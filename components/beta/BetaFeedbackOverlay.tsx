@@ -226,10 +226,13 @@ export default function BetaFeedbackOverlay({
   }
 
   return (
+    // Backdrop : click-to-close + Escape global handler (l.128-136)
+    // eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions -- backdrop, Esc handled at window level, focus trap inside dialog
     <div
       className="fixed inset-0 z-[90] flex items-center justify-center bg-black/70 px-4 py-6 backdrop-blur-sm"
       onClick={handleBackdropClick}
     >
+      {/* eslint-disable-next-line jsx-a11y/no-noninteractive-element-interactions -- Dialog with role="dialog" needs onKeyDown for Tab focus trap */}
       <section
         ref={dialogRef}
         role="dialog"

@@ -113,7 +113,9 @@ function GenerateModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={state === "idle" ? onClose : undefined} />
+      {/* Sprint 1.5 polish (a11y) : backdrop modal = presentation, Esc gere par contenu. */}
+      {/* eslint-disable-next-line jsx-a11y/no-static-element-interactions, jsx-a11y/click-events-have-key-events */}
+      <div role="presentation" className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={state === "idle" ? onClose : undefined} />
       <div className="relative z-10 w-full max-w-md rounded-2xl border border-[rgb(var(--border))] bg-[rgb(var(--surface))] p-6 shadow-2xl">
         {state === "loading" ? (
           <div className="flex flex-col items-center gap-4 py-4">

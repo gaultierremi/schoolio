@@ -458,7 +458,9 @@ function DeleteModalOverlay({ modal, onCancel, onConfirm }: DeleteModalProps) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={onCancel} />
+      {/* Sprint 1.5 polish (a11y) : backdrop modal = presentation. Esc gere par dialog content. */}
+      {/* eslint-disable-next-line jsx-a11y/no-static-element-interactions, jsx-a11y/click-events-have-key-events */}
+      <div role="presentation" className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={onCancel} />
       <div className="relative z-10 w-full max-w-md rounded-2xl border border-[rgb(var(--border))] bg-[rgb(var(--surface))] p-6 shadow-2xl">
         <h2 className="serif text-lg font-bold text-[rgb(var(--ink))]">Supprimer ce cours ?</h2>
         <p className="mt-1 text-sm font-medium text-[rgb(var(--ink-2))]">{course.title ?? "Sans titre"}</p>

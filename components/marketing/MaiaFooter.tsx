@@ -60,19 +60,19 @@ export default function MaiaFooter() {
                 </a>
               </li>
               <li>
-                <a href="#" className="hover:ink">
+                <button type="button" className="hover:ink text-left">
                   Politique de confidentialité
-                </a>
+                </button>
               </li>
               <li>
-                <a href="#" className="hover:ink">
+                <button type="button" className="hover:ink text-left">
                   Conditions générales
-                </a>
+                </button>
               </li>
               <li>
-                <a href="#" className="hover:ink">
+                <button type="button" className="hover:ink text-left">
                   DPA &amp; DPIA
-                </a>
+                </button>
               </li>
             </ul>
           </div>
@@ -104,9 +104,9 @@ export default function MaiaFooter() {
                 </a>
               </li>
               <li>
-                <a href="#" className="hover:ink">
+                <button type="button" className="hover:ink text-left">
                   Status
-                </a>
+                </button>
               </li>
             </ul>
           </div>
@@ -117,12 +117,12 @@ export default function MaiaFooter() {
         <div className="mt-6 flex flex-wrap items-center justify-between gap-3 text-xs ink3">
           <p>© 2026 Maïa · Bruxelles, Belgique · TVA BE 0XXX.XXX.XXX</p>
           <div className="flex items-center gap-4">
-            <a href="#" className="hover:ink2">
+            <button type="button" className="hover:ink2">
               Mentions légales
-            </a>
-            <a href="#" className="hover:ink2">
+            </button>
+            <button type="button" className="hover:ink2">
               Cookies
-            </a>
+            </button>
           </div>
         </div>
       </div>

@@ -47,12 +47,15 @@ export default function MaiaPilot() {
                 Postuler comme école pilote
                 <ArrowRight className="h-4 w-4" />
               </a>
-              <a
-                href="#"
+              {/* Sprint 1.5 polish (a11y) : button (pas anchor) — pas de URL,
+                  c'est une action (subscribe newsletter). TODO Sprint 2C+ :
+                  wire vraie action newsletter. */}
+              <button
+                type="button"
                 className="btn-secondary rounded-xl px-6 py-3.5 text-base font-medium inline-flex items-center gap-2"
               >
                 Plus tard, juste me tenir au courant
-              </a>
+              </button>
             </div>
 
             <p className="mt-6 text-xs ink3">

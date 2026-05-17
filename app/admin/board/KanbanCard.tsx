@@ -42,6 +42,9 @@ export function KanbanCard({ card, isDragging, onDragStart, onDragEnd, onClick }
 
   return (
     <div
+      role="button"
+      tabIndex={0}
+      aria-label={`Ouvrir la carte ${card.title}`}
       draggable
       onDragStart={(e) => {
         e.dataTransfer.effectAllowed = "move";
@@ -49,10 +52,17 @@ export function KanbanCard({ card, isDragging, onDragStart, onDragEnd, onClick }
       }}
       onDragEnd={onDragEnd}
       onClick={() => onClick(card)}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          onClick(card);
+        }
+      }}
       className={[
         "rounded-xl border bg-gray-900 p-3 cursor-pointer select-none",
         "transition-all duration-150",
         "hover:border-purple-500/40 hover:bg-gray-800/80 active:scale-95",
+        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-500 focus-visible:ring-offset-2 focus-visible:ring-offset-gray-950",
         priority.border,
         isDragging ? "opacity-40 scale-95 rotate-1" : "",
       ].join(" ")}

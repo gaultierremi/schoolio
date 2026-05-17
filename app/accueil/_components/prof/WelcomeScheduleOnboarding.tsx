@@ -31,7 +31,12 @@ export function WelcomeScheduleOnboarding({ firstName, onDismiss }: Props) {
   }
 
   return (
+    // Sprint 1.5 polish (a11y) : backdrop modal = element presentation
+    // (decoratif visuel, pas logique). Le contenu interne a son propre focus.
+    // L'equivalent clavier de "click outside" = Esc, gere par le dialog.
+    // eslint-disable-next-line jsx-a11y/no-static-element-interactions, jsx-a11y/click-events-have-key-events -- backdrop, see comment above
     <div
+      role="presentation"
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm"
       onClick={(e) => { if (e.target === e.currentTarget) void handleLater(); }}
     >

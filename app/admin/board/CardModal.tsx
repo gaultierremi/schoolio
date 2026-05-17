@@ -157,7 +157,10 @@ export function CardModal({
   }
 
   return (
+    // Sprint 1.5 polish (a11y) : backdrop modal = presentation, Esc gere par contenu.
+    // eslint-disable-next-line jsx-a11y/no-static-element-interactions, jsx-a11y/click-events-have-key-events
     <div
+      role="presentation"
       className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm"
       onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
     >
