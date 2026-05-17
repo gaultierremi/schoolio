@@ -7,10 +7,10 @@ import {
   BookOpen,
   Calendar,
   CheckSquare,
-  ChevronLeft,
-  ChevronRight,
   House,
   Mail,
+  PanelLeftClose,
+  PanelLeftOpen,
   Radio,
   Upload,
   Users,
@@ -68,6 +68,29 @@ export default function NavSidebar({ role }: { role: AppRole }) {
       }`}
       aria-label="Navigation principale"
     >
+      {/* Toggle collapse en haut, icône PanelLeftClose/Open (Lucide standard
+          pour les sidebars — rectangle avec barre verticale au tiers). */}
+      <div
+        className={`flex border-b border-slate-200 px-3 py-2 dark:border-slate-800 ${
+          collapsed ? "justify-center" : "justify-end"
+        }`}
+      >
+        <button
+          type="button"
+          onClick={() => setCollapsed((c) => !c)}
+          aria-label={collapsed ? "Étendre le menu" : "Réduire le menu"}
+          aria-expanded={!collapsed}
+          title={collapsed ? "Étendre" : "Réduire"}
+          className="flex h-8 w-8 items-center justify-center rounded-lg text-slate-500 transition hover:bg-slate-100 hover:text-slate-700 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-200"
+        >
+          {collapsed ? (
+            <PanelLeftOpen size={18} strokeWidth={1.75} />
+          ) : (
+            <PanelLeftClose size={18} strokeWidth={1.75} />
+          )}
+        </button>
+      </div>
+
       <nav className="flex-1 overflow-y-auto px-3 py-4">
         <ul className="space-y-1">
           {items.map((item) => {
@@ -91,17 +114,6 @@ export default function NavSidebar({ role }: { role: AppRole }) {
           })}
         </ul>
       </nav>
-
-      <div className="border-t border-slate-200 p-3 dark:border-slate-800">
-        <button
-          type="button"
-          onClick={() => setCollapsed((c) => !c)}
-          aria-label={collapsed ? "Étendre le menu" : "Réduire le menu"}
-          className="flex w-full items-center justify-center rounded-lg px-3 py-2 text-slate-500 transition hover:bg-slate-100 hover:text-slate-700 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-200"
-        >
-          {collapsed ? <ChevronRight size={16} /> : <ChevronLeft size={16} />}
-        </button>
-      </div>
     </aside>
   );
 }
