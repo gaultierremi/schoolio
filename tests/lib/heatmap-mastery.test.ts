@@ -3,6 +3,7 @@ import {
   countStrugglingStudents,
   findStrongestConcept,
   findWeakestConcept,
+  generateRemediationSuggestions,
   masteryCellClass,
   masteryLabel,
   masteryLevel,
@@ -154,6 +155,130 @@ describe("findStrongestConcept", () => {
   it("returns null when all concepts are 0%", () => {
     const result = findStrongestConcept(concepts, [0, 0, 0]);
     expect(result).toBeNull();
+  });
+});
+
+describe("generateRemediationSuggestions", () => {
+  const concepts = [
+    { id: "1", name: "Atomes" },
+    { id: "2", name: "Stœchiométrie" },
+    { id: "3", name: "Solutions" },
+    { id: "4", name: "Acides" },
+  ];
+
+  it("flags not_started students as 'info' severity with relance message", () => {
+    const students = [
+      {
+        user_id: "u1",
+        display_name: "Lou Beaumont",
+        status: "not_started" as const,
+        masteries: [0, 0, 0, 0],
+      },
+    ];
+    const result = generateRemediationSuggestions(students, concepts);
+    expect(result).toHaveLength(1);
+    expect(result[0].severity).toBe("info");
+    expect(result[0].reason).toMatch(/relance/);
+    expect(result[0].redConceptNames).toHaveLength(0);
+  });
+
+  it("flags 3+ red concepts as 'high' severity with entretien individuel", () => {
+    const students = [
+      {
+        user_id: "u1",
+        display_name: "Mathéo Vandenbroucke",
+        status: "completed" as const,
+        masteries: [30, 25, 35, 70], // 3 red (< 40), 1 OK
+      },
+    ];
+    const result = generateRemediationSuggestions(students, concepts);
+    expect(result).toHaveLength(1);
+    expect(result[0].severity).toBe("high");
+    expect(result[0].reason).toMatch(/entretien individuel/);
+    expect(result[0].redConceptNames).toEqual(["Atomes", "Stœchiométrie", "Solutions"]);
+  });
+
+  it("flags 1-2 red concepts as 'medium' severity with specific concepts to retry", () => {
+    const students = [
+      {
+        user_id: "u1",
+        display_name: "Kylian Dupuis",
+        status: "completed" as const,
+        masteries: [70, 22, 28, 70], // 2 red
+      },
+    ];
+    const result = generateRemediationSuggestions(students, concepts);
+    expect(result).toHaveLength(1);
+    expect(result[0].severity).toBe("medium");
+    expect(result[0].reason).toMatch(/Stœchiométrie \+ Solutions à reprendre/);
+  });
+
+  it("skips students with no red concepts (all >= 40%)", () => {
+    const students = [
+      {
+        user_id: "u1",
+        display_name: "Inès Charlier",
+        status: "completed" as const,
+        masteries: [88, 92, 82, 78],
+      },
+    ];
+    const result = generateRemediationSuggestions(students, concepts);
+    expect(result).toHaveLength(0);
+  });
+
+  it("sorts by severity (high > medium > info)", () => {
+    const students = [
+      {
+        user_id: "u1",
+        display_name: "Lou (info)",
+        status: "not_started" as const,
+        masteries: [0, 0, 0, 0],
+      },
+      {
+        user_id: "u2",
+        display_name: "Kylian (medium)",
+        status: "completed" as const,
+        masteries: [70, 22, 70, 70],
+      },
+      {
+        user_id: "u3",
+        display_name: "Mathéo (high)",
+        status: "completed" as const,
+        masteries: [30, 25, 35, 38],
+      },
+    ];
+    const result = generateRemediationSuggestions(students, concepts);
+    expect(result.map((s) => s.studentDisplayName)).toEqual([
+      "Mathéo (high)",
+      "Kylian (medium)",
+      "Lou (info)",
+    ]);
+  });
+
+  it("respects maxResults cap", () => {
+    const students = Array.from({ length: 10 }, (_, i) => ({
+      user_id: `u${i}`,
+      display_name: `Élève ${i}`,
+      status: "completed" as const,
+      masteries: [20, 25, 30, 35], // tous "high" (4 red)
+    }));
+    const result = generateRemediationSuggestions(students, concepts, 3);
+    expect(result).toHaveLength(3);
+  });
+
+  it("ignores 0% mastery (non évalué) when counting red concepts", () => {
+    const students = [
+      {
+        user_id: "u1",
+        display_name: "Victor (en cours)",
+        status: "in_progress" as const,
+        masteries: [25, 0, 0, 0], // 1 red, 3 non évalués (pas comptés)
+      },
+    ];
+    const result = generateRemediationSuggestions(students, concepts);
+    expect(result).toHaveLength(1);
+    expect(result[0].severity).toBe("medium");
+    expect(result[0].redConceptNames).toEqual(["Atomes"]);
   });
 });
 

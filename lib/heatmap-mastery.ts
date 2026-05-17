@@ -165,3 +165,88 @@ export function countStrugglingStudents<
     return avg > 0 && avg < 50;
   }).length;
 }
+
+/**
+ * Suggestion de remédiation pour un élève en difficulté (Sprint 3 PR S3-2).
+ *
+ * Computed côté client depuis les données heatmap, pas de batch nuit nécessaire.
+ * Cf. mockup `docs/dashboard-prof-heatmap-mockup.html` panel "Suggestions de remédiation".
+ *
+ * Mémoire `feedback_heatmap_no_overwhelm` : max 3-5 alertes, encourageant > exhaustif.
+ * Mémoire `project_drilldown_summary_maia` : pré-baked, jamais IA runtime → ici 100% déterministe.
+ */
+export type RemediationSuggestion = {
+  studentUserId: string;
+  studentDisplayName: string;
+  severity: "high" | "medium" | "info";
+  reason: string;
+  redConceptNames: string[]; // concepts mastery < 40% (rouge)
+};
+
+/**
+ * Génère jusqu'à `maxResults` suggestions de remédiation, classées par priorité.
+ *
+ * Heuristique (deterministe, sans IA runtime) :
+ * - "not_started" en fin de période → relance (severity=info)
+ * - 3+ concepts rouges → entretien individuel (severity=high)
+ * - 1-2 concepts rouges → reprendre ces concepts spécifiquement (severity=medium)
+ */
+export function generateRemediationSuggestions<
+  T extends {
+    user_id: string;
+    display_name: string;
+    status: StatusKind;
+    masteries: number[];
+  },
+  C extends { id: string; name: string },
+>(students: T[], concepts: C[], maxResults: number = 5): RemediationSuggestion[] {
+  const suggestions: RemediationSuggestion[] = [];
+
+  for (const student of students) {
+    // Status "not_started" → relance simple
+    if (student.status === "not_started") {
+      suggestions.push({
+        studentUserId: student.user_id,
+        studentDisplayName: student.display_name,
+        severity: "info",
+        reason: "Non commencé — relance recommandée",
+        redConceptNames: [],
+      });
+      continue;
+    }
+
+    // Identifier les concepts rouges (mastery < 40%, > 0)
+    const redConcepts: string[] = [];
+    for (let i = 0; i < student.masteries.length; i++) {
+      const m = student.masteries[i];
+      if (m > 0 && m < 40) {
+        redConcepts.push(concepts[i]?.name ?? "?");
+      }
+    }
+
+    if (redConcepts.length >= 3) {
+      suggestions.push({
+        studentUserId: student.user_id,
+        studentDisplayName: student.display_name,
+        severity: "high",
+        reason: `${redConcepts.length} concepts en rouge — entretien individuel suggéré`,
+        redConceptNames: redConcepts,
+      });
+    } else if (redConcepts.length > 0) {
+      suggestions.push({
+        studentUserId: student.user_id,
+        studentDisplayName: student.display_name,
+        severity: "medium",
+        reason: `${redConcepts.join(" + ")} à reprendre`,
+        redConceptNames: redConcepts,
+      });
+    }
+  }
+
+  // Tri : high > medium > info
+  const severityWeight = (s: "high" | "medium" | "info"): number =>
+    s === "high" ? 0 : s === "medium" ? 1 : 2;
+  suggestions.sort((a, b) => severityWeight(a.severity) - severityWeight(b.severity));
+
+  return suggestions.slice(0, maxResults);
+}

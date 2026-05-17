@@ -1,11 +1,12 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { AlertTriangle, BookOpen, ChevronDown, Loader2, TrendingDown, TrendingUp } from "lucide-react";
+import { AlertTriangle, BookOpen, ChevronDown, Lightbulb, Loader2, TrendingDown, TrendingUp } from "lucide-react";
 import {
   countStrugglingStudents,
   findStrongestConcept,
   findWeakestConcept,
+  generateRemediationSuggestions,
   masteryCellClass,
   masteryLabel,
   masteryLevel,
@@ -102,6 +103,16 @@ export default function ConceptHeatmap({
   );
   const strugglingCount = useMemo(
     () => (data ? countStrugglingStudents(data.students) : 0),
+    [data],
+  );
+
+  // Sprint 3 PR S3-2 : suggestions de remédiation déterministe (pas IA runtime)
+  // Mémoire feedback_heatmap_no_overwhelm : max 5 alertes encourageant.
+  const remediationSuggestions = useMemo(
+    () =>
+      data
+        ? generateRemediationSuggestions(data.students, data.concepts, 5)
+        : [],
     [data],
   );
 
@@ -370,6 +381,75 @@ export default function ConceptHeatmap({
           </tbody>
         </table>
       </div>
+
+      {/* ── Side panel Suggestions de remédiation (Sprint 3 PR S3-2) ──
+          Déterministe, calculé client-side depuis data heatmap (pas IA runtime).
+          Mémoire `project_drilldown_summary_maia` + `feedback_heatmap_no_overwhelm`. */}
+      {remediationSuggestions.length > 0 ? (
+        <aside
+          aria-labelledby="remediation-title"
+          className="mt-6 rounded-2xl border border-indigo-200 bg-indigo-50/50 p-5 dark:border-indigo-900 dark:bg-indigo-950/30"
+        >
+          <div className="flex items-start gap-2">
+            <Lightbulb
+              size={18}
+              strokeWidth={2}
+              aria-hidden="true"
+              className="mt-0.5 shrink-0 text-indigo-600 dark:text-indigo-400"
+            />
+            <div className="min-w-0 flex-1">
+              <h4
+                id="remediation-title"
+                className="text-sm font-semibold text-indigo-900 dark:text-indigo-100"
+              >
+                Suggestions de remédiation
+              </h4>
+              <p className="mt-0.5 text-xs text-indigo-800 dark:text-indigo-300">
+                {remediationSuggestions.length} élève
+                {remediationSuggestions.length > 1 ? "s" : ""} nécessite
+                {remediationSuggestions.length > 1 ? "nt" : ""} un suivi prioritaire
+              </p>
+            </div>
+          </div>
+
+          <ul role="list" className="mt-3 space-y-2">
+            {remediationSuggestions.map((s) => {
+              const iconClass =
+                s.severity === "high"
+                  ? "text-red-500 dark:text-red-400"
+                  : s.severity === "medium"
+                    ? "text-orange-500 dark:text-orange-400"
+                    : "text-slate-500 dark:text-slate-400";
+              return (
+                <li
+                  key={s.studentUserId}
+                  className="flex items-start gap-2 rounded-lg bg-white px-3 py-2 dark:bg-slate-900"
+                >
+                  <AlertTriangle
+                    size={14}
+                    strokeWidth={2}
+                    aria-hidden="true"
+                    className={`mt-0.5 shrink-0 ${iconClass}`}
+                  />
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-medium text-slate-900 dark:text-slate-100">
+                      {s.studentDisplayName}
+                    </p>
+                    <p className="text-xs text-slate-600 dark:text-slate-400">
+                      {s.reason}
+                    </p>
+                  </div>
+                </li>
+              );
+            })}
+          </ul>
+
+          <p className="mt-3 text-[10px] italic text-indigo-700 dark:text-indigo-400">
+            Calculé automatiquement depuis les résultats du devoir · pas d&apos;IA
+            temps réel
+          </p>
+        </aside>
+      ) : null}
     </section>
   );
 }
