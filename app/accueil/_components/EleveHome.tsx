@@ -11,6 +11,7 @@
 import { createClient as createSupabaseAdminClient } from "@supabase/supabase-js";
 import { requireStudentPage } from "@/lib/auth/role";
 import HeatmapDashboardClient from "@/app/accueil/_components/eleve/HeatmapDashboardClient";
+import PlanMaiaCard from "@/app/accueil/_components/eleve/PlanMaiaCard";
 import type {
   HeatmapData,
   SubjectClass,
@@ -320,5 +321,11 @@ export default async function EleveHome() {
 
   const data = await fetchHeatmapData(user.id);
 
-  return <HeatmapDashboardClient displayName={displayName} initialData={data} />;
+  return (
+    <div className="mx-auto max-w-6xl space-y-4 px-4 py-6 sm:px-6">
+      {/* Sprint 4 PR S4-1 : Card Plan Maïa du jour en haut du dashboard */}
+      <PlanMaiaCard displayName={displayName} />
+      <HeatmapDashboardClient displayName={displayName} initialData={data} />
+    </div>
+  );
 }
