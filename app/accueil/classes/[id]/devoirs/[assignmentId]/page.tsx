@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { GRADE_LABEL, GRADE_STYLE } from "@/lib/grading";
+import ConceptHeatmap from "./_components/ConceptHeatmap";
 
 type StudentRow = {
   student_user_id: string;
@@ -50,7 +51,7 @@ type AssignmentDetail = {
 
 type SortKey = "display_name" | "status" | "score" | "duration_seconds" | "attempts_count" | "last_attempt_at" | "letter_grade";
 type StatusFilter = "all" | "pending" | "in_progress" | "completed";
-type Tab = "overview" | "students" | "top_errors";
+type Tab = "overview" | "students" | "top_errors" | "heatmap";
 
 const STATUS_LABEL: Record<string, string> = {
   pending: "À faire",
@@ -309,6 +310,7 @@ export default function AssignmentDetailPage() {
             { key: "overview", label: "Vue d'ensemble" },
             { key: "students", label: "Élèves" },
             ...(isQuiz ? [{ key: "top_errors", label: "Top erreurs" }] : []),
+            ...(isQuiz ? [{ key: "heatmap", label: "🎯 Heatmap concepts" }] : []),
           ] as { key: Tab; label: string }[]).map(({ key, label }) => (
             <button
               key={key}
@@ -474,6 +476,11 @@ export default function AssignmentDetailPage() {
               )}
             </div>
           </div>
+        )}
+
+        {/* ── Tab: Heatmap concepts (Sprint 3 PR S3-1) ───────────────────── */}
+        {activeTab === "heatmap" && (
+          <ConceptHeatmap classId={classId} assignmentId={assignmentId} />
         )}
 
         {/* ── Tab: Top erreurs ────────────────────────────────────────────── */}
