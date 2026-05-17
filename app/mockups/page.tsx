@@ -9,11 +9,18 @@ export const metadata: Metadata = {
 type Mockup = {
   slug: string;
   title: string;
-  audience: "Élève" | "Prof" | "Marketing";
+  audience: "Élève" | "Prof" | "Marketing" | "Roadmap";
   description: string;
 };
 
 const MOCKUPS: Mockup[] = [
+  {
+    slug: "maia-roadmap.html",
+    title: "Roadmap Maïa — sprints livrés + à venir",
+    audience: "Roadmap",
+    description:
+      "État du projet, KPIs, architecture pipeline A+B, dette technique, sprints chronologiques. Mis à jour 17 mai 2026.",
+  },
   {
     slug: "dashboard-eleve-session-mockup.html",
     title: "Session adaptive — tuteur IA en action",
@@ -51,6 +58,7 @@ const audienceColor: Record<Mockup["audience"], string> = {
   Élève: "bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-200",
   Prof: "bg-purple-100 text-purple-800 dark:bg-purple-900/40 dark:text-purple-200",
   Marketing: "bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-200",
+  Roadmap: "bg-violet-100 text-violet-800 dark:bg-violet-900/40 dark:text-violet-200",
 };
 
 export default function MockupsIndexPage() {
