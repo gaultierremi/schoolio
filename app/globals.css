@@ -100,6 +100,23 @@ html, body {
   animation: fade-slide-down 200ms ease-out both;
 }
 
+/* Sprint 2B PR B : fade-in léger pour les toasts a11y. Respecte
+   prefers-reduced-motion via la classe motion-reduce:animate-none côté composant. */
+@keyframes fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in {
+  animation: fade-in 200ms ease-out both;
+}
+
 /* Tutor IA panel : bulles d'indices qui slide-in du bas en cascade
    (cf. dashboard-eleve-session mockup). Le délai est appliqué par
    inline style sur chaque bulle pour cascade-réveler 0/800/1600/...ms. */

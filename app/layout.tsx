@@ -30,7 +30,7 @@ export default async function RootLayout({
   const messages = await getMessages();
   return (
     <html
-      lang="fr"
+      lang="fr-BE"
       className={`${inter.variable} ${sourceSerif.variable}`}
       suppressHydrationWarning
     >

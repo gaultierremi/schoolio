@@ -94,15 +94,23 @@ export async function PATCH(request: NextRequest, { params }: RouteContext) {
       return NextResponse.json({ error: "Accès refusé" }, { status: 403 });
     }
 
+    // Sprint 2B pre-flight : on maintient `is_active` en parallèle de validated_at
+    // pour que le slider de la nouvelle vue concept reflète l'état runtime.
+    // validate → is_active=true ; reject/unvalidate → is_active=false.
+    // Le runtime filtre désormais sur is_active (cf. lib/contextual-questions,
+    // app/api/classes/[id]/assignments, app/api/student/assignments/[id]/start-quiz).
+    // Sprint 2C dropera validated_at/rejected_at au profit de is_active seul.
     const update: {
       validated_at?: string | null;
       rejected_at?: string | null;
       difficulty_stars?: 1 | 2 | 3;
+      is_active?: boolean;
     } = {};
 
     if (body.action === "validate") {
       update.validated_at = new Date().toISOString();
       update.rejected_at = null;
+      update.is_active = true;
 
       if (body.difficulty_stars !== undefined) {
         update.difficulty_stars = body.difficulty_stars;
@@ -112,11 +120,13 @@ export async function PATCH(request: NextRequest, { params }: RouteContext) {
     if (body.action === "reject") {
       update.rejected_at = new Date().toISOString();
       update.validated_at = null;
+      update.is_active = false;
     }
 
     if (body.action === "unvalidate") {
       update.validated_at = null;
       update.rejected_at = null;
+      update.is_active = false;
     }
 
     const { data: updatedQuestion, error: updateError } = await admin

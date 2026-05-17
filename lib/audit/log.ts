@@ -30,6 +30,11 @@ export const AUDIT_EVENTS = {
   DATA_EXPORT_REQUESTED: "data_export_requested",
   ACCOUNT_DELETION_REQUESTED: "account_deletion_requested",
   ACCOUNT_ANONYMIZED: "account_anonymized",
+  // Sprint 2B — Vue concept unifiée curation
+  CONCEPT_THEORY_UPDATED: "concept_theory_updated",
+  CONCEPT_MISCONCEPTION_CREATED: "concept_misconception_created",
+  CONCEPT_MISCONCEPTION_UPDATED: "concept_misconception_updated",
+  CONCEPT_MISCONCEPTION_DELETED: "concept_misconception_deleted",
 } as const;
 
 export type AuditEventType = (typeof AUDIT_EVENTS)[keyof typeof AUDIT_EVENTS];
