@@ -164,7 +164,6 @@ export function ContextualQuestionCard({
       disabled={isDisabled}
       onClick={handleActivate}
       onKeyDown={handleKeyDown}
-      role="button"
       type="button"
     >
       <span className="flex w-full items-center justify-between gap-2">

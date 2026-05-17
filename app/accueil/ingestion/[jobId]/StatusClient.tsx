@@ -220,7 +220,7 @@ export default function StatusClient({ jobId, initialStatus, programId }: Props)
               {data?.theoryBlocksCount ?? 0} paragraphes générés. Place à la curation.
             </p>
             <p className="mt-1 text-xs text-[rgb(var(--ink-2))]">
-              Sprint 2 ajoutera l'UI de curation. Pour l'instant, vérifie en base via Supabase Studio.
+              Sprint 2 ajoutera l&apos;UI de curation. Pour l&apos;instant, vérifie en base via Supabase Studio.
             </p>
             <Link
               href="/accueil"

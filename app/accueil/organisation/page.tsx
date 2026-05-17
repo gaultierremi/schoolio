@@ -519,6 +519,7 @@ function TagModal({ mode, initialTag, onClose, onSaved }: TagModalProps) {
                       ? "border-[rgb(var(--red))]/60 focus:border-[rgb(var(--red))]"
                       : "border-[rgb(var(--border))] focus:border-purple-500",
                   ].join(" ")}
+                  // eslint-disable-next-line jsx-a11y/no-autofocus -- form modal organisation: focus immediat sur 1er champ apres ouverture
                   autoFocus
                 />
                 {formError && (

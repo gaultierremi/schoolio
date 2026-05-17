@@ -293,7 +293,7 @@ export function PairingCodeDisplay({
       )}
     >
       <span className="text-xs font-semibold uppercase tracking-widest text-gray-500">
-        Code pour l'écran de classe
+        Code pour l&apos;écran de classe
       </span>
 
       <button

@@ -41,18 +41,21 @@ export default async function LegalPage({ slug }: { slug: LegalSlug }) {
         <ReactMarkdown
           components={{
             h1: (props) => (
+              // eslint-disable-next-line jsx-a11y/heading-has-content -- children passes via {...props} from react-markdown
               <h1
                 className="mb-6 text-3xl font-semibold tracking-tight text-slate-900 dark:text-slate-100"
                 {...props}
               />
             ),
             h2: (props) => (
+              // eslint-disable-next-line jsx-a11y/heading-has-content -- children passes via {...props} from react-markdown
               <h2
                 className="mt-8 mb-3 text-xl font-semibold tracking-tight text-slate-900 dark:text-slate-100"
                 {...props}
               />
             ),
             h3: (props) => (
+              // eslint-disable-next-line jsx-a11y/heading-has-content -- children passes via {...props} from react-markdown
               <h3
                 className="mt-6 mb-2 text-base font-semibold tracking-tight text-slate-900 dark:text-slate-100"
                 {...props}

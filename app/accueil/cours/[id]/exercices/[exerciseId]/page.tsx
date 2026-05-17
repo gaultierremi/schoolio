@@ -114,6 +114,7 @@ function EditableTitle({
     return (
       <div className="flex flex-1 items-center gap-2">
         <input
+          // eslint-disable-next-line jsx-a11y/no-autofocus -- mode edition: user vient de cliquer "Edit", focus immediat sur le champ attendu
           autoFocus
           value={draft}
           onChange={(e) => setDraft(e.target.value)}
@@ -194,6 +195,7 @@ function StatementEditor({
       </div>
       {tab === "edit" ? (
         <textarea
+          // eslint-disable-next-line jsx-a11y/no-autofocus -- mode edition: focus immediat sur le textarea attendu apres click "Edit"
           autoFocus
           value={draft}
           onChange={(e) => setDraft(e.target.value)}
@@ -265,6 +267,7 @@ function StepCard({
 
         {editingTitle ? (
           <input
+            // eslint-disable-next-line jsx-a11y/no-autofocus -- mode edition titre: focus immediat attendu
             autoFocus
             value={titleDraft}
             onChange={(e) => setTitleDraft(e.target.value)}
@@ -321,6 +324,7 @@ function StepCard({
             </div>
             {contentTab === "edit" ? (
               <textarea
+                // eslint-disable-next-line jsx-a11y/no-autofocus -- mode edition content: focus immediat attendu
                 autoFocus
                 value={contentDraft}
                 onChange={(e) => setContentDraft(e.target.value)}
@@ -353,6 +357,7 @@ function StepCard({
         <div className="min-w-0 flex-1">
           {editingMethod ? (
             <input
+              // eslint-disable-next-line jsx-a11y/no-autofocus -- mode edition methode: focus immediat attendu
               autoFocus
               value={methodDraft}
               onChange={(e) => setMethodDraft(e.target.value)}

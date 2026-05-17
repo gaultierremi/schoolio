@@ -412,7 +412,7 @@ export default function BoardPage() {
                       onClick={() => setShowAllDone(true)}
                       className="w-full py-2.5 text-xs text-white/30 hover:text-purple-400 transition-colors border border-dashed border-white/10 hover:border-purple-500/30 rounded-lg"
                     >
-                      Voir tout l'historique ({doneTotalCount} cartes)
+                      Voir tout l&apos;historique ({doneTotalCount} cartes)
                     </button>
                   )}
 

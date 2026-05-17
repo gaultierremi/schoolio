@@ -135,6 +135,7 @@ export default function PinSetupClient({
             inputRefs={pinRefs}
             onChange={(i, v) => handleDigitChange("pin", i, v)}
             onKeyDown={(i, e) => handleKeyDown("pin", i, e)}
+            // eslint-disable-next-line jsx-a11y/no-autofocus -- PIN setup flow: user vient de cliquer "Configurer PIN", focus immediat sur 1er digit attendu (pattern auth canonique)
             autoFocus
           />
 
@@ -207,6 +208,7 @@ function DigitGroup({
             aria-label={`Chiffre ${i + 1} sur 4`}
             maxLength={1}
             value={value[i]}
+            // eslint-disable-next-line jsx-a11y/no-autofocus -- DigitGroup recoit autoFocus du parent qui justifie l'usage
             autoFocus={autoFocus && i === 0}
             onChange={(e: ChangeEvent<HTMLInputElement>) => onChange(i, e.target.value)}
             onKeyDown={(e) => onKeyDown(i, e)}

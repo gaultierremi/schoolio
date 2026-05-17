@@ -537,6 +537,7 @@ export default function StudyWizard() {
               "Le code du travail en France, L'anatomie du cœur…"
             }
             rows={4}
+            // eslint-disable-next-line jsx-a11y/no-autofocus -- StudyWizard etape 1: textarea topic, focus immediat (user vient de lancer le wizard)
             autoFocus
             className="w-full resize-none rounded-xl border border-gray-700 bg-gray-900 px-4 py-3 text-sm text-white placeholder-gray-600 focus:border-purple-500 focus:outline-none"
           />
@@ -871,6 +872,7 @@ export default function StudyWizard() {
                           commitEdit();
                         }
                       }}
+                      // eslint-disable-next-line jsx-a11y/no-autofocus -- mode edition question: focus immediat (user vient de cliquer pour editer)
                       autoFocus
                       rows={3}
                       className="w-full resize-none rounded-lg border border-purple-500 bg-gray-800 px-3 py-2 text-sm text-white focus:outline-none"
