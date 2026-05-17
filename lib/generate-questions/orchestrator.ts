@@ -10,7 +10,7 @@
 
 import { logError } from "@/lib/observability/log-error";
 import { withAdminClient } from "@/lib/db/admin-client";
-import { extractTextFromPdf } from "@/lib/pdf/extract-text";
+import { extractTextFromDocument, detectMimeType, type DocumentMimeType } from "@/lib/documents/extract";
 import { isValidSubject, isValidLevel, SUBJECTS_BY_ID } from "@/lib/subjects";
 import type { SubjectId, SchoolLevel } from "@/lib/subjects";
 import { PIPELINE_B_ENABLED } from "@/lib/feature-flags";
@@ -102,16 +102,24 @@ export async function runOrchestrator(jobId: string): Promise<void> {
 
     if (pdfBuffer.byteLength > MAX_PDF_BYTES) {
       const sizeMB = (pdfBuffer.byteLength / 1024 / 1024).toFixed(1);
-      throw new Error(`PDF de ${sizeMB}MB trop volumineux (max 20MB)`);
+      throw new Error(`Fichier de ${sizeMB}MB trop volumineux (max 20MB)`);
     }
+
+    // Detect MIME type from storage path (extension). Sprint M.0 : PDF only,
+    // mais le dispatcher est en place pour M.1 (docx) et M.2 (pptx).
+    // Hard rule : "unknown" default sur PDF (path le plus eprouve). Jamais
+    // throw a cause d'une detection MIME ratee.
+    const mime: DocumentMimeType = detectMimeType(course.pdf_storage_path);
 
     // CRITIQUE : extractTextFromPdf passe pdfBuffer a unpdf/pdfjs qui transfere
     // l'ArrayBuffer sous-jacent vers son worker interne -> le buffer original
     // devient "detached" (byteLength=0) et inutilisable apres l'appel.
     // On clone AVANT le premier appel pour preserver le contenu pour pipeline B.
+    // Hard rule M.0 : on garde le clone meme pour docx/pptx (jszip ne detache
+    // probablement pas mais ~5MB RAM negligeable, pas d'optim prematuree).
     const pdfBufferForImages = PIPELINE_B_ENABLED ? Buffer.from(pdfBuffer) : null;
 
-    const extracted = await extractTextFromPdf(pdfBuffer);
+    const extracted = await extractTextFromDocument(pdfBuffer, mime);
     // eslint-disable-next-line no-console
     console.log(
       `[orchestrator] text extraction: ${extracted.pageCount} pages, ${extracted.totalChars} chars, ${extracted.durationMs}ms`,
@@ -133,11 +141,13 @@ export async function runOrchestrator(jobId: string): Promise<void> {
     ];
 
     if (PIPELINE_B_ENABLED && pdfBufferForImages) {
-      // Buffer clone fait AVANT extractTextFromPdf (qui detache l'original).
-      // pagesText passe pour que pipeline B puisse donner le vrai contexte
-      // texte du chapitre a Sonnet (evite hallucinations type "tour medievale
-      // dans cours de math sur le cone" cf bug observe 2026-05-15).
-      promises.push(runImagePipeline(jobId, job, course, pdfBufferForImages, pagesText));
+      // Buffer clone fait AVANT extractTextFromDocument (qui detache l'original
+      // pour PDF via pdfjs worker). pagesText passe pour que pipeline B puisse
+      // donner le vrai contexte texte du chapitre a Sonnet (evite hallucinations
+      // type "tour medievale dans cours de math sur le cone" cf bug 2026-05-15).
+      // mime passe pour que extractImagesFromDocument dispatche correctement
+      // (Sprint M.0 : seul PDF supporte, mais wiring deja en place).
+      promises.push(runImagePipeline(jobId, job, course, pdfBufferForImages, pagesText, mime));
     }
 
     await Promise.allSettled(promises);
