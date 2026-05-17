@@ -42,6 +42,10 @@ export function PdfUploadZone({
       )}
 
       <div
+        role="button"
+        tabIndex={loading ? -1 : 0}
+        aria-label="Zone de glisser-déposer : déposer un PDF ou cliquer pour ouvrir le sélecteur de fichier"
+        aria-disabled={loading || undefined}
         onDragOver={(e) => {
           e.preventDefault();
           setDragging(true);
@@ -49,7 +53,14 @@ export function PdfUploadZone({
         onDragLeave={() => setDragging(false)}
         onDrop={handleDrop}
         onClick={() => !loading && inputRef.current?.click()}
-        className={`flex cursor-pointer flex-col items-center justify-center rounded-3xl border-2 border-dashed p-12 transition ${
+        onKeyDown={(e) => {
+          if (loading) return;
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            inputRef.current?.click();
+          }
+        }}
+        className={`flex cursor-pointer flex-col items-center justify-center rounded-3xl border-2 border-dashed p-12 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgb(var(--accent))] focus-visible:ring-offset-2 focus-visible:ring-offset-[rgb(var(--surface-2))] ${
           dragging
             ? "border-[rgb(var(--accent))] bg-[rgb(var(--accent))]/5"
             : loading

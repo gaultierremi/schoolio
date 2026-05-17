@@ -261,10 +261,21 @@ function DropZone({ onFiles, disabled }: DropZoneProps) {
 
   return (
     <div
+      role="button"
+      tabIndex={disabled ? -1 : 0}
+      aria-label="Zone de glisser-déposer : déposer un PDF ou cliquer pour sélectionner"
+      aria-disabled={disabled || undefined}
       onDragOver={(e) => { e.preventDefault(); if (!disabled) setDragging(true); }}
       onDragLeave={() => setDragging(false)}
       onDrop={handleDrop}
       onClick={() => !disabled && inputRef.current?.click()}
+      onKeyDown={(e) => {
+        if (disabled) return;
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          inputRef.current?.click();
+        }
+      }}
       className={[
         "flex cursor-pointer flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed p-10 transition-colors",
         dragging ? "border-[rgb(var(--accent))] bg-[rgb(var(--accent))]/5" : "border-[rgb(var(--border))] bg-[rgb(var(--surface))] hover:border-[rgb(var(--accent))]/60",

@@ -877,10 +877,19 @@ export default function StudyWizard() {
                     />
                   ) : (
                     <p
-                      className="cursor-text text-sm text-gray-300 hover:text-white"
+                      role="button"
+                      tabIndex={0}
+                      aria-label="Modifier la question"
+                      className="cursor-text rounded text-sm text-gray-300 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-500"
                       onClick={() =>
                         setEditState({ idx: i, text: q.question })
                       }
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" || e.key === " ") {
+                          e.preventDefault();
+                          setEditState({ idx: i, text: q.question });
+                        }
+                      }}
                     >
                       {q.question}
                     </p>

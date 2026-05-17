@@ -51,13 +51,15 @@ export default function MaiaSecurity() {
         </div>
 
         <div className="mt-10 text-center">
-          <a
-            href="#"
+          {/* Sprint 1.5 polish (a11y) : button (pas anchor) — pas de URL.
+              TODO Sprint 1B+ : wire vrai download DPIA depuis docs/dpia-stub.md. */}
+          <button
+            type="button"
             className="inline-flex items-center gap-1.5 text-sm font-medium accent-text hover:underline"
           >
             Télécharger le DPIA + DPA complet
             <Download className="h-3.5 w-3.5" />
-          </a>
+          </button>
         </div>
       </div>
     </section>

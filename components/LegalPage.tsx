@@ -81,6 +81,7 @@ export default async function LegalPage({ slug }: { slug: LegalSlug }) {
               <strong className="font-semibold text-slate-900 dark:text-slate-100" {...props} />
             ),
             a: (props) => (
+              // eslint-disable-next-line jsx-a11y/anchor-has-content -- children passes via {...props} from react-markdown
               <a
                 className="text-indigo-600 underline transition hover:text-indigo-700 dark:text-indigo-400 dark:hover:text-indigo-300"
                 {...props}

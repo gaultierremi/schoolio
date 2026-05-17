@@ -48,14 +48,30 @@ function ClassCard({ cls, onArchiveToggle }: { cls: ClassItem; onArchiveToggle: 
   const subj = subjectMeta(cls.subject);
   const isArchived = cls.archived_at !== null;
 
+  // Sprint 1.5 polish (a11y) : card cliquable avec actions imbriquees
+  // (Archiver / Detail) => peut pas etre un <button> (nested interactive).
+  // Pattern : div role="button" + tabIndex + onKeyDown pour parite clavier.
+  function handleCardActivate() {
+    if (!isArchived) router.push(`/accueil/classes/${cls.id}`);
+  }
   return (
     <div
+      role={isArchived ? undefined : "button"}
+      tabIndex={isArchived ? undefined : 0}
+      aria-label={isArchived ? undefined : `Ouvrir la classe ${cls.name}`}
       className={`relative flex flex-col gap-3 rounded-2xl border p-5 transition ${
         isArchived
           ? "border-[rgb(var(--border))] bg-[rgb(var(--surface-2))] opacity-70"
-          : "cursor-pointer border-[rgb(var(--border))] bg-[rgb(var(--surface))] hover:border-[rgb(var(--accent))]/40 hover:bg-[rgb(var(--surface-3))]"
+          : "cursor-pointer border-[rgb(var(--border))] bg-[rgb(var(--surface))] hover:border-[rgb(var(--accent))]/40 hover:bg-[rgb(var(--surface-3))] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgb(var(--accent))] focus-visible:ring-offset-2 focus-visible:ring-offset-[rgb(var(--surface-2))]"
       }`}
-      onClick={() => !isArchived && router.push(`/accueil/classes/${cls.id}`)}
+      onClick={handleCardActivate}
+      onKeyDown={(e) => {
+        if (isArchived) return;
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          handleCardActivate();
+        }
+      }}
     >
       {/* Header */}
       <div className="flex items-start justify-between gap-2">

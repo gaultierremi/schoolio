@@ -202,10 +202,13 @@ export function ConfirmDialog({
   }
 
   return (
+    // Backdrop : click-to-close + Escape global handler (registered above)
+    // eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions -- backdrop, Esc handled at window level (l.145-154), focus trap inside dialog
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 opacity-100 backdrop-blur-sm transition-opacity duration-150"
       onClick={handleBackdropClick}
     >
+      {/* eslint-disable-next-line jsx-a11y/no-noninteractive-element-interactions -- Dialog role + onKeyDown required for Tab focus trap */}
       <div
         aria-describedby={description ? descriptionId : undefined}
         aria-labelledby={titleId}

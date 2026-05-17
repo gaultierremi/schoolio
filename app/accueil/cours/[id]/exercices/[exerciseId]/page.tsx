@@ -138,6 +138,9 @@ function EditableTitle({
     <h1
       className="serif flex-1 cursor-pointer text-2xl font-black text-[rgb(var(--ink))] transition hover:text-[rgb(var(--accent))]"
       onClick={() => { setDraft(value); setEditing(true); }}
+      onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setDraft(value); setEditing(true); } }}
+      role="button"
+      tabIndex={0}
       title="Cliquer pour modifier"
     >
       {value}
@@ -161,14 +164,15 @@ function StatementEditor({
 
   if (!editing) {
     return (
-      <div
-        className="cursor-pointer rounded-xl border border-transparent p-3 transition hover:border-[rgb(var(--border))] hover:bg-[rgb(var(--surface-3))]"
+      <button
+        type="button"
+        className="block w-full cursor-pointer rounded-xl border border-transparent p-3 text-left transition hover:border-[rgb(var(--border))] hover:bg-[rgb(var(--surface-3))]"
         onClick={() => { setDraft(value); setEditing(true); }}
         title="Cliquer pour modifier l'énoncé"
       >
         <MarkdownLatex content={value} />
         <p className="mt-2 text-xs text-[rgb(var(--ink-3))]">✎ Cliquer pour modifier</p>
-      </div>
+      </button>
     );
   }
 
@@ -277,6 +281,9 @@ function StepCard({
           <span
             className="flex-1 cursor-pointer text-sm font-black text-[rgb(var(--ink))] hover:text-[rgb(var(--accent))]"
             onClick={() => { setTitleDraft(step.title ?? ""); setEditingTitle(true); }}
+            onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setTitleDraft(step.title ?? ""); setEditingTitle(true); } }}
+            role="button"
+            tabIndex={0}
           >
             {step.title || <span className="font-normal italic text-[rgb(var(--ink-3))]">Cliquer pour nommer l&apos;étape</span>}
           </span>
@@ -331,12 +338,13 @@ function StepCard({
             </div>
           </div>
         ) : (
-          <div
-            className="cursor-pointer rounded-lg border border-transparent p-2 transition hover:border-[rgb(var(--border))] hover:bg-[rgb(var(--surface-3))]"
+          <button
+            type="button"
+            className="block w-full cursor-pointer rounded-lg border border-transparent p-2 text-left transition hover:border-[rgb(var(--border))] hover:bg-[rgb(var(--surface-3))]"
             onClick={() => { setContentDraft(step.content); setEditingContent(true); }}
           >
             <MarkdownLatex content={step.content} />
-          </div>
+          </button>
         )}
       </div>
 
@@ -362,6 +370,9 @@ function StepCard({
             <span
               className={`cursor-pointer text-xs transition hover:text-[rgb(var(--accent))] ${step.method_or_concept ? "text-[rgb(var(--accent))]" : "italic text-[rgb(var(--ink-3))]"}`}
               onClick={() => { setMethodDraft(step.method_or_concept ?? ""); setEditingMethod(true); }}
+              onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setMethodDraft(step.method_or_concept ?? ""); setEditingMethod(true); } }}
+              role="button"
+              tabIndex={0}
             >
               {step.method_or_concept ?? "Concept / règle (cliquer pour modifier)"}
             </span>

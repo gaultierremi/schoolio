@@ -465,6 +465,10 @@ function TagModal({ mode, initialTag, onClose, onSaved }: TagModalProps) {
     <div
       className="fixed inset-0 z-50 flex items-center justify-center p-4"
       onClick={(e) => { if (!saving && e.target === e.currentTarget) onClose(); }}
+      onKeyDown={(e) => { if (e.key === "Escape" && !saving) onClose(); }}
+      role="button"
+      tabIndex={-1}
+      aria-label="Fermer la fenêtre"
     >
       {/* Backdrop */}
       <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" />
@@ -657,6 +661,10 @@ function DeleteModal({ state, deleting, onCancel, onConfirm }: DeleteModalProps)
     <div
       className="fixed inset-0 z-50 flex items-center justify-center p-4"
       onClick={(e) => { if (!deleting && e.target === e.currentTarget) onCancel(); }}
+      onKeyDown={(e) => { if (e.key === "Escape" && !deleting) onCancel(); }}
+      role="button"
+      tabIndex={-1}
+      aria-label="Fermer la fenêtre"
     >
       <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" />
 
