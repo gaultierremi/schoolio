@@ -91,6 +91,7 @@ export default function JoinClassForm({ initialCode }: Props) {
           value={code}
           maxLength={8}
           autoComplete="off"
+          // eslint-disable-next-line jsx-a11y/no-autofocus -- Page rejoindre une classe: focus immediat sur le code attendu (UX critique pour l'eleve)
           autoFocus={!initialCode}
           onChange={(e) => {
             setCode(e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, ""));

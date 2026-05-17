@@ -118,7 +118,7 @@ export default function MockupsIndexPage() {
         <footer className="mt-10 border-t border-gray-200 pt-6 text-xs text-gray-500 dark:border-gray-800 dark:text-gray-400">
           Page non indexée. Pour ajouter un mockup : copier le HTML dans{" "}
           <code className="rounded bg-gray-200 px-1 py-0.5 dark:bg-gray-800">public/mockups/</code>{" "}
-          et l'ajouter à la liste dans{" "}
+          et l&apos;ajouter à la liste dans{" "}
           <code className="rounded bg-gray-200 px-1 py-0.5 dark:bg-gray-800">app/mockups/page.tsx</code>.
         </footer>
       </div>

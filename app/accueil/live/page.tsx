@@ -58,6 +58,7 @@ export default function StudentLiveEntryPage() {
             onChange={(e) => setCode(e.target.value.toUpperCase())}
             placeholder="ABC123"
             maxLength={6}
+            // eslint-disable-next-line jsx-a11y/no-autofocus -- Live join: focus immediat sur code (eleve scanne QR / saisit immediatement)
             autoFocus
             inputMode="text"
             className="w-full rounded-2xl border-2 border-gray-700 bg-gray-900 px-6 py-5 text-center font-mono text-3xl font-black uppercase tracking-widest text-white outline-none transition focus:border-purple-500"

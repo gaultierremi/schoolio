@@ -140,6 +140,7 @@ export default function PinUnlockClient({
                 aria-label={`Chiffre ${i + 1} sur 4`}
                 maxLength={1}
                 value={pin[i]}
+                // eslint-disable-next-line jsx-a11y/no-autofocus -- PIN unlock: user vient d'arriver sur l'ecran d'auth, focus immediat sur 1er digit attendu (pattern auth canonique)
                 autoFocus={i === 0}
                 onChange={(e: ChangeEvent<HTMLInputElement>) => handleDigitChange(i, e.target.value)}
                 onKeyDown={(e) => handleKeyDown(i, e)}

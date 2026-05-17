@@ -74,6 +74,7 @@ export default function OnboardingNameClient() {
               onChange={(e) => setFirstName(e.target.value)}
               placeholder="Ex : Mathéo"
               maxLength={80}
+              // eslint-disable-next-line jsx-a11y/no-autofocus -- Onboarding name: 1er champ d'un form d'onboarding, focus immediat attendu (premier action user post-signup)
               autoFocus
               autoComplete="given-name"
               disabled={saving}

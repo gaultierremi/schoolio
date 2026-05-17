@@ -216,6 +216,7 @@ export function CardModal({
               maxLength={200}
               placeholder="Titre de la carte…"
               className={inputCls}
+              // eslint-disable-next-line jsx-a11y/no-autofocus -- modal CardModal: 1er champ titre, focus immediat attendu apres ouverture
               autoFocus
             />
           </div>

@@ -186,6 +186,7 @@ export function PdfPageNavigator({
           allowJumpTo ? (
             <>
               <input
+                role="spinbutton"
                 aria-label="Aller à la page"
                 aria-valuemax={totalPages}
                 aria-valuemin={1}
