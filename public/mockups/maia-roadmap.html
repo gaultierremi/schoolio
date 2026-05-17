@@ -1,0 +1,655 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Maïa — Roadmap & état du projet</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,typography"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Source+Serif+4:opsz,wght@8..60,500;8..60,600;8..60,700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --surface: 255 255 255;
+    --surface-2: 252 250 248;
+    --surface-3: 247 245 250;
+    --border: 234 232 240;
+    --ink: 17 24 39;
+    --ink-2: 91 100 120;
+    --ink-3: 148 156 172;
+    --accent: 109 40 217;
+    --accent-2: 124 58 237;
+    --green: 34 197 94;
+    --green-soft: 132 204 22;
+    --orange: 245 158 11;
+    --red: 239 68 68;
+    --blue: 37 99 235;
+  }
+  html, body {
+    background: rgb(var(--surface-2));
+    color: rgb(var(--ink));
+    font-family: 'Inter', ui-sans-serif, system-ui, sans-serif;
+  }
+  .serif { font-family: 'Source Serif 4', ui-serif, Georgia, serif; }
+  .mono { font-family: 'JetBrains Mono', ui-monospace, monospace; }
+  .card {
+    background: rgb(var(--surface));
+    border: 1px solid rgb(var(--border));
+    border-radius: 16px;
+  }
+  .ink   { color: rgb(var(--ink)); }
+  .ink2  { color: rgb(var(--ink-2)); }
+  .ink3  { color: rgb(var(--ink-3)); }
+  .border1 { border-color: rgb(var(--border)); }
+  .accent-text { color: rgb(var(--accent)); }
+  .accent-bg { background: rgb(var(--accent)); }
+  /* Timeline dot */
+  .dot {
+    flex-shrink: 0;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    border: 3px solid;
+    background: rgb(var(--surface));
+  }
+  .dot-done    { border-color: rgb(var(--green)); background: rgb(var(--green)); }
+  .dot-active  { border-color: rgb(var(--accent)); background: rgb(var(--accent)); }
+  .dot-todo    { border-color: rgb(var(--ink-3)); background: rgb(var(--surface)); }
+  .dot-planned { border-color: rgb(var(--ink-3)); background: rgb(var(--surface)); border-style: dashed; }
+  /* Phase pill */
+  .pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 2px 8px;
+    border-radius: 9999px;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+  }
+  .pill-done    { background: rgb(var(--green) / 0.12); color: rgb(var(--green)); }
+  .pill-active  { background: rgb(var(--accent) / 0.12); color: rgb(var(--accent)); }
+  .pill-next    { background: rgb(var(--blue) / 0.12); color: rgb(var(--blue)); }
+  .pill-future  { background: rgb(var(--ink-3) / 0.18); color: rgb(var(--ink-2)); }
+  .pill-warn    { background: rgb(var(--orange) / 0.12); color: rgb(var(--orange)); }
+  /* KPI block */
+  .kpi {
+    background: rgb(var(--surface));
+    border: 1px solid rgb(var(--border));
+    border-radius: 12px;
+    padding: 16px;
+  }
+  .kpi-value {
+    font-family: 'Source Serif 4', serif;
+    font-size: 28px;
+    font-weight: 600;
+    line-height: 1.1;
+  }
+  .kpi-label {
+    color: rgb(var(--ink-3));
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    margin-bottom: 6px;
+  }
+  /* Stack flow */
+  .arrow::after {
+    content: "→";
+    color: rgb(var(--ink-3));
+    margin: 0 8px;
+  }
+</style>
+</head>
+<body>
+
+<!-- ─────────────── HEADER ─────────────── -->
+<header class="border-b border1" style="background: rgb(var(--surface));">
+  <div class="mx-auto max-w-[1100px] px-6 py-8">
+    <p class="ink3 text-xs uppercase tracking-wide font-semibold">Maïa · Roadmap interne</p>
+    <h1 class="serif mt-2 text-4xl font-bold ink">Où on en est, où on va</h1>
+    <p class="ink2 mt-2 text-sm">État du projet · Sprints livrés · Roadmap technique · Mise à jour 17 mai 2026</p>
+  </div>
+</header>
+
+<main class="mx-auto max-w-[1100px] px-6 py-10 space-y-12">
+
+  <!-- ─────────────── KPIs ─────────────── -->
+  <section>
+    <h2 class="serif text-2xl font-semibold ink mb-4">État aujourd'hui</h2>
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+      <div class="kpi">
+        <p class="kpi-label">Pipeline PDF</p>
+        <p class="kpi-value text-[rgb(var(--green))]">Production</p>
+        <p class="ink3 text-xs mt-1">Text + images, 81 types</p>
+      </div>
+      <div class="kpi">
+        <p class="kpi-label">Coût/syllabus</p>
+        <p class="kpi-value">~0,09 $</p>
+        <p class="ink3 text-xs mt-1">Vision + Sonnet + Storage</p>
+      </div>
+      <div class="kpi">
+        <p class="kpi-label">PRs livrées</p>
+        <p class="kpi-value">88</p>
+        <p class="ink3 text-xs mt-1">Dont 12 hier sur pipeline B</p>
+      </div>
+      <div class="kpi">
+        <p class="kpi-label">Tests</p>
+        <p class="kpi-value text-[rgb(var(--green))]">129/129</p>
+        <p class="ink3 text-xs mt-1">Vitest + Playwright</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ─────────────── ARCHITECTURE ─────────────── -->
+  <section>
+    <h2 class="serif text-2xl font-semibold ink mb-4">Architecture pipeline d'ingestion</h2>
+    <div class="card p-6">
+      <div class="flex items-center flex-wrap gap-2 text-sm">
+        <span class="mono px-3 py-1 rounded-md" style="background: rgb(var(--surface-3));">Upload PDF</span>
+        <span class="ink3">→</span>
+        <span class="mono px-3 py-1 rounded-md" style="background: rgb(var(--surface-3));">Supabase Storage</span>
+        <span class="ink3">→</span>
+        <span class="mono px-3 py-1 rounded-md" style="background: rgb(var(--accent) / 0.1); color: rgb(var(--accent));">Trigger.dev v9</span>
+        <span class="ink3">→</span>
+        <span class="mono px-3 py-1 rounded-md" style="background: rgb(var(--accent) / 0.1); color: rgb(var(--accent));">Orchestrator</span>
+      </div>
+      <div class="mt-6 grid md:grid-cols-2 gap-4">
+        <div class="rounded-xl p-4" style="background: rgb(var(--blue) / 0.06); border: 1px solid rgb(var(--blue) / 0.3);">
+          <p class="font-bold ink text-sm">Pipeline A · Texte</p>
+          <ul class="mt-2 space-y-1 ink2 text-sm list-disc list-inside">
+            <li><span class="mono text-xs">unpdf</span> → pagesText[]</li>
+            <li>Haiku TOC → chapters[]</li>
+            <li>Sonnet par chapter → questions QCM/numeric/short_text</li>
+            <li>INSERT par chapitre (partial success)</li>
+          </ul>
+        </div>
+        <div class="rounded-xl p-4" style="background: rgb(var(--accent) / 0.06); border: 1px solid rgb(var(--accent) / 0.3);">
+          <p class="font-bold ink text-sm">Pipeline B · Images</p>
+          <ul class="mt-2 space-y-1 ink2 text-sm list-disc list-inside">
+            <li><span class="mono text-xs">pdfjs canvas</span> → images PNG dedup SHA-256</li>
+            <li>Haiku Vision → classification 81 types + confidence</li>
+            <li>Sonnet image-aware + chapter context → questions</li>
+            <li>Threshold dynamique 0,80 / 0,95 selon affinity matière</li>
+          </ul>
+        </div>
+      </div>
+      <p class="ink3 text-xs mt-4 italic">
+        Le trigger DB <span class="mono">trg_job_auto_done</span> coordonne atomiquement la fin des 2 pipelines (BEFORE UPDATE Postgres trigger SECURITY DEFINER).
+      </p>
+    </div>
+  </section>
+
+  <!-- ─────────────── SPRINTS LIVRÉS ─────────────── -->
+  <section>
+    <div class="flex items-baseline justify-between mb-4">
+      <h2 class="serif text-2xl font-semibold ink">Sprints livrés</h2>
+      <span class="ink3 text-xs">Chronologique, plus récent en haut</span>
+    </div>
+
+    <ol class="space-y-5">
+
+      <!-- M.0 Document dispatcher -->
+      <li class="flex gap-4">
+        <div class="dot dot-done mt-2"></div>
+        <div class="flex-1 card p-5">
+          <div class="flex items-baseline justify-between gap-3 flex-wrap">
+            <h3 class="font-bold ink">M.0 · Document dispatcher (foundation)</h3>
+            <span class="pill pill-done">17 mai · Livré</span>
+          </div>
+          <p class="ink2 text-sm mt-1">PR #88 · Trigger.dev v20260517.x</p>
+          <p class="ink2 text-sm mt-2">
+            Refactor de l'orchestrateur pour utiliser un dispatcher générique
+            <span class="mono text-xs">extractTextFromDocument(buffer, mime)</span>. PDF-only en M.0, prêt à brancher
+            DOCX (M.1) et PPTX (M.2) sans toucher au flow PDF qui marche. Hard rules : default sur PDF si mime
+            inconnu, signature <span class="mono text-xs">extractTextFromPdf</span> inchangée, buffer clone conservé.
+          </p>
+          <p class="ink3 text-xs mt-2">Zéro régression observable côté prof.</p>
+        </div>
+      </li>
+
+      <!-- Anti-hallucination v8 -->
+      <li class="flex gap-4">
+        <div class="dot dot-done mt-2"></div>
+        <div class="flex-1 card p-5">
+          <div class="flex items-baseline justify-between gap-3 flex-wrap">
+            <h3 class="font-bold ink">Anti-hallucinations Vision (v8)</h3>
+            <span class="pill pill-done">16 mai · Livré</span>
+          </div>
+          <p class="ink2 text-sm mt-1">PR #83</p>
+          <p class="ink2 text-sm mt-2">
+            4 fixes critiques après détection en prod : Vision Haiku classifiait une tour à toit conique en
+            <em>monument_architectural</em> confidence 0,95 → Sonnet générait une question sur les bretèches en
+            encorbellement dans un cours de math. Fixes :
+          </p>
+          <ul class="mt-2 space-y-1 ink2 text-sm list-disc list-inside">
+            <li><strong>Chapter context réel</strong> : pages ±1 autour de l'image passées à Sonnet (1500 chars)</li>
+            <li><strong>Subject + level + chapter title</strong> explicites dans le prompt</li>
+            <li><strong>Skip path</strong> : Sonnet retourne <span class="mono text-xs">{skip: true}</span> si image hors-sujet</li>
+            <li><strong>Threshold dynamique</strong> 0,80 / 0,95 selon affinity matière (subject-affinity.ts)</li>
+          </ul>
+          <p class="ink3 text-xs mt-2 italic">Smoke test : la même tour génère maintenant une question sur l'aire latérale du cône.</p>
+        </div>
+      </li>
+
+      <!-- Pipeline B images PDF -->
+      <li class="flex gap-4">
+        <div class="dot dot-done mt-2"></div>
+        <div class="flex-1 card p-5">
+          <div class="flex items-baseline justify-between gap-3 flex-wrap">
+            <h3 class="font-bold ink">Pipeline B · Extraction images PDF</h3>
+            <span class="pill pill-done">15-16 mai · Livré</span>
+          </div>
+          <p class="ink2 text-sm mt-1">PRs #63-#71 + hotfixes #72, #77, #79, #82, #83 · 12 PRs en 24h</p>
+          <p class="ink2 text-sm mt-2">
+            Extraction des images d'un syllabus PDF, classification par Haiku Vision (81 types CESS FWB),
+            génération de questions image-aware par Sonnet, INSERT avec <span class="mono text-xs">image_url</span>
+            + <span class="mono text-xs">needs_review</span> pour validation prof.
+          </p>
+          <div class="mt-3 grid sm:grid-cols-3 gap-2 text-xs">
+            <div class="rounded-md px-2 py-1.5" style="background: rgb(var(--surface-3));">
+              <span class="ink3">5 migrations DB</span><br>
+              <span class="mono">image_*, vision_type, needs_review, formula_mathml</span>
+            </div>
+            <div class="rounded-md px-2 py-1.5" style="background: rgb(var(--surface-3));">
+              <span class="ink3">81 IMAGE_TYPES</span><br>
+              <span class="ink2">Math, chimie, bio, histoire, géo, religion, arts…</span>
+            </div>
+            <div class="rounded-md px-2 py-1.5" style="background: rgb(var(--surface-3));">
+              <span class="ink3">Trigger DB done coordinator</span><br>
+              <span class="ink2">Atomic, zero race condition A+B</span>
+            </div>
+          </div>
+        </div>
+      </li>
+
+      <!-- Pipeline A texte -->
+      <li class="flex gap-4">
+        <div class="dot dot-done mt-2"></div>
+        <div class="flex-1 card p-5">
+          <div class="flex items-baseline justify-between gap-3 flex-wrap">
+            <h3 class="font-bold ink">Pipeline A · Extraction texte (text-only)</h3>
+            <span class="pill pill-done">14 mai · Livré</span>
+          </div>
+          <p class="ink2 text-sm mt-1">PRs #46-#59 · Pivot architectural</p>
+          <p class="ink2 text-sm mt-2">
+            Pivot de Anthropic Vision PDF (200s/appel) vers extraction texte locale <span class="mono text-xs">unpdf</span>
+            (~1s) + Sonnet text-only (~30s/chapitre). Gain : ~10× vitesse et coût. INSERT chapter-by-chapter
+            pour préserver succès partiels.
+          </p>
+        </div>
+      </li>
+
+      <!-- Sprint 2A is_active -->
+      <li class="flex gap-4">
+        <div class="dot dot-done mt-2"></div>
+        <div class="flex-1 card p-5">
+          <div class="flex items-baseline justify-between gap-3 flex-wrap">
+            <h3 class="font-bold ink">Curation · slider is_active</h3>
+            <span class="pill pill-done">15 mai · Livré</span>
+          </div>
+          <p class="ink2 text-sm mt-1">PR #76</p>
+          <p class="ink2 text-sm mt-2">
+            Toggle on/off par question dans ValidatedCard. Le prof peut désactiver une question pour le
+            semestre sans la rejeter définitivement. Première brique de la vue concept (Sprint 2B à venir).
+          </p>
+        </div>
+      </li>
+
+      <!-- Rebrand school → accueil -->
+      <li class="flex gap-4">
+        <div class="dot dot-done mt-2"></div>
+        <div class="flex-1 card p-5">
+          <div class="flex items-baseline justify-between gap-3 flex-wrap">
+            <h3 class="font-bold ink">Sprint 0 · Unification /accueil</h3>
+            <span class="pill pill-done">15 mai · Livré</span>
+          </div>
+          <p class="ink2 text-sm mt-1">PR #69</p>
+          <p class="ink2 text-sm mt-2">
+            Migration <span class="mono text-xs">/school/*</span> et <span class="mono text-xs">/student/*</span> sous
+            <span class="mono text-xs">/accueil/*</span>, rôle-aware via app_metadata. Préparation à l'URL flat
+            <span class="mono text-xs">maia.app/accueil</span>.
+          </p>
+        </div>
+      </li>
+
+    </ol>
+  </section>
+
+  <!-- ─────────────── SPRINTS À VENIR ─────────────── -->
+  <section>
+    <div class="flex items-baseline justify-between mb-4">
+      <h2 class="serif text-2xl font-semibold ink">Sprints à venir</h2>
+      <span class="ink3 text-xs">Ordre proposé, scope identifié</span>
+    </div>
+
+    <ol class="space-y-5">
+
+      <!-- M.1 DOCX -->
+      <li class="flex gap-4">
+        <div class="dot dot-active mt-2"></div>
+        <div class="flex-1 card p-5">
+          <div class="flex items-baseline justify-between gap-3 flex-wrap">
+            <h3 class="font-bold ink">M.1 · DOCX extractor</h3>
+            <span class="pill pill-active">Prochain · ~1,5 j</span>
+          </div>
+          <p class="ink2 text-sm mt-2">
+            Parser natif <span class="mono text-xs">.docx</span> (OOXML = ZIP + XML) :
+          </p>
+          <ul class="mt-2 space-y-1 ink2 text-sm list-disc list-inside">
+            <li><span class="mono text-xs">jszip</span> unzip + <span class="mono text-xs">fast-xml-parser</span> sur <span class="mono text-xs">word/document.xml</span></li>
+            <li>Split par <em>Heading 1</em> → pseudo-pages contigus (1, 2, 3...)</li>
+            <li>Images depuis <span class="mono text-xs">word/media/*</span>, mapping page via walk linéaire des <span class="mono text-xs">&lt;w:drawing&gt;</span></li>
+            <li>Activé derrière flag <span class="mono text-xs">DOCX_UPLOAD_ENABLED</span> (off par défaut)</li>
+          </ul>
+        </div>
+      </li>
+
+      <!-- M.2 PPTX -->
+      <li class="flex gap-4">
+        <div class="dot dot-todo mt-2"></div>
+        <div class="flex-1 card p-5">
+          <div class="flex items-baseline justify-between gap-3 flex-wrap">
+            <h3 class="font-bold ink">M.2 · PPTX extractor</h3>
+            <span class="pill pill-next">~1,5 j</span>
+          </div>
+          <p class="ink2 text-sm mt-2">
+            Parser natif <span class="mono text-xs">.pptx</span> :
+            1 slide = 1 page (mapping naturel). Parse <span class="mono text-xs">ppt/slides/slide{N}.xml</span> +
+            images depuis <span class="mono text-xs">ppt/media/*</span> liées via rels. Flag <span class="mono text-xs">PPTX_UPLOAD_ENABLED</span>.
+            Refus explicite <span class="mono text-xs">.doc</span>/<span class="mono text-xs">.ppt</span> legacy avec message UX.
+          </p>
+        </div>
+      </li>
+
+      <!-- M.3 wiring -->
+      <li class="flex gap-4">
+        <div class="dot dot-todo mt-2"></div>
+        <div class="flex-1 card p-5">
+          <div class="flex items-baseline justify-between gap-3 flex-wrap">
+            <h3 class="font-bold ink">M.3 · Wiring upload route + bucket + UI</h3>
+            <span class="pill pill-next">~0,5 j</span>
+          </div>
+          <p class="ink2 text-sm mt-2">
+            Étendre validation route <span class="mono text-xs">/api/courses/upload-url</span> à
+            <span class="mono text-xs">.docx</span> / <span class="mono text-xs">.pptx</span>. Nouveau bucket
+            <span class="mono text-xs">course-documents</span> (cohabite avec <span class="mono text-xs">course-pdfs</span>).
+            UI dropzone : "PDF, Word ou PowerPoint" + accept attribute.
+          </p>
+        </div>
+      </li>
+
+      <!-- Fix chapter race -->
+      <li class="flex gap-4">
+        <div class="dot dot-todo mt-2"></div>
+        <div class="flex-1 card p-5">
+          <div class="flex items-baseline justify-between gap-3 flex-wrap">
+            <h3 class="font-bold ink">Fix race condition chapter mapping</h3>
+            <span class="pill pill-warn">Tech debt · ~0,5 j</span>
+          </div>
+          <p class="ink2 text-sm mt-2">
+            Déplacer <span class="mono text-xs">extractChapters</span> dans l'orchestrateur (au lieu de dans
+            runTextPipeline). Partage TOC entre A et B → fini la race où pipeline B fallbackait sur
+            <span class="mono text-xs">course.title</span> au lieu du vrai chapter. Cosmétique sur PDF mono-chapter
+            mais bloquant sur PDF multi-chapitres (géo 3e, histoire 4e).
+          </p>
+        </div>
+      </li>
+
+      <!-- Sprint 2B concept view -->
+      <li class="flex gap-4">
+        <div class="dot dot-todo mt-2"></div>
+        <div class="flex-1 card p-5">
+          <div class="flex items-baseline justify-between gap-3 flex-wrap">
+            <h3 class="font-bold ink">Sprint 2B · Vue concept unifiée</h3>
+            <span class="pill pill-next">~2 j</span>
+          </div>
+          <p class="ink2 text-sm mt-2">
+            Refonte curation : vue par <em>concept</em> au lieu de par <em>question</em>. Théorie en champs
+            séparés (définition, formules, exemples), questions liées, slider on/off par concept.
+            Source quote read-only. Préparation à la curation "manuelle" du prof + génération récursive
+            depuis un concept.
+          </p>
+        </div>
+      </li>
+
+      <!-- Plan Maïa daily -->
+      <li class="flex gap-4">
+        <div class="dot dot-todo mt-2"></div>
+        <div class="flex-1 card p-5">
+          <div class="flex items-baseline justify-between gap-3 flex-wrap">
+            <h3 class="font-bold ink">Plan Maïa · session quotidienne</h3>
+            <span class="pill pill-next">~3 j</span>
+          </div>
+          <p class="ink2 text-sm mt-2">
+            Session 20 min multi-matière auto-générée chaque matin pour chaque élève. Pick-and-choose,
+            non-adaptatif au skip (équilibré). Heatmap mastery par concept côté élève + prof (max 3-5
+            alertes simultanées élève, encourageant > exhaustif).
+          </p>
+        </div>
+      </li>
+
+      <!-- PIN auth -->
+      <li class="flex gap-4">
+        <div class="dot dot-todo mt-2"></div>
+        <div class="flex-1 card p-5">
+          <div class="flex items-baseline justify-between gap-3 flex-wrap">
+            <h3 class="font-bold ink">PIN auth · 4 caractères</h3>
+            <span class="pill pill-next">~1,5 j</span>
+          </div>
+          <p class="ink2 text-sm mt-2">
+            Double-auth SSO Google/Microsoft + PIN 4 chars (bcrypt cost 12, partagé par user, timezone user).
+            Fallback SSO après 3 échecs PIN. Tous rôles (prof + élève + admin).
+          </p>
+        </div>
+      </li>
+
+      <!-- Live session Kahoot mode année -->
+      <li class="flex gap-4">
+        <div class="dot dot-todo mt-2"></div>
+        <div class="flex-1 card p-5">
+          <div class="flex items-baseline justify-between gap-3 flex-wrap">
+            <h3 class="font-bold ink">Live session · Kahoot mode année</h3>
+            <span class="pill pill-next">~3 j</span>
+          </div>
+          <p class="ink2 text-sm mt-2">
+            Routes <span class="mono text-xs">/live</span> et <span class="mono text-xs">/session</span>
+            (déjà scaffolded). Phase silencieuse écran + random-pick élève réponse orale projetée.
+            Pensée comme mode de cours toute l'année, pas révision ponctuelle.
+          </p>
+        </div>
+      </li>
+
+      <!-- PWA -->
+      <li class="flex gap-4">
+        <div class="dot dot-todo mt-2"></div>
+        <div class="flex-1 card p-5">
+          <div class="flex items-baseline justify-between gap-3 flex-wrap">
+            <h3 class="font-bold ink">PWA installable</h3>
+            <span class="pill pill-next">~1 j</span>
+          </div>
+          <p class="ink2 text-sm mt-2">
+            Manifest + service worker. Prépare le wrap natif futur (Capacitor) sans dette technique.
+            Dès MVP, pas après.
+          </p>
+        </div>
+      </li>
+
+      <!-- Pre-warming corpus -->
+      <li class="flex gap-4">
+        <div class="dot dot-planned mt-2"></div>
+        <div class="flex-1 card p-5">
+          <div class="flex items-baseline justify-between gap-3 flex-wrap">
+            <h3 class="font-bold ink">Pre-warming corpus FWB</h3>
+            <span class="pill pill-future">Été 2026</span>
+          </div>
+          <p class="ink2 text-sm mt-2">
+            Pré-traiter 100 syllabi populaires CESS FWB en août → en septembre, dedup hash sert
+            <strong>instant</strong> sans Anthropic. Investissement ~200 $ one-shot pour absorber le pic
+            rentrée (1000 profs/semaine).
+          </p>
+        </div>
+      </li>
+
+      <!-- Phase 3 spec -->
+      <li class="flex gap-4">
+        <div class="dot dot-planned mt-2"></div>
+        <div class="flex-1 card p-5">
+          <div class="flex items-baseline justify-between gap-3 flex-wrap">
+            <h3 class="font-bold ink">Phase 3 · Polish images</h3>
+            <span class="pill pill-future">Post-MVP</span>
+          </div>
+          <p class="ink2 text-sm mt-2">
+            Hors scope immédiat mais préparé dans la spec :
+          </p>
+          <ul class="mt-2 space-y-1 ink2 text-sm list-disc list-inside">
+            <li><strong>Imago WASM</strong> · rendu 2D molécules organiques (chimie)</li>
+            <li><strong>d3-geo + TopoJSON FWB</strong> · cartes muettes interactives (géographie)</li>
+            <li><strong>Quiz géo interactif</strong> · clic région, scoring, drag-drop labels</li>
+            <li><strong>Mathpix</strong> si benchmark prouve > 20 % d'échec sur formules complexes (improbable au niveau CESS)</li>
+          </ul>
+        </div>
+      </li>
+
+    </ol>
+  </section>
+
+  <!-- ─────────────── DETTE TECHNIQUE ─────────────── -->
+  <section>
+    <h2 class="serif text-2xl font-semibold ink mb-4">Dette technique à surveiller</h2>
+    <div class="grid md:grid-cols-2 gap-3">
+      <div class="card p-4">
+        <p class="pill pill-warn mb-2">P1 · bloquant à terme</p>
+        <p class="font-semibold ink text-sm">Race condition chapter mapping</p>
+        <p class="ink2 text-xs mt-1">Sur PDF multi-chapitres, les images peuvent être attribuées à course.title au lieu du vrai chapter si pipeline B démarre avant pipeline A.</p>
+      </div>
+      <div class="card p-4">
+        <p class="pill pill-warn mb-2">P2 · cosmétique</p>
+        <p class="font-semibold ink text-sm">phase = 'validating' vs status = 'done'</p>
+        <p class="ink2 text-xs mt-1">Race entre trigger DB et updateJob final. Le Stepper peut afficher état stale, mais status est correct.</p>
+      </div>
+      <div class="card p-4">
+        <p class="pill pill-warn mb-2">P2 · ops</p>
+        <p class="font-semibold ink text-sm">Vercel auto-deploy cassé</p>
+        <p class="ink2 text-xs mt-1">PRs #77 et #79 n'ont pas auto-triggered Vercel. Deploy manuel requis. À investiguer.</p>
+      </div>
+      <div class="card p-4">
+        <p class="pill pill-warn mb-2">P3 · sécurité</p>
+        <p class="font-semibold ink text-sm">Rotation PAT Supabase</p>
+        <p class="ink2 text-xs mt-1">Le PAT utilisé pour les migrations a été collé dans l'historique. À rotate.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ─────────────── KEY METRICS ─────────────── -->
+  <section>
+    <h2 class="serif text-2xl font-semibold ink mb-4">Mesures clés (smoke test math/cône)</h2>
+    <div class="card p-6">
+      <table class="w-full text-sm">
+        <thead>
+          <tr class="border-b border1 text-left">
+            <th class="py-2 ink3 text-xs uppercase tracking-wide font-semibold">Métrique</th>
+            <th class="py-2 ink3 text-xs uppercase tracking-wide font-semibold">Valeur</th>
+            <th class="py-2 ink3 text-xs uppercase tracking-wide font-semibold">Note</th>
+          </tr>
+        </thead>
+        <tbody class="ink">
+          <tr class="border-b border1">
+            <td class="py-2.5">Durée totale pipeline A + B</td>
+            <td class="py-2.5 mono">~ 2 min 50</td>
+            <td class="py-2.5 ink2">1 chapter · 14 images · 36 questions</td>
+          </tr>
+          <tr class="border-b border1">
+            <td class="py-2.5">Questions texte (pipeline A)</td>
+            <td class="py-2.5 mono">25</td>
+            <td class="py-2.5 ink2">Calculs, identifications, courte réponse</td>
+          </tr>
+          <tr class="border-b border1">
+            <td class="py-2.5">Questions image-aware (pipeline B)</td>
+            <td class="py-2.5 mono">11</td>
+            <td class="py-2.5 ink2">Aire/volume cône, étymologie, lecture schéma</td>
+          </tr>
+          <tr class="border-b border1">
+            <td class="py-2.5"><span class="mono text-xs">needs_review</span> flag fire</td>
+            <td class="py-2.5 mono">4 / 11</td>
+            <td class="py-2.5 ink2">Types out-of-domain (architectural, religious_symbol)</td>
+          </tr>
+          <tr class="border-b border1">
+            <td class="py-2.5">Hallucinations détectées en validation</td>
+            <td class="py-2.5 mono text-[rgb(var(--green))]">0</td>
+            <td class="py-2.5 ink2">Pipeline B convertit "tour conique" → question sur l'aire</td>
+          </tr>
+          <tr class="border-b border1">
+            <td class="py-2.5">Coût Anthropic / syllabus</td>
+            <td class="py-2.5 mono">~ 0,09 $</td>
+            <td class="py-2.5 ink2">Haiku Vision + Sonnet text + Sonnet image</td>
+          </tr>
+          <tr>
+            <td class="py-2.5">Storage Supabase</td>
+            <td class="py-2.5 mono">~ 16 Mo / syllabus</td>
+            <td class="py-2.5 ink2">PDF + images extraites PNG</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ─────────────── STACK ─────────────── -->
+  <section>
+    <h2 class="serif text-2xl font-semibold ink mb-4">Stack technique</h2>
+    <div class="card p-6 text-sm">
+      <div class="grid md:grid-cols-2 gap-x-8 gap-y-3">
+        <div>
+          <p class="ink3 text-xs uppercase tracking-wide font-semibold mb-2">Frontend</p>
+          <ul class="space-y-1 ink2">
+            <li>Next.js 14 App Router</li>
+            <li>React 18 + Tailwind CSS</li>
+            <li>Lucide icons (sauf tuteur élève → emojis seulement)</li>
+            <li>KaTeX server-side · MathML natif WCAG 2.2 AA</li>
+          </ul>
+        </div>
+        <div>
+          <p class="ink3 text-xs uppercase tracking-wide font-semibold mb-2">Backend</p>
+          <ul class="space-y-1 ink2">
+            <li>Supabase Postgres + RLS + Realtime + Storage</li>
+            <li>Trigger.dev v3 cloud workers</li>
+            <li>Anthropic Claude · Haiku 4.5 + Sonnet 4.6</li>
+            <li><span class="mono text-xs">unpdf</span>, <span class="mono text-xs">pdfjs-dist</span>, canvas natif</li>
+          </ul>
+        </div>
+        <div>
+          <p class="ink3 text-xs uppercase tracking-wide font-semibold mb-2">Infra</p>
+          <ul class="space-y-1 ink2">
+            <li>Vercel · Fluid Compute</li>
+            <li>Supabase eu-west-1</li>
+            <li>2 remotes git · schoolio (dev) + maia (prod link)</li>
+            <li>GitHub Actions à venir · auto-sync + auto-deploy Trigger.dev</li>
+          </ul>
+        </div>
+        <div>
+          <p class="ink3 text-xs uppercase tracking-wide font-semibold mb-2">Tests · Observabilité</p>
+          <ul class="space-y-1 ink2">
+            <li>Vitest · 129 tests unitaires</li>
+            <li>Playwright · multi-tenant isolation E2E</li>
+            <li>Table <span class="mono text-xs">error_logs</span> · sources structurées</li>
+            <li>Table <span class="mono text-xs">activity_events</span> · audit prof</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ─────────────── FOOTER ─────────────── -->
+  <footer class="pt-6 border-t border1">
+    <div class="flex items-baseline justify-between flex-wrap gap-2">
+      <p class="ink3 text-xs">
+        Doc généré le 17 mai 2026 · Source : <a href="/mockups" class="accent-text hover:underline">/mockups</a>
+      </p>
+      <p class="ink3 text-xs">
+        Mémoire des règles Maïa : <span class="mono">CLAUDE.md</span> · <span class="mono">~/.claude/projects/.../memory/MEMORY.md</span>
+      </p>
+    </div>
+  </footer>
+
+</main>
+
+</body>
+</html>
