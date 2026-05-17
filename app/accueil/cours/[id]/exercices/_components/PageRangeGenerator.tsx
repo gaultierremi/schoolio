@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useId, useState } from "react";
 import PageRangeSlider from "@/components/pdf/PageRangeSlider";
 
 type Props = {
@@ -99,6 +99,13 @@ export function PageRangeGenerator({ courseId, pagesCount, courseTitle, onSucces
 
   const sliderKey = pagesCount !== null ? "with-pages" : "no-pages";
 
+  const pageRangeLabelId = useId();
+  const startPageId = useId();
+  const endPageId = useId();
+  const generateGroupId = useId();
+  const questionCountId = useId();
+  const exerciseCountId = useId();
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div
@@ -120,11 +127,11 @@ export function PageRangeGenerator({ courseId, pagesCount, courseTitle, onSucces
             <p className="mt-1 truncate text-sm text-[rgb(var(--ink-2))]">{courseTitle}</p>
 
             {/* Page range */}
-            <div className="mt-5">
+            <div className="mt-5" role="group" aria-labelledby={pageRangeLabelId}>
               <div className="mb-2 flex items-center justify-between">
-                <label className="text-xs font-black uppercase tracking-widest text-[rgb(var(--ink-3))]">
+                <span id={pageRangeLabelId} className="text-xs font-black uppercase tracking-widest text-[rgb(var(--ink-3))]">
                   Plage de pages
-                </label>
+                </span>
                 <span className="text-sm font-bold text-[rgb(var(--ink))]">
                   Pages {range[0]} → {range[1]}
                   {pagesCount !== null && (
@@ -144,8 +151,9 @@ export function PageRangeGenerator({ courseId, pagesCount, courseTitle, onSucces
                 /* Fallback: 2 number inputs when pages_count is unknown */
                 <div className="flex items-center gap-3">
                   <div className="flex-1">
-                    <label className="mb-1 block text-xs text-[rgb(var(--ink-3))]">Page de début</label>
+                    <label htmlFor={startPageId} className="mb-1 block text-xs text-[rgb(var(--ink-3))]">Page de début</label>
                     <input
+                      id={startPageId}
                       type="number"
                       min={1}
                       value={range[0]}
@@ -158,8 +166,9 @@ export function PageRangeGenerator({ courseId, pagesCount, courseTitle, onSucces
                   </div>
                   <span className="mt-5 text-[rgb(var(--ink-3))]">→</span>
                   <div className="flex-1">
-                    <label className="mb-1 block text-xs text-[rgb(var(--ink-3))]">Page de fin</label>
+                    <label htmlFor={endPageId} className="mb-1 block text-xs text-[rgb(var(--ink-3))]">Page de fin</label>
                     <input
+                      id={endPageId}
                       type="number"
                       min={range[0]}
                       value={range[1]}
@@ -175,10 +184,10 @@ export function PageRangeGenerator({ courseId, pagesCount, courseTitle, onSucces
             </div>
 
             {/* Type toggles */}
-            <div className="mt-5">
-              <label className="text-xs font-black uppercase tracking-widest text-[rgb(var(--ink-3))]">
+            <div className="mt-5" role="group" aria-labelledby={generateGroupId}>
+              <span id={generateGroupId} className="text-xs font-black uppercase tracking-widest text-[rgb(var(--ink-3))]">
                 Générer
-              </label>
+              </span>
               <div className="mt-2 flex gap-3">
                 {(["questions", "exercises"] as const).map((t) => {
                   const active = genTypes.has(t);
@@ -210,11 +219,12 @@ export function PageRangeGenerator({ courseId, pagesCount, courseTitle, onSucces
             <div className="mt-4 flex gap-4">
               {genTypes.has("questions") && (
                 <div className="flex-1">
-                  <label className="text-xs font-black uppercase tracking-widest text-[rgb(var(--ink-3))]">
+                  <label htmlFor={questionCountId} className="text-xs font-black uppercase tracking-widest text-[rgb(var(--ink-3))]">
                     Nb de questions
                   </label>
                   <div className="mt-2 flex items-center gap-3">
                     <input
+                      id={questionCountId}
                       type="range"
                       min={5}
                       max={50}
@@ -230,11 +240,12 @@ export function PageRangeGenerator({ courseId, pagesCount, courseTitle, onSucces
               )}
               {genTypes.has("exercises") && (
                 <div className="flex-1">
-                  <label className="text-xs font-black uppercase tracking-widest text-[rgb(var(--ink-3))]">
+                  <label htmlFor={exerciseCountId} className="text-xs font-black uppercase tracking-widest text-[rgb(var(--ink-3))]">
                     Nb d&apos;exercices
                   </label>
                   <div className="mt-2 flex items-center gap-3">
                     <input
+                      id={exerciseCountId}
                       type="range"
                       min={3}
                       max={10}

@@ -149,8 +149,9 @@ function EditForm({
       <h3 className="font-black text-[rgb(var(--ink))]">Modifier la classe</h3>
 
       <div>
-        <label className="text-xs font-bold text-[rgb(var(--ink-2))]">Nom</label>
+        <label htmlFor="edit-class-name" className="text-xs font-bold text-[rgb(var(--ink-2))]">Nom</label>
         <input
+          id="edit-class-name"
           type="text"
           value={name}
           onChange={(e) => setName(e.target.value)}
@@ -161,8 +162,9 @@ function EditForm({
 
       <div className="grid grid-cols-2 gap-3">
         <div>
-          <label className="text-xs font-bold text-[rgb(var(--ink-2))]">Niveau</label>
+          <label htmlFor="edit-class-level" className="text-xs font-bold text-[rgb(var(--ink-2))]">Niveau</label>
           <select
+            id="edit-class-level"
             value={level}
             onChange={(e) => setLevel(e.target.value)}
             className="mt-1 w-full rounded-xl border border-[rgb(var(--border))] bg-[rgb(var(--surface))] px-3 py-2.5 text-sm text-[rgb(var(--ink))] outline-none focus:border-[rgb(var(--accent))]"
@@ -174,8 +176,9 @@ function EditForm({
           </select>
         </div>
         <div>
-          <label className="text-xs font-bold text-[rgb(var(--ink-2))]">Matière</label>
+          <label htmlFor="edit-class-subject" className="text-xs font-bold text-[rgb(var(--ink-2))]">Matière</label>
           <select
+            id="edit-class-subject"
             value={subject}
             onChange={(e) => setSubject(e.target.value)}
             className="mt-1 w-full rounded-xl border border-[rgb(var(--border))] bg-[rgb(var(--surface))] px-3 py-2.5 text-sm text-[rgb(var(--ink))] outline-none focus:border-[rgb(var(--accent))]"

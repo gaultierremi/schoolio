@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useEffect, useId, useState } from "react";
 
 const COLORS = [
   "#6366f1", // indigo
@@ -81,6 +81,14 @@ export function SlotModal({ slot, defaultDay, defaultTime, classes, onClose, onS
   const [deleting, setDeleting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [results, setResults] = useState<{ ok: number; conflicts: number; errors: number } | null>(null);
+
+  const sessionListLabelId = useId();
+  const dayLabelId = useId();
+  const startLabelId = useId();
+  const endLabelId = useId();
+  const weekPatternLabelId = useId();
+  const colorLabelId = useId();
+  const notesId = useId();
 
   function updateSession(idx: number, patch: Partial<SessionRow>) {
     setSessions((prev) => prev.map((s, i) => (i === idx ? { ...s, ...patch } : s)));
@@ -204,11 +212,11 @@ export function SlotModal({ slot, defaultDay, defaultTime, classes, onClose, onS
 
         <div className="space-y-4">
           {/* Sessions */}
-          <div className="space-y-2">
+          <div className="space-y-2" role="group" aria-labelledby={sessionListLabelId}>
             <div className="flex items-baseline justify-between">
-              <label className="text-xs text-[rgb(var(--ink-2))]">
+              <span id={sessionListLabelId} className="text-xs text-[rgb(var(--ink-2))]">
                 {isEdit ? "Créneau" : sessions.length > 1 ? `Séances (${sessions.length})` : "Séance"}
-              </label>
+              </span>
               {!isEdit && (
                 <button
                   type="button"
@@ -222,8 +230,9 @@ export function SlotModal({ slot, defaultDay, defaultTime, classes, onClose, onS
             {sessions.map((s, idx) => (
               <div key={idx} className="flex items-end gap-2">
                 <div className="flex-1">
-                  {idx === 0 && <label className="mb-0.5 block text-[10px] text-[rgb(var(--ink-3))]">Jour</label>}
+                  {idx === 0 && <span id={dayLabelId} className="mb-0.5 block text-[10px] text-[rgb(var(--ink-3))]">Jour</span>}
                   <select
+                    aria-labelledby={dayLabelId}
                     value={s.day_of_week}
                     onChange={(e) => updateSession(idx, { day_of_week: Number(e.target.value) })}
                     className="w-full rounded-lg border border-[rgb(var(--border))] bg-[rgb(var(--surface))] px-2 py-1.5 text-sm text-[rgb(var(--ink))]"
@@ -234,8 +243,9 @@ export function SlotModal({ slot, defaultDay, defaultTime, classes, onClose, onS
                   </select>
                 </div>
                 <div className="w-24">
-                  {idx === 0 && <label className="mb-0.5 block text-[10px] text-[rgb(var(--ink-3))]">Début</label>}
+                  {idx === 0 && <span id={startLabelId} className="mb-0.5 block text-[10px] text-[rgb(var(--ink-3))]">Début</span>}
                   <input
+                    aria-labelledby={startLabelId}
                     type="time"
                     value={s.start_time}
                     onChange={(e) => updateSession(idx, { start_time: e.target.value })}
@@ -243,8 +253,9 @@ export function SlotModal({ slot, defaultDay, defaultTime, classes, onClose, onS
                   />
                 </div>
                 <div className="w-24">
-                  {idx === 0 && <label className="mb-0.5 block text-[10px] text-[rgb(var(--ink-3))]">Fin</label>}
+                  {idx === 0 && <span id={endLabelId} className="mb-0.5 block text-[10px] text-[rgb(var(--ink-3))]">Fin</span>}
                   <input
+                    aria-labelledby={endLabelId}
                     type="time"
                     value={s.end_time}
                     onChange={(e) => updateSession(idx, { end_time: e.target.value })}
@@ -266,8 +277,8 @@ export function SlotModal({ slot, defaultDay, defaultTime, classes, onClose, onS
           </div>
 
           {/* Week pattern */}
-          <div>
-            <label className="mb-1 block text-xs text-[rgb(var(--ink-2))]">Semaine</label>
+          <div role="group" aria-labelledby={weekPatternLabelId}>
+            <span id={weekPatternLabelId} className="mb-1 block text-xs text-[rgb(var(--ink-2))]">Semaine</span>
             <div className="flex gap-2">
               {(["all", "A", "B"] as const).map((p) => (
                 <button
@@ -321,8 +332,8 @@ export function SlotModal({ slot, defaultDay, defaultTime, classes, onClose, onS
           </div>
 
           {/* Color */}
-          <div>
-            <label className="mb-1 block text-xs text-[rgb(var(--ink-2))]">Couleur</label>
+          <div role="group" aria-labelledby={colorLabelId}>
+            <span id={colorLabelId} className="mb-1 block text-xs text-[rgb(var(--ink-2))]">Couleur</span>
             <div className="flex gap-2">
               {COLORS.map((c) => (
                 <button
@@ -337,8 +348,9 @@ export function SlotModal({ slot, defaultDay, defaultTime, classes, onClose, onS
 
           {/* Notes */}
           <div>
-            <label className="mb-1 block text-xs text-[rgb(var(--ink-2))]">Notes (optionnel)</label>
+            <label htmlFor={notesId} className="mb-1 block text-xs text-[rgb(var(--ink-2))]">Notes (optionnel)</label>
             <textarea
+              id={notesId}
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
               rows={2}

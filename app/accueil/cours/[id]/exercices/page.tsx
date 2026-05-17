@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useId, useMemo, useState } from "react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { PageRangeGenerator } from "./_components/PageRangeGenerator";
@@ -87,6 +87,7 @@ function GenerateModal({
   const [count, setCount] = useState(5);
   const [state, setState] = useState<"idle" | "loading" | "error">("idle");
   const [errorMsg, setErrorMsg] = useState("");
+  const countId = useId();
 
   async function launch() {
     setState("loading");
@@ -130,11 +131,12 @@ function GenerateModal({
             </p>
 
             <div className="mt-5">
-              <label className="text-xs font-black uppercase tracking-widest text-[rgb(var(--ink-3))]">
+              <label htmlFor={countId} className="text-xs font-black uppercase tracking-widest text-[rgb(var(--ink-3))]">
                 Nombre d&apos;exercices
               </label>
               <div className="mt-2 flex items-center gap-3">
                 <input
+                  id={countId}
                   type="range"
                   min={3}
                   max={10}
