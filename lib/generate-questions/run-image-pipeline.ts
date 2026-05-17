@@ -2,7 +2,7 @@
 // Vision Haiku classification wired in PR 5, question generation wired in PR 6.
 // Toujours derriere PIPELINE_B_ENABLED feature flag (cf orchestrator).
 
-import { extractImagesFromPdf, type ExtractedImage } from "@/lib/pdf/extract-images";
+import { extractImagesFromDocument, type DocumentMimeType, type ExtractedImage } from "@/lib/documents/extract";
 import { joinPagesAsMarkdown } from "@/lib/pdf/extract-text";
 import { withAdminClient } from "@/lib/db/admin-client";
 import { logError } from "@/lib/observability/log-error";
@@ -204,18 +204,21 @@ export async function runImagePipeline(
   course: CourseRow,
   pdfBuffer: Buffer,
   pagesText: string[],
+  // Sprint M.0 : mime parametre, defaults a "application/pdf" pour back-compat.
+  // M.1 (docx) et M.2 (pptx) dispatchent via extractImagesFromDocument.
+  mime: DocumentMimeType = "application/pdf",
 ): Promise<{ imagesExtracted: number; imagesUploaded: number }> {
-  // Wrapper top-level : si extractImagesFromPdf throw (pdfjs/canvas issue),
-  // l'erreur etait avalee par Promise.allSettled dans orchestrator. On log
-  // explicitement + on marque image_batches_total=0 pour ne pas bloquer le
-  // trigger DB done coordinator.
+  // Wrapper top-level : si extractImagesFromDocument throw (pdfjs/canvas issue
+  // pour PDF, jszip pour docx/pptx), l'erreur etait avalee par Promise.allSettled
+  // dans orchestrator. On log explicitement + on marque image_batches_total=0
+  // pour ne pas bloquer le trigger DB done coordinator.
   let images: ExtractedImage[];
   try {
-    images = await extractImagesFromPdf(pdfBuffer);
+    images = await extractImagesFromDocument(pdfBuffer, mime);
   } catch (extractErr) {
     await logError(extractErr, {
-      source: "image-pipeline.extractImagesFromPdf",
-      context: { jobId, pdfBytes: pdfBuffer.byteLength },
+      source: "image-pipeline.extractImagesFromDocument",
+      context: { jobId, mime, pdfBytes: pdfBuffer.byteLength },
     });
     // Marquer pipeline B comme termine avec 0 images pour debloquer le trigger
     // DB. Sinon image_batches_total reste NULL et le job ne sera jamais marque
