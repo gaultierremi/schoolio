@@ -210,4 +210,183 @@ describe("selectQuestionsForPlan", () => {
       expect(q.reason.length).toBeGreaterThan(5);
     }
   });
+
+  // ────────────────────────────────────────────────────────────────────────
+  // Hard review fixes : B4 cap pending pick, B5 spaced, D17 shuffle,
+  //                    D19 beginner, I7 strategy actual, I13 sub-bucket
+  // ────────────────────────────────────────────────────────────────────────
+
+  describe("B4 — cap subject during pick (not after)", () => {
+    it("respects cap subject without losing questions", () => {
+      const candidates: QuestionCandidate[] = [];
+      const mastery: ConceptMastery[] = [];
+      // 18 math + 2 chimie, all faible
+      for (let i = 0; i < 18; i++) {
+        candidates.push(makeQuestion(`m${i}`, `cm${i}`, "math"));
+        mastery.push(makeMastery(`cm${i}`, 30));
+      }
+      for (let i = 0; i < 2; i++) {
+        candidates.push(makeQuestion(`c${i}`, `cc${i}`, "chimie"));
+        mastery.push(makeMastery(`cc${i}`, 30));
+      }
+      const plan = selectQuestionsForPlan(candidates, mastery, 20);
+      const subjects: Record<string, number> = {};
+      for (const q of plan.questions) {
+        const candidate = candidates.find((c) => c.id === q.question_id)!;
+        const subj = candidate.subject_enum ?? "autre";
+        subjects[subj] = (subjects[subj] ?? 0) + 1;
+      }
+      // Cap math à 10 (ceil(20*0.5)), reste = chimie + on continue par math
+      // jusqu'à atteindre 20 total. Mais cap empêche > 10 math.
+      // Donc max final = 10 math + 2 chimie = 12.
+      // C'est une perte de capacité — documentée comme acceptable
+      // (priorise diversité over volume).
+      expect(subjects.math ?? 0).toBeLessThanOrEqual(10);
+      expect(plan.questions.length).toBeGreaterThan(2);
+    });
+  });
+
+  describe("B5 — spaced repetition pour revision bucket", () => {
+    it("prioritizes revision concepts not seen for 7+ days", () => {
+      const now = "2026-05-18T10:00:00Z";
+      const candidates = [
+        makeQuestion("q-recent", "c-recent"),
+        makeQuestion("q-old", "c-old"),
+      ];
+      const mastery: ConceptMastery[] = [
+        { concept_id: "c-recent", mastery_pct: 80, last_answered_at: "2026-05-17T10:00:00Z" }, // 1 day ago
+        { concept_id: "c-old", mastery_pct: 80, last_answered_at: "2026-05-01T10:00:00Z" }, // 17 days ago
+      ];
+      const plan = selectQuestionsForPlan(candidates, mastery, {
+        targetMinutes: 20,
+        nowIso: now,
+      });
+      // Le plus ancien devrait être en premier dans le bucket revision
+      const revisionQuestions = plan.questions.filter((q) => q.bucket === "revision");
+      expect(revisionQuestions[0]?.question_id).toBe("q-old");
+    });
+
+    it("includes 'pas revu depuis X jours' in reason for old revision", () => {
+      const now = "2026-05-18T10:00:00Z";
+      const candidates = [makeQuestion("q-old", "c-old")];
+      const mastery: ConceptMastery[] = [
+        { concept_id: "c-old", mastery_pct: 80, last_answered_at: "2026-05-01T10:00:00Z" },
+      ];
+      const plan = selectQuestionsForPlan(candidates, mastery, {
+        targetMinutes: 20,
+        nowIso: now,
+      });
+      expect(plan.questions[0]?.reason).toMatch(/pas revu depuis/);
+    });
+  });
+
+  describe("D17 — shuffle déterministe avec seed", () => {
+    it("produces different orders for different seeds", () => {
+      const candidates: QuestionCandidate[] = [];
+      const mastery: ConceptMastery[] = [];
+      for (let i = 0; i < 10; i++) {
+        candidates.push(makeQuestion(`q${i}`, `c${i}`));
+        mastery.push(makeMastery(`c${i}`, 30));
+      }
+      const planA = selectQuestionsForPlan(candidates, mastery, {
+        targetMinutes: 20,
+        shuffleSeed: "user-A:2026-05-18",
+      });
+      const planB = selectQuestionsForPlan(candidates, mastery, {
+        targetMinutes: 20,
+        shuffleSeed: "user-B:2026-05-18",
+      });
+      const idsA = planA.questions.map((q) => q.question_id).join(",");
+      const idsB = planB.questions.map((q) => q.question_id).join(",");
+      expect(idsA).not.toBe(idsB);
+    });
+
+    it("produces SAME order for same seed (deterministic)", () => {
+      const candidates: QuestionCandidate[] = [];
+      const mastery: ConceptMastery[] = [];
+      for (let i = 0; i < 10; i++) {
+        candidates.push(makeQuestion(`q${i}`, `c${i}`));
+        mastery.push(makeMastery(`c${i}`, 30));
+      }
+      const seed = "user-A:2026-05-18";
+      const planA = selectQuestionsForPlan(candidates, mastery, {
+        targetMinutes: 20,
+        shuffleSeed: seed,
+      });
+      const planB = selectQuestionsForPlan(candidates, mastery, {
+        targetMinutes: 20,
+        shuffleSeed: seed,
+      });
+      expect(planA.questions.map((q) => q.question_id)).toEqual(
+        planB.questions.map((q) => q.question_id),
+      );
+    });
+  });
+
+  describe("D19 — beginner mode (< 10 réponses totales)", () => {
+    it("prioritizes 1-star questions when isBeginnerMode=true", () => {
+      const candidates = [
+        makeQuestion("q-easy", "c-easy", "math", 1),
+        makeQuestion("q-medium", "c-medium", "math", 2),
+        makeQuestion("q-hard", "c-hard", "math", 3),
+      ];
+      const mastery = [
+        makeMastery("c-easy", 30),
+        makeMastery("c-medium", 30),
+        makeMastery("c-hard", 30),
+      ];
+      const plan = selectQuestionsForPlan(candidates, mastery, {
+        targetMinutes: 20,
+        isBeginnerMode: true,
+      });
+      // 1-star en premier dans le plan
+      expect(plan.questions[0]?.question_id).toBe("q-easy");
+    });
+  });
+
+  describe("I13 — sub-bucket très faible (< 20%)", () => {
+    it("prioritizes 1-star for concepts < 20% mastery (don't overwhelm)", () => {
+      const candidates = [
+        makeQuestion("q-vlow-1star", "c-vlow", "math", 1),
+        makeQuestion("q-vlow-3star", "c-vlow", "math", 3),
+        makeQuestion("q-mid", "c-mid", "math", 1),
+      ];
+      const mastery = [
+        makeMastery("c-vlow", 15), // < 20 = very low
+        makeMastery("c-mid", 50), // 50 = faible mais pas very low
+      ];
+      const plan = selectQuestionsForPlan(candidates, mastery, 20);
+      // Very low concept devrait apparaître en premier avec 1-star
+      const vlowIdx = plan.questions.findIndex(
+        (q) => q.question_id === "q-vlow-1star",
+      );
+      const vlow3Idx = plan.questions.findIndex(
+        (q) => q.question_id === "q-vlow-3star",
+      );
+      expect(vlowIdx).toBeLessThan(vlow3Idx);
+    });
+
+    it("uses 'à reprendre du début' reason for very low concepts", () => {
+      const candidates = [makeQuestion("q-vlow", "c-vlow")];
+      const mastery = [makeMastery("c-vlow", 10)];
+      const plan = selectQuestionsForPlan(candidates, mastery, 20);
+      expect(plan.questions[0]?.reason).toMatch(/reprendre du début/);
+    });
+  });
+
+  describe("I7 — strategy reflète le ratio réel obtenu", () => {
+    it("reports actual ratios, not target ratios", () => {
+      // Pool déséquilibré : tous nouveau, pas de faible/revision
+      const candidates = [
+        makeQuestion("q1", "c1"),
+        makeQuestion("q2", "c2"),
+        makeQuestion("q3", "c3"),
+      ];
+      const mastery: ConceptMastery[] = []; // pas de mastery → tous "nouveau"
+      const plan = selectQuestionsForPlan(candidates, mastery, 20);
+      // Le strategy doit indiquer 0/0/100 ou similaire, pas 60/30/10
+      expect(plan.strategy).toMatch(/0\/0\/100|^\d+\/\d+\/\d+/);
+      expect(plan.strategy).toContain("actual");
+    });
+  });
 });

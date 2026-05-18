@@ -53,6 +53,7 @@ export default function PlanMaiaCard({ displayName }: { displayName: string }) {
           setError("error" in json ? json.error : "Erreur de chargement");
           return;
         }
+        setError(null);
         setData(json);
       } catch (err) {
         if (cancelled) return;
@@ -60,8 +61,22 @@ export default function PlanMaiaCard({ displayName }: { displayName: string }) {
       }
     }
     void load();
+
+    /**
+     * I11 fix : re-fetch quand l'onglet redevient visible (élève revient
+     * après avoir fait des questions ailleurs, ou jour qui change si onglet
+     * resté ouvert toute la nuit). Sans ça, `completed_count` reste figé.
+     */
+    function handleVisibilityChange() {
+      if (document.visibilityState === "visible") {
+        void load();
+      }
+    }
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+
     return () => {
       cancelled = true;
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
     };
   }, []);
 
@@ -144,9 +159,8 @@ export default function PlanMaiaCard({ displayName }: { displayName: string }) {
 
         {!isFinished ? (
           <div className="mt-4 flex flex-wrap items-center justify-between gap-2">
-            {/* TODO Sprint 4 PR S4-2 : route /accueil/plan-maia/today pour la session quiz dédiée */}
             <Link
-              href="/accueil/devoirs"
+              href="/accueil/plan-maia/today"
               className="
                 inline-flex items-center gap-1.5 rounded-lg bg-indigo-600 px-4 py-2
                 text-sm font-semibold text-white transition
