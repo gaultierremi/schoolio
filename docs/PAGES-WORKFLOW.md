@@ -1,6 +1,51 @@
-# Maïa — Inventaire des pages & workflow utilisateur (v2)
+# Maïa — Inventaire des pages & workflow utilisateur (v3)
 
-> **Version 2** — basée sur un audit composant-par-composant (60+ fichiers lus le 2026-05-15) et l'intégration de tous les arbitrages produit. Remplace intégralement la v1.
+> **Version 3** — audit de réconciliation 2026-05-19 : 51 pages + 112 routes API présentes. Les statuts inline ci-dessous reflètent la planification v2 (15 mai). Le changelog v3 ci-dessous liste les écarts depuis cette date.
+
+## Changelog v3 (2026-05-19)
+
+**Livrés depuis le 15 mai (à jour du repo)** :
+
+| Item v2 | Statut v3 | Référence commit |
+|---|---|---|
+| Sprint 0 rebrand `/student/*` `/school/*` → `/accueil` | ✅ **mergé** | #69 |
+| Sprint 1A RGPD + PIN auth + audit_log immutable | ✅ **mergé** | #74 |
+| Sprint 1B consent parental mineur + export + suppression | ✅ **mergé** | #75 |
+| Sprint 1.5 Design Visual Foundation + polish a11y (-141 warnings) | ✅ **mergé** | #73 #86 #87 #89 #91 |
+| Sprint 2A curation `is_active` slider | ✅ **mergé** | #76 |
+| Sprint 2B vue concept unifiée (lecture) | ✅ **mergé** | #84 |
+| Anti-hallucination Vision (chapter + subject + threshold + affinity) | ✅ **mergé** | #83 |
+| Sprint 3 S3-1 heatmap prof devoir concept-level (tab page devoir) | ✅ **mergé** | #92 |
+| Sprint 3 S3-2 suggestions remédiation déterministe | ✅ **mergé** | #93 |
+| Sprint 4 S4-1 Plan Maïa foundation (algo + API + page overview + trigger DB) | ✅ **mergé** | #94 |
+| Document dispatcher M.0 (PDF-only) | ✅ **mergé** | #88 |
+
+**Réclassifications statut v3** :
+
+- 🔴 → ✅ : `/auth/error`, `/legal/{cgu,mentions-legales,confidentialite,cookies}` (squelettes + markdown `legal-drafts/`, contenu à valider juridiquement BE)
+- 🔴 → ✅ : `/parametres/{compte,confidentialite,export-donnees,suppression-compte}`, `/onboarding/{consent-rgpd,pin-setup}`, `/auth/pin-unlock`
+- 🔴 → ✅ : `/accueil/classes/[id]/devoirs/[assignmentId]/heatmap` (livré en **tab** sur la page devoir, pas en route séparée — `ConceptHeatmap.tsx` 455 lignes)
+- 🔴 → ✅ : `/accueil/plan-maia/today` (overview foundation, quiz dédié = S4-2 à venir)
+- 🟡 → ✅ : `/accueil/curation` (mais modale expansion concept toujours 🔴 à faire)
+
+**Pages réellement bloquantes pour pilotes (top 10 audit 19/05)** :
+
+1. 🔴 `/accueil/classes/[id]/devoirs/[assignmentId]/eleve/[studentId]` (drill-down élève depuis heatmap, S5-1)
+2. 🔴 `/accueil/curation/concept/[id]` modale expansion (théorie + misconceptions + hints, S5-2)
+3. 🔴 `/accueil/devoirs/[id]/bilan` (SessionRecapHero orphelin prêt à câbler, S5-3)
+4. 🔴 `/accueil/plan-maia/today/quiz` + table `plan_maia_answers` + API check-answer-plan (S5-4 = ex-S4-2)
+5. 🔴 `/pilotes` (section landing 3 écoles, S6)
+6. 🔴 `/404` `/403` `/500` brandés Maïa (S6)
+7. 🔴 `/onboarding/join-class` (saisie code 6 chars élève, S6)
+8. 🔴 `/accueil/concepts/[id]` (drill-down concept élève depuis heatmap, S6)
+9. ⚠️ `/legal/*` validation juridique BE (textes markdown existent, audit légal pending, S6)
+10. ⚠️ `/profile` à retirer (legacy, mémoire `feedback_no_student_profile_route`)
+
+**Estimation Sprint 5+6 → 8-10 jours-dev** pour ouverture aux 3 écoles pilotes.
+
+**Composants orphelins toujours non-câblés** : `SessionRecapHero`, `StudyWizard`, `StudentPickBadge`, `LiveSessionTimer`, `AttendanceRow`, `EvaluationButtons` (économie estimée si bien intégrés : 1.5-2 j).
+
+---
 
 ## Changelog v2
 
