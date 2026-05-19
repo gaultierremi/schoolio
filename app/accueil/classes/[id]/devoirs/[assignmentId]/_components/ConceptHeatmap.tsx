@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { AlertTriangle, BookOpen, ChevronDown, Lightbulb, Loader2, TrendingDown, TrendingUp } from "lucide-react";
 import {
@@ -41,7 +42,7 @@ type HeatmapData = {
  * - Filtres : tri (difficulté / alphabétique / score)
  * - Table : ligne 1 = moyenne classe, puis 1 ligne / élève (trié)
  * - Cellules colorées (mastery 0-5 = gris/rouge/orange/jaune/lime/vert)
- * - Click cellule = drill-down (modal détail élève × concept) — TODO Sprint 3+
+ * - Click cellule = navigation drill-down élève × devoir (S5-1, query `?concept=`)
  * - Légende couleurs en bas
  *
  * A11y :
@@ -363,15 +364,18 @@ export default function ConceptHeatmap({
                   </th>
                   {student.masteries.map((pct, i) => {
                     const level = masteryLevel(pct);
+                    const concept = data.concepts[i];
+                    // S5-1 : drill-down cell click → page détail élève × devoir,
+                    // scroll au concept ciblé via query `?concept=`.
                     return (
                       <td key={i} className="px-1">
-                        <div
-                          aria-label={`${student.display_name} — ${data.concepts[i].name} : ${pct === 0 ? "non évalué" : pct + " pourcent — " + masteryLabel(level)}`}
-                          tabIndex={0}
+                        <Link
+                          href={`/accueil/classes/${classId}/devoirs/${assignmentId}/eleve/${student.user_id}?concept=${concept.id}`}
+                          aria-label={`Voir détail ${student.display_name} — ${concept.name} : ${pct === 0 ? "non évalué" : pct + " pourcent — " + masteryLabel(level)}`}
                           className={`mx-auto flex h-7 w-12 items-center justify-center rounded-md text-xs font-semibold transition-transform focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 focus-visible:ring-offset-white hover:scale-105 dark:focus-visible:ring-offset-slate-900 motion-reduce:transition-none ${masteryCellClass(level)}`}
                         >
                           {pct === 0 ? "—" : pct}
-                        </div>
+                        </Link>
                       </td>
                     );
                   })}
