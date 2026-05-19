@@ -49,14 +49,19 @@ export async function POST(req: NextRequest) {
       process.env.SUPABASE_SERVICE_ROLE_KEY!,
     );
 
-    // Tenant check via hint.school_id
+    // Tenant check via hint.school_id + question_id pour vérifier que
+    // l'élève a effectivement vu cette question (hot-fix D5 anti-pollution
+    // analytics : sinon élève peut spam-feedback toute hint de son tenant
+    // même hors devoirs assignés).
     const hintRes = await admin
       .from("question_hints")
-      .select("id, school_id")
+      .select("id, school_id, question_id")
       .eq("id", hint_id)
       .maybeSingle();
     if (hintRes.error) throw hintRes.error;
-    const hint = hintRes.data as { id: string; school_id: string } | null;
+    const hint = hintRes.data as
+      | { id: string; school_id: string; question_id: string }
+      | null;
     if (!hint) return apiError("Indice introuvable", 404);
 
     const profileRes = await admin
@@ -68,6 +73,23 @@ export async function POST(req: NextRequest) {
     const schoolId = (profileRes.data as { school_id?: string } | null)?.school_id;
     if (!schoolId || schoolId !== hint.school_id) {
       return apiError("Accès interdit", 403);
+    }
+
+    // D5 hot-fix : vérifier que l'élève a effectivement vu/répondu à cette
+    // question (sinon il peut spam-feedback toute hint de son tenant).
+    const seenRes = await admin
+      .from("assignment_question_answers")
+      .select("id")
+      .eq("student_user_id", user.id)
+      .eq("question_id", hint.question_id)
+      .limit(1)
+      .maybeSingle();
+    if (seenRes.error) throw seenRes.error;
+    if (!seenRes.data) {
+      return apiError(
+        "Tu ne peux évaluer un indice que sur une question que tu as déjà tentée",
+        403,
+      );
     }
 
     // UPSERT (user_id, hint_id) → permet de changer d'avis

@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import { requireStudentPage } from "@/lib/auth/role";
 import { masteryCellClass, masteryLabel, masteryLevel } from "@/lib/heatmap-mastery";
+import { latestAnswerByQuestion } from "@/lib/assignment-student-detail";
 import {
   SECTION_KINDS,
   type SectionKind,
@@ -103,9 +104,11 @@ export default async function ConceptDrillDownPage({
       .eq("concept_id", params.id)
       .order("ordinal", { ascending: true }),
     // Stats élève : ses réponses sur des questions de ce concept
+    // (D1 hot-fix : on inclut created_at pour latestAnswerByQuestion qui
+    // dedupe les retries → mastery cohérent avec drill-down prof S5-1)
     admin
       .from("assignment_question_answers")
-      .select("question_id, is_correct, teacher_questions!inner(concept_id)")
+      .select("question_id, is_correct, created_at, teacher_questions!inner(concept_id)")
       .eq("student_user_id", user.id)
       .eq("teacher_questions.concept_id", params.id),
   ]);
@@ -151,11 +154,15 @@ export default async function ConceptDrillDownPage({
   type AnswerRow = {
     question_id: string;
     is_correct: boolean;
+    created_at: string;
     teacher_questions: { concept_id: string | null }[] | null;
   };
   const answers = (answersRes.data as AnswerRow[] | null) ?? [];
-  const totalAnswered = answers.length;
-  const correctCount = answers.filter((a) => a.is_correct).length;
+  // D1 hot-fix : dedupe les retries — on garde le dernier verdict par question
+  // (cohérent avec lib/assignment-student-detail.ts utilisé par S5-1 et S6-6).
+  const latest = latestAnswerByQuestion(answers);
+  const totalAnswered = latest.size;
+  const correctCount = Array.from(latest.values()).filter((a) => a.is_correct).length;
   const masteryPct = totalAnswered === 0 ? 0 : Math.round((100 * correctCount) / totalAnswered);
   const level = masteryLevel(masteryPct);
 

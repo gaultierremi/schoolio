@@ -164,7 +164,14 @@ export default function HeatmapDashboardClient({ displayName, initialData }: Pro
           <div className="px-6 py-6">
             <ConceptHeatmapGrid
               concepts={selected.concepts}
-              onConceptClick={(c) => router.push(`/accueil/concepts/${c.key}`)}
+              onConceptClick={(c) => {
+                // S6 hot-fix B1 : `c.key` peut être `assign:<uuid>` quand la
+                // question n'a pas de concept_id (fallback dans heatmap API
+                // route). La page /accueil/concepts/[id] exige un UUID strict
+                // → on no-op pour ces buckets (pas de drill-down possible).
+                if (c.key.startsWith("assign:")) return;
+                router.push(`/accueil/concepts/${c.key}`);
+              }}
             />
           </div>
         </section>
