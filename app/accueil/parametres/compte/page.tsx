@@ -1,9 +1,10 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createClient as createSupabaseAdminClient } from "@supabase/supabase-js";
-import { ArrowLeft, GraduationCap, Mail, School, UserCircle, Users } from "lucide-react";
+import { ArrowLeft, Eye, GraduationCap, Mail, School, UserCircle, Users } from "lucide-react";
 import { getUserWithRole } from "@/lib/auth/role";
 import SignOutButton from "@/app/accueil/_components/eleve/SignOutButton";
+import AccessibilityPrefsForm from "./AccessibilityPrefsForm";
 
 export const dynamic = "force-dynamic";
 
@@ -68,7 +69,7 @@ export default async function MonComptePage() {
   const admin = createAdminClient();
   const { data: profile } = await admin
     .from("user_profiles")
-    .select("first_name, last_name, pseudo")
+    .select("first_name, last_name, pseudo, prefers_dyslexic_font")
     .eq("id", user.id)
     .maybeSingle();
 
@@ -156,6 +157,21 @@ export default async function MonComptePage() {
             ))}
           </ul>
         )}
+      </section>
+
+      <section
+        aria-labelledby="prefs-title"
+        className="mt-8"
+      >
+        <div className="mb-3 flex items-center gap-2 text-sm font-medium text-slate-700 dark:text-slate-300">
+          <Eye size={16} strokeWidth={1.75} aria-hidden="true" />
+          <h2 id="prefs-title">Préférences d&apos;accessibilité</h2>
+        </div>
+        <AccessibilityPrefsForm
+          initialPrefersDyslexicFont={
+            ((profile as { prefers_dyslexic_font?: boolean } | null)?.prefers_dyslexic_font) === true
+          }
+        />
       </section>
 
       <section className="mt-8 border-t border-slate-200 pt-6 dark:border-slate-800">

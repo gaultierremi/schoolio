@@ -1,6 +1,8 @@
 import type { ReactNode } from "react";
+import { createClient as createSupabaseAdminClient } from "@supabase/supabase-js";
 import Header from "@/components/Header";
 import { getUserWithRole } from "@/lib/auth/role";
+import AccessibilityProvider from "@/app/_components/AccessibilityProvider";
 import NavSidebar from "./_components/NavSidebar";
 import NavBottom from "./_components/NavBottom";
 
@@ -26,11 +28,31 @@ export default async function AccueilLayout({ children }: { children: ReactNode 
   // Cf. design-system/MASTER.md §Spacing.
   const density = role === "student" ? "aere" : "compact";
 
+  // S6-8 : préférence font dyslexique. Fetch côté server pour éviter FOUC.
+  // Si pas authentifié → false (les pages /accueil/* sont guard middleware).
+  let prefersDyslexicFont = false;
+  if (user) {
+    const admin = createSupabaseAdminClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!,
+    );
+    const profileRes = await admin
+      .from("user_profiles")
+      .select("prefers_dyslexic_font")
+      .eq("id", user.id)
+      .maybeSingle();
+    if (!profileRes.error && profileRes.data) {
+      prefersDyslexicFont =
+        ((profileRes.data as { prefers_dyslexic_font?: boolean }).prefers_dyslexic_font) === true;
+    }
+  }
+
   return (
     <div
       data-density={density}
       className="min-h-dvh bg-slate-50 dark:bg-slate-950"
     >
+      <AccessibilityProvider prefersDyslexicFont={prefersDyslexicFont} />
       <Header />
       {user && role && <NavSidebar role={role} />}
       {/*

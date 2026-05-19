@@ -13,7 +13,13 @@ type ClassDetail = {
   name: string;
   level: string | null;
   subject: string | null;
+  /**
+   * S6-10 : `invite_code` (legacy 6 chars) preserve en DB pour backward
+   * compat, mais l'UI affiche maintenant `invitation_code` (8 chars unifie
+   * avec la page invitation/QR). Drop `invite_code` previsible Sprint 7+.
+   */
   invite_code: string;
+  invitation_code: string | null;
   invite_link_token: string;
   archived_at: string | null;
   created_at: string;
@@ -413,9 +419,11 @@ export default function ClassDetailPage() {
 
   async function handleCopy(type: "code" | "link") {
     if (!cls) return;
+    // S6-10 : copie le code que l'élève saisira (invitation_code 8 chars)
+    // Fallback invite_code si invitation_code pas encore peuplé.
     const value =
       type === "code"
-        ? cls.invite_code
+        ? (cls.invitation_code ?? cls.invite_code)
         : `${baseUrl}/join/${cls.invite_link_token}`;
     await copyToClipboard(value);
     setCopied(type);
@@ -580,7 +588,7 @@ export default function ClassDetailPage() {
             <p className="text-xs font-bold uppercase tracking-widest text-[rgb(var(--ink-3))]">Code d&apos;invitation</p>
             <div className="mt-2 flex items-center gap-3">
               <div className="flex-1 rounded-xl bg-[rgb(var(--surface-3))] px-4 py-3 font-mono text-2xl font-black tracking-widest text-[rgb(var(--accent))]">
-                {cls.invite_code}
+                {cls.invitation_code ?? cls.invite_code}
               </div>
               <button
                 onClick={() => handleCopy("code")}
