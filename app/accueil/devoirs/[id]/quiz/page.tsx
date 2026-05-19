@@ -277,16 +277,23 @@ export default function AssignmentQuizPage() {
         </p>
         <p className="mt-1 text-xs text-gray-400">Le meilleur score est conservé.</p>
         {submitting && <p className="mt-3 text-xs text-gray-400">Sauvegarde…</p>}
-        <div className="mt-8 flex gap-3">
+        <div className="mt-8 flex flex-wrap justify-center gap-3">
+          {/* S5-3 : nouvelle entrée vers le bilan détaillé (page persistante) */}
+          <button
+            onClick={() => router.push(`/accueil/devoirs/${id}/bilan`)}
+            className="rounded-2xl bg-purple-500 px-5 py-2.5 text-sm font-black text-gray-950 transition hover:bg-purple-400 motion-reduce:transition-none"
+          >
+            Voir mon bilan
+          </button>
           <button
             onClick={() => router.push(`/accueil/devoirs/${id}`)}
-            className="rounded-2xl border border-gray-700 px-5 py-2.5 text-sm font-bold text-gray-300 transition hover:text-white"
+            className="rounded-2xl border border-gray-700 px-5 py-2.5 text-sm font-bold text-gray-300 transition hover:text-white motion-reduce:transition-none"
           >
             ← Retour au devoir
           </button>
           <button
             onClick={() => router.push("/accueil")}
-            className="rounded-2xl bg-purple-500 px-5 py-2.5 text-sm font-black text-gray-950 transition hover:bg-purple-400"
+            className="rounded-2xl border border-gray-700 px-5 py-2.5 text-sm font-bold text-gray-300 transition hover:text-white motion-reduce:transition-none"
           >
             Mon espace
           </button>
