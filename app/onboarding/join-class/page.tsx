@@ -1,5 +1,4 @@
 import Link from "next/link";
-import { redirect } from "next/navigation";
 import { createClient as createSupabaseAdminClient } from "@supabase/supabase-js";
 import { ArrowRight, CheckCircle2, Sparkles } from "lucide-react";
 import { requireStudentPage } from "@/lib/auth/role";

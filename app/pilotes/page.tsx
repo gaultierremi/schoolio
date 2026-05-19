@@ -53,11 +53,10 @@ Pourquoi notre école :
 Merci d'avance pour votre retour.`;
 
 function mailtoHref() {
-  const params = new URLSearchParams({
-    subject: MAILTO_SUBJECT,
-    body: MAILTO_BODY,
-  });
-  return `mailto:${PILOTE_EMAIL}?${params.toString()}`;
+  // RFC 6068 : mailto: attend du percent-encoding (%20 pour espace), pas
+  // form-encoded (+). URLSearchParams produit du `+` qui s'affiche littéral
+  // dans Outlook classique. encodeURIComponent évite ce piège.
+  return `mailto:${PILOTE_EMAIL}?subject=${encodeURIComponent(MAILTO_SUBJECT)}&body=${encodeURIComponent(MAILTO_BODY)}`;
 }
 
 export default function PilotesPage() {
