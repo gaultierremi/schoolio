@@ -45,6 +45,12 @@ export default function LegalLayout({ children }: { children: ReactNode }) {
             <Link href="/legal/cookies" className="hover:text-slate-900 dark:hover:text-slate-200">
               Cookies
             </Link>
+            <Link
+              href="/legal/lecture-facile"
+              className="font-medium text-indigo-700 hover:no-underline hover:text-indigo-900 dark:text-indigo-400 dark:hover:text-indigo-200"
+            >
+              Maïa expliqué simplement
+            </Link>
           </div>
           <a
             href="mailto:dpo@maia.app"

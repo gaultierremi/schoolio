@@ -42,7 +42,7 @@ export async function GET(
     const [classRes, membersRes] = await Promise.all([
       admin
         .from("classes")
-        .select("id, name, level, subject, auth_mode, invite_code, invite_link_token, archived_at, created_at, updated_at")
+        .select("id, name, level, subject, auth_mode, invite_code, invitation_code, invite_link_token, archived_at, created_at, updated_at")
         .eq("id", params.id)
         .eq("teacher_id", user.id)
         .single(),
@@ -135,7 +135,7 @@ export async function PATCH(
       .from("classes")
       .update(updates)
       .eq("id", params.id)
-      .select("id, name, level, subject, auth_mode, invite_code, invite_link_token, archived_at, created_at, updated_at")
+      .select("id, name, level, subject, auth_mode, invite_code, invitation_code, invite_link_token, archived_at, created_at, updated_at")
       .single();
 
     if (error) throw error;

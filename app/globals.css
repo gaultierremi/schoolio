@@ -387,6 +387,33 @@ details summary::-webkit-details-marker { display: none; }
 details[open] .chevron { transform: rotate(180deg); }
 .chevron { transition: transform 200ms ease; }
 
+/* ============================================================================
+   Sprint 6 PR S6-8 — Accessibilité : font OpenDyslexic
+   ============================================================================
+   Quand l'utilisateur coche "Police adaptée à la dyslexie" dans son profil,
+   AccessibilityProvider applique data-dyslexic="true" sur <html>.
+
+   Fichier woff2 à placer manuellement (libre, OFL) :
+     public/fonts/OpenDyslexic-Regular.woff2
+   Source : https://opendyslexic.org
+   Fallback si fichier absent : system-ui (lisible mais non-spécialisé).
+   ============================================================================ */
+@font-face {
+  font-family: "OpenDyslexic";
+  src: url("/fonts/OpenDyslexic-Regular.woff2") format("woff2");
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+html[data-dyslexic="true"] body,
+html[data-dyslexic="true"] input,
+html[data-dyslexic="true"] textarea,
+html[data-dyslexic="true"] select,
+html[data-dyslexic="true"] button {
+  font-family: "OpenDyslexic", system-ui, -apple-system, BlinkMacSystemFont, sans-serif !important;
+}
+
 /* Focus ring */
 *:focus-visible {
   outline: none;
