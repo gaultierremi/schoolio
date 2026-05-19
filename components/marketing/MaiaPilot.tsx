@@ -19,14 +19,15 @@ export default function MaiaPilot() {
               <em className="not-italic accent-text">3 écoles pilotes</em>.
             </h2>
             <p className="mt-5 text-lg ink2 leading-relaxed">
-              Accompagnement personnalisé par notre équipe, gratuit pendant 6 mois. On
-              vous aide à intégrer Maïa dans 1 à 3 classes, on co-construit avec vos
-              profs, on mesure les résultats ensemble.
+              Accompagnement personnalisé par notre équipe, gratuit pendant un an.
+              On vous aide à intégrer Maïa dans 1 à 3 classes et on mesure les
+              résultats ensemble. Pas de co-construction — Maïa est un produit
+              fini, vous nous dites simplement si ça marche dans votre réalité.
             </p>
 
             <div className="mt-8 grid gap-5 sm:grid-cols-3">
               <div>
-                <p className="serif text-3xl font-semibold accent-text">6 mois</p>
+                <p className="serif text-3xl font-semibold accent-text">1 an</p>
                 <p className="ink2 mt-1 text-sm">Gratuit · pas d&apos;engagement</p>
               </div>
               <div>
@@ -41,7 +42,7 @@ export default function MaiaPilot() {
 
             <div className="mt-10 flex flex-wrap items-center gap-3">
               <a
-                href="mailto:hello@schoolio.app"
+                href="mailto:pilotes@maia.app"
                 className="btn-primary rounded-xl px-6 py-3.5 text-base font-semibold inline-flex items-center gap-2"
               >
                 Postuler comme école pilote
@@ -60,8 +61,8 @@ export default function MaiaPilot() {
 
             <p className="mt-6 text-xs ink3">
               Ou écrivez-nous directement :{" "}
-              <a href="mailto:hello@schoolio.app" className="accent-text underline">
-                hello@schoolio.app
+              <a href="mailto:pilotes@maia.app" className="accent-text underline">
+                pilotes@maia.app
               </a>
             </p>
           </div>
