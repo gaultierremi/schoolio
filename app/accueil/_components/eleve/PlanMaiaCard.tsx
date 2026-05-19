@@ -160,7 +160,7 @@ export default function PlanMaiaCard({ displayName }: { displayName: string }) {
         {!isFinished ? (
           <div className="mt-4 flex flex-wrap items-center justify-between gap-2">
             <Link
-              href="/accueil/plan-maia/today"
+              href="/accueil/plan-maia/today/quiz"
               className="
                 inline-flex items-center gap-1.5 rounded-lg bg-indigo-600 px-4 py-2
                 text-sm font-semibold text-white transition
