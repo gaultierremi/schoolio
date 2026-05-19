@@ -222,7 +222,7 @@ export default async function PlanMaiaTodayPage() {
       </section>
 
       {/* S5-4 : CTA Démarrer le quiz Plan Maïa (session dédiée) */}
-      <nav aria-label="Action principale" className="mt-6">
+      <nav aria-label="Action principale" className="mt-6 flex flex-wrap gap-3">
         <Link
           href="/accueil/plan-maia/today/quiz"
           className="
@@ -236,12 +236,29 @@ export default async function PlanMaiaTodayPage() {
           "
         >
           <Sparkles size={16} strokeWidth={2} aria-hidden="true" />
-          Démarrer le quiz
+          {plan.completed_count > 0 ? "Continuer mon plan" : "Démarrer le quiz"}
         </Link>
-        <p className="mt-2 text-xs italic text-slate-500 dark:text-slate-500">
-          Pick-and-choose : skip n&apos;importe quand sans pénalité. Le plan reste équilibré.
-        </p>
+        {plan.completed_count > 0 ? (
+          <Link
+            href="/accueil/plan-maia/today/bilan"
+            className="
+              inline-flex items-center gap-2 rounded-lg border border-slate-300 bg-white px-5 py-3
+              text-base font-medium text-slate-700 transition
+              hover:bg-slate-50
+              focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500
+              focus-visible:ring-offset-2 focus-visible:ring-offset-slate-50
+              dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800
+              dark:focus-visible:ring-offset-slate-950
+              motion-reduce:transition-none
+            "
+          >
+            Voir mon bilan ({plan.completed_count} réponses)
+          </Link>
+        ) : null}
       </nav>
+      <p className="mt-2 text-xs italic text-slate-500 dark:text-slate-500">
+        Pick-and-choose : skip n&apos;importe quand sans pénalité. Le plan reste équilibré.
+      </p>
     </main>
   );
 }

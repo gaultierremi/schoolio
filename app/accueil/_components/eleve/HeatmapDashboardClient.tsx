@@ -162,7 +162,10 @@ export default function HeatmapDashboardClient({ displayName, initialData }: Pro
           </div>
 
           <div className="px-6 py-6">
-            <ConceptHeatmapGrid concepts={selected.concepts} />
+            <ConceptHeatmapGrid
+              concepts={selected.concepts}
+              onConceptClick={(c) => router.push(`/accueil/concepts/${c.key}`)}
+            />
           </div>
         </section>
       )}

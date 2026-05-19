@@ -119,7 +119,7 @@ export default function PlanMaiaQuizClient({
     );
     if (nextIdx === -1) {
       // Toutes répondues → overview du plan
-      router.push("/accueil/plan-maia/today");
+      router.push("/accueil/plan-maia/today/bilan");
     } else {
       setCurrentIndex(nextIdx);
     }
@@ -140,7 +140,7 @@ export default function PlanMaiaQuizClient({
         (q) => !answeredInSession.has(q.id),
       );
       if (firstUnanswered === -1 || firstUnanswered === currentIndex) {
-        router.push("/accueil/plan-maia/today");
+        router.push("/accueil/plan-maia/today/bilan");
       } else {
         setCurrentIndex(firstUnanswered);
       }

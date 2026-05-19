@@ -36,6 +36,33 @@ export function TutorPanel({
   const [revealedCount, setRevealedCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [feedback, setFeedback] = useState<"up" | "down" | null>(null);
+  const [feedbackSaving, setFeedbackSaving] = useState(false);
+
+  // S6-7 : persiste le feedback via API (UPSERT, idempotent au toggle)
+  async function persistFeedback(value: "up" | "down") {
+    // L'évaluation porte sur le dernier indice révélé (logique simple MVP)
+    const lastHint = hints[Math.max(0, revealedCount - 1)];
+    if (!lastHint) return;
+    setFeedback(value);
+    setFeedbackSaving(true);
+    try {
+      const res = await fetch("/api/student/hint-feedback", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ hint_id: lastHint.id, evaluation: value }),
+      });
+      if (!res.ok) {
+        // Rollback silencieux : on garde l'UI mais on log
+        // eslint-disable-next-line no-console
+        console.error("[hint-feedback] persist failed", res.status);
+      }
+    } catch (err) {
+      // eslint-disable-next-line no-console
+      console.error("[hint-feedback] network error", err);
+    } finally {
+      setFeedbackSaving(false);
+    }
+  }
 
   // Fetch hints au montage
   useEffect(() => {
@@ -151,7 +178,8 @@ export function TutorPanel({
             </button>
             <div className="ml-auto flex gap-1.5">
               <button
-                onClick={() => setFeedback("up")}
+                onClick={() => persistFeedback("up")}
+                disabled={feedbackSaving}
                 aria-pressed={feedback === "up"}
                 aria-label="Indice utile"
                 className={
@@ -164,7 +192,8 @@ export function TutorPanel({
                 <ThumbsUp className="h-3 w-3" />
               </button>
               <button
-                onClick={() => setFeedback("down")}
+                onClick={() => persistFeedback("down")}
+                disabled={feedbackSaving}
                 aria-pressed={feedback === "down"}
                 aria-label="Indice pas utile"
                 className={

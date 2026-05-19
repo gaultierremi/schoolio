@@ -99,10 +99,10 @@ export default async function PlanMaiaQuizPage() {
   // affiche seulement "déjà répondue" sans valeur)
   const answeredSet = new Set(answered.map((a) => a.question_id));
 
-  // Si toutes répondues → bilan/overview
+  // Si toutes répondues → bilan
   const totalQuestions = orderedQuestions.length;
   if (answeredSet.size >= totalQuestions) {
-    redirect("/accueil/plan-maia/today");
+    redirect("/accueil/plan-maia/today/bilan");
   }
 
   return (
