@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createClient as createSupabaseAdminClient } from "@supabase/supabase-js";
-import { ArrowLeft, Lightbulb, Sparkles } from "lucide-react";
+import { ArrowLeft, Sparkles } from "lucide-react";
 import { requireStudentPage } from "@/lib/auth/role";
 import { todayInBelgium } from "@/lib/plan-maia-date";
 
@@ -221,39 +221,27 @@ export default async function PlanMaiaTodayPage() {
         </ol>
       </section>
 
-      <aside
-        aria-labelledby="plan-info-title"
-        className="mt-6 rounded-2xl border border-amber-200 bg-amber-50 p-5 dark:border-amber-900 dark:bg-amber-950/30"
-      >
-        <div className="flex items-start gap-2">
-          <Lightbulb
-            size={18}
-            strokeWidth={2}
-            aria-hidden="true"
-            className="mt-0.5 shrink-0 text-amber-700 dark:text-amber-400"
-          />
-          <div>
-            <h2
-              id="plan-info-title"
-              className="text-sm font-semibold text-amber-900 dark:text-amber-200"
-            >
-              Session quiz dédiée arrivant bientôt
-            </h2>
-            <p className="mt-1 text-sm text-amber-800 dark:text-amber-300">
-              Pour l&apos;instant, tu peux voir ton plan ici mais le quiz personnalisé
-              dédié Plan Maïa arrive en prochain sprint. En attendant, fais tes devoirs
-              assignés sur la page{" "}
-              <Link
-                href="/accueil/devoirs"
-                className="font-semibold underline hover:no-underline"
-              >
-                Devoirs
-              </Link>
-              {" "}— les questions répondues alimentent ton plan suivant.
-            </p>
-          </div>
-        </div>
-      </aside>
+      {/* S5-4 : CTA Démarrer le quiz Plan Maïa (session dédiée) */}
+      <nav aria-label="Action principale" className="mt-6">
+        <Link
+          href="/accueil/plan-maia/today/quiz"
+          className="
+            inline-flex items-center gap-2 rounded-lg bg-indigo-600 px-5 py-3 text-base
+            font-semibold text-white transition
+            hover:bg-indigo-700
+            focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500
+            focus-visible:ring-offset-2 focus-visible:ring-offset-slate-50
+            dark:focus-visible:ring-offset-slate-950
+            motion-reduce:transition-none
+          "
+        >
+          <Sparkles size={16} strokeWidth={2} aria-hidden="true" />
+          Démarrer le quiz
+        </Link>
+        <p className="mt-2 text-xs italic text-slate-500 dark:text-slate-500">
+          Pick-and-choose : skip n&apos;importe quand sans pénalité. Le plan reste équilibré.
+        </p>
+      </nav>
     </main>
   );
 }
