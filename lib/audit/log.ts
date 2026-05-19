@@ -35,6 +35,8 @@ export const AUDIT_EVENTS = {
   CONCEPT_MISCONCEPTION_CREATED: "concept_misconception_created",
   CONCEPT_MISCONCEPTION_UPDATED: "concept_misconception_updated",
   CONCEPT_MISCONCEPTION_DELETED: "concept_misconception_deleted",
+  // Sprint 4 — Plan Maïa quotidien
+  PLAN_MAIA_GENERATED: "plan_maia_generated",
 } as const;
 
 export type AuditEventType = (typeof AUDIT_EVENTS)[keyof typeof AUDIT_EVENTS];
