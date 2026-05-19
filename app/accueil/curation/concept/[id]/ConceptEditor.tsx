@@ -123,6 +123,11 @@ export default function ConceptEditor({ initialData }: { initialData: ConceptEdi
     setToast({ message, tone: "error" });
   }, []);
 
+  // S5-2 : surface toast générique pour les sous-composants (hints panel)
+  const handleToast = useCallback((message: string, tone: "success" | "error") => {
+    setToast({ message, tone });
+  }, []);
+
   return (
     <main
       className="mx-auto min-h-dvh max-w-5xl bg-slate-50 px-4 py-8 dark:bg-slate-950 sm:px-6"
@@ -260,8 +265,10 @@ export default function ConceptEditor({ initialData }: { initialData: ConceptEdi
         </div>
         <QuestionsList
           questions={questions}
+          misconceptions={misconceptions}
           onToggle={handleQuestionToggle}
           onError={handleError}
+          onToast={handleToast}
         />
       </section>
 
