@@ -32,7 +32,7 @@ export const runtime = "nodejs";
  * Response shape :
  * {
  *   ok: true,
- *   student: { user_id, display_name, status },
+ *   student: { user_id, display_name, status, membership_status },
  *   assignment: { id, title },
  *   byConcept: [
  *     {
@@ -72,6 +72,8 @@ export async function GET(
     );
 
     // 1. Vérifier ownership classe + devoir lié + élève membre
+    // Note : on throw sur .error pour basculer sur safeError (sinon faux 200
+    // avec data vide masque les régressions schema/RLS — hard review B2).
     const [classRes, assignmentRes, membershipRes] = await Promise.all([
       admin.from("classes").select("id, teacher_id").eq("id", params.id).maybeSingle(),
       admin
@@ -86,6 +88,9 @@ export async function GET(
         .eq("student_user_id", params.studentId)
         .maybeSingle(),
     ]);
+    if (classRes.error) throw classRes.error;
+    if (assignmentRes.error) throw assignmentRes.error;
+    if (membershipRes.error) throw membershipRes.error;
 
     const classRow = classRes.data as { id: string; teacher_id: string } | null;
     const assignmentRow = assignmentRes.data as
@@ -110,21 +115,27 @@ export async function GET(
     // a quitté la classe.
 
     // 2. Questions du devoir (avec position pour ordering) + détails questions
-    const { data: assignmentQuestionsData } = await admin
+    const aqRes = await admin
       .from("assignment_questions")
       .select("question_id, position")
       .eq("assignment_id", params.assignmentId)
       .order("position", { ascending: true });
+    if (aqRes.error) throw aqRes.error;
 
     type AQ = { question_id: string; position: number };
-    const assignmentQuestions = (assignmentQuestionsData as AQ[] | null) ?? [];
+    const assignmentQuestions = (aqRes.data as AQ[] | null) ?? [];
     const questionIds = assignmentQuestions.map((q) => q.question_id);
     const questionIdToPosition = new Map(assignmentQuestions.map((q) => [q.question_id, q.position]));
 
     if (questionIds.length === 0) {
       return apiOk({
         ok: true,
-        student: { user_id: params.studentId, display_name: "Élève", status: "not_started" },
+        student: {
+          user_id: params.studentId,
+          display_name: "Élève",
+          status: "not_started",
+          membership_status: membershipRow.status,
+        },
         assignment: { id: assignmentRow.id, title: assignmentRow.title },
         byConcept: [],
         questionsWithoutConcept: [],
@@ -156,6 +167,10 @@ export async function GET(
         .eq("assignment_id", params.assignmentId)
         .eq("student_user_id", params.studentId),
     ]);
+    if (questionsRes.error) throw questionsRes.error;
+    if (profileRes.error) throw profileRes.error;
+    if (completionRes.error) throw completionRes.error;
+    if (answersRes.error) throw answersRes.error;
 
     type QuestionRow = {
       id: string;
@@ -203,16 +218,17 @@ export async function GET(
     const conceptIds = Array.from(
       new Set(questions.map((q) => q.concept_id).filter((id): id is string => id !== null)),
     );
-    const { data: conceptsData } =
-      conceptIds.length === 0
-        ? { data: [] as { id: string; name: string; slug: string }[] }
-        : await admin
-            .from("concepts")
-            .select("id, name, slug")
-            .in("id", conceptIds)
-            .order("name", { ascending: true });
-    const concepts =
-      (conceptsData as { id: string; name: string; slug: string }[] | null) ?? [];
+    let concepts: { id: string; name: string; slug: string }[] = [];
+    if (conceptIds.length > 0) {
+      const conceptsRes = await admin
+        .from("concepts")
+        .select("id, name, slug")
+        .in("id", conceptIds)
+        .order("name", { ascending: true });
+      if (conceptsRes.error) throw conceptsRes.error;
+      concepts =
+        (conceptsRes.data as { id: string; name: string; slug: string }[] | null) ?? [];
+    }
 
     // 5. Grouper questions par concept_id, ordonner par position dans le devoir
     type EnrichedQuestion = {
@@ -270,7 +286,12 @@ export async function GET(
 
     return apiOk({
       ok: true,
-      student: { user_id: params.studentId, display_name: displayName, status },
+      student: {
+        user_id: params.studentId,
+        display_name: displayName,
+        status,
+        membership_status: membershipRow.status,
+      },
       assignment: { id: assignmentRow.id, title: assignmentRow.title },
       byConcept,
       questionsWithoutConcept,

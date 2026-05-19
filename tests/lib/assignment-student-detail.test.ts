@@ -41,11 +41,26 @@ describe("latestAnswerByQuestion", () => {
     expect(map.get("q1")?.is_correct).toBe(true);
   });
 
-  it("compares ISO 8601 timestamps lexicographically (timezone offset included)", () => {
-    // 22:00 UTC = 00:00 Belgique (UTC+2) → la string ISO Z reste comparable
+  it("handles ms precision (Z format, Supabase normal case)", () => {
     const answers = [
       { question_id: "q1", is_correct: false, created_at: "2026-05-19T22:00:00.123Z" },
       { question_id: "q1", is_correct: true, created_at: "2026-05-19T22:00:00.456Z" }, // 333ms après
+    ];
+    const map = latestAnswerByQuestion(answers);
+    expect(map.get("q1")?.is_correct).toBe(true);
+  });
+
+  it("handles cross-offset timestamps (anti-fragile via Date.parse)", () => {
+    // Si jamais une source écrit en offset local au lieu de Z (hypothétique),
+    // Date.parse normalise vers epoch ms → comparaison fiable.
+    // 22:00 UTC = 23:00 en CET (+0100) → même instant, mais string lexicographique
+    // dirait l'inverse. Date.parse les ramène au même epoch.
+    const answers = [
+      // T1 : 22:30 UTC = "22:30:00Z"
+      { question_id: "q1", is_correct: false, created_at: "2026-05-19T22:30:00Z" },
+      // T2 : 23:00 UTC, exprimé en +0100 = "00:00:00+0100" → STRING lex < T1 mais
+      // epoch ms > T1.
+      { question_id: "q1", is_correct: true, created_at: "2026-05-20T00:00:00+0100" },
     ];
     const map = latestAnswerByQuestion(answers);
     expect(map.get("q1")?.is_correct).toBe(true);

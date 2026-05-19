@@ -17,9 +17,10 @@ export type AnswerRecord = {
  * Cas edge couvert : l'élève répond plusieurs fois à la même question (retry,
  * second click). On veut le verdict final, pas un mix.
  *
- * Pourquoi `created_at` lexicographique : les timestamptz Postgres sérialisés
- * en ISO 8601 sont triables par comparaison de strings, y compris avec
- * fractions de secondes et offset timezone.
+ * Implémentation : `Date.parse()` pour robustesse contre les variations de
+ * format ISO 8601 (Z vs +0200, fractions ms, etc.). La comparaison string
+ * lexicographique fonctionnerait si Postgres sérialise toujours en UTC `Z`
+ * (cas Supabase actuel), mais on évite la fragilité.
  */
 export function latestAnswerByQuestion<A extends AnswerRecord>(
   answers: readonly A[],
@@ -27,7 +28,7 @@ export function latestAnswerByQuestion<A extends AnswerRecord>(
   const map = new Map<string, A>();
   for (const a of answers) {
     const existing = map.get(a.question_id);
-    if (!existing || existing.created_at < a.created_at) {
+    if (!existing || Date.parse(existing.created_at) < Date.parse(a.created_at)) {
       map.set(a.question_id, a);
     }
   }

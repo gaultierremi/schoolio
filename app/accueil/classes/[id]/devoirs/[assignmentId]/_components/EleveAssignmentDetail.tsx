@@ -65,7 +65,12 @@ type ConceptSection = {
 
 type ApiResponse = {
   ok: true;
-  student: { user_id: string; display_name: string; status: StatusKind };
+  student: {
+    user_id: string;
+    display_name: string;
+    status: StatusKind;
+    membership_status: string;
+  };
   assignment: { id: string; title: string };
   byConcept: ConceptSection[];
   questionsWithoutConcept: Question[];
@@ -115,12 +120,16 @@ export default function EleveAssignmentDetail({
   }, [classId, assignmentId, studentId]);
 
   // Scroll vers la section concept ciblée par la query (?concept=...)
+  // D5 fix : respecte prefers-reduced-motion (scrollIntoView smooth ne le
+  // respecte pas automatiquement, contrairement aux animations CSS).
   useEffect(() => {
     if (!data || !targetConceptId) return;
-    // Attendre un tick que le DOM rende
     const timer = window.setTimeout(() => {
+      const prefersReduced =
+        typeof window !== "undefined" &&
+        window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
       targetSectionRef.current?.scrollIntoView({
-        behavior: "smooth",
+        behavior: prefersReduced ? "auto" : "smooth",
         block: "start",
       });
     }, 50);
@@ -174,6 +183,7 @@ export default function EleveAssignmentDetail({
   }
 
   const status = statusLabel(data.student.status);
+  const hasLeftClass = data.student.membership_status !== "active";
 
   return (
     <>
@@ -181,9 +191,19 @@ export default function EleveAssignmentDetail({
         <p className="text-xs font-medium uppercase tracking-wide text-indigo-700 dark:text-indigo-400">
           Détail élève · {data.assignment.title}
         </p>
-        <h1 className="mt-1 text-3xl font-semibold tracking-tight text-slate-900 dark:text-slate-100">
-          {data.student.display_name}
-        </h1>
+        <div className="mt-1 flex flex-wrap items-baseline gap-3">
+          <h1 className="text-3xl font-semibold tracking-tight text-slate-900 dark:text-slate-100">
+            {data.student.display_name}
+          </h1>
+          {hasLeftClass ? (
+            <span
+              className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-medium text-amber-900 dark:bg-amber-950/40 dark:text-amber-300"
+              aria-label="Cet élève n'est plus inscrit dans la classe — consultation historique uniquement"
+            >
+              A quitté la classe
+            </span>
+          ) : null}
+        </div>
         <p className={`mt-1 text-sm font-medium ${status.toneClass}`}>{status.label}</p>
         {overall ? (
           <p className="mt-2 text-sm text-slate-600 dark:text-slate-400">
@@ -255,7 +275,7 @@ export default function EleveAssignmentDetail({
                 id={`concept-${section.concept.id}`}
                 ref={isTarget ? targetSectionRef : undefined}
                 aria-labelledby={`concept-title-${section.concept.id}`}
-                aria-current={isTarget ? "true" : undefined}
+                aria-current={isTarget ? "location" : undefined}
                 className={`
                   scroll-mt-20 rounded-2xl border bg-white p-5 dark:bg-slate-900
                   ${isTarget

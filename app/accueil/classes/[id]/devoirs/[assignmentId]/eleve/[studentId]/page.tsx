@@ -1,7 +1,8 @@
 import Link from "next/link";
+import { Suspense } from "react";
 import { notFound, redirect } from "next/navigation";
 import { createClient as createSupabaseAdminClient } from "@supabase/supabase-js";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Loader2 } from "lucide-react";
 import { requireTeacherPage } from "@/lib/auth/role";
 import EleveAssignmentDetail from "../../_components/EleveAssignmentDetail";
 
@@ -62,11 +63,35 @@ export default async function EleveAssignmentPage({
         </Link>
       </nav>
 
-      <EleveAssignmentDetail
-        classId={params.id}
-        assignmentId={params.assignmentId}
-        studentId={params.studentId}
-      />
+      {/* Suspense boundary requis Next 14.2 : EleveAssignmentDetail utilise
+          useSearchParams() pour récupérer la query `?concept=`. Sans Suspense,
+          le build static bailout silencieusement. */}
+      <Suspense
+        fallback={
+          <section
+            aria-busy="true"
+            className="rounded-2xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900"
+          >
+            <div className="flex items-center gap-3">
+              <Loader2
+                size={18}
+                strokeWidth={2}
+                aria-hidden="true"
+                className="animate-spin text-indigo-500 motion-reduce:animate-none"
+              />
+              <p className="text-sm text-slate-700 dark:text-slate-300">
+                Chargement du détail élève…
+              </p>
+            </div>
+          </section>
+        }
+      >
+        <EleveAssignmentDetail
+          classId={params.id}
+          assignmentId={params.assignmentId}
+          studentId={params.studentId}
+        />
+      </Suspense>
     </main>
   );
 }
