@@ -4,6 +4,7 @@ import { createClient as createSupabaseAdminClient } from "@supabase/supabase-js
 import { ArrowLeft, Sparkles } from "lucide-react";
 import { requireStudentPage } from "@/lib/auth/role";
 import { todayInBelgium } from "@/lib/plan-maia-date";
+import { isValidPlanRow } from "@/lib/plan-maia-validation";
 
 export const dynamic = "force-dynamic";
 
@@ -40,39 +41,7 @@ export default async function PlanMaiaTodayPage() {
     .eq("plan_date", planDate)
     .maybeSingle();
 
-  type PlanRow = {
-    id: string;
-    plan_data: {
-      question_ids: string[];
-      reasons_by_question_id?: Record<string, { bucket: string; reason: string }>;
-      strategy?: string;
-      estimated_minutes?: number;
-      concept_breakdown?: { faible: number; revision: number; nouveau: number };
-      is_beginner_mode?: boolean;
-    };
-    target_minutes: number;
-    completed_count: number;
-    completed_at: string | null;
-  };
-
-  /**
-   * Validation défensive avant cast — un plan_data malformé (ex. migration
-   * future qui change la forme, plan corrompu, race condition) ne doit pas
-   * crash la page mais rediriger gracieusement vers /accueil.
-   */
-  function isValidPlanRow(row: unknown): row is PlanRow {
-    if (!row || typeof row !== "object") return false;
-    const r = row as Record<string, unknown>;
-    if (typeof r.id !== "string") return false;
-    if (typeof r.target_minutes !== "number") return false;
-    if (typeof r.completed_count !== "number") return false;
-    if (!r.plan_data || typeof r.plan_data !== "object") return false;
-    const pd = r.plan_data as Record<string, unknown>;
-    if (!Array.isArray(pd.question_ids)) return false;
-    if (!pd.question_ids.every((id) => typeof id === "string")) return false;
-    return true;
-  }
-
+  // Validation défensive via helper partagé (lib/plan-maia-validation.ts)
   if (!planRow || !isValidPlanRow(planRow)) {
     // Pas de plan ou plan malformé → redirige vers /accueil (card explique)
     redirect("/accueil");

@@ -62,7 +62,7 @@ export const pregeneratePlanMaiaTask = schedules.task({
     // Si volume > 500 élèves, basculer sur Promise.all avec pLimit(10).
     for (const userId of studentIds) {
       try {
-        const result = await generatePlanForStudent(admin, userId, planDate, "cron_nightly");
+        const result = await generatePlanForStudent(admin, userId, planDate, "batch_cron");
         if (result.kind === "created") counters.created += 1;
         else if (result.kind === "existing") counters.existing += 1;
         else if (result.kind === "skipped") {

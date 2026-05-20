@@ -30,7 +30,7 @@ import { masteryCellClass, masteryLabel, masteryLevel } from "@/lib/heatmap-mast
 type ClassStats = {
   class_id: string;
   name: string;
-  level: number | null;
+  level: string | null;
   subject: string | null;
   student_count: number;
   assignments_count: number;

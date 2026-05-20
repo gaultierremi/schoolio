@@ -76,13 +76,13 @@ type AdminClient = SupabaseClient<any, any, any>;
  * @param admin - client service_role (caller doit fournir, évite recréer)
  * @param userId - UUID de l'élève
  * @param planDate - date ISO YYYY-MM-DD (timezone Europe/Brussels côté caller)
- * @param generatedBy - source : "lazy_runtime" | "cron_nightly" | "manual_debug"
+ * @param generatedBy - source : "lazy_runtime" | "batch_cron" | "manual"
  */
 export async function generatePlanForStudent(
   admin: AdminClient,
   userId: string,
   planDate: string,
-  generatedBy: "lazy_runtime" | "cron_nightly" | "manual_debug" = "lazy_runtime",
+  generatedBy: "lazy_runtime" | "batch_cron" | "manual" = "lazy_runtime",
 ): Promise<GenerationResult> {
   // 1. Vérif plan existant (idempotent : cron peut tourner 2× sans casser)
   const existingRes = await admin
@@ -294,10 +294,11 @@ export async function generatePlanForStudent(
     if (!finalPlan) throw insertRes.error ?? new Error("Plan insertion failed");
   }
 
-  // 10. Audit log (fire-and-forget)
-  await logAuditEvent({
+  // 10. Audit log — fire-and-forget vrai (I6 hot-fix : pas de await pour
+  //     ne pas rallonger N × 200ms quand le cron itère 90+ élèves)
+  void logAuditEvent({
     actorId: userId,
-    actorRole: generatedBy === "cron_nightly" ? "system" : "student",
+    actorRole: generatedBy === "batch_cron" ? "system" : "student",
     eventType: AUDIT_EVENTS.PLAN_MAIA_GENERATED,
     targetType: "plan_maia_daily",
     targetId: finalPlan.id,

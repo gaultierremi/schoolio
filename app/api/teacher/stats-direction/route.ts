@@ -36,6 +36,18 @@ export async function GET() {
       process.env.SUPABASE_SERVICE_ROLE_KEY!,
     );
 
+    // Récupère school_id du prof pour tenant filter sur les jointures
+    // teacher_questions / concepts (hot-fix hard review B2 — service_role
+    // bypass RLS, on doit filtrer manuellement).
+    const profileRes = await admin
+      .from("user_profiles")
+      .select("school_id")
+      .eq("id", teacher.id)
+      .maybeSingle();
+    if (profileRes.error) throw profileRes.error;
+    const schoolId = (profileRes.data as { school_id?: string } | null)?.school_id;
+    if (!schoolId) return apiOk({ ok: true, classes: [], topWeakConcepts: [], totals: { students: 0, assignments: 0, completions: 0 } });
+
     // 1. Classes du prof (non-archivées)
     const classesRes = await admin
       .from("classes")
@@ -45,7 +57,7 @@ export async function GET() {
       .order("name", { ascending: true });
     if (classesRes.error) throw classesRes.error;
     const classes =
-      (classesRes.data as { id: string; name: string; level: number | null; subject: string | null }[] | null) ?? [];
+      (classesRes.data as { id: string; name: string; level: string | null; subject: string | null }[] | null) ?? [];
 
     if (classes.length === 0) {
       return apiOk({
@@ -119,7 +131,7 @@ export async function GET() {
     type ClassStats = {
       class_id: string;
       name: string;
-      level: number | null;
+      level: string | null;
       subject: string | null;
       student_count: number;
       assignments_count: number;
@@ -178,6 +190,7 @@ export async function GET() {
         .from("teacher_questions")
         .select("id, concept_id")
         .in("id", qIds)
+        .eq("school_id", schoolId) // B2 hot-fix : tenant filter explicite
         .not("concept_id", "is", null);
       if (qRes.error) throw qRes.error;
       const qRows = (qRes.data as QRow[] | null) ?? [];
@@ -219,7 +232,8 @@ export async function GET() {
       const conceptsRes = await admin
         .from("concepts")
         .select("id, name")
-        .in("id", cIds);
+        .in("id", cIds)
+        .eq("school_id", schoolId); // B2 hot-fix : tenant filter explicite
       if (conceptsRes.error) throw conceptsRes.error;
       const conceptsMap = new Map(
         ((conceptsRes.data as { id: string; name: string }[] | null) ?? []).map((c) => [c.id, c.name]),
