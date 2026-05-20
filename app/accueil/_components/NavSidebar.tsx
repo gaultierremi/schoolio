@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
 import {
+  BarChart3,
   BookOpen,
   Calendar,
   CheckSquare,
@@ -49,6 +50,8 @@ const PROF_ITEMS: NavItem[] = [
   { href: "/accueil/import", label: "Import", Icon: Upload },
   { href: "/accueil/horaire", label: "Horaire", Icon: Calendar },
   { href: "/accueil/live", label: "Live", Icon: Radio, exact: true },
+  // S6-12 : stats agrégées toutes classes du prof
+  { href: "/accueil/stats-direction", label: "Stats", Icon: BarChart3 },
 ];
 
 function isActive(pathname: string, item: NavItem): boolean {
