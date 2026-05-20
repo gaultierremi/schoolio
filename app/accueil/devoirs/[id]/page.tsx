@@ -109,8 +109,10 @@ export default function StudentAssignmentPage() {
         {/* Header */}
         <div className="mt-4">
           <div className="flex items-center gap-2">
-            <span className="text-lg">{assignment.resource_type === "pdf" ? "📄" : "🧠"}</span>
-            <h1 className="text-2xl font-black text-white">{assignment.title}</h1>
+            <h1 className="text-3xl font-semibold tracking-tight text-white">{assignment.title}</h1>
+            <span className="rounded-full border border-gray-700 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-gray-400">
+              {assignment.resource_type === "pdf" ? "Lecture" : "Quiz"}
+            </span>
           </div>
           <p className="mt-1 text-sm text-gray-500">
             {assignment.class_name} · {assignment.course_title}

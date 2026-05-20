@@ -115,7 +115,7 @@ export default function StatusClient({ jobId, initialStatus, programId }: Props)
           Espace prof
         </Link>
 
-        <h1 className="serif mt-4 text-3xl font-bold text-[rgb(var(--ink))]">
+        <h1 className="mt-4 text-3xl font-semibold tracking-tight text-slate-900 dark:text-slate-100">
           {isDone ? "Ingestion terminée" : isFailed ? "Ingestion échouée" : "Ingestion en cours"}
         </h1>
         <p className="mt-2 text-sm text-[rgb(var(--ink-2))]">

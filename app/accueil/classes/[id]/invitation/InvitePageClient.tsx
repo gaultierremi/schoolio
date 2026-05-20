@@ -90,7 +90,7 @@ export default function InvitePageClient({
         >
           ← {className}
         </a>
-        <h1 className="serif mt-3 text-2xl font-black text-[rgb(var(--ink))]">🔗 Inviter des élèves</h1>
+        <h1 className="mt-3 text-3xl font-semibold tracking-tight text-slate-900 dark:text-slate-100">Inviter des élèves</h1>
         <p className="mt-1 text-sm text-[rgb(var(--ink-2))]">
           Partage ce code ou ce QR avec tes élèves pour qu&apos;ils rejoignent la classe automatiquement.
         </p>

@@ -725,7 +725,7 @@ export default function CoursesPage() {
           >
             ← Retour au dashboard
           </Link>
-          <h1 className="serif text-2xl font-bold text-[rgb(var(--ink))]">Mes cours</h1>
+          <h1 className="text-3xl font-semibold tracking-tight text-slate-900 dark:text-slate-100">Mes cours</h1>
           {!dataLoading && (
             <p className="mt-1 text-sm text-[rgb(var(--ink-3))]">
               {courses.length} cours · {totalQuestions} question{totalQuestions > 1 ? "s" : ""} générée{totalQuestions > 1 ? "s" : ""}

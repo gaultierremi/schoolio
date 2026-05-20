@@ -175,7 +175,7 @@ export default async function DevoirsIndexPage() {
       <div className="mx-auto max-w-[1100px] space-y-8 px-4 py-8 sm:px-6">
         {/* Hero */}
         <div>
-          <h1 className="serif text-3xl font-semibold text-[rgb(var(--ink))] sm:text-4xl">
+          <h1 className="text-3xl font-semibold tracking-tight text-slate-900 dark:text-slate-100">
             Mes devoirs
           </h1>
           <p className="mt-2 text-base text-[rgb(var(--ink-2))]">

@@ -85,7 +85,7 @@ export default function HeatmapDashboardClient({ displayName, initialData }: Pro
       {/* ── GREETING + STREAK ─────────────────────────────────────────────── */}
       <header className="mt-2 flex flex-wrap items-end justify-between gap-4 pt-2">
         <div>
-          <h1 className="serif text-3xl font-semibold text-[rgb(var(--ink))] sm:text-4xl">
+          <h1 className="text-3xl font-semibold tracking-tight text-slate-900 dark:text-slate-100">
             Bonjour {displayName}.
           </h1>
           <p className="mt-2 text-base text-[rgb(var(--ink-2))]">

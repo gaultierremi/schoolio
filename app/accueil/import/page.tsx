@@ -1046,7 +1046,7 @@ export default function ImportPage() {
           <Link href="/accueil" className="mb-6 inline-block text-sm text-[rgb(var(--ink-2))] transition-colors hover:text-[rgb(var(--accent))]">
             ← Retour au dashboard
           </Link>
-          <h1 className="serif text-2xl font-bold text-[rgb(var(--ink))]">Import en masse</h1>
+          <h1 className="text-3xl font-semibold tracking-tight text-slate-900 dark:text-slate-100">Import en masse</h1>
           <p className="mt-1 text-sm text-[rgb(var(--ink-2))]">
             Choisis d&apos;abord la matière et l&apos;année, puis dépose tes PDF.
           </p>
