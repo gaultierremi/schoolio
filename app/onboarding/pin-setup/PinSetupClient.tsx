@@ -1,7 +1,6 @@
 "use client";
 
 import { useRef, useState, type ChangeEvent, type FormEvent, type KeyboardEvent } from "react";
-import { useRouter } from "next/navigation";
 import { KeyRound } from "lucide-react";
 
 /**
@@ -24,7 +23,6 @@ export default function PinSetupClient({
   nextParam: string;
   userEmail: string;
 }) {
-  const router = useRouter();
   const [pin, setPin] = useState<string[]>(["", "", "", ""]);
   const [confirm, setConfirm] = useState<string[]>(["", "", "", ""]);
   const [submitting, setSubmitting] = useState(false);
@@ -100,7 +98,18 @@ export default function PinSetupClient({
         setSubmitting(false);
         return;
       }
-      router.push(data.redirectTo ?? nextParam);
+      // Hard redirect (pas router.push) : la route serveur vient de update
+      // app_metadata.has_pin via admin.updateUserById, mais le JWT de la
+      // session navigateur garde son ancien snapshot (has_pin: undefined).
+      // Si on fait `router.push`, le middleware lit le JWT cache → considère
+      // que le PIN n'est pas configuré → redirige vers /onboarding/pin-setup
+      // → la page server check le user_pin row → existe → redirect /accueil
+      // → BOUCLE INFINIE invisible (le user reste sur l'écran "Configuration…").
+      //
+      // window.location.href force un full page load qui rafraîchit la session
+      // Supabase via le middleware (read app_metadata fresh from DB).
+      // Pattern identique à JoinClassForm.tsx ligne 74.
+      window.location.href = data.redirectTo ?? nextParam;
     } catch {
       setError("Erreur réseau. Réessaie.");
       setSubmitting(false);
