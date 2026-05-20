@@ -23,7 +23,7 @@
  */
 
 import { logger, schedules } from "@trigger.dev/sdk/v3";
-import { createClient as createSupabaseAdminClient } from "@supabase/supabase-js";
+import { getAdminClient } from "@/lib/db/admin-client";
 import { todayInBelgium } from "@/lib/plan-maia-date";
 import {
   generatePlanForStudent,
@@ -38,10 +38,10 @@ export const pregeneratePlanMaiaTask = schedules.task({
   maxDuration: 300, // 5 min — large pour pilote (3 écoles × 30 élèves)
 
   run: async () => {
-    const admin = createSupabaseAdminClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!,
-    );
+    // S6-11 hot-fix : utilise le helper centralise lib/db/admin-client.ts
+    // qui inclut le polyfill WebSocket (`ws`) pour le runtime Node 21 de
+    // Trigger.dev cloud (RealtimeClient Supabase crash sans transport).
+    const admin = await getAdminClient();
 
     const planDate = todayInBelgium();
     logger.info("Pre-generating Plan Maïa for date", { planDate });
