@@ -391,7 +391,7 @@ export default function ExercisesListPage() {
 
         <div className="mt-4 flex flex-wrap items-start justify-between gap-3">
           <div>
-            <h1 className="serif text-3xl font-black">Gérer les exercices</h1>
+            <h1 className="text-3xl font-semibold tracking-tight text-slate-900 dark:text-slate-100">Gérer les exercices</h1>
             {course?.title && (
               <p className="mt-1 text-sm text-[rgb(var(--ink-2))]">{course.title}</p>
             )}

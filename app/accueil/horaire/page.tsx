@@ -97,7 +97,7 @@ export default function SchedulePage() {
 
         <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h1 className="serif flex items-center gap-2 text-2xl font-bold text-[rgb(var(--ink))]">
+            <h1 className="flex items-center gap-2 text-3xl font-semibold tracking-tight text-slate-900 dark:text-slate-100">
               <CalendarDays className="h-6 w-6 shrink-0" aria-hidden="true" />
               Mon horaire
             </h1>

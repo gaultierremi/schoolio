@@ -135,7 +135,7 @@ export default function NewSchoolSessionPage() {
             Espace professeur
           </p>
 
-          <h1 className="serif mt-3 text-4xl font-black text-[rgb(var(--ink))]">Créer une session</h1>
+          <h1 className="mt-3 text-3xl font-semibold tracking-tight text-slate-900 dark:text-slate-100">Créer une session</h1>
 
           <p className="mt-2 text-[rgb(var(--ink-2))]">
             Choisis un titre et sélectionne tes questions.

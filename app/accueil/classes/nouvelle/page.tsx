@@ -125,7 +125,7 @@ export default function NewClassPage() {
         <a href="/accueil/classes" className="text-xs text-[rgb(var(--ink-3))] hover:text-[rgb(var(--ink-2))]">
           ← Mes classes
         </a>
-        <h1 className="serif mt-2 text-3xl font-black text-[rgb(var(--ink))]">Nouvelle classe</h1>
+        <h1 className="mt-2 text-3xl font-semibold tracking-tight text-slate-900 dark:text-slate-100">Nouvelle classe</h1>
         <p className="mt-1 text-sm text-[rgb(var(--ink-2))]">
           Une cohorte regroupe les élèves d&apos;une année (ex : 4ème D). Une sous-classe matière
           vit à l&apos;intérieur (ex : 4D Maths) et contient le syllabus, les chapitres et les résultats.

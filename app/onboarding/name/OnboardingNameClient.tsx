@@ -51,7 +51,7 @@ export default function OnboardingNameClient() {
           <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-[rgb(var(--accent))] text-white text-2xl font-black select-none">
             M
           </div>
-          <h1 className="serif text-2xl font-bold text-[rgb(var(--ink))]">
+          <h1 className="text-3xl font-semibold tracking-tight text-slate-900 dark:text-slate-100">
             Dis-nous qui tu es
           </h1>
           <p className="text-sm text-[rgb(var(--ink-2))] text-center">

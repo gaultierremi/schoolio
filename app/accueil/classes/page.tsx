@@ -186,7 +186,7 @@ export default function ClassesPage() {
         <div className="flex items-center justify-between gap-4">
           <div>
             <a href="/accueil" className="text-xs text-[rgb(var(--ink-3))] hover:text-[rgb(var(--ink-2))]">← Espace enseignant</a>
-            <h1 className="serif mt-1 text-3xl font-black text-[rgb(var(--ink))]">🏫 Mes classes</h1>
+            <h1 className="mt-1 text-3xl font-semibold tracking-tight text-slate-900 dark:text-slate-100">Mes classes</h1>
           </div>
           <a
             href="/accueil/classes/nouvelle"

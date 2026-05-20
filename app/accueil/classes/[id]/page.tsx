@@ -526,7 +526,7 @@ export default function ClassDetailPage() {
         <div className="flex items-start justify-between gap-4">
           <div>
             <div className="flex items-center gap-2">
-              <h1 className="serif text-3xl font-black text-[rgb(var(--ink))]">{cls.name}</h1>
+              <h1 className="text-3xl font-semibold tracking-tight text-slate-900 dark:text-slate-100">{cls.name}</h1>
               {isArchived && (
                 <span className="rounded-full bg-[rgb(var(--surface-3))] px-2 py-0.5 text-[10px] font-bold uppercase tracking-widest text-[rgb(var(--ink-3))]">
                   Archivée

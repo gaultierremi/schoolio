@@ -141,7 +141,7 @@ export default function NewAssignmentPage() {
           ← Retour à la classe
         </a>
 
-        <h1 className="serif mt-4 text-2xl font-black text-[rgb(var(--ink))]">📋 Créer un devoir</h1>
+        <h1 className="mt-4 text-3xl font-semibold tracking-tight text-slate-900 dark:text-slate-100">Créer un devoir</h1>
 
         <form
           onSubmit={handleSubmit}

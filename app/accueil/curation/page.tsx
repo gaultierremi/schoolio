@@ -108,7 +108,7 @@ export default function SchoolQuestionsPage() {
           ← Espace professeur
         </a>
 
-        <h1 className="mt-4 text-4xl font-black">
+        <h1 className="mt-4 text-3xl font-semibold tracking-tight text-slate-900 dark:text-slate-100">
           Mes questions ({myQuestions.length})
         </h1>
         <p className="mt-2 text-[rgb(var(--ink-2))]">

@@ -222,7 +222,7 @@ export default function AssignmentDetailPage() {
               <span className="rounded-full border border-[rgb(var(--border))] bg-[rgb(var(--surface))] px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-[rgb(var(--ink-2))]">
                 {isQuiz ? "🧠 Quiz" : "📄 PDF"}
               </span>
-              <h1 className="serif text-2xl font-black text-[rgb(var(--ink))]">{assignment.title}</h1>
+              <h1 className="text-3xl font-semibold tracking-tight text-slate-900 dark:text-slate-100">{assignment.title}</h1>
             </div>
             <p className="mt-1 text-sm text-[rgb(var(--ink-2))]">{assignment.course_title}</p>
             {assignment.due_date && (
