@@ -7,6 +7,10 @@ import ThemeProvider from "@/components/ThemeProvider";
 import SkipLink from "@/components/a11y/SkipLink";
 import "./globals.css";
 import "katex/dist/katex.min.css";
+// S6-8 fix : font OpenDyslexic chargée via @fontsource (libre OFL, self-host,
+// bundlée par Next). Active quand l'utilisateur coche la pref dyslexique
+// dans /accueil/parametres/compte (CSS rule sur html[data-dyslexic="true"]).
+import "@fontsource/opendyslexic/latin-400.css";
 
 const inter = Inter({
   subsets: ["latin"],
