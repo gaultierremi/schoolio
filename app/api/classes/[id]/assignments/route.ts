@@ -26,6 +26,22 @@ async function assertTeacherOwnsClass(
   return data !== null;
 }
 
+/**
+ * Fetch school_id de la classe (utilise pour propager le tenant scope sur
+ * les rows assignments — assignments.school_id est NOT NULL).
+ */
+async function getClassSchoolId(
+  admin: ReturnType<typeof createAdminClient>,
+  classId: string,
+): Promise<string | null> {
+  const { data } = await admin
+    .from("classes")
+    .select("school_id")
+    .eq("id", classId)
+    .maybeSingle();
+  return (data as { school_id?: string } | null)?.school_id ?? null;
+}
+
 // ── GET : list assignments for a class ───────────────────────────────────────
 
 export async function GET(
@@ -199,6 +215,15 @@ export async function POST(
     const owns = await assertTeacherOwnsClass(admin, params.id, user.id);
     if (!owns) return NextResponse.json({ error: "Classe introuvable" }, { status: 404 });
 
+    // Récupère school_id de la classe (assignments.school_id NOT NULL)
+    const schoolId = await getClassSchoolId(admin, params.id);
+    if (!schoolId) {
+      return NextResponse.json(
+        { error: "Classe sans tenant (school_id manquant)" },
+        { status: 500 },
+      );
+    }
+
     // Verify course belongs to teacher
     const { data: course } = await admin
       .from("courses")
@@ -237,6 +262,7 @@ export async function POST(
       .from("assignments")
       .insert({
         class_id: params.id,
+        school_id: schoolId,
         assigned_by: user.id,
         title,
         description: typeof body.description === "string" ? body.description.trim() || null : null,
