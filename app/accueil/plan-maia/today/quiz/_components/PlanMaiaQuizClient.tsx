@@ -40,6 +40,10 @@ type Question = {
   options: string[] | null;
   unit: string | null;
   difficulty_stars: 1 | 2 | 3 | null;
+  // Images extraites du syllabus via Pipeline B (Vision Haiku)
+  image_url: string | null;
+  image_description_md: string | null;
+  image_page_number: number | null;
 };
 
 type Verdict = { is_correct: boolean } | null;
@@ -201,6 +205,25 @@ export default function PlanMaiaQuizClient({
         aria-labelledby="question-title"
         className="mb-4 rounded-2xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900"
       >
+        {/* Image du syllabus (Pipeline B Vision) — schéma / formule / graphique */}
+        {currentQuestion.image_url ? (
+          <figure className="mb-3">
+            <img
+              src={currentQuestion.image_url}
+              alt={
+                currentQuestion.image_description_md ??
+                `Illustration de la question${currentQuestion.image_page_number ? ` (p. ${currentQuestion.image_page_number} du syllabus)` : ""}`
+              }
+              className="mx-auto max-h-64 w-auto rounded-lg border border-slate-200 bg-white object-contain dark:border-slate-800 dark:bg-slate-50"
+              loading="lazy"
+            />
+            {currentQuestion.image_page_number ? (
+              <figcaption className="mt-1 text-center text-xs text-slate-500 dark:text-slate-400">
+                Page {currentQuestion.image_page_number} du syllabus
+              </figcaption>
+            ) : null}
+          </figure>
+        ) : null}
         <h2
           id="question-title"
           className="mb-3 text-base font-semibold text-slate-900 dark:text-slate-100"

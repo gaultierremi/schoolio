@@ -26,6 +26,11 @@ type Question = {
   numeric_tolerance: number | null;
   numeric_unit: string | null;
   expected_text_answers: string[] | null;
+  // Images extraites via Pipeline B (Vision Haiku) — schémas, formules,
+  // graphiques. Affichées au-dessus de la question pour contexte visuel.
+  image_url: string | null;
+  image_description_md: string | null;
+  image_page_number: number | null;
 };
 
 type QuestionResult = {
@@ -345,6 +350,27 @@ export default function AssignmentQuizPage() {
 
         {/* Question */}
         <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6">
+          {/* Image extraite du syllabus (Pipeline B Vision) — schémas, formules
+              ou graphiques que la question référence. Mémoire
+              `project_image_strategy_phases` : layer 1 (Haiku Vision 90% cases). */}
+          {q.image_url ? (
+            <figure className="mb-4">
+              <img
+                src={q.image_url}
+                alt={
+                  q.image_description_md ??
+                  `Illustration de la question${q.image_page_number ? ` (p. ${q.image_page_number} du syllabus)` : ""}`
+                }
+                className="mx-auto max-h-64 w-auto rounded-lg border border-slate-200 bg-white object-contain dark:border-slate-800 dark:bg-slate-50"
+                loading="lazy"
+              />
+              {q.image_page_number ? (
+                <figcaption className="mt-1 text-center text-xs text-slate-500 dark:text-slate-400">
+                  Page {q.image_page_number} du syllabus
+                </figcaption>
+              ) : null}
+            </figure>
+          ) : null}
           <p className="text-lg font-semibold text-slate-900 dark:text-slate-100 leading-snug">{q.question}</p>
 
           {(q.type === "mcq" || q.type === "truefalse") ? (
