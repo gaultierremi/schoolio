@@ -13,7 +13,14 @@ type ClassItem = {
   name: string;
   level: string | null;
   subject: string | null;
+  /**
+   * S6-10 + fix bug bind testeurs : `invite_code` (legacy 6 chars) preserve
+   * en DB pour rétrocompat. L'UI affiche desormais `invitation_code` (8 chars
+   * unifie avec QR + /api/join). Sans ca, le prof copie un code 6 chars que
+   * l'API /api/join/preview refuse (filter sur invitation_code) -> 404.
+   */
   invite_code: string;
+  invitation_code: string | null;
   archived_at: string | null;
   created_at: string;
   member_count: number;
@@ -97,7 +104,7 @@ function ClassCard({ cls, onArchiveToggle }: { cls: ClassItem; onArchiveToggle: 
       {/* Invite code */}
       <div className="flex items-center gap-2 rounded-xl bg-[rgb(var(--surface-3))] px-3 py-2 font-mono text-sm">
         <span className="text-[rgb(var(--ink-3))]">Code :</span>
-        <span className="font-black tracking-widest text-[rgb(var(--accent))]">{cls.invite_code}</span>
+        <span className="font-black tracking-widest text-[rgb(var(--accent))]">{cls.invitation_code ?? cls.invite_code}</span>
       </div>
 
       {/* Footer */}

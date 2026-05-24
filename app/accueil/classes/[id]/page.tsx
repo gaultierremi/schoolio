@@ -433,21 +433,29 @@ export default function ClassDetailPage() {
   async function handleRegenerate(type: "code" | "link") {
     if (!cls) return;
     setRegenerating(type);
+    // S6-10 fix : régénérer `invitation_code` (8 chars) que l'UI affiche
+    // et que /api/join/preview attend. L'ancien endpoint regenerate-code
+    // ne touchait que `invite_code` legacy 6 chars -> code visible inchangé.
     const endpoint =
       type === "code"
-        ? `/api/classes/${cls.id}/regenerate-code`
+        ? `/api/classes/${cls.id}/invitation/regenerate`
         : `/api/classes/${cls.id}/regenerate-link`;
     const res = await fetch(endpoint, { method: "POST" });
     if (res.ok) {
-      const json = await res.json() as { invite_code?: string; invite_link_token?: string };
+      const json = (await res.json()) as {
+        invitation_code?: string;
+        invite_code?: string;
+        invite_link_token?: string;
+      };
       setCls((prev) =>
         prev
           ? {
               ...prev,
+              invitation_code: json.invitation_code ?? prev.invitation_code,
               invite_code: json.invite_code ?? prev.invite_code,
               invite_link_token: json.invite_link_token ?? prev.invite_link_token,
             }
-          : prev
+          : prev,
       );
     }
     setRegenerating(null);
