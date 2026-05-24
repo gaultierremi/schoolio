@@ -48,7 +48,7 @@ export async function GET() {
 
     const { data: classes, error } = await admin
       .from("classes")
-      .select("id, name, level, subject, auth_mode, invite_code, parent_class_id, archived_at, created_at")
+      .select("id, name, level, subject, auth_mode, invite_code, invitation_code, parent_class_id, archived_at, created_at")
       .eq("teacher_id", user.id)
       .order("created_at", { ascending: false });
 
@@ -183,7 +183,7 @@ export async function POST(req: NextRequest) {
         parent_class_id: parentClassId,
         academic_year: academicYear,
       })
-      .select("id, name, level, subject, auth_mode, invite_code, invite_link_token, invitation_expires_at, parent_class_id, academic_year, archived_at, created_at")
+      .select("id, name, level, subject, auth_mode, invite_code, invitation_code, invite_link_token, invitation_expires_at, parent_class_id, academic_year, archived_at, created_at")
       .single();
 
     if (error) throw error;
