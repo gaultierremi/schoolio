@@ -34,23 +34,35 @@ export function ShortTextInput({ answered, grading, onSubmit }: Props) {
         onKeyDown={handleKeyDown}
         disabled={disabled}
         placeholder="Votre réponse…"
-        className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 px-4 py-3 text-sm text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:border-indigo-500 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50"
+        // colorScheme: 'light' defeats Chrome's native dark <input> rendering
+        // when the user has OS-level prefers-color-scheme: dark.
+        // Le quiz est toujours en light mode (card blanche) — pas de dark: variants.
+        style={{ colorScheme: "light" }}
+        className="w-full rounded-lg border border-slate-300 bg-white px-3.5 py-2.5 text-sm text-slate-900 placeholder-slate-400 transition focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 disabled:cursor-not-allowed disabled:opacity-50"
       />
 
       {!answered && (
         <button
           onClick={handleSubmit}
           disabled={value.trim() === "" || grading}
-          className="flex w-full items-center justify-center gap-2 rounded-2xl bg-indigo-600 py-3 font-semibold text-white transition hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-40"
+          className="
+            inline-flex items-center gap-1.5 rounded-lg bg-indigo-600 px-4 py-2
+            text-sm font-semibold text-white transition
+            hover:bg-indigo-700
+            focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500
+            focus-visible:ring-offset-2 focus-visible:ring-offset-white
+            disabled:cursor-not-allowed disabled:opacity-40
+            motion-reduce:transition-none
+          "
         >
           {grading ? (
             <>
-              <Loader2 size={16} className="animate-spin" />
+              <Loader2 size={14} strokeWidth={2} className="animate-spin" aria-hidden="true" />
               Vérification…
             </>
           ) : (
             <>
-              <Check size={16} />
+              <Check size={14} strokeWidth={2} aria-hidden="true" />
               Valider
             </>
           )}

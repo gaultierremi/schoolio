@@ -250,8 +250,12 @@ export default function PlanMaiaQuizClient({
             Anti-leak : on passe answerIndex=null pour ne pas révéler la bonne
             réponse (cohérent avec le pattern check-answer générique).
             La révélation détaillée arrivera sur le bilan post-plan. */}
+        {/* key={currentQuestion.id} force le remount React quand la question
+            change → reset du useState interne (sinon la réponse précédente
+            persiste dans l'input field, bug reporté Alex 2026-05-24). */}
         {currentQuestion.type === "mcq" && currentQuestion.options ? (
           <MCQOptions
+            key={currentQuestion.id}
             options={currentQuestion.options}
             answered={verdict !== null}
             grading={grading}
@@ -267,6 +271,7 @@ export default function PlanMaiaQuizClient({
           />
         ) : currentQuestion.type === "numeric" ? (
           <NumericInput
+            key={currentQuestion.id}
             answered={verdict !== null}
             grading={grading}
             unit={currentQuestion.unit}
@@ -274,6 +279,7 @@ export default function PlanMaiaQuizClient({
           />
         ) : currentQuestion.type === "short_text" ? (
           <ShortTextInput
+            key={currentQuestion.id}
             answered={verdict !== null}
             grading={grading}
             onSubmit={(value: string) => handleAnswer(value)}
