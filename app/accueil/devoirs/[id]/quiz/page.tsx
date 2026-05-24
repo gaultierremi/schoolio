@@ -2,11 +2,13 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
+import { CheckCircle2 } from "lucide-react";
 import { TutorPanel } from "./_components/TutorPanel";
 import { CorrectionPanel, type CorrectionStep } from "./_components/CorrectionPanel";
 import { MCQOptions } from "./_components/MCQOptions";
 import { NumericInput } from "./_components/NumericInput";
 import { ShortTextInput } from "./_components/ShortTextInput";
+import { TheoryPanel } from "./_components/TheoryPanel";
 
 type Question = {
   id: string;
@@ -59,6 +61,9 @@ export default function AssignmentQuizPage() {
   const [errorMsg, setErrorMsg] = useState("");
   const [wrongPhase, setWrongPhase] = useState<WrongPhase>(null);
   const [pdfLoading, setPdfLoading] = useState(false);
+  // Théorie : panel intégré (ne plus ouvrir le PDF, anti-leak + extraction
+  // textuelle des theory_blocks approuvés par le prof).
+  const [theoryPanelConceptId, setTheoryPanelConceptId] = useState<string | null>(null);
 
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const startTimeRef = useRef<number>(Date.now());
@@ -182,18 +187,25 @@ export default function AssignmentQuizPage() {
     setWrongPhase("help");
   }
 
-  async function handleOpenTheory() {
+  function handleOpenTheory() {
+    // Ouvre le panel théorie intégré (theory_blocks + misconceptions du concept)
+    // au lieu de download le PDF. Si la question n'a pas de concept_id, on
+    // garde le fallback PDF en dernière ressort.
     const q = questions[current];
+    if (q.concept_id) {
+      setTheoryPanelConceptId(q.concept_id);
+      return;
+    }
+    // Fallback historique : pas de concept_id sur cette question → PDF
     const page = q.concept_page_hint ?? q.page_range_start;
     if (!page) return;
     setPdfLoading(true);
-    try {
-      const res = await fetch(`/api/student/assignments/${id}/course-pdf-url`);
-      const json = await res.json() as { url?: string };
-      if (json.url) window.open(`${json.url}#page=${page}`, "_blank", "noopener,noreferrer");
-    } finally {
-      setPdfLoading(false);
-    }
+    void fetch(`/api/student/assignments/${id}/course-pdf-url`)
+      .then((res) => res.json())
+      .then((json: { url?: string }) => {
+        if (json.url) window.open(`${json.url}#page=${page}`, "_blank", "noopener,noreferrer");
+      })
+      .finally(() => setPdfLoading(false));
   }
 
   function handleRetry() {
@@ -375,14 +387,33 @@ export default function AssignmentQuizPage() {
           {answered && (
             <div className="mt-5 space-y-3">
 
-              {/* Correct → next */}
+              {/* Correct → validation positive + next */}
               {isCorrectAnswer && (
-                <button
-                  onClick={handleNext}
-                  className="w-full rounded-2xl bg-emerald-600 py-3 font-semibold text-white transition hover:bg-emerald-700"
-                >
-                  {current + 1 < questions.length ? "Question suivante →" : "Voir mon score →"}
-                </button>
+                <>
+                  <div
+                    role="status"
+                    aria-live="polite"
+                    className="
+                      flex items-center justify-center gap-2 rounded-xl border border-emerald-200
+                      bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-900
+                      dark:border-emerald-900 dark:bg-emerald-950/30 dark:text-emerald-200
+                    "
+                  >
+                    <CheckCircle2
+                      size={18}
+                      strokeWidth={2}
+                      aria-hidden="true"
+                      className="text-emerald-700 dark:text-emerald-400"
+                    />
+                    <span>Correct — bien joué.</span>
+                  </div>
+                  <button
+                    onClick={handleNext}
+                    className="w-full rounded-2xl bg-emerald-600 py-3 font-semibold text-white transition hover:bg-emerald-700"
+                  >
+                    {current + 1 < questions.length ? "Question suivante →" : "Voir mon score →"}
+                  </button>
+                </>
               )}
 
               {/* Wrong → choose action */}
@@ -467,6 +498,14 @@ export default function AssignmentQuizPage() {
         </p>
 
       </div>
+
+      {/* Panel théorie (overlay modal) — remplace l'ouverture PDF */}
+      {theoryPanelConceptId ? (
+        <TheoryPanel
+          conceptId={theoryPanelConceptId}
+          onClose={() => setTheoryPanelConceptId(null)}
+        />
+      ) : null}
     </main>
   );
 }
