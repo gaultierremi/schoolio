@@ -62,10 +62,11 @@ export default async function PlanMaiaQuizPage() {
   }
 
   // 2. Fetch questions complètes (champs requis pour les input types)
+  // Note : la colonne s'appelle `numeric_unit` en DB (pas `unit`).
   const questionsRes = await admin
     .from("teacher_questions")
     .select(
-      "id, type, question, options, unit, difficulty_stars, subject_enum, concept_id",
+      "id, type, question, options, numeric_unit, difficulty_stars, subject_enum, concept_id",
     )
     .in("id", questionIds);
   if (questionsRes.error) throw questionsRes.error;
@@ -75,7 +76,7 @@ export default async function PlanMaiaQuizPage() {
     type: string;
     question: string;
     options: string[] | null;
-    unit: string | null;
+    numeric_unit: string | null;
     difficulty_stars: 1 | 2 | 3 | null;
     subject_enum: string | null;
     concept_id: string | null;
@@ -132,7 +133,7 @@ export default async function PlanMaiaQuizPage() {
           type: q.type,
           question: q.question,
           options: q.options,
-          unit: q.unit,
+          unit: q.numeric_unit,
           difficulty_stars: q.difficulty_stars,
         }))}
         alreadyAnsweredIds={Array.from(answeredSet)}
