@@ -97,7 +97,10 @@ export default function AssignmentDetailPage() {
   const [sortKey, setSortKey] = useState<SortKey>("status");
   const [sortAsc, setSortAsc] = useState(true);
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
-  const [activeTab, setActiveTab] = useState<Tab>("overview");
+  // Heatmap par défaut pour les quiz (insight prof prioritaire — réduit la
+  // profondeur de navigation, feedback Alex 2026-05-24). Pour les PDFs, pas
+  // de heatmap → fallback "overview".
+  const [activeTab, setActiveTab] = useState<Tab>("heatmap");
 
   useEffect(() => {
     fetch(`/api/classes/${classId}/assignments/${assignmentId}/dashboard`)
@@ -108,6 +111,11 @@ export default function AssignmentDetailPage() {
           setEditTitle(j.assignment.title);
           setEditDesc(j.assignment.description ?? "");
           setEditDue(j.assignment.due_date ? j.assignment.due_date.slice(0, 16) : "");
+          // Fallback "overview" pour les PDFs (pas de heatmap dispo) — sinon
+          // l'onglet par défaut "heatmap" n'aurait pas de contenu correspondant.
+          if (j.assignment.resource_type !== "quiz") {
+            setActiveTab("overview");
+          }
         }
         setStudents(j.students ?? []);
         setOverview(j.overview ?? null);
@@ -304,13 +312,13 @@ export default function AssignmentDetailPage() {
           </div>
         )}
 
-        {/* Tabs */}
+        {/* Tabs — Heatmap en 1ʳᵉ position (insight clé prof), feedback Alex 2026-05-24. */}
         <div className="flex gap-1 rounded-xl border border-[rgb(var(--border))] bg-[rgb(var(--surface))] p-1">
           {([
+            ...(isQuiz ? [{ key: "heatmap", label: "Heatmap concepts" }] : []),
             { key: "overview", label: "Vue d'ensemble" },
             { key: "students", label: "Élèves" },
             ...(isQuiz ? [{ key: "top_errors", label: "Top erreurs" }] : []),
-            ...(isQuiz ? [{ key: "heatmap", label: "🎯 Heatmap concepts" }] : []),
           ] as { key: Tab; label: string }[]).map(({ key, label }) => (
             <button
               key={key}

@@ -158,13 +158,27 @@ export default function ConceptHeatmap({
           className="mx-auto text-slate-400 dark:text-slate-500"
         />
         <p className="mt-3 text-sm font-semibold text-slate-700 dark:text-slate-300">
-          Aucun concept taggé sur les questions de ce devoir.
+          Aucun concept rattaché aux questions de ce devoir.
         </p>
         <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
-          Les questions doivent être rattachées à un concept (champ <code>concept_id</code>) pour
-          apparaître ici. Cf. vue concept unifiée &mdash;{" "}
-          <code>/accueil/curation/concept/[id]</code>.
+          Pour voir la maîtrise par concept, rattache les questions du devoir
+          aux concepts de ton chapitre depuis Curation.
         </p>
+        <Link
+          href="/accueil/curation"
+          className="
+            mt-4 inline-flex items-center gap-1.5 rounded-lg bg-indigo-600 px-4 py-2
+            text-sm font-semibold text-white transition
+            hover:bg-indigo-700
+            focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500
+            focus-visible:ring-offset-2 focus-visible:ring-offset-white
+            dark:focus-visible:ring-offset-slate-900
+            motion-reduce:transition-none
+          "
+        >
+          <BookOpen size={14} strokeWidth={2} aria-hidden="true" />
+          Ouvrir Curation
+        </Link>
       </div>
     );
   }

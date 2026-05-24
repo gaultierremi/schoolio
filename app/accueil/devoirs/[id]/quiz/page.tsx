@@ -373,8 +373,12 @@ export default function AssignmentQuizPage() {
           ) : null}
           <p className="text-lg font-semibold text-slate-900 dark:text-slate-100 leading-snug">{q.question}</p>
 
+          {/* key={q.id} force le remount React quand la question change →
+              reset du useState interne (sinon la reponse precedente persiste
+              dans l'input field, bug Alex 2026-05-24). */}
           {(q.type === "mcq" || q.type === "truefalse") ? (
             <MCQOptions
+              key={q.id}
               options={q.options ?? []}
               answered={answered}
               grading={grading}
@@ -385,6 +389,7 @@ export default function AssignmentQuizPage() {
             />
           ) : q.type === "numeric" ? (
             <NumericInput
+              key={q.id}
               answered={answered}
               grading={grading}
               unit={q.numeric_unit}
@@ -392,6 +397,7 @@ export default function AssignmentQuizPage() {
             />
           ) : q.type === "short_text" ? (
             <ShortTextInput
+              key={q.id}
               answered={answered}
               grading={grading}
               onSubmit={handleSubmitFreeform}
