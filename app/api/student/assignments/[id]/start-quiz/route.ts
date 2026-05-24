@@ -76,7 +76,7 @@ export async function POST(
       const ids = (sampledRows as { question_id: string }[]).map((r) => r.question_id);
       const { data: qs, error: qErr } = await admin
         .from("teacher_questions")
-        .select("id, question, options, answer_index, type, difficulty_stars, explanation, concept_page_hint, page_range_start, correction_steps, concept_id, expected_numeric_answer, numeric_tolerance, numeric_unit, expected_text_answers")
+        .select("id, question, options, answer_index, type, difficulty_stars, explanation, concept_page_hint, page_range_start, correction_steps, concept_id, expected_numeric_answer, numeric_tolerance, numeric_unit, expected_text_answers, image_url, image_description_md, image_page_number")
         .in("id", ids)
         // Sprint 2B : double-gate. Si le prof désactive une question
         // après création du devoir, elle disparaît du quiz (même sémantique
@@ -89,7 +89,7 @@ export async function POST(
     } else {
       const { data: qs, error: qErr } = await admin
         .from("teacher_questions")
-        .select("id, question, options, answer_index, type, difficulty_stars, explanation, concept_page_hint, page_range_start, correction_steps, concept_id, expected_numeric_answer, numeric_tolerance, numeric_unit, expected_text_answers")
+        .select("id, question, options, answer_index, type, difficulty_stars, explanation, concept_page_hint, page_range_start, correction_steps, concept_id, expected_numeric_answer, numeric_tolerance, numeric_unit, expected_text_answers, image_url, image_description_md, image_page_number")
         .eq("course_id", assignment.resource_id)
         // Sprint 2B : double-gate is_active + validated_at.
         .not("validated_at", "is", null)

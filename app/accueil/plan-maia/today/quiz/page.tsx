@@ -66,7 +66,7 @@ export default async function PlanMaiaQuizPage() {
   const questionsRes = await admin
     .from("teacher_questions")
     .select(
-      "id, type, question, options, numeric_unit, difficulty_stars, subject_enum, concept_id",
+      "id, type, question, options, numeric_unit, difficulty_stars, subject_enum, concept_id, image_url, image_description_md, image_page_number",
     )
     .in("id", questionIds);
   if (questionsRes.error) throw questionsRes.error;
@@ -80,6 +80,9 @@ export default async function PlanMaiaQuizPage() {
     difficulty_stars: 1 | 2 | 3 | null;
     subject_enum: string | null;
     concept_id: string | null;
+    image_url: string | null;
+    image_description_md: string | null;
+    image_page_number: number | null;
   };
   const questions = (questionsRes.data as QuestionRow[] | null) ?? [];
   const orderedQuestions = questionIds
@@ -135,6 +138,9 @@ export default async function PlanMaiaQuizPage() {
           options: q.options,
           unit: q.numeric_unit,
           difficulty_stars: q.difficulty_stars,
+          image_url: q.image_url,
+          image_description_md: q.image_description_md,
+          image_page_number: q.image_page_number,
         }))}
         alreadyAnsweredIds={Array.from(answeredSet)}
       />
