@@ -106,18 +106,18 @@ export function TutorPanel({
   // On garde l'UX dégradée mais propre : "Revoir la théorie" seule.
   if (!loading && hints.length === 0) {
     return (
-      <div className="rounded-2xl border border-blue-800/40 bg-blue-950/30 p-4">
-        <div className="mb-3 flex items-center gap-2 text-xs font-bold text-blue-300">
+      <div className="rounded-2xl border border-blue-200 bg-blue-50 dark:border-blue-900 dark:bg-blue-950/30 p-4">
+        <div className="mb-3 flex items-center gap-2 text-xs font-bold text-blue-700 dark:text-blue-300">
           <Sparkles className="h-4 w-4" />
           Tuteur Maïa
         </div>
-        <p className="mb-3 text-sm text-blue-200">
+        <p className="mb-3 text-sm text-blue-900 dark:text-blue-200">
           Pas d&apos;indice rédigé pour cette question. Consulte la théorie pour t&apos;aider.
         </p>
         <button
           onClick={onOpenTheory}
           disabled={!theoryPage || theoryLoading}
-          className="inline-flex items-center gap-2 rounded-xl border border-blue-700/50 bg-blue-950/40 px-3 py-1.5 text-sm font-bold text-blue-200 transition hover:border-blue-500 hover:text-blue-100 disabled:cursor-not-allowed disabled:opacity-50"
+          className="inline-flex items-center gap-2 rounded-xl border border-blue-300 bg-blue-100 dark:border-blue-800 dark:bg-blue-950/40 px-3 py-1.5 text-sm font-bold text-blue-900 dark:text-blue-200 transition hover:border-blue-500 hover:text-blue-900 dark:text-blue-100 disabled:cursor-not-allowed disabled:opacity-50"
         >
           <BookOpen className="h-3.5 w-3.5" />
           {theoryLoading ? "Chargement…" : theoryPage ? `Revoir la théorie (p. ${theoryPage})` : "Théorie indisponible"}
@@ -127,14 +127,14 @@ export function TutorPanel({
   }
 
   return (
-    <div className="rounded-2xl border border-blue-800/40 bg-blue-950/30">
-      <header className="flex items-center gap-2 border-b border-blue-800/40 px-4 py-3">
+    <div className="rounded-2xl border border-blue-200 bg-blue-50 dark:border-blue-900 dark:bg-blue-950/30">
+      <header className="flex items-center gap-2 border-b border-blue-200 dark:border-blue-900 px-4 py-3">
         <div className="flex h-7 w-7 items-center justify-center rounded-full bg-blue-500/20">
-          <Sparkles className="h-3.5 w-3.5 text-blue-300" />
+          <Sparkles className="h-3.5 w-3.5 text-blue-700 dark:text-blue-300" />
         </div>
         <div>
-          <p className="text-sm font-bold text-blue-100">Tuteur Maïa</p>
-          <p className="text-[10px] text-blue-300/80">
+          <p className="text-sm font-bold text-blue-900 dark:text-blue-100">Tuteur Maïa</p>
+          <p className="text-[10px] text-blue-700 dark:text-blue-300/80">
             il t&apos;analyse · ne donne jamais la réponse
           </p>
         </div>
@@ -142,7 +142,7 @@ export function TutorPanel({
 
       <div className="space-y-2 p-4">
         {loading && (
-          <div className="flex items-center gap-2 text-sm text-blue-200">
+          <div className="flex items-center gap-2 text-sm text-blue-900 dark:text-blue-200">
             <Loader2 className="h-3.5 w-3.5 animate-spin" />
             Le tuteur prépare tes indices…
           </div>
@@ -163,7 +163,7 @@ export function TutorPanel({
             <button
               onClick={handleRevealMore}
               disabled={!canRevealMore}
-              className="inline-flex items-center gap-1.5 rounded-full border border-blue-700/50 bg-blue-950/40 px-3 py-1 text-xs font-bold text-blue-200 transition hover:border-blue-500 hover:text-blue-100 disabled:cursor-not-allowed disabled:opacity-50"
+              className="inline-flex items-center gap-1.5 rounded-full border border-blue-300 bg-blue-100 dark:border-blue-800 dark:bg-blue-950/40 px-3 py-1 text-xs font-bold text-blue-900 dark:text-blue-200 transition hover:border-blue-500 hover:text-blue-900 dark:text-blue-100 disabled:cursor-not-allowed disabled:opacity-50"
             >
               <Lightbulb className="h-3 w-3" />
               {canRevealMore ? "Je veux un autre indice" : "Plus d'indices disponibles"}
@@ -171,7 +171,7 @@ export function TutorPanel({
             <button
               onClick={onOpenTheory}
               disabled={!theoryPage || theoryLoading}
-              className="inline-flex items-center gap-1.5 rounded-full border border-blue-700/50 bg-blue-950/40 px-3 py-1 text-xs font-bold text-blue-200 transition hover:border-blue-500 hover:text-blue-100 disabled:cursor-not-allowed disabled:opacity-50"
+              className="inline-flex items-center gap-1.5 rounded-full border border-blue-300 bg-blue-100 dark:border-blue-800 dark:bg-blue-950/40 px-3 py-1 text-xs font-bold text-blue-900 dark:text-blue-200 transition hover:border-blue-500 hover:text-blue-900 dark:text-blue-100 disabled:cursor-not-allowed disabled:opacity-50"
             >
               <BookOpen className="h-3 w-3" />
               {theoryLoading ? "Chargement…" : theoryPage ? `Revoir la théorie` : "Théorie indisponible"}
@@ -185,8 +185,8 @@ export function TutorPanel({
                 className={
                   "flex h-7 w-7 items-center justify-center rounded-full border transition " +
                   (feedback === "up"
-                    ? "border-green-500/60 bg-green-500/20 text-green-200"
-                    : "border-blue-700/50 text-blue-300 hover:border-blue-500 hover:text-blue-100")
+                    ? "border-emerald-500 bg-emerald-100 text-emerald-900 dark:border-emerald-500/60 dark:bg-emerald-500/20 dark:text-emerald-200"
+                    : "border-blue-300 text-blue-700 hover:border-blue-500 hover:bg-blue-50 dark:border-blue-800 dark:text-blue-700 dark:text-blue-300 dark:hover:bg-blue-950/40")
                 }
               >
                 <ThumbsUp className="h-3 w-3" />
@@ -199,8 +199,8 @@ export function TutorPanel({
                 className={
                   "flex h-7 w-7 items-center justify-center rounded-full border transition " +
                   (feedback === "down"
-                    ? "border-red-500/60 bg-red-500/20 text-red-200"
-                    : "border-blue-700/50 text-blue-300 hover:border-blue-500 hover:text-blue-100")
+                    ? "border-red-500 bg-red-100 text-red-900 dark:border-red-500/60 dark:bg-red-500/20 dark:text-red-200"
+                    : "border-blue-300 text-blue-700 hover:border-blue-500 hover:bg-blue-50 dark:border-blue-800 dark:text-blue-700 dark:text-blue-300 dark:hover:bg-blue-950/40")
                 }
               >
                 <ThumbsDown className="h-3 w-3" />
