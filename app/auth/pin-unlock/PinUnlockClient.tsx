@@ -1,7 +1,6 @@
 "use client";
 
 import { useRef, useState, type ChangeEvent, type FormEvent, type KeyboardEvent } from "react";
-import { useRouter } from "next/navigation";
 import { Lock } from "lucide-react";
 import { createClient } from "@/lib/supabase-browser";
 
@@ -22,7 +21,6 @@ export default function PinUnlockClient({
   nextParam: string;
   userEmail: string;
 }) {
-  const router = useRouter();
   const [pin, setPin] = useState<string[]>(["", "", "", ""]);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -71,7 +69,9 @@ export default function PinUnlockClient({
         // 3 échecs atteints → signout global et redirect login
         const supabase = createClient();
         await supabase.auth.signOut({ scope: "global" });
-        router.push("/login?error=pin_lockout");
+        // Hard redirect : le signOut a invalide le JWT, faut un full reload
+        // sinon le middleware peut encore voir une session valide en cache.
+        window.location.href = "/login?error=pin_lockout";
         return;
       }
 
@@ -84,7 +84,12 @@ export default function PinUnlockClient({
         return;
       }
 
-      router.push(data.redirectTo ?? nextParam);
+      // Hard redirect (pas router.push) — meme bug que /onboarding/pin-setup
+      // (cf. PR #110) : router.push fait soft nav et le middleware peut lire
+      // le cookie/JWT pas encore committed dans le store du browser.
+      // window.location.href force un full page load qui inclut le nouveau
+      // cookie maia_pin_unlocked dans la requete.
+      window.location.href = data.redirectTo ?? nextParam;
     } catch {
       setError("Erreur réseau. Réessaie.");
       setSubmitting(false);
@@ -100,7 +105,8 @@ export default function PinUnlockClient({
       await fetch("/api/auth/pin", { method: "DELETE" });
       const supabase = createClient();
       await supabase.auth.signOut({ scope: "global" });
-      router.push("/login");
+      // Hard redirect post-signOut (cohérent avec le bloc lockedOut ci-dessus)
+      window.location.href = "/login";
     } catch {
       setSubmitting(false);
     }
