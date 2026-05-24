@@ -1,19 +1,22 @@
 /**
- * Interface devoirs élève (distincte du quiz d'entraînement).
+ * Interface devoirs role-aware (Feedback Alex 2026-05-24).
  *
- * UX : 3 sections — Devoirs à faire (deadline future), En retard, Terminés.
- * Mockup source : docs/dashboard-eleve-session-mockup.html (header session
- * adaptive) — mais ici on est sur la vue index, pas la vue exercice. La vue
- * exercice (session adaptive) reste sur /accueil/devoirs/[id]/quiz.
+ * - Eleve : 3 sections — Devoirs a faire (deadline future), En retard, Termines.
+ *   Mockup source : docs/dashboard-eleve-session-mockup.html.
+ * - Prof : vue agregee toutes classes, groupee par classe, KPIs completion.
+ *   Avant cette PR, prof devait passer par /accueil/classes -> click classe
+ *   -> liste devoirs. Maintenant accessible direct depuis sidebar.
  *
- * CLAUDE.md règle 3 : role lu depuis app_metadata.
+ * CLAUDE.md regle 3 : role lu depuis app_metadata via getUserWithRole().
  */
 
+import { redirect } from "next/navigation";
 import Link from "next/link";
 import { createClient as createSupabaseAdminClient } from "@supabase/supabase-js";
-import { requireStudentPage } from "@/lib/auth/role";
+import { getUserWithRole } from "@/lib/auth/role";
 import { ArrowLeft, CheckCircle2, AlertTriangle, ListChecks } from "lucide-react";
 import AssignmentCard from "@/app/accueil/_components/eleve/AssignmentCard";
+import ProfDevoirsView from "./_components/ProfDevoirsView";
 import type { AssignmentItem } from "@/lib/types/student-dashboard";
 
 export const dynamic = "force-dynamic";
@@ -125,7 +128,18 @@ async function fetchAssignments(userId: string): Promise<AssignmentItem[]> {
 }
 
 export default async function DevoirsIndexPage() {
-  const { user } = await requireStudentPage();
+  const { user, role } = await getUserWithRole();
+  if (!user) redirect("/login");
+
+  // Dispatch role-aware (Feedback Alex 2026-05-24 : Devoirs dans sidebar prof).
+  if (role === "teacher") {
+    return <ProfDevoirsView user={user} />;
+  }
+  if (role !== "student") {
+    // Role inconnu/legacy -> renvoyer sur l'accueil dispatcher (cohérent
+    // avec UnknownRoleScreen sur /accueil).
+    redirect("/accueil");
+  }
 
   const items = await fetchAssignments(user.id);
 

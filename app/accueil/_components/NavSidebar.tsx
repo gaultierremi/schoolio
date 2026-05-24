@@ -45,6 +45,10 @@ const ELEVE_ITEMS: NavItem[] = [
 const PROF_ITEMS: NavItem[] = [
   { href: "/accueil", label: "Accueil", Icon: House, exact: true },
   { href: "/accueil/classes", label: "Classes", Icon: Users },
+  // Feedback Alex 2026-05-24 : Devoirs accessible directement depuis sidebar
+  // (avant : devait passer par Classes -> click classe -> liste devoirs).
+  // Vue agrégée tous devoirs toutes classes du prof.
+  { href: "/accueil/devoirs", label: "Devoirs", Icon: Mail },
   { href: "/accueil/cours", label: "Cours", Icon: BookOpen },
   { href: "/accueil/curation", label: "Curation", Icon: CheckSquare },
   { href: "/accueil/import", label: "Import", Icon: Upload },
