@@ -53,7 +53,7 @@ export default function AssignmentCard({ assignment: a }: Props) {
 
   return (
     <Link
-      href={`/student/assignments/${a.id}`}
+      href={`/accueil/devoirs/${a.id}`}
       className={`block rounded-2xl border ${cardBorder} bg-[rgb(var(--surface))] p-5 transition-shadow hover:shadow-md`}
     >
       <div className="flex items-start justify-between gap-4">
