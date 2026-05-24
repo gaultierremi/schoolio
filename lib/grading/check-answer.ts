@@ -23,6 +23,12 @@ export type CheckResult =
 
 /**
  * Normalize a string for accent-insensitive, case-insensitive comparison.
+ *
+ * - Lowercase
+ * - Trim
+ * - Strip diacritics (é → e, à → a, etc.)
+ * - Strip ponctuation usuelle (.,;:!?'"«»)
+ * - Collapse multi-spaces
  */
 function normalize(s: string): string {
   return s
@@ -30,7 +36,34 @@ function normalize(s: string): string {
     .toLowerCase()
     .normalize("NFD")
     .replace(/\p{Diacritic}/gu, "")
-    .replace(/\s+/g, " ");
+    .replace(/[.,;:!?'"«»()’‘“”]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+/**
+ * Tolerant text match : strict equality OR substring (un sens ou l'autre).
+ *
+ * Pourquoi : les expected_text_answers du prof sont souvent une phrase
+ * canonique courte ("la mise à plat de la forme"). Les élèves répondent
+ * en variantes étendues ou simplifiées ("la mise a plat de toutes les
+ * faces d'un solide", "mise à plat de la forme", etc.).
+ *
+ * Sans tolérance, le grading rejette à tort ces réponses. Avec substring
+ * bidirectionnel :
+ * - "la mise a plat" (court) match "la mise à plat de la forme" (expected)
+ * - "la mise à plat de la forme du solide" (long) match aussi
+ *
+ * Risque : faux positifs si l'expected est très court (e.g. "oui").
+ * Garde-fou : on n'applique la substring que si l'expected a au moins
+ * 3 mots, sinon strict equality (pour éviter de matcher des réponses
+ * accidentellement par contenir "oui" dans "non oui").
+ */
+function textMatch(studentNorm: string, expectedNorm: string): boolean {
+  if (studentNorm === expectedNorm) return true;
+  const expectedWordCount = expectedNorm.split(" ").length;
+  if (expectedWordCount < 3) return false;
+  return studentNorm.includes(expectedNorm) || expectedNorm.includes(studentNorm);
 }
 
 /**
@@ -73,7 +106,10 @@ export function checkAnswer(
         return { is_correct: false };
       }
       const studentNorm = normalize(studentAnswer);
-      const matched = question.expected_text_answers.map(normalize).includes(studentNorm);
+      if (studentNorm.length === 0) return { is_correct: false };
+      const matched = question.expected_text_answers
+        .map(normalize)
+        .some((expectedNorm) => textMatch(studentNorm, expectedNorm));
       return { is_correct: matched };
     }
 

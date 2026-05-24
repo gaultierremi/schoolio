@@ -62,6 +62,67 @@ describe("checkAnswer", () => {
     expect(checkAnswer(q, "respiration").is_correct).toBe(false);
   });
 
+  // 6b. short_text — tolerance substring (élève écrit plus court)
+  it("short_text: tolère réponse plus courte (substring) si expected >= 3 mots", () => {
+    const q = {
+      type: "short_text" as const,
+      expected_text_answers: ["la mise à plat de la forme"],
+    };
+    // L'élève écrit une variante plus courte → match
+    expect(checkAnswer(q, "mise à plat de la forme").is_correct).toBe(true);
+    expect(checkAnswer(q, "La mise a plat de la forme").is_correct).toBe(true);
+  });
+
+  // 6c. short_text — tolérance substring (élève écrit plus long)
+  it("short_text: tolère réponse plus longue (élève précise) si expected >= 3 mots", () => {
+    const q = {
+      type: "short_text" as const,
+      expected_text_answers: ["la mise à plat de la forme"],
+    };
+    expect(
+      checkAnswer(
+        q,
+        "La mise à plat de la forme qu'il suffira de découper",
+      ).is_correct,
+    ).toBe(true);
+  });
+
+  // 6d. short_text — pas de substring sur expected court (anti-faux-positif)
+  it("short_text: pas de substring si expected < 3 mots (anti-faux-positif)", () => {
+    const q = {
+      type: "short_text" as const,
+      expected_text_answers: ["oui"],
+    };
+    // "non oui" contient "oui" mais ne doit PAS matcher (expected trop court)
+    expect(checkAnswer(q, "non oui").is_correct).toBe(false);
+    // Strict match marche toujours
+    expect(checkAnswer(q, "oui").is_correct).toBe(true);
+  });
+
+  // 6e. short_text — ponctuation strip
+  it("short_text: ignore la ponctuation", () => {
+    const q = {
+      type: "short_text" as const,
+      expected_text_answers: ["la photosynthèse, c'est la conversion"],
+    };
+    expect(
+      checkAnswer(q, "la photosynthèse c'est la conversion").is_correct,
+    ).toBe(true);
+    expect(
+      checkAnswer(q, "La photosynthèse: c'est la conversion!").is_correct,
+    ).toBe(true);
+  });
+
+  // 6f. short_text — empty string
+  it("short_text: empty string is wrong", () => {
+    const q = {
+      type: "short_text" as const,
+      expected_text_answers: ["la mise à plat"],
+    };
+    expect(checkAnswer(q, "").is_correct).toBe(false);
+    expect(checkAnswer(q, "   ").is_correct).toBe(false);
+  });
+
   // 7. truefalse — index 1 (true)
   it("truefalse: is_correct for index 1", () => {
     const q = { type: "truefalse" as const, answer_index: 1 };
