@@ -138,6 +138,7 @@ export default async function PlanMaiaQuizPage() {
           options: q.options,
           unit: q.numeric_unit,
           difficulty_stars: q.difficulty_stars,
+          concept_id: q.concept_id,
           image_url: q.image_url,
           image_description_md: q.image_description_md,
           image_page_number: q.image_page_number,

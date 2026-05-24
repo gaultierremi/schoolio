@@ -2,10 +2,11 @@
 
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
-import { CheckCircle2, CircleX, Sparkles, SkipForward, Loader2 } from "lucide-react";
+import { BookOpen, CheckCircle2, CircleX, Sparkles, SkipForward, Loader2 } from "lucide-react";
 import { MCQOptions } from "@/app/accueil/devoirs/[id]/quiz/_components/MCQOptions";
 import { NumericInput } from "@/app/accueil/devoirs/[id]/quiz/_components/NumericInput";
 import { ShortTextInput } from "@/app/accueil/devoirs/[id]/quiz/_components/ShortTextInput";
+import { TheoryPanel } from "@/app/accueil/devoirs/[id]/quiz/_components/TheoryPanel";
 
 /**
  * Sprint 5 PR S5-4 — Composant client quiz Plan Maïa.
@@ -40,6 +41,8 @@ type Question = {
   options: string[] | null;
   unit: string | null;
   difficulty_stars: 1 | 2 | 3 | null;
+  // Concept lié à la question — permet d'ouvrir le panel théorie (PR #117)
+  concept_id: string | null;
   // Images extraites du syllabus via Pipeline B (Vision Haiku)
   image_url: string | null;
   image_description_md: string | null;
@@ -70,6 +73,7 @@ export default function PlanMaiaQuizClient({
   const [verdict, setVerdict] = useState<Verdict>(null);
   const [selectedMcqIdx, setSelectedMcqIdx] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [theoryConceptId, setTheoryConceptId] = useState<string | null>(null);
   // Set des IDs répondus pendant cette session (pour ne pas re-grader)
   const [answeredInSession, setAnsweredInSession] = useState<Set<string>>(
     new Set(alreadyAnsweredIds),
@@ -383,11 +387,41 @@ export default function PlanMaiaQuizClient({
             Passer celle-ci
           </button>
         )}
+        {/* Bouton "Revoir la theorie" — ouvre le TheoryPanel partage avec
+            le quiz devoir (PR #117). Disponible uniquement si la question a
+            un concept_id (sinon pas de fiche prof a afficher). */}
+        {currentQuestion.concept_id ? (
+          <button
+            type="button"
+            onClick={() => setTheoryConceptId(currentQuestion.concept_id)}
+            className="
+              inline-flex items-center gap-1.5 rounded-lg border border-indigo-200
+              bg-indigo-50 px-4 py-2 text-sm font-medium text-indigo-700 transition
+              hover:bg-indigo-100
+              focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500
+              focus-visible:ring-offset-2 focus-visible:ring-offset-slate-50
+              dark:border-indigo-900 dark:bg-indigo-950/30 dark:text-indigo-300
+              dark:hover:bg-indigo-950/50 dark:focus-visible:ring-offset-slate-950
+              motion-reduce:transition-none
+            "
+          >
+            <BookOpen size={14} strokeWidth={2} aria-hidden="true" />
+            Revoir la théorie
+          </button>
+        ) : null}
         <p className="text-xs text-slate-500 dark:text-slate-500">
           {remainingCount} restante{remainingCount > 1 ? "s" : ""} · pick-and-choose,
           sans pénalité
         </p>
       </nav>
+
+      {/* Panel theorie overlay (texte des theory_blocks, pas PDF) */}
+      {theoryConceptId ? (
+        <TheoryPanel
+          conceptId={theoryConceptId}
+          onClose={() => setTheoryConceptId(null)}
+        />
+      ) : null}
     </>
   );
 }

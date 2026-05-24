@@ -54,7 +54,7 @@ export default async function AssignmentBilanPage({
       .maybeSingle(),
     admin
       .from("assignment_completions")
-      .select("status, score, completed_at, started_at, attempts_count")
+      .select("status, score, completed_at, last_attempt_at, attempts_count, duration_seconds")
       .eq("assignment_id", params.id)
       .eq("student_user_id", user.id)
       .maybeSingle(),
@@ -84,8 +84,9 @@ export default async function AssignmentBilanPage({
         status: string;
         score: number | null;
         completed_at: string | null;
-        started_at: string | null;
+        last_attempt_at: string | null;
         attempts_count: number;
+        duration_seconds: number | null;
       }
     | null;
 
@@ -175,12 +176,11 @@ export default async function AssignmentBilanPage({
   const solutionViews = answers.filter((a) => a.requested_solution).length;
   const explanationViews = answers.filter((a) => a.requested_explanation).length;
 
-  // Durée (si started_at + completed_at dispo)
+  // Durée : finish-quiz stocke directement duration_seconds (started_at
+  // n'existe pas en DB — utilisé par erreur dans le code S5-3 initial).
   let durationMinutes: number | null = null;
-  if (completion?.started_at && completion.completed_at) {
-    const ms =
-      new Date(completion.completed_at).getTime() - new Date(completion.started_at).getTime();
-    durationMinutes = Math.max(1, Math.round(ms / 60000));
+  if (completion?.duration_seconds !== null && completion?.duration_seconds !== undefined) {
+    durationMinutes = Math.max(1, Math.round(completion.duration_seconds / 60));
   }
 
   return (
