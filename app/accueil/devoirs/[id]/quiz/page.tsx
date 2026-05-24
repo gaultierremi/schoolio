@@ -236,10 +236,10 @@ export default function AssignmentQuizPage() {
 
   if (phase === "loading") {
     return (
-      <main className="flex min-h-screen items-center justify-center bg-gray-950">
+      <main className="flex min-h-dvh items-center justify-center bg-slate-50 dark:bg-slate-950">
         <div className="text-center">
-          <div className="h-10 w-10 animate-spin rounded-full border-2 border-gray-700 border-t-purple-500 mx-auto" />
-          <p className="mt-4 text-sm text-gray-400">Chargement des questions…</p>
+          <div className="h-10 w-10 animate-spin rounded-full border-2 border-slate-300 dark:border-slate-700 border-t-indigo-600 mx-auto" />
+          <p className="mt-4 text-sm text-slate-500 dark:text-slate-400">Chargement des questions…</p>
         </div>
       </main>
     );
@@ -247,13 +247,13 @@ export default function AssignmentQuizPage() {
 
   if (phase === "error") {
     return (
-      <main className="flex min-h-screen flex-col items-center justify-center bg-gray-950 px-4 text-center">
+      <main className="flex min-h-dvh flex-col items-center justify-center bg-slate-50 dark:bg-slate-950 px-4 text-center">
         <p className="text-5xl">⚠️</p>
-        <p className="mt-4 text-lg font-black text-white">Impossible de lancer le quiz</p>
-        <p className="mt-2 text-sm text-red-400">{errorMsg}</p>
+        <p className="mt-4 text-lg font-semibold text-slate-900 dark:text-slate-100">Impossible de lancer le quiz</p>
+        <p className="mt-2 text-sm text-red-700 dark:text-red-400">{errorMsg}</p>
         <button
           onClick={() => router.push(`/accueil/devoirs/${id}`)}
-          className="mt-6 rounded-2xl border border-gray-700 px-5 py-2.5 text-sm font-bold text-gray-300 transition hover:text-white"
+          className="mt-6 rounded-2xl border border-slate-300 dark:border-slate-700 px-5 py-2.5 text-sm font-bold text-slate-700 dark:text-slate-300 transition hover:bg-slate-100 dark:hover:bg-slate-800"
         >
           ← Retour au devoir
         </button>
@@ -268,32 +268,32 @@ export default function AssignmentQuizPage() {
     const label =
       finalScore >= 80 ? "Excellent !" : finalScore >= 50 ? "Bien joué !" : "Continue les efforts !";
     return (
-      <main className="flex min-h-screen flex-col items-center justify-center bg-gray-950 px-4 text-center">
+      <main className="flex min-h-dvh flex-col items-center justify-center bg-slate-50 dark:bg-slate-950 px-4 text-center">
         <p className="text-6xl">{emoji}</p>
-        <p className="mt-4 text-2xl font-black text-white">{label}</p>
-        <p className="mt-6 text-6xl font-black text-purple-400">{finalScore}%</p>
-        <p className="mt-2 text-sm text-gray-500">
+        <p className="mt-4 text-2xl font-semibold tracking-tight text-slate-900 dark:text-slate-100">{label}</p>
+        <p className="mt-6 text-6xl font-black text-indigo-600 dark:text-indigo-400">{finalScore}%</p>
+        <p className="mt-2 text-sm text-slate-500">
           {correctCount}/{questions.length} bonnes réponses · {fmtTime(elapsed)}
         </p>
-        <p className="mt-1 text-xs text-gray-400">Le meilleur score est conservé.</p>
-        {submitting && <p className="mt-3 text-xs text-gray-400">Sauvegarde…</p>}
+        <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">Le meilleur score est conservé.</p>
+        {submitting && <p className="mt-3 text-xs text-slate-500 dark:text-slate-400">Sauvegarde…</p>}
         <div className="mt-8 flex flex-wrap justify-center gap-3">
           {/* S5-3 : nouvelle entrée vers le bilan détaillé (page persistante) */}
           <button
             onClick={() => router.push(`/accueil/devoirs/${id}/bilan`)}
-            className="rounded-2xl bg-purple-500 px-5 py-2.5 text-sm font-black text-gray-950 transition hover:bg-purple-400 motion-reduce:transition-none"
+            className="rounded-2xl bg-indigo-600 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-indigo-700 motion-reduce:transition-none"
           >
             Voir mon bilan
           </button>
           <button
             onClick={() => router.push(`/accueil/devoirs/${id}`)}
-            className="rounded-2xl border border-gray-700 px-5 py-2.5 text-sm font-bold text-gray-300 transition hover:text-white motion-reduce:transition-none"
+            className="rounded-2xl border border-slate-300 dark:border-slate-700 px-5 py-2.5 text-sm font-bold text-slate-700 dark:text-slate-300 transition hover:bg-slate-100 dark:hover:bg-slate-800 motion-reduce:transition-none"
           >
             ← Retour au devoir
           </button>
           <button
             onClick={() => router.push("/accueil")}
-            className="rounded-2xl border border-gray-700 px-5 py-2.5 text-sm font-bold text-gray-300 transition hover:text-white motion-reduce:transition-none"
+            className="rounded-2xl border border-slate-300 dark:border-slate-700 px-5 py-2.5 text-sm font-bold text-slate-700 dark:text-slate-300 transition hover:bg-slate-100 dark:hover:bg-slate-800 motion-reduce:transition-none"
           >
             Mon espace
           </button>
@@ -312,28 +312,28 @@ export default function AssignmentQuizPage() {
   const theoryPage = q.concept_page_hint ?? q.page_range_start;
 
   return (
-    <main className="min-h-screen bg-gray-950 px-4 py-8 text-white">
+    <main className="min-h-screen bg-slate-50 px-4 py-8 text-slate-900 dark:bg-slate-950 dark:text-slate-100">
       <div className="mx-auto w-full max-w-lg">
 
         {/* Progress header */}
         <div className="flex items-center justify-between mb-4">
-          <span className="text-sm font-bold text-gray-400">
+          <span className="text-sm font-bold text-slate-500 dark:text-slate-400">
             {current + 1} / {questions.length}
           </span>
-          <span className="font-mono text-sm text-gray-500">{fmtTime(elapsed)}</span>
+          <span className="font-mono text-sm text-slate-500">{fmtTime(elapsed)}</span>
         </div>
 
         {/* Progress bar */}
-        <div className="mb-6 h-1.5 rounded-full bg-gray-800">
+        <div className="mb-6 h-1.5 rounded-full bg-slate-100 dark:bg-slate-800">
           <div
-            className="h-1.5 rounded-full bg-purple-500 transition-all duration-500"
+            className="h-1.5 rounded-full bg-indigo-600 transition-all duration-500"
             style={{ width: `${progress}%` }}
           />
         </div>
 
         {/* Question */}
-        <div className="rounded-2xl border border-gray-800 bg-gray-900 p-6">
-          <p className="text-lg font-black text-white leading-snug">{q.question}</p>
+        <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6">
+          <p className="text-lg font-semibold text-slate-900 dark:text-slate-100 leading-snug">{q.question}</p>
 
           {(q.type === "mcq" || q.type === "truefalse") ? (
             <MCQOptions
@@ -359,13 +359,13 @@ export default function AssignmentQuizPage() {
               onSubmit={handleSubmitFreeform}
             />
           ) : (
-            <p className="mt-6 text-sm text-gray-500">Type {q.type} non supporté</p>
+            <p className="mt-6 text-sm text-slate-500">Type {q.type} non supporté</p>
           )}
 
           {gradingError && !answered && (
             <p
               role="alert"
-              className="mt-4 rounded-xl border border-red-500/40 bg-red-500/10 px-4 py-2 text-center text-sm text-red-300"
+              className="mt-4 rounded-xl border border-red-200 bg-red-50 dark:border-red-900 dark:bg-red-950/30 px-4 py-2 text-center text-sm text-red-900 dark:text-red-300"
             >
               {gradingError}
             </p>
@@ -379,7 +379,7 @@ export default function AssignmentQuizPage() {
               {isCorrectAnswer && (
                 <button
                   onClick={handleNext}
-                  className="w-full rounded-2xl bg-green-600 py-3 font-black text-white transition hover:bg-green-500"
+                  className="w-full rounded-2xl bg-emerald-600 py-3 font-semibold text-white transition hover:bg-emerald-700"
                 >
                   {current + 1 < questions.length ? "Question suivante →" : "Voir mon score →"}
                 </button>
@@ -388,17 +388,17 @@ export default function AssignmentQuizPage() {
               {/* Wrong → choose action */}
               {wrongPhase === "choosing" && (
                 <>
-                  <p className="text-center text-sm font-bold text-red-400">Mauvaise réponse</p>
+                  <p className="text-center text-sm font-semibold text-red-700 dark:text-red-400">Mauvaise réponse</p>
                   <div className="grid grid-cols-2 gap-3">
                     <button
                       onClick={handleViewResult}
-                      className="rounded-xl border border-amber-600/40 bg-amber-500/10 py-2.5 text-sm font-bold text-amber-300 transition hover:border-amber-500/60 hover:bg-amber-500/15"
+                      className="rounded-xl border border-amber-200 bg-amber-50 dark:border-amber-900 dark:bg-amber-950/30 py-2.5 text-sm font-semibold text-amber-900 dark:text-amber-300 transition hover:border-amber-300 hover:bg-amber-100 dark:hover:bg-amber-950/40"
                     >
                       Voir le résultat
                     </button>
                     <button
                       onClick={handleHelpMe}
-                      className="rounded-xl border border-blue-600/40 bg-blue-500/10 py-2.5 text-sm font-bold text-blue-300 transition hover:border-blue-500/60 hover:bg-blue-500/15"
+                      className="rounded-xl border border-blue-200 bg-blue-50 dark:border-blue-900 dark:bg-blue-950/30 py-2.5 text-sm font-semibold text-blue-900 dark:text-blue-300 transition hover:border-blue-300 hover:bg-blue-100 dark:hover:bg-blue-950/40"
                     >
                       J&apos;ai pas compris
                     </button>
@@ -410,14 +410,14 @@ export default function AssignmentQuizPage() {
               {wrongPhase === "revealed" && (
                 <>
                   {q.explanation && (
-                    <div className="rounded-xl border border-green-800/40 bg-green-950/30 p-3">
-                      <p className="text-xs font-bold text-green-400 mb-1">Explication</p>
-                      <p className="text-sm text-green-200">{q.explanation}</p>
+                    <div className="rounded-xl border border-emerald-200 bg-emerald-50 dark:border-emerald-900 dark:bg-emerald-950/30 p-3">
+                      <p className="text-xs font-bold text-emerald-700 dark:text-emerald-400 mb-1">Explication</p>
+                      <p className="text-sm text-emerald-900 dark:text-emerald-200">{q.explanation}</p>
                     </div>
                   )}
                   <button
                     onClick={handleNext}
-                    className="w-full rounded-2xl bg-purple-500 py-3 font-black text-gray-950 transition hover:bg-purple-400"
+                    className="w-full rounded-2xl bg-indigo-600 py-3 font-semibold text-white transition hover:bg-indigo-700"
                   >
                     {current + 1 < questions.length ? "Question suivante →" : "Voir mon score →"}
                   </button>
@@ -442,13 +442,13 @@ export default function AssignmentQuizPage() {
                   <div className="grid grid-cols-2 gap-3">
                     <button
                       onClick={handleRetry}
-                      className="rounded-xl border border-gray-700 py-2.5 text-sm font-bold text-gray-300 transition hover:border-gray-500 hover:text-white"
+                      className="rounded-xl border border-slate-300 dark:border-slate-700 py-2.5 text-sm font-semibold text-slate-700 dark:text-slate-300 transition hover:bg-slate-100 dark:hover:bg-slate-800"
                     >
                       Réessayer
                     </button>
                     <button
                       onClick={handleNext}
-                      className="rounded-xl border border-gray-700 py-2.5 text-sm font-bold text-gray-400 transition hover:border-gray-500 hover:text-gray-300"
+                      className="rounded-xl border border-slate-300 dark:border-slate-700 py-2.5 text-sm font-bold text-slate-500 dark:text-slate-400 transition hover:border-slate-400 dark:border-slate-500 hover:text-slate-700 dark:text-slate-300"
                     >
                       {current + 1 < questions.length ? "Passer →" : "Terminer →"}
                     </button>
@@ -461,7 +461,7 @@ export default function AssignmentQuizPage() {
         </div>
 
         {/* Running score */}
-        <p className="mt-4 text-center text-xs text-gray-400">
+        <p className="mt-4 text-center text-xs text-slate-500 dark:text-slate-400">
           {correctCount} bonne{correctCount !== 1 ? "s" : ""} réponse{correctCount !== 1 ? "s" : ""} sur{" "}
           {current + (answered ? 1 : 0)} question{current + (answered ? 1 : 0) !== 1 ? "s" : ""}
         </p>

@@ -34,14 +34,14 @@ export function ShortTextInput({ answered, grading, onSubmit }: Props) {
         onKeyDown={handleKeyDown}
         disabled={disabled}
         placeholder="Votre réponse…"
-        className="w-full rounded-xl border border-gray-700 bg-gray-800 px-4 py-3 text-sm text-white placeholder-gray-500 focus:border-purple-500 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50"
+        className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 px-4 py-3 text-sm text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:border-indigo-500 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50"
       />
 
       {!answered && (
         <button
           onClick={handleSubmit}
           disabled={value.trim() === "" || grading}
-          className="flex w-full items-center justify-center gap-2 rounded-2xl bg-purple-500 py-3 font-black text-gray-950 transition hover:bg-purple-400 disabled:cursor-not-allowed disabled:opacity-40"
+          className="flex w-full items-center justify-center gap-2 rounded-2xl bg-indigo-600 py-3 font-semibold text-white transition hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-40"
         >
           {grading ? (
             <>

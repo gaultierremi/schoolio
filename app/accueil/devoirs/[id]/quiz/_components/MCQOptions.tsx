@@ -28,21 +28,21 @@ export function MCQOptions({
     if (!answered) {
       // While grading, mark the pending choice so the user gets feedback.
       if (grading && idx === selected) {
-        return "border-purple-500/60 bg-purple-500/10 text-purple-200 cursor-wait";
+        return "border-indigo-500 bg-indigo-600/10 text-indigo-200 cursor-wait";
       }
       if (grading) {
-        return "border-gray-800 text-gray-600 cursor-not-allowed";
+        return "border-slate-200 dark:border-slate-800 text-slate-500 cursor-not-allowed";
       }
-      return "border-gray-700 text-gray-300 hover:border-purple-500/60 hover:bg-purple-500/5 cursor-pointer";
+      return "border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:border-indigo-500 hover:bg-indigo-600/5 cursor-pointer";
     }
     if (wrongPhase === "choosing" || wrongPhase === "help") {
       if (idx === selected) return "border-red-500 bg-red-500/10 text-red-300";
-      return "border-gray-800 text-gray-600";
+      return "border-slate-200 dark:border-slate-800 text-slate-500";
     }
     // null (correct) or "revealed" — show correct answer
     if (idx === answerIndex) return "border-green-500 bg-green-500/10 text-green-300 font-bold";
     if (idx === selected && idx !== answerIndex) return "border-red-500 bg-red-500/10 text-red-300";
-    return "border-gray-800 text-gray-600";
+    return "border-slate-200 dark:border-slate-800 text-slate-500";
   }
 
   return (
@@ -54,7 +54,7 @@ export function MCQOptions({
           disabled={locked}
           className={`w-full rounded-xl border px-4 py-3 text-left text-sm transition ${optionStyle(idx)}`}
         >
-          <span className="font-bold text-gray-500 mr-2">{String.fromCharCode(65 + idx)}.</span>
+          <span className="font-bold text-slate-500 mr-2">{String.fromCharCode(65 + idx)}.</span>
           {opt}
           {grading && idx === selected && (
             <Loader2 className="ml-2 inline h-3.5 w-3.5 animate-spin" aria-hidden="true" />

@@ -24,14 +24,14 @@ export function CorrectionPanel({ steps, fallbackExplanation, finalAnswer }: Pro
   }
 
   return (
-    <div className="rounded-2xl border-2 border-green-700/40 bg-green-950/10 p-4">
+    <div className="rounded-2xl border-2 border-emerald-200 bg-emerald-50 dark:border-emerald-900 dark:bg-emerald-950/30 p-4">
       <header className="mb-3 flex items-center justify-between">
-        <p className="flex items-center gap-2 text-sm font-bold text-green-300">
+        <p className="flex items-center gap-2 text-sm font-bold text-emerald-700 dark:text-emerald-300">
           <CheckCircle2 className="h-4 w-4" />
           Correction
         </p>
         {hasSteps && (
-          <span className="text-xs text-green-400/80">Décompose pas-à-pas</span>
+          <span className="text-xs text-emerald-700 dark:text-emerald-400">Décompose pas-à-pas</span>
         )}
       </header>
 
@@ -44,14 +44,14 @@ export function CorrectionPanel({ steps, fallbackExplanation, finalAnswer }: Pro
                   {idx + 1}
                 </span>
                 <div className="flex-1">
-                  <p className="text-sm font-medium text-green-100">{step.title}</p>
+                  <p className="text-sm font-medium text-emerald-900 dark:text-emerald-100">{step.title}</p>
                   {step.detail && (
-                    <p className="mt-0.5 font-mono text-xs text-green-200/80">
+                    <p className="mt-0.5 font-mono text-xs text-emerald-800 dark:text-emerald-200">
                       {step.detail}
                     </p>
                   )}
                   {step.annotation && (
-                    <p className="mt-1 text-xs italic text-amber-300/90">
+                    <p className="mt-1 text-xs italic text-amber-700 dark:text-amber-300">
                       ← {step.annotation}
                     </p>
                   )}
@@ -60,7 +60,7 @@ export function CorrectionPanel({ steps, fallbackExplanation, finalAnswer }: Pro
             ))}
           </ol>
           {finalAnswer && (
-            <p className="mt-4 text-sm leading-relaxed text-green-100">
+            <p className="mt-4 text-sm leading-relaxed text-emerald-900 dark:text-emerald-100">
               {finalAnswer}
             </p>
           )}
@@ -68,7 +68,7 @@ export function CorrectionPanel({ steps, fallbackExplanation, finalAnswer }: Pro
       ) : (
         // Fallback : l'explanation TEXTE existante (questions pas encore
         // converties au format steps). UX dégradée mais lisible.
-        <p className="text-sm leading-relaxed text-green-100">
+        <p className="text-sm leading-relaxed text-emerald-900 dark:text-emerald-100">
           {fallbackExplanation}
         </p>
       )}
