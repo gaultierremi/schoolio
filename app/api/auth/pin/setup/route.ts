@@ -4,6 +4,7 @@ import { createClient as createSupabaseAdminClient } from "@supabase/supabase-js
 import { createClient } from "@/lib/supabase-server";
 import { hashPin, isValidPinFormat } from "@/lib/auth/pin";
 import { signPinUnlockCookie, PIN_COOKIE_NAME } from "@/lib/auth/pin-cookie";
+import { safeNextPath } from "@/lib/auth/safe-redirect";
 import { logAuditEvent, AUDIT_EVENTS } from "@/lib/audit/log";
 
 export const runtime = "nodejs";
@@ -53,8 +54,9 @@ export async function POST(request: Request) {
       ? body.timezone
       : "Europe/Brussels";
 
-  const nextParam =
-    typeof body.next === "string" && body.next.startsWith("/") ? body.next : "/accueil";
+  // Audit hard review 2026-05-25 P1 : safeNextPath rejette //evil.com,
+  // /\\evil.com, javascript:, CRLF injection.
+  const nextParam = safeNextPath(body.next, "/accueil");
 
   // ── 3. Hash + UPSERT ──────────────────────────────────────────────────────
   const admin = createSupabaseAdminClient(
