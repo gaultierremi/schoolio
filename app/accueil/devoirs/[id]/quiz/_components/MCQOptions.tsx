@@ -28,12 +28,12 @@ export function MCQOptions({
     if (!answered) {
       // While grading, mark the pending choice so the user gets feedback.
       if (grading && idx === selected) {
-        return "border-indigo-500 bg-indigo-600/10 text-indigo-200 cursor-wait";
+        return "border-[rgb(var(--accent))] bg-[rgb(var(--accent)/0.08)] accent-text cursor-wait";
       }
       if (grading) {
         return "border-slate-200 dark:border-slate-800 text-slate-500 cursor-not-allowed";
       }
-      return "border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:border-indigo-500 hover:bg-indigo-600/5 cursor-pointer";
+      return "border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:border-[rgb(var(--accent))] hover:bg-[rgb(var(--accent)/0.05)] cursor-pointer";
     }
     if (wrongPhase === "choosing" || wrongPhase === "help") {
       if (idx === selected) return "border-red-500 bg-red-500/10 text-red-300";
