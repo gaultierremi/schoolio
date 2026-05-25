@@ -157,7 +157,7 @@ export function TheoryPanel({
         {/* Header */}
         <header className="flex items-start justify-between gap-3 border-b border-slate-200 p-5 dark:border-slate-800">
           <div className="min-w-0 flex-1">
-            <p className="text-xs font-medium uppercase tracking-wide text-indigo-700 dark:text-indigo-400">
+            <p className="text-xs font-medium uppercase tracking-wide accent-text">
               Théorie
             </p>
             <h2
@@ -180,7 +180,7 @@ export function TheoryPanel({
               -mr-1 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg
               text-slate-500 transition
               hover:bg-slate-100 hover:text-slate-700
-              focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500
+              focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgb(var(--accent))]
               dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-200
               motion-reduce:transition-none
             "
@@ -229,7 +229,7 @@ export function TheoryPanel({
                   >
                     <h3
                       id={`section-${kind}-title`}
-                      className="mb-2 flex items-center gap-2 text-sm font-semibold text-indigo-700 dark:text-indigo-400"
+                      className="mb-2 flex items-center gap-2 text-sm font-semibold accent-text"
                     >
                       <SectionIcon kind={kind} />
                       {SECTION_LABELS[kind]}

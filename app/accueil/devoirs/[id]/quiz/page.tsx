@@ -288,7 +288,7 @@ export default function AssignmentQuizPage() {
       <main className="flex min-h-dvh flex-col items-center justify-center bg-slate-50 dark:bg-slate-950 px-4 text-center">
         <p className="text-6xl">{emoji}</p>
         <p className="mt-4 text-2xl font-semibold tracking-tight text-slate-900 dark:text-slate-100">{label}</p>
-        <p className="mt-6 text-6xl font-black text-indigo-600 dark:text-indigo-400">{finalScore}%</p>
+        <p className="mt-6 text-6xl font-bold accent-text">{finalScore}%</p>
         <p className="mt-2 text-sm text-slate-500">
           {correctCount}/{questions.length} bonnes réponses · {fmtTime(elapsed)}
         </p>
@@ -298,7 +298,7 @@ export default function AssignmentQuizPage() {
           {/* S5-3 : nouvelle entrée vers le bilan détaillé (page persistante) */}
           <button
             onClick={() => router.push(`/accueil/devoirs/${id}/bilan`)}
-            className="rounded-2xl bg-indigo-600 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-indigo-700 motion-reduce:transition-none"
+            className="btn-primary rounded-xl px-5 py-2.5 text-sm font-semibold motion-reduce:transition-none"
           >
             Voir mon bilan
           </button>
@@ -341,9 +341,9 @@ export default function AssignmentQuizPage() {
         </div>
 
         {/* Progress bar */}
-        <div className="mb-6 h-1.5 rounded-full bg-slate-100 dark:bg-slate-800">
+        <div className="mb-6 h-1.5 overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800">
           <div
-            className="h-1.5 rounded-full bg-indigo-600 transition-all duration-500"
+            className="h-full rounded-full accent-bg transition-all duration-500"
             style={{ width: `${progress}%` }}
           />
         </div>
@@ -480,7 +480,7 @@ export default function AssignmentQuizPage() {
                   )}
                   <button
                     onClick={handleNext}
-                    className="w-full rounded-2xl bg-indigo-600 py-3 font-semibold text-white transition hover:bg-indigo-700"
+                    className="btn-primary inline-flex w-full items-center justify-center gap-1.5 rounded-xl py-3 font-semibold motion-reduce:transition-none"
                   >
                     {current + 1 < questions.length ? "Question suivante →" : "Voir mon score →"}
                   </button>

@@ -46,7 +46,7 @@ export function NumericInput({ answered, grading, unit, onSubmit }: Props) {
           // colorScheme: 'light' defeats Chrome's native dark <input> rendering
           // quand l'utilisateur a OS prefers-color-scheme: dark.
           style={{ colorScheme: "light" }}
-          className="flex-1 rounded-lg border border-slate-300 bg-white px-3.5 py-2.5 text-sm text-slate-900 placeholder-slate-400 transition focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 disabled:cursor-not-allowed disabled:opacity-50"
+          className="flex-1 rounded-lg border border-slate-300 bg-white px-3.5 py-2.5 text-sm text-slate-900 placeholder-slate-400 transition focus:border-[rgb(var(--accent))] focus:outline-none focus:ring-2 focus:ring-[rgb(var(--accent))]/20 disabled:cursor-not-allowed disabled:opacity-50"
         />
         {unit && (
           <span className="shrink-0 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm text-slate-600 select-none">
@@ -60,11 +60,10 @@ export function NumericInput({ answered, grading, unit, onSubmit }: Props) {
           onClick={handleSubmit}
           disabled={raw.trim() === "" || grading}
           className="
-            inline-flex items-center gap-1.5 rounded-lg bg-indigo-600 px-4 py-2
-            text-sm font-semibold text-white transition
-            hover:bg-indigo-700
-            focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500
-            focus-visible:ring-offset-2 focus-visible:ring-offset-white
+            btn-primary inline-flex items-center gap-1.5 rounded-xl
+            px-4 py-2 text-sm font-semibold
+            focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgb(var(--accent))]
+            focus-visible:ring-offset-2 focus-visible:ring-offset-[rgb(var(--surface))]
             disabled:cursor-not-allowed disabled:opacity-40
             motion-reduce:transition-none
           "
