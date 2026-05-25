@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { requireUser } from "@/lib/api/auth";
+import { apiError, safeError } from "@/lib/api/respond";
 
 function normalize(s: string): string {
   return s
@@ -54,7 +55,7 @@ export async function POST(req: NextRequest) {
     };
 
     if (!questionId) {
-      return NextResponse.json({ error: "questionId requis" }, { status: 400 });
+      return apiError("questionId requis", 400);
     }
 
     // Fetch source question
@@ -108,12 +109,13 @@ export async function POST(req: NextRequest) {
       });
 
     if (insertError) {
-      return NextResponse.json({ error: insertError.message }, { status: 500 });
+      // Audit hard review 2026-05-25 P2 : ne pas leak err.message au client
+      // (revele les noms de colonnes / constraints Postgres = info disclosure).
+      return safeError(insertError, "propose-question:insert", "Impossible d'enregistrer la proposition");
     }
 
     return NextResponse.json({ success: true });
   } catch (err) {
-    const msg = err instanceof Error ? err.message : "Erreur inconnue";
-    return NextResponse.json({ error: msg }, { status: 500 });
+    return safeError(err, "propose-question:POST");
   }
 }

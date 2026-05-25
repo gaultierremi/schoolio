@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient as createSupabaseAdminClient } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase-server";
 import { generateExercises } from "@/lib/exercises/generate-exercises";
+import { apiError, safeError } from "@/lib/api/respond";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 120;
@@ -98,14 +99,16 @@ export async function POST(
 
     return NextResponse.json(result);
   } catch (err) {
-    console.error("[generate-exercises:POST]", err);
+    // Cas particulier 503 : conserve le message utilisateur friendly (sentinel
+    // controle, pas un leak).
     if (err instanceof Error && err.message === "ALL_MODELS_RATE_LIMITED") {
-      return NextResponse.json(
-        { error: "Service IA temporairement saturé, réessaye dans quelques minutes." },
-        { status: 503 }
+      return apiError(
+        "Service IA temporairement saturé, réessaye dans quelques minutes.",
+        503,
       );
     }
-    const message = err instanceof Error ? err.message : "Erreur serveur";
-    return NextResponse.json({ error: message }, { status: 500 });
+    // Audit hard review 2026-05-25 P2 : ne pas leak err.message au client
+    // (revele les details internes : noms de modeles AI, prompts, tokens, etc.).
+    return safeError(err, "generate-exercises:POST");
   }
 }
