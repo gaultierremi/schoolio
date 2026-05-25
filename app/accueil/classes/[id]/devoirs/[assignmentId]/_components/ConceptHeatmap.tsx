@@ -16,6 +16,7 @@ import {
   type SortMode,
   type StatusKind,
 } from "@/lib/heatmap-mastery";
+import { computeClassAverage, computeParticipation } from "@/lib/heatmap-kpis";
 
 type ConceptRow = { id: string; name: string; slug: string };
 type StudentRow = {
@@ -106,6 +107,14 @@ export default function ConceptHeatmap({
     () => (data ? countStrugglingStudents(data.students) : 0),
     [data],
   );
+  const participation = useMemo(
+    () => (data ? computeParticipation(data.students) : null),
+    [data],
+  );
+  const classAvg = useMemo(
+    () => (data ? computeClassAverage(data.classAverage) : 0),
+    [data],
+  );
 
   // Sprint 3 PR S3-2 : suggestions de remédiation déterministe (pas IA runtime)
   // Mémoire feedback_heatmap_no_overwhelm : max 5 alertes encourageant.
@@ -139,7 +148,7 @@ export default function ConceptHeatmap({
           size={20}
           strokeWidth={2}
           aria-hidden="true"
-          className="mx-auto animate-spin text-indigo-500 motion-reduce:animate-none"
+          className="mx-auto animate-spin text-[rgb(var(--accent))] motion-reduce:animate-none"
         />
         <p className="mt-2 text-sm text-slate-600 dark:text-slate-400">
           Chargement de la heatmap…
@@ -167,12 +176,10 @@ export default function ConceptHeatmap({
         <Link
           href="/accueil/curation"
           className="
-            mt-4 inline-flex items-center gap-1.5 rounded-lg bg-indigo-600 px-4 py-2
-            text-sm font-semibold text-white transition
-            hover:bg-indigo-700
-            focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500
-            focus-visible:ring-offset-2 focus-visible:ring-offset-white
-            dark:focus-visible:ring-offset-slate-900
+            btn-primary mt-4 inline-flex items-center gap-1.5 rounded-xl px-4 py-2
+            text-sm font-semibold
+            focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgb(var(--accent))]
+            focus-visible:ring-offset-2 focus-visible:ring-offset-[rgb(var(--surface))]
             motion-reduce:transition-none
           "
         >
@@ -194,6 +201,62 @@ export default function ConceptHeatmap({
   }
 
   return (
+    <>
+      {/* KPI cards top (mockup dashboard-prof-heatmap lignes 152-175). */}
+      {participation ? (
+        <div className="mb-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
+          <div className="card p-4">
+            <p className="text-xs uppercase tracking-wide text-[rgb(var(--ink-3))]">
+              Participation
+            </p>
+            <p className="serif mt-1 text-2xl font-semibold text-[rgb(var(--ink))]">
+              {participation.completed}
+              <span className="text-base text-[rgb(var(--ink-3))]">
+                /{participation.total}
+              </span>
+            </p>
+            <p className="mt-1 text-xs text-[rgb(var(--ink-2))]">
+              {participation.pct}% des élèves ont terminé
+            </p>
+          </div>
+          <div className="card p-4">
+            <p className="text-xs uppercase tracking-wide text-[rgb(var(--ink-3))]">
+              Moyenne classe
+            </p>
+            <p className="serif mt-1 text-2xl font-semibold text-[rgb(var(--ink))]">
+              {classAvg}%
+            </p>
+            <p className="mt-1 text-xs text-[rgb(var(--ink-2))]">
+              {strugglingCount > 0
+                ? `${strugglingCount} élève${strugglingCount > 1 ? "s" : ""} en difficulté`
+                : "Aucun élève en difficulté"}
+            </p>
+          </div>
+          <div className="card p-4">
+            <p className="text-xs uppercase tracking-wide text-[rgb(var(--ink-3))]">
+              Concept le + faible
+            </p>
+            <p className="serif mt-1 text-lg font-semibold text-[rgb(var(--ink))]">
+              {weakest?.concept.name ?? "—"}
+            </p>
+            <p className="mt-1 text-xs text-red-700 dark:text-red-400">
+              {weakest ? `${weakest.pct}% maîtrise classe` : "Pas encore évalué"}
+            </p>
+          </div>
+          <div className="card p-4">
+            <p className="text-xs uppercase tracking-wide text-[rgb(var(--ink-3))]">
+              Concept le + fort
+            </p>
+            <p className="serif mt-1 text-lg font-semibold text-[rgb(var(--ink))]">
+              {strongest?.concept.name ?? "—"}
+            </p>
+            <p className="mt-1 text-xs text-emerald-700 dark:text-emerald-400">
+              {strongest ? `${strongest.pct}% maîtrise classe` : "Pas encore évalué"}
+            </p>
+          </div>
+        </div>
+      ) : null}
+
     <section
       aria-labelledby="heatmap-title"
       className="rounded-2xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900"
@@ -256,7 +319,7 @@ export default function ConceptHeatmap({
             id="heatmap-sort"
             value={sortMode}
             onChange={(e) => setSortMode(e.target.value as SortMode)}
-            className="appearance-none rounded-md border border-slate-300 bg-white pl-2 pr-7 py-1 text-xs text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200"
+            className="appearance-none rounded-md border border-slate-300 bg-white pl-2 pr-7 py-1 text-xs text-slate-700 focus:outline-none focus:ring-2 focus:ring-[rgb(var(--accent))] dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200"
           >
             <option value="difficulty">Élèves en difficulté en premier</option>
             <option value="alphabetical">Ordre alphabétique</option>
@@ -335,6 +398,7 @@ export default function ConceptHeatmap({
                     <div
                       aria-label={`Moyenne classe ${data.concepts[i].name} : ${pct === 0 ? "non évaluée" : pct + " pourcent — " + masteryLabel(level)}`}
                       className={`mx-auto flex h-7 w-12 items-center justify-center rounded-md text-xs font-semibold ${masteryCellClass(level)}`}
+                      // Pas de heatmap-cell hover sur ligne moyenne (info-only).
                     >
                       {pct === 0 ? "—" : pct}
                     </div>
@@ -364,7 +428,7 @@ export default function ConceptHeatmap({
                     <div className="flex items-center gap-2">
                       <span
                         aria-hidden="true"
-                        className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-indigo-100 text-[10px] font-semibold text-indigo-700 dark:bg-indigo-950/40 dark:text-indigo-300"
+                        className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[rgb(var(--accent)/0.10)] text-[10px] font-semibold accent-text"
                       >
                         {initials}
                       </span>
@@ -386,7 +450,7 @@ export default function ConceptHeatmap({
                         <Link
                           href={`/accueil/classes/${classId}/devoirs/${assignmentId}/eleve/${student.user_id}?concept=${concept.id}`}
                           aria-label={`Voir détail ${student.display_name} — ${concept.name} : ${pct === 0 ? "non évalué" : pct + " pourcent — " + masteryLabel(level)}`}
-                          className={`mx-auto flex h-7 w-12 items-center justify-center rounded-md text-xs font-semibold transition-transform focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 focus-visible:ring-offset-white hover:scale-105 dark:focus-visible:ring-offset-slate-900 motion-reduce:transition-none ${masteryCellClass(level)}`}
+                          className={`heatmap-cell mx-auto flex h-7 w-12 items-center justify-center rounded-md text-xs font-semibold focus:outline-none focus-visible:ring-2 focus-visible:ring-[rgb(var(--accent))] focus-visible:ring-offset-2 focus-visible:ring-offset-[rgb(var(--surface))] ${masteryCellClass(level)}`}
                         >
                           {pct === 0 ? "—" : pct}
                         </Link>
@@ -406,23 +470,23 @@ export default function ConceptHeatmap({
       {remediationSuggestions.length > 0 ? (
         <aside
           aria-labelledby="remediation-title"
-          className="mt-6 rounded-2xl border border-indigo-200 bg-indigo-50/50 p-5 dark:border-indigo-900 dark:bg-indigo-950/30"
+          className="mt-6 rounded-2xl border border-[rgb(var(--accent)/0.30)] bg-[rgb(var(--accent)/0.06)] p-5"
         >
           <div className="flex items-start gap-2">
             <Lightbulb
               size={18}
               strokeWidth={2}
               aria-hidden="true"
-              className="mt-0.5 shrink-0 text-indigo-600 dark:text-indigo-400"
+              className="mt-0.5 shrink-0 accent-text"
             />
             <div className="min-w-0 flex-1">
               <h4
                 id="remediation-title"
-                className="text-sm font-semibold text-indigo-900 dark:text-indigo-100"
+                className="text-sm font-semibold text-[rgb(var(--ink))]"
               >
                 Suggestions de remédiation
               </h4>
-              <p className="mt-0.5 text-xs text-indigo-800 dark:text-indigo-300">
+              <p className="mt-0.5 text-xs accent-text">
                 {remediationSuggestions.length} élève
                 {remediationSuggestions.length > 1 ? "s" : ""} nécessite
                 {remediationSuggestions.length > 1 ? "nt" : ""} un suivi prioritaire
@@ -462,12 +526,13 @@ export default function ConceptHeatmap({
             })}
           </ul>
 
-          <p className="mt-3 text-[10px] italic text-indigo-700 dark:text-indigo-400">
+          <p className="mt-3 text-[10px] italic accent-text">
             Calculé automatiquement depuis les résultats du devoir · pas d&apos;IA
             temps réel
           </p>
         </aside>
       ) : null}
-    </section>
+      </section>
+    </>
   );
 }

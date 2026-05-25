@@ -332,6 +332,23 @@ html, body {
   font-size: 1rem;
 }
 
+/* Heatmap cells (cf docs/dashboard-prof-heatmap-mockup.html lines 64-71)
+   Hover outline + scale pour feedback tactile clair.
+   Sprint design 2026-05-25 PR audit-design-3. */
+.heatmap-cell {
+  transition: all 120ms ease;
+}
+.heatmap-cell:hover {
+  outline: 2px solid rgb(var(--accent));
+  outline-offset: -2px;
+  transform: scale(1.05);
+  z-index: 10;
+}
+@media (prefers-reduced-motion: reduce) {
+  .heatmap-cell { transition: none; }
+  .heatmap-cell:hover { transform: none; }
+}
+
 /* Mastery preview cells */
 .pm-cell {
   width: 2.25rem;
