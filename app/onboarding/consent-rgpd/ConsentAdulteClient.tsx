@@ -64,7 +64,13 @@ export default function ConsentAdulteClient({
         setSubmitting(false);
         return;
       }
-      router.push(data.redirectTo ?? nextParam);
+      // window.location.href (PAS router.push) — apres /api/consent/give,
+      // /api/auth/v1/admin/users/[id] a mis a jour app_metadata mais le JWT
+      // en RAM cote client est cached jusqu au prochain hard navigation.
+      // router.push() ferait un soft nav avec ancien JWT -> middleware
+      // recoit l ancien role/consent et boucle. Meme bug que PinSetup/Unlock
+      // corriges PR #110/#111 (audit hard review 2026-05-25).
+      window.location.href = data.redirectTo ?? nextParam;
     } catch {
       setError("Erreur réseau. Réessaie.");
       setSubmitting(false);
