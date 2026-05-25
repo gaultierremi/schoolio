@@ -1,18 +1,15 @@
 import type { ReactNode } from "react";
-import { requireStudentPage } from "@/lib/auth/role";
 
 /**
- * Layout server-side guard for /accueil/devoirs/*.
+ * Layout pass-through pour /accueil/devoirs.
  *
- * Q3 "sécurité béton" : chaque page (devoirs index, detail, quiz) est
- * protégée car ses children sont des Client Components qui ne peuvent
- * pas appeler `requireStudentPage()` directement.
+ * Avant 2026-05-24, ce layout faisait `requireStudentPage()` car toutes
+ * les pages /accueil/devoirs/* étaient student-only. Désormais l'INDEX
+ * `/accueil/devoirs` est role-aware (prof voit ses devoirs aggrégés).
  *
- * Le layout fait le check une fois en server-side, l'arborescence entière
- * est cloisonnée aux students. Un teacher tape /accueil/devoirs/... →
- * redirect /accueil (dispatcher → ProfHome).
+ * Le guard student strict est déplacé dans `app/accueil/devoirs/[id]/layout.tsx`
+ * qui couvre les sous-routes student-only (DETAIL + QUIZ + BILAN).
  */
-export default async function DevoirsLayout({ children }: { children: ReactNode }) {
-  await requireStudentPage();
+export default function DevoirsLayout({ children }: { children: ReactNode }) {
   return <>{children}</>;
 }
