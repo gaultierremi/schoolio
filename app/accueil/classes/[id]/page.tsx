@@ -5,6 +5,15 @@ import { useRouter, useParams } from "next/navigation";
 import { createClient } from "@/lib/supabase-browser";
 import { SUBJECTS, LEVELS, SUBJECTS_BY_ID } from "@/lib/subjects";
 import type { SubjectId } from "@/lib/subjects";
+import {
+  Calendar,
+  ClipboardList,
+  Download,
+  FileText,
+  Link as LinkIcon,
+  Sparkles,
+  Users,
+} from "lucide-react";
 import ClassConceptHeatmap from "./_components/ClassConceptHeatmap";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -299,7 +308,14 @@ function AssignmentsTab({ classId }: { classId: string }) {
             disabled={exporting || assignments.length === 0}
             className="rounded-2xl border border-[rgb(var(--border))] bg-[rgb(var(--surface))] px-4 py-2 text-sm font-bold text-[rgb(var(--ink-2))] transition hover:border-[rgb(var(--ink-3))] hover:text-[rgb(var(--ink))] disabled:opacity-40"
           >
-            {exporting ? "Export..." : "📥 Exporter CSV"}
+            {exporting ? (
+              "Export..."
+            ) : (
+              <span className="inline-flex items-center gap-1.5">
+                <Download size={14} strokeWidth={2} aria-hidden="true" />
+                Exporter CSV
+              </span>
+            )}
           </button>
           <a
             href={`/accueil/classes/${classId}/devoirs/nouveau`}
@@ -312,7 +328,12 @@ function AssignmentsTab({ classId }: { classId: string }) {
 
       {assignments.length === 0 ? (
         <div className="mt-8 text-center">
-          <p className="text-4xl">📋</p>
+          <ClipboardList
+            size={40}
+            strokeWidth={1.5}
+            aria-hidden="true"
+            className="mx-auto text-[rgb(var(--ink-3))]"
+          />
           <p className="mt-3 font-black text-[rgb(var(--ink))]">Aucun devoir</p>
           <p className="mt-1 text-sm text-[rgb(var(--ink-3))]">Crée le premier devoir pour cette classe.</p>
         </div>
@@ -338,8 +359,18 @@ function AssignmentsTab({ classId }: { classId: string }) {
                 <div className="flex items-start justify-between gap-2">
                   <div className="min-w-0">
                     <div className="flex items-center gap-2">
-                      <span className="shrink-0 rounded-full border border-[rgb(var(--border))] bg-[rgb(var(--surface-2))] px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-[rgb(var(--ink-2))]">
-                        {a.resource_type === "pdf" ? "📄 PDF" : "🧠 Quiz"}
+                      <span className="inline-flex shrink-0 items-center gap-1 rounded-full border border-[rgb(var(--border))] bg-[rgb(var(--surface-2))] px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-[rgb(var(--ink-2))]">
+                        {a.resource_type === "pdf" ? (
+                          <>
+                            <FileText size={10} strokeWidth={2} aria-hidden="true" />
+                            PDF
+                          </>
+                        ) : (
+                          <>
+                            <Sparkles size={10} strokeWidth={2} aria-hidden="true" />
+                            Quiz
+                          </>
+                        )}
                       </span>
                       <p className="truncate font-black text-[rgb(var(--ink))]">{a.title}</p>
                     </div>
@@ -362,7 +393,10 @@ function AssignmentsTab({ classId }: { classId: string }) {
                     )}
                   </span>
                   {a.due_date && (
-                    <span>📅 {new Date(a.due_date).toLocaleDateString("fr-BE", { day: "numeric", month: "short" })}</span>
+                    <span className="inline-flex items-center gap-1">
+                      <Calendar size={12} strokeWidth={2} aria-hidden="true" />
+                      {new Date(a.due_date).toLocaleDateString("fr-BE", { day: "numeric", month: "short" })}
+                    </span>
                   )}
                 </div>
 
@@ -586,7 +620,10 @@ export default function ClassDetailPage() {
         {/* Invite section */}
         <div className="space-y-4 rounded-2xl border border-[rgb(var(--border))] bg-[rgb(var(--surface))] p-5">
           <div className="flex items-center justify-between gap-3">
-            <h2 className="font-black text-[rgb(var(--ink))]">🔗 Inviter des élèves</h2>
+            <h2 className="inline-flex items-center gap-2 font-black text-[rgb(var(--ink))]">
+              <LinkIcon size={16} strokeWidth={2} aria-hidden="true" />
+              Inviter des élèves
+            </h2>
             <a
               href={`/accueil/classes/${cls.id}/invitation`}
               className="shrink-0 rounded-xl bg-[rgb(var(--accent))] px-3 py-1.5 text-xs font-bold text-white transition hover:opacity-90"
@@ -673,8 +710,9 @@ export default function ClassDetailPage() {
         {pageTab === "members" && (
           <div className="rounded-2xl border border-[rgb(var(--border))] bg-[rgb(var(--surface))] p-5">
             <div className="flex items-center justify-between gap-4">
-              <h2 className="font-black text-[rgb(var(--ink))]">
-                👥 Élèves ({activeMembers.length})
+              <h2 className="inline-flex items-center gap-2 font-black text-[rgb(var(--ink))]">
+                <Users size={16} strokeWidth={2} aria-hidden="true" />
+                Élèves ({activeMembers.length})
               </h2>
               <div className="flex gap-2">
                 {(["active", "removed"] as const).map((t) => (
@@ -735,7 +773,10 @@ export default function ClassDetailPage() {
         {/* Devoirs section */}
         {pageTab === "devoirs" && (
           <div className="rounded-2xl border border-[rgb(var(--border))] bg-[rgb(var(--surface))] p-5">
-            <h2 className="mb-4 font-black text-[rgb(var(--ink))]">📋 Devoirs</h2>
+            <h2 className="mb-4 inline-flex items-center gap-2 font-black text-[rgb(var(--ink))]">
+              <ClipboardList size={16} strokeWidth={2} aria-hidden="true" />
+              Devoirs
+            </h2>
             <AssignmentsTab classId={id} />
           </div>
         )}

@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useId, useMemo, useState } from "react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
+import { FileText, Radio, Target } from "lucide-react";
 import { PageRangeGenerator } from "./_components/PageRangeGenerator";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -183,7 +184,8 @@ function GenerateModal({
 function PageRangeBadge({ start, end }: { start: number; end: number }) {
   return (
     <span className="inline-flex items-center gap-1 rounded-full bg-[rgb(var(--surface-3))] px-2 py-0.5 text-xs text-[rgb(var(--ink-2))]">
-      📄 p.{start}–{end}
+      <FileText size={10} strokeWidth={2} aria-hidden="true" />
+      p.{start}–{end}
     </span>
   );
 }
@@ -402,20 +404,37 @@ export default function ExercisesListPage() {
               disabled={startingLive}
               className="rounded-2xl border border-[rgb(var(--red))]/40 bg-[rgb(var(--red))]/10 px-4 py-3 text-sm font-black text-[rgb(var(--red))] transition hover:bg-[rgb(var(--red))]/15 disabled:opacity-50"
             >
-              {startingLive ? "Chargement…" : "🎬 Cours live"}
+              {startingLive ? (
+                "Chargement…"
+              ) : (
+                <span className="inline-flex items-center gap-1.5">
+                  <Radio size={14} strokeWidth={2} aria-hidden="true" />
+                  Cours live
+                </span>
+              )}
             </button>
             <button
               onClick={handleExtractQuestions}
               disabled={extracting}
               className="rounded-2xl border border-sky-300 bg-sky-50 px-4 py-3 text-sm font-black text-sky-700 transition hover:bg-sky-100 disabled:opacity-50"
             >
-              {extracting ? "Extraction…" : "📄 Extraire les questions"}
+              {extracting ? (
+                "Extraction…"
+              ) : (
+                <span className="inline-flex items-center gap-1.5">
+                  <FileText size={14} strokeWidth={2} aria-hidden="true" />
+                  Extraire les questions
+                </span>
+              )}
             </button>
             <button
               onClick={() => setShowRangeGenerator(true)}
               className="rounded-2xl border border-[rgb(var(--accent))]/40 bg-[rgb(var(--accent))]/10 px-4 py-3 text-sm font-black text-[rgb(var(--accent))] transition hover:bg-[rgb(var(--accent))]/15"
             >
-              🎯 Sélection de pages
+              <span className="inline-flex items-center gap-1.5">
+                <Target size={14} strokeWidth={2} aria-hidden="true" />
+                Sélection de pages
+              </span>
             </button>
             <button
               onClick={() => setShowGenerate(true)}

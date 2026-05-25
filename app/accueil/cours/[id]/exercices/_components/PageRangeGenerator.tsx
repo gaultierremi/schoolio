@@ -1,6 +1,7 @@
 "use client";
 
 import { useId, useState } from "react";
+import { Target } from "lucide-react";
 import PageRangeSlider from "@/components/pdf/PageRangeSlider";
 
 type Props = {
@@ -126,7 +127,10 @@ export function PageRangeGenerator({ courseId, pagesCount, courseTitle, onSucces
           </div>
         ) : (
           <>
-            <h2 className="serif text-lg font-black text-[rgb(var(--ink))]">🎯 Générer sur une sélection de pages</h2>
+            <h2 className="serif inline-flex items-center gap-2 text-lg font-black text-[rgb(var(--ink))]">
+              <Target size={18} strokeWidth={2} aria-hidden="true" />
+              Générer sur une sélection de pages
+            </h2>
             <p className="mt-1 truncate text-sm text-[rgb(var(--ink-2))]">{courseTitle}</p>
 
             {/* Page range */}
