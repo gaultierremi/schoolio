@@ -72,6 +72,11 @@ const SKIP_MESSAGES: Record<SkipReason, string> = {
   no_assigned_courses:
     "Aucun cours assigné pour l'instant — reviens quand ton prof distribuera un devoir.",
   no_candidates: "Pas encore de questions disponibles dans tes cours.",
+  // Feedback Alex 2026-05-25 : Plan Maia ne se genere plus avant que l eleve
+  // ait fait au moins un devoir. Le devoir est le moment de decouverte du
+  // contenu, le Plan c est de la revision/practice.
+  no_answers_yet:
+    "Commence par tes devoirs assignés. Ton Plan Maïa apparaîtra dès que tu auras répondu à ta première question.",
   all_correct_24h:
     "Tu as déjà bien répondu à toutes les questions disponibles aujourd'hui — repose-toi !",
   no_questions_generated:
