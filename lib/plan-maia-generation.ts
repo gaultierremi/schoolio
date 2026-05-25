@@ -59,6 +59,7 @@ export type SkipReason =
   | "no_active_classes"
   | "no_assigned_courses"
   | "no_candidates"
+  | "no_answers_yet"
   | "all_correct_24h"
   | "no_questions_generated";
 
@@ -150,6 +151,23 @@ export async function generatePlanForStudent(
   ];
   if (courseIds.length === 0) {
     return { kind: "skipped", reason: "no_assigned_courses" };
+  }
+
+  // 4b. Gate : l eleve doit avoir repondu a au moins une question avant que
+  // Plan Maia genere quoi que ce soit. Sans cette gate, le plan tirerait des
+  // questions random dans le curriculum prof pour un eleve qui n a encore
+  // jamais ouvert un devoir -> contenu hors-contexte, anxiogene.
+  // Pedagogiquement : la decouverte du contenu se fait via les devoirs assignes
+  // par le prof. Plan Maia est de la revision/practice apres premier contact.
+  // (Feedback Alex 2026-05-25).
+  const firstAnswerRes = await admin
+    .from("assignment_question_answers")
+    .select("question_id", { count: "exact", head: true })
+    .eq("student_user_id", userId)
+    .limit(1);
+  if (firstAnswerRes.error) throw firstAnswerRes.error;
+  if ((firstAnswerRes.count ?? 0) === 0) {
+    return { kind: "skipped", reason: "no_answers_yet" };
   }
 
   // 5. Questions candidates filtrées
