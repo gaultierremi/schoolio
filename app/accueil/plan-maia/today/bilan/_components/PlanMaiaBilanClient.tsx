@@ -59,14 +59,14 @@ export default function PlanMaiaBilanClient({
   return (
     <>
       <header className="mb-6">
-        <p className="text-xs font-medium uppercase tracking-wide text-indigo-700 dark:text-indigo-400">
+        <p className="text-xs font-medium uppercase tracking-wide accent-text">
           Bilan · Plan Maïa du {planDate}
         </p>
         <div className="mt-2 flex items-start gap-4">
           <div
             aria-hidden="true"
             className={`
-              flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl text-3xl font-bold
+              flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl text-3xl font-semibold
               ${overallPct >= 85
                 ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300"
                 : overallPct >= 60
@@ -79,12 +79,13 @@ export default function PlanMaiaBilanClient({
             {overallPct}%
           </div>
           <div>
-            <h1 className="text-2xl font-semibold tracking-tight text-slate-900 dark:text-slate-100">
+            <h1 className="serif text-2xl font-semibold tracking-tight text-[rgb(var(--ink))]">
               {encouragement}
             </h1>
-            <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">
-              <strong>{correctCount}</strong> bonnes réponses sur <strong>{uniqueAnswered}</strong>{" "}
-              question{uniqueAnswered > 1 ? "s" : ""} répondue{uniqueAnswered > 1 ? "s" : ""}
+            <p className="mt-1 text-sm text-[rgb(var(--ink-2))]">
+              <strong className="text-[rgb(var(--ink))]">{correctCount}</strong> bonnes réponses sur{" "}
+              <strong className="text-[rgb(var(--ink))]">{uniqueAnswered}</strong> question
+              {uniqueAnswered > 1 ? "s" : ""} répondue{uniqueAnswered > 1 ? "s" : ""}
               {totalQuestions > uniqueAnswered ? <> ({totalQuestions} au total)</> : null}
               {isCompleted && completedAt ? (
                 <>
@@ -102,7 +103,7 @@ export default function PlanMaiaBilanClient({
 
       <section
         aria-labelledby="kpi-title"
-        className="mb-6 rounded-2xl border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900"
+        className="mb-6 card p-5"
       >
         <h2 id="kpi-title" className="sr-only">
           Indicateurs du Plan Maïa
@@ -112,7 +113,7 @@ export default function PlanMaiaBilanClient({
             icon={<Target size={16} strokeWidth={2} aria-hidden="true" />}
             label="Score"
             value={`${overallPct}%`}
-            tone="indigo"
+            tone="accent"
           />
           <KpiCard
             icon={<CheckCircle2 size={16} strokeWidth={2} aria-hidden="true" />}
@@ -132,18 +133,18 @@ export default function PlanMaiaBilanClient({
       {sortedConcepts.length > 0 ? (
         <section
           aria-labelledby="concepts-title"
-          className="mb-6 rounded-2xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900"
+          className="mb-6 card p-6"
         >
           <div className="mb-3 flex items-center gap-2">
             <Sparkles
               size={18}
               strokeWidth={2}
               aria-hidden="true"
-              className="text-indigo-600 dark:text-indigo-400"
+              className="accent-text"
             />
             <h2
               id="concepts-title"
-              className="text-base font-semibold text-slate-900 dark:text-slate-100"
+              className="serif text-base font-semibold text-[rgb(var(--ink))]"
             >
               Concepts touchés aujourd&apos;hui
             </h2>
@@ -154,23 +155,21 @@ export default function PlanMaiaBilanClient({
               return (
                 <li
                   key={c.concept.id}
-                  className="flex items-center justify-between gap-3 rounded-lg bg-slate-50 p-3 dark:bg-slate-950"
+                  className="flex items-center justify-between gap-3 rounded-xl surface-2-bg p-3"
                 >
                   <Link
                     href={`/accueil/concepts/${c.concept.id}`}
                     className="
-                      min-w-0 flex-1 truncate text-sm font-medium text-slate-900
+                      min-w-0 flex-1 truncate text-sm font-medium text-[rgb(var(--ink))]
                       transition hover:underline focus-visible:underline
-                      focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500
-                      focus-visible:ring-offset-2 focus-visible:ring-offset-slate-50
-                      dark:text-slate-100
-                      dark:focus-visible:ring-offset-slate-950
+                      focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgb(var(--accent))]
+                      focus-visible:ring-offset-2 focus-visible:ring-offset-[rgb(var(--surface))]
                       motion-reduce:transition-none
                     "
                   >
                     {c.concept.name}
                   </Link>
-                  <span className="shrink-0 text-xs text-slate-500 dark:text-slate-500">
+                  <span className="shrink-0 text-xs text-[rgb(var(--ink-3))]">
                     {c.answered}/{c.total}
                   </span>
                   <span
@@ -190,12 +189,10 @@ export default function PlanMaiaBilanClient({
         <Link
           href="/accueil"
           className="
-            inline-flex items-center justify-center rounded-lg bg-indigo-600 px-4 py-2
-            text-sm font-semibold text-white transition
-            hover:bg-indigo-700
-            focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500
-            focus-visible:ring-offset-2 focus-visible:ring-offset-slate-50
-            dark:focus-visible:ring-offset-slate-950
+            btn-primary inline-flex items-center justify-center rounded-xl px-4 py-2
+            text-sm font-semibold
+            focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgb(var(--accent))]
+            focus-visible:ring-offset-2 focus-visible:ring-offset-[rgb(var(--surface))]
             motion-reduce:transition-none
           "
         >
@@ -205,13 +202,10 @@ export default function PlanMaiaBilanClient({
           <Link
             href="/accueil/plan-maia/today/quiz"
             className="
-              inline-flex items-center justify-center rounded-lg border border-slate-300 bg-white
-              px-4 py-2 text-sm font-medium text-slate-700 transition
-              hover:bg-slate-50
-              focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500
-              focus-visible:ring-offset-2 focus-visible:ring-offset-slate-50
-              dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800
-              dark:focus-visible:ring-offset-slate-950
+              btn-secondary inline-flex items-center justify-center rounded-xl px-4 py-2
+              text-sm font-medium
+              focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgb(var(--accent))]
+              focus-visible:ring-offset-2 focus-visible:ring-offset-[rgb(var(--surface))]
               motion-reduce:transition-none
             "
           >
@@ -232,21 +226,21 @@ function KpiCard({
   icon: React.ReactNode;
   label: string;
   value: string;
-  tone: "indigo" | "emerald" | "amber" | "slate";
+  tone: "accent" | "emerald" | "amber" | "slate";
 }) {
   const toneClasses: Record<typeof tone, string> = {
-    indigo: "text-indigo-700 dark:text-indigo-400",
+    accent: "accent-text",
     emerald: "text-emerald-700 dark:text-emerald-400",
     amber: "text-amber-700 dark:text-amber-400",
     slate: "text-slate-700 dark:text-slate-300",
   };
   return (
-    <div className="rounded-lg bg-slate-50 p-3 dark:bg-slate-950">
+    <div className="rounded-xl surface-2-bg p-4">
       <div className={`mb-1 flex items-center gap-1.5 text-xs font-medium ${toneClasses[tone]}`}>
         {icon}
         {label}
       </div>
-      <p className="text-xl font-bold text-slate-900 dark:text-slate-100">{value}</p>
+      <p className="text-xl font-semibold text-[rgb(var(--ink))]">{value}</p>
     </div>
   );
 }

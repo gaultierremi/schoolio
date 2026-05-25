@@ -117,7 +117,7 @@ export default async function PlanMaiaQuizPage() {
           className="
             inline-flex items-center gap-1.5 rounded-md text-sm text-slate-600 transition
             hover:text-slate-900
-            focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500
+            focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgb(var(--accent))]
             focus-visible:ring-offset-2 focus-visible:ring-offset-slate-50
             dark:text-slate-400 dark:hover:text-slate-200
             dark:focus-visible:ring-offset-slate-950

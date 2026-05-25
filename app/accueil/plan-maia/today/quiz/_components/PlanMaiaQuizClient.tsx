@@ -174,15 +174,15 @@ export default function PlanMaiaQuizClient({
       <header className="mb-4 flex items-center gap-3">
         <div
           aria-hidden="true"
-          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-indigo-600 text-white"
+          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl accent-bg text-white"
         >
           <Sparkles size={18} strokeWidth={2} />
         </div>
         <div className="min-w-0 flex-1">
-          <p className="text-xs font-medium uppercase tracking-wide text-indigo-700 dark:text-indigo-400">
+          <p className="text-xs font-medium uppercase tracking-wide accent-text">
             Quiz Plan Maïa
           </p>
-          <h1 className="text-lg font-semibold text-slate-900 dark:text-slate-100">
+          <h1 className="serif text-xl font-semibold text-[rgb(var(--ink))]">
             Question {currentIndex + 1} sur {total}
           </h1>
         </div>
@@ -191,10 +191,10 @@ export default function PlanMaiaQuizClient({
       {/* Progress bar */}
       <div
         aria-live="polite"
-        className="mb-6 rounded-full bg-slate-200 dark:bg-slate-800"
+        className="mb-6 h-2 overflow-hidden rounded-full bg-[rgb(var(--surface-3))]"
       >
         <div
-          className="h-2 rounded-full bg-indigo-500 transition-all motion-reduce:transition-none"
+          className="h-full rounded-full accent-bg transition-all motion-reduce:transition-none"
           style={{ width: `${progress}%` }}
           role="progressbar"
           aria-valuenow={progress}
@@ -357,13 +357,11 @@ export default function PlanMaiaQuizClient({
             onClick={handleNext}
             disabled={grading}
             className="
-              inline-flex items-center gap-1.5 rounded-lg bg-indigo-600 px-4 py-2
-              text-sm font-semibold text-white transition
-              hover:bg-indigo-700
-              focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500
-              focus-visible:ring-offset-2 focus-visible:ring-offset-slate-50
+              btn-primary inline-flex items-center gap-1.5 rounded-xl
+              px-4 py-2 text-sm font-semibold
+              focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgb(var(--accent))]
+              focus-visible:ring-offset-2 focus-visible:ring-offset-[rgb(var(--surface))]
               disabled:opacity-50
-              dark:focus-visible:ring-offset-slate-950
               motion-reduce:transition-none
             "
           >
@@ -378,14 +376,11 @@ export default function PlanMaiaQuizClient({
             onClick={handleSkip}
             disabled={grading}
             className="
-              inline-flex items-center gap-1.5 rounded-lg border border-slate-300 bg-white px-4 py-2
-              text-sm font-medium text-slate-700 transition
-              hover:bg-slate-50
-              focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500
-              focus-visible:ring-offset-2 focus-visible:ring-offset-slate-50
+              btn-secondary inline-flex items-center gap-1.5 rounded-xl
+              px-4 py-2 text-sm font-medium
+              focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgb(var(--accent))]
+              focus-visible:ring-offset-2 focus-visible:ring-offset-[rgb(var(--surface))]
               disabled:opacity-50
-              dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800
-              dark:focus-visible:ring-offset-slate-950
               motion-reduce:transition-none
             "
           >
@@ -401,13 +396,11 @@ export default function PlanMaiaQuizClient({
             type="button"
             onClick={() => setTheoryConceptId(currentQuestion.concept_id)}
             className="
-              inline-flex items-center gap-1.5 rounded-lg border border-indigo-200
-              bg-indigo-50 px-4 py-2 text-sm font-medium text-indigo-700 transition
-              hover:bg-indigo-100
-              focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500
-              focus-visible:ring-offset-2 focus-visible:ring-offset-slate-50
-              dark:border-indigo-900 dark:bg-indigo-950/30 dark:text-indigo-300
-              dark:hover:bg-indigo-950/50 dark:focus-visible:ring-offset-slate-950
+              inline-flex items-center gap-1.5 rounded-xl border border-[rgb(var(--border))]
+              bg-[rgb(var(--accent)/0.08)] px-4 py-2 text-sm font-medium accent-text transition
+              hover:bg-[rgb(var(--accent)/0.12)]
+              focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgb(var(--accent))]
+              focus-visible:ring-offset-2 focus-visible:ring-offset-[rgb(var(--surface))]
               motion-reduce:transition-none
             "
           >
