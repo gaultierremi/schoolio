@@ -96,14 +96,14 @@ export default function PlanMaiaCard({ displayName }: { displayName: string }) {
     return (
       <article
         aria-busy="true"
-        className="rounded-2xl border border-indigo-200 bg-indigo-50/60 p-5 dark:border-indigo-900 dark:bg-indigo-950/30"
+        className="card p-5"
       >
         <div className="flex items-center gap-3">
           <Loader2
             size={18}
             strokeWidth={2}
             aria-hidden="true"
-            className="animate-spin text-indigo-500 motion-reduce:animate-none"
+            className="animate-spin text-[rgb(var(--accent))] motion-reduce:animate-none"
           />
           <p className="text-sm text-slate-700 dark:text-slate-300">
             Maïa prépare ton plan du jour…
@@ -122,60 +122,62 @@ export default function PlanMaiaCard({ displayName }: { displayName: string }) {
     const isFinished = data.plan.completed_at !== null;
 
     return (
-      <article className="rounded-2xl border border-indigo-200 bg-gradient-to-br from-indigo-50 to-violet-50 p-5 shadow-sm dark:border-indigo-900 dark:from-indigo-950/40 dark:to-violet-950/40">
+      <article className="card p-6">
         <div className="flex items-start gap-3">
           <div
             aria-hidden="true"
-            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-indigo-600 text-white"
+            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl accent-bg text-white"
           >
             <Sparkles size={18} strokeWidth={2} />
           </div>
           <div className="min-w-0 flex-1">
-            <p className="text-xs font-medium uppercase tracking-wide text-indigo-700 dark:text-indigo-300">
+            <p className="text-xs font-medium uppercase tracking-wide accent-text">
               Plan Maïa du jour
             </p>
-            <h2 className="mt-1 text-lg font-semibold text-slate-900 dark:text-slate-100">
+            <h2 className="serif mt-1 text-xl font-semibold text-[rgb(var(--ink))]">
               Bonjour {displayName} — ton plan est prêt
             </h2>
-            <p className="mt-1 text-sm text-slate-700 dark:text-slate-300">
+            <p className="mt-1 text-sm text-[rgb(var(--ink-2))]">
               {isFinished ? (
                 <>
-                  <strong>Plan terminé</strong> ✓ Reviens demain pour ton prochain plan.
+                  <strong className="text-[rgb(var(--ink))]">Plan terminé.</strong>{" "}
+                  Reviens demain pour ton prochain plan.
                 </>
               ) : (
                 <>
-                  <strong>{remaining} question{remaining > 1 ? "s" : ""}</strong> ·{" "}
-                  ~{minutes} min · multi-matière équilibré
+                  <strong className="text-[rgb(var(--ink))]">
+                    {remaining} question{remaining > 1 ? "s" : ""}
+                  </strong>{" "}
+                  · ~{minutes} min · multi-matière équilibré
                 </>
               )}
             </p>
             {!isFinished && completed > 0 ? (
-              <p className="mt-1 text-xs text-indigo-700 dark:text-indigo-300">
-                Tu as déjà répondu à {completed} question{completed > 1 ? "s" : ""} aujourd&apos;hui.
+              <p className="mt-1 text-xs accent-text">
+                Tu as déjà répondu à {completed} question
+                {completed > 1 ? "s" : ""} aujourd&apos;hui.
               </p>
             ) : null}
           </div>
         </div>
 
         {!isFinished ? (
-          <div className="mt-4 flex flex-wrap items-center justify-between gap-2">
+          <div className="mt-5 flex flex-wrap items-center justify-between gap-2">
             <Link
               href="/accueil/plan-maia/today/quiz"
               className="
-                inline-flex items-center gap-1.5 rounded-lg bg-indigo-600 px-4 py-2
-                text-sm font-semibold text-white transition
-                hover:bg-indigo-700
+                btn-primary inline-flex items-center gap-1.5 rounded-xl
+                px-4 py-2 text-sm font-semibold
                 focus-visible:outline-none focus-visible:ring-2
-                focus-visible:ring-indigo-500 focus-visible:ring-offset-2
-                focus-visible:ring-offset-white
-                dark:focus-visible:ring-offset-slate-900
+                focus-visible:ring-[rgb(var(--accent))] focus-visible:ring-offset-2
+                focus-visible:ring-offset-[rgb(var(--surface))]
                 motion-reduce:transition-none
               "
             >
               Démarrer
               <ArrowRight size={14} strokeWidth={2} aria-hidden="true" />
             </Link>
-            <p className="text-[10px] italic text-slate-500 dark:text-slate-500">
+            <p className="text-[10px] italic text-[rgb(var(--ink-3))]">
               Plan généré automatiquement depuis tes lacunes — non-adaptatif au skip
             </p>
           </div>

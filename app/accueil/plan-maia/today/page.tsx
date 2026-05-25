@@ -83,12 +83,10 @@ export default async function PlanMaiaTodayPage() {
         <Link
           href="/accueil"
           className="
-            inline-flex items-center gap-1.5 rounded-md text-sm text-slate-600 transition
-            hover:text-slate-900
-            focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500
-            focus-visible:ring-offset-2 focus-visible:ring-offset-slate-50
-            dark:text-slate-400 dark:hover:text-slate-200
-            dark:focus-visible:ring-offset-slate-950
+            inline-flex items-center gap-1.5 rounded-md text-sm text-[rgb(var(--ink-2))] transition
+            hover:text-[rgb(var(--ink))]
+            focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgb(var(--accent))]
+            focus-visible:ring-offset-2 focus-visible:ring-offset-[rgb(var(--surface))]
             motion-reduce:transition-none
           "
         >
@@ -101,21 +99,23 @@ export default async function PlanMaiaTodayPage() {
         <div className="flex items-start gap-3">
           <div
             aria-hidden="true"
-            className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-indigo-600 text-white"
+            className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl accent-bg text-white"
           >
             <Sparkles size={22} strokeWidth={2} />
           </div>
           <div>
-            <p className="text-xs font-medium uppercase tracking-wide text-indigo-700 dark:text-indigo-400">
+            <p className="text-xs font-medium uppercase tracking-wide accent-text">
               Plan Maïa du {planDate}
             </p>
-            <h1 className="mt-1 text-3xl font-semibold tracking-tight text-slate-900 dark:text-slate-100">
+            <h1 className="serif mt-1 text-3xl font-semibold tracking-tight text-[rgb(var(--ink))]">
               Ta session du jour
             </h1>
-            <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">
-              <strong>{orderedQuestions.length} questions</strong> · ~{estimatedMin} min
-              · {breakdown.faible} à retravailler, {breakdown.revision} en révision,{" "}
-              {breakdown.nouveau} nouveau
+            <p className="mt-1 text-sm text-[rgb(var(--ink-2))]">
+              <strong className="text-[rgb(var(--ink))]">
+                {orderedQuestions.length} questions
+              </strong>{" "}
+              · ~{estimatedMin} min · {breakdown.faible} à retravailler,{" "}
+              {breakdown.revision} en révision, {breakdown.nouveau} nouveau
             </p>
           </div>
         </div>
@@ -123,11 +123,11 @@ export default async function PlanMaiaTodayPage() {
 
       <section
         aria-labelledby="plan-list-title"
-        className="rounded-2xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900"
+        className="card p-6"
       >
         <h2
           id="plan-list-title"
-          className="mb-3 text-base font-semibold text-slate-900 dark:text-slate-100"
+          className="mb-3 text-base font-semibold text-[rgb(var(--ink))]"
         >
           Aperçu de tes questions
         </h2>
@@ -143,11 +143,11 @@ export default async function PlanMaiaTodayPage() {
             return (
               <li
                 key={q.id}
-                className="flex items-start gap-3 rounded-lg border border-slate-200 bg-slate-50 p-3 dark:border-slate-700 dark:bg-slate-950"
+                className="flex items-start gap-3 rounded-xl border border-[rgb(var(--border))] surface-2-bg p-3"
               >
                 <span
                   aria-hidden="true"
-                  className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-indigo-600 text-xs font-bold text-white"
+                  className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full accent-bg text-xs font-semibold text-white"
                 >
                   {i + 1}
                 </span>
@@ -195,12 +195,10 @@ export default async function PlanMaiaTodayPage() {
         <Link
           href="/accueil/plan-maia/today/quiz"
           className="
-            inline-flex items-center gap-2 rounded-lg bg-indigo-600 px-5 py-3 text-base
-            font-semibold text-white transition
-            hover:bg-indigo-700
-            focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500
-            focus-visible:ring-offset-2 focus-visible:ring-offset-slate-50
-            dark:focus-visible:ring-offset-slate-950
+            btn-primary inline-flex items-center gap-2 rounded-xl px-5 py-3 text-base
+            font-semibold
+            focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgb(var(--accent))]
+            focus-visible:ring-offset-2 focus-visible:ring-offset-[rgb(var(--surface))]
             motion-reduce:transition-none
           "
         >
@@ -211,13 +209,10 @@ export default async function PlanMaiaTodayPage() {
           <Link
             href="/accueil/plan-maia/today/bilan"
             className="
-              inline-flex items-center gap-2 rounded-lg border border-slate-300 bg-white px-5 py-3
-              text-base font-medium text-slate-700 transition
-              hover:bg-slate-50
-              focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500
-              focus-visible:ring-offset-2 focus-visible:ring-offset-slate-50
-              dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800
-              dark:focus-visible:ring-offset-slate-950
+              btn-secondary inline-flex items-center gap-2 rounded-xl px-5 py-3
+              text-base font-medium
+              focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgb(var(--accent))]
+              focus-visible:ring-offset-2 focus-visible:ring-offset-[rgb(var(--surface))]
               motion-reduce:transition-none
             "
           >
@@ -225,7 +220,7 @@ export default async function PlanMaiaTodayPage() {
           </Link>
         ) : null}
       </nav>
-      <p className="mt-2 text-xs italic text-slate-500 dark:text-slate-500">
+      <p className="mt-2 text-xs italic text-[rgb(var(--ink-3))]">
         Pick-and-choose : skip n&apos;importe quand sans pénalité. Le plan reste équilibré.
       </p>
     </main>
