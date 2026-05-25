@@ -5,6 +5,7 @@ import { useRouter, useParams } from "next/navigation";
 import { createClient } from "@/lib/supabase-browser";
 import { SUBJECTS, LEVELS, SUBJECTS_BY_ID } from "@/lib/subjects";
 import type { SubjectId } from "@/lib/subjects";
+import ClassConceptHeatmap from "./_components/ClassConceptHeatmap";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -396,7 +397,10 @@ export default function ClassDetailPage() {
   const [copied, setCopied] = useState<"code" | "link" | null>(null);
   const [regenerating, setRegenerating] = useState<"code" | "link" | null>(null);
   const [memberTab, setMemberTab] = useState<"active" | "removed">("active");
-  const [pageTab, setPageTab] = useState<"members" | "devoirs">("members");
+  // Feedback Alex 2026-05-24 : ajout onglet Heatmap au niveau classe (agrege
+  // toutes assignments). Onglet Heatmap par defaut pour acceder direct a
+  // l insight prof prioritaire des qu on ouvre une classe.
+  const [pageTab, setPageTab] = useState<"heatmap" | "members" | "devoirs">("heatmap");
 
   const baseUrl = typeof window !== "undefined" ? window.location.origin : "";
 
@@ -641,9 +645,9 @@ export default function ClassDetailPage() {
           </div>
         </div>
 
-        {/* Main tabs */}
-        <div className="flex gap-2">
-          {(["members", "devoirs"] as const).map((t) => (
+        {/* Main tabs — Heatmap en 1re position, par defaut (feedback Alex 2026-05-24). */}
+        <div className="flex flex-wrap gap-2">
+          {(["heatmap", "members", "devoirs"] as const).map((t) => (
             <button
               key={t}
               onClick={() => setPageTab(t)}
@@ -653,10 +657,17 @@ export default function ClassDetailPage() {
                   : "border border-[rgb(var(--border))] bg-[rgb(var(--surface))] text-[rgb(var(--ink-2))] hover:border-[rgb(var(--ink-3))] hover:text-[rgb(var(--ink))]"
               }`}
             >
-              {t === "members" ? `👥 Élèves (${activeMembers.length})` : "📋 Devoirs"}
+              {t === "heatmap"
+                ? "Heatmap"
+                : t === "members"
+                  ? `Élèves (${activeMembers.length})`
+                  : "Devoirs"}
             </button>
           ))}
         </div>
+
+        {/* Heatmap section — vue agregee toutes assignments de la classe */}
+        {pageTab === "heatmap" && <ClassConceptHeatmap classId={id} />}
 
         {/* Members section */}
         {pageTab === "members" && (
