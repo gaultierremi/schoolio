@@ -40,14 +40,27 @@ export default function StudentLiveEntryPage() {
   }
 
   return (
-    <main className="min-h-screen bg-gray-950 px-4 py-8 text-white">
+    <main className="min-h-screen bg-slate-50 px-4 py-8 dark:bg-slate-950" lang="fr-BE">
       <div className="mx-auto w-full max-w-md">
-        <Link href="/accueil" className="text-sm text-gray-500 hover:text-gray-300">
+        <Link
+          href="/accueil"
+          className="
+            inline-flex items-center gap-1.5 rounded-md text-sm text-slate-600 transition
+            hover:text-slate-900
+            focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500
+            focus-visible:ring-offset-2 focus-visible:ring-offset-slate-50
+            dark:text-slate-400 dark:hover:text-slate-200
+            dark:focus-visible:ring-offset-slate-950
+            motion-reduce:transition-none
+          "
+        >
           ← Mon espace
         </Link>
 
-        <h1 className="mt-4 text-3xl font-black">Rejoindre une session</h1>
-        <p className="mt-1 text-sm text-gray-400">
+        <h1 className="mt-4 text-3xl font-semibold tracking-tight text-slate-900 dark:text-slate-100">
+          Rejoindre une session
+        </h1>
+        <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">
           Saisis le code à 6 caractères que ton prof a projeté.
         </p>
 
@@ -61,19 +74,41 @@ export default function StudentLiveEntryPage() {
             // eslint-disable-next-line jsx-a11y/no-autofocus -- Live join: focus immediat sur code (eleve scanne QR / saisit immediatement)
             autoFocus
             inputMode="text"
-            className="w-full rounded-2xl border-2 border-gray-700 bg-gray-900 px-6 py-5 text-center font-mono text-3xl font-black uppercase tracking-widest text-white outline-none transition focus:border-purple-500"
+            // colorScheme: light defeats Chrome's native dark input rendering
+            // (cf. fix similaire ShortTextInput / NumericInput, hard review 2026-05-24).
+            style={{ colorScheme: "light" }}
+            className="
+              w-full rounded-xl border border-slate-300 bg-white px-6 py-4
+              text-center font-mono text-3xl font-semibold uppercase tracking-widest text-slate-900
+              transition outline-none placeholder-slate-400
+              focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20
+              dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100
+              motion-reduce:transition-none
+            "
           />
           {error && (
-            <div className="rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm font-bold text-red-300">
+            <div
+              role="alert"
+              className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-900 dark:border-red-900 dark:bg-red-950/40 dark:text-red-200"
+            >
               {error}
             </div>
           )}
           <button
             type="submit"
             disabled={joining || code.length !== 6}
-            className="flex w-full items-center justify-center gap-2 rounded-2xl bg-purple-500 py-4 font-black text-gray-950 transition hover:bg-purple-400 disabled:cursor-not-allowed disabled:opacity-50"
+            className="
+              inline-flex w-full items-center justify-center gap-1.5 rounded-lg
+              bg-indigo-600 px-4 py-3 text-sm font-semibold text-white transition
+              hover:bg-indigo-700
+              focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500
+              focus-visible:ring-offset-2 focus-visible:ring-offset-slate-50
+              dark:focus-visible:ring-offset-slate-950
+              disabled:cursor-not-allowed disabled:opacity-50
+              motion-reduce:transition-none
+            "
           >
-            <LogIn className="h-5 w-5" />
+            <LogIn size={16} strokeWidth={2} aria-hidden="true" />
             {joining ? "Connexion…" : "Rejoindre"}
           </button>
         </form>
