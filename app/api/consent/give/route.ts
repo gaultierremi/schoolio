@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createClient as createSupabaseAdminClient } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase-server";
 import { logAuditEvent, AUDIT_EVENTS } from "@/lib/audit/log";
+import { safeNextPath } from "@/lib/auth/safe-redirect";
 
 export const runtime = "nodejs";
 
@@ -74,10 +75,9 @@ export async function POST(request: Request) {
     );
   }
 
-  const nextParam =
-    typeof body.next === "string" && body.next.startsWith("/")
-      ? body.next
-      : "/onboarding/pin-setup";
+  // Audit hard review 2026-05-25 P1 : safeNextPath rejette //evil.com,
+  // /\\evil.com, javascript:, CRLF injection.
+  const nextParam = safeNextPath(body.next, "/onboarding/pin-setup");
 
   const admin = createSupabaseAdminClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,

@@ -4,6 +4,7 @@ import { createClient as createSupabaseAdminClient } from "@supabase/supabase-js
 import { createClient } from "@/lib/supabase-server";
 import { verifyPin, isValidPinFormat, shouldFallbackSSO } from "@/lib/auth/pin";
 import { signPinUnlockCookie, PIN_COOKIE_NAME } from "@/lib/auth/pin-cookie";
+import { safeNextPath } from "@/lib/auth/safe-redirect";
 import { logAuditEvent, AUDIT_EVENTS } from "@/lib/audit/log";
 import { createHash } from "crypto";
 
@@ -55,8 +56,9 @@ export async function POST(request: Request) {
     return NextResponse.json({ ok: false, error: "Format PIN invalide" }, { status: 400 });
   }
   const pin = body.pin;
-  const nextParam =
-    typeof body.next === "string" && body.next.startsWith("/") ? body.next : "/accueil";
+  // Audit hard review 2026-05-25 P1 : safeNextPath rejette //evil.com,
+  // /\\evil.com, javascript:, CRLF injection (cf. tests safe-redirect.test.ts).
+  const nextParam = safeNextPath(body.next, "/accueil");
 
   // ── Fetch user_pin row ────────────────────────────────────────────────────
   const admin = createSupabaseAdminClient(
