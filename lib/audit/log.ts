@@ -41,6 +41,8 @@ export const AUDIT_EVENTS = {
   CONCEPT_HINT_CREATED: "concept_hint_created",
   CONCEPT_HINT_UPDATED: "concept_hint_updated",
   CONCEPT_HINT_DELETED: "concept_hint_deleted",
+  // 2026-05-25 — Auto-link concept_id sur teacher_questions via Haiku
+  CONCEPT_AUTO_LINK_RAN: "concept_auto_link_ran",
 } as const;
 
 export type AuditEventType = (typeof AUDIT_EVENTS)[keyof typeof AUDIT_EVENTS];
