@@ -1,8 +1,15 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
-import { BookOpen, ChevronRight, ListChecks, Lightbulb } from "lucide-react";
+import { useCallback, useEffect, useState } from "react";
+import {
+  BookOpen,
+  ChevronRight,
+  ListChecks,
+  Lightbulb,
+  Loader2,
+  Sparkles,
+} from "lucide-react";
 
 type ConceptSummary = {
   id: string;
@@ -44,36 +51,75 @@ const TONE_CLASSES: Record<Tone, string> = {
  * - `aria-busy` pendant le fetch initial
  * - Empty state explicite
  */
+type AutoLinkResult = {
+  ok: true;
+  stats: {
+    questions_scanned: number;
+    auto_applied: number;
+    to_review: number;
+    skipped_low_confidence: number;
+    skipped_no_concepts: boolean;
+  };
+};
+
 export default function ConceptsList() {
   const [concepts, setConcepts] = useState<ConceptSummary[] | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [autoLinkRunning, setAutoLinkRunning] = useState(false);
+  const [autoLinkResult, setAutoLinkResult] = useState<AutoLinkResult["stats"] | null>(null);
+  const [autoLinkError, setAutoLinkError] = useState<string | null>(null);
+
+  const fetchConcepts = useCallback(async () => {
+    try {
+      const res = await fetch("/api/curation/concepts");
+      const json = (await res.json()) as {
+        ok?: boolean;
+        concepts?: ConceptSummary[];
+        error?: string;
+      };
+      if (!res.ok || !json.ok) {
+        setError(json.error ?? "Erreur lors du chargement");
+        return;
+      }
+      setError(null);
+      setConcepts(json.concepts ?? []);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Erreur réseau");
+    }
+  }, []);
 
   useEffect(() => {
-    let cancelled = false;
-    async function fetchConcepts() {
-      try {
-        const res = await fetch("/api/curation/concepts");
-        const json = (await res.json()) as {
-          ok?: boolean;
-          concepts?: ConceptSummary[];
-          error?: string;
-        };
-        if (cancelled) return;
-        if (!res.ok || !json.ok) {
-          setError(json.error ?? "Erreur lors du chargement");
-          return;
-        }
-        setConcepts(json.concepts ?? []);
-      } catch (err) {
-        if (cancelled) return;
-        setError(err instanceof Error ? err.message : "Erreur réseau");
-      }
-    }
     void fetchConcepts();
-    return () => {
-      cancelled = true;
-    };
-  }, []);
+  }, [fetchConcepts]);
+
+  async function handleAutoLink() {
+    setAutoLinkRunning(true);
+    setAutoLinkError(null);
+    setAutoLinkResult(null);
+    try {
+      const res = await fetch("/api/curation/concepts/auto-link", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({}),
+      });
+      const json = (await res.json()) as
+        | AutoLinkResult
+        | { ok: false; error: string };
+      if (!res.ok || !("ok" in json) || !json.ok) {
+        setAutoLinkError(
+          "error" in json ? json.error : "Erreur lors de l'auto-link",
+        );
+        return;
+      }
+      setAutoLinkResult(json.stats);
+      // Refresh la liste pour mettre à jour les counts questions_active
+      await fetchConcepts();
+    } catch (err) {
+      setAutoLinkError(err instanceof Error ? err.message : "Erreur réseau");
+    } finally {
+      setAutoLinkRunning(false);
+    }
+  }
 
   if (error) {
     return (
@@ -149,7 +195,115 @@ export default function ConceptsList() {
   // donc on rend les concepts en h2 (pas h3) pour ne pas skipper de niveau
   // (WCAG 1.3.1 Info and Relationships).
   return (
-    <ul role="list" className="grid gap-3">
+    <>
+      {/* Auto-link banner : feedback Alex 2026-05-25 — "pourquoi ne pourrait-on
+          pas remplir tout et lier tous les concepts et questions" */}
+      <section
+        aria-labelledby="auto-link-title"
+        className="
+          mb-6 rounded-2xl border border-[rgb(var(--accent)/0.3)]
+          bg-[rgb(var(--accent)/0.06)] p-5
+        "
+      >
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div className="min-w-0 flex-1">
+            <h2
+              id="auto-link-title"
+              className="serif inline-flex items-center gap-2 text-base font-semibold text-[rgb(var(--ink))]"
+            >
+              <Sparkles
+                size={16}
+                strokeWidth={2}
+                aria-hidden="true"
+                className="accent-text"
+              />
+              Lier les questions aux concepts
+            </h2>
+            <p className="mt-1 text-sm text-[rgb(var(--ink-2))]">
+              Maïa propose automatiquement un concept pour chaque question sans
+              lien. Application directe si confiance ≥ 85%, sinon ignoré
+              (révision manuelle ensuite).
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={handleAutoLink}
+            disabled={autoLinkRunning}
+            className="
+              btn-primary inline-flex items-center gap-1.5 rounded-xl
+              px-4 py-2 text-sm font-semibold
+              focus-visible:outline-none focus-visible:ring-2
+              focus-visible:ring-[rgb(var(--accent))] focus-visible:ring-offset-2
+              focus-visible:ring-offset-[rgb(var(--surface))]
+              disabled:cursor-not-allowed disabled:opacity-60
+              motion-reduce:transition-none
+            "
+          >
+            {autoLinkRunning ? (
+              <>
+                <Loader2
+                  size={14}
+                  strokeWidth={2}
+                  aria-hidden="true"
+                  className="animate-spin motion-reduce:animate-none"
+                />
+                Lien en cours…
+              </>
+            ) : (
+              <>
+                <Sparkles size={14} strokeWidth={2} aria-hidden="true" />
+                Lier automatiquement
+              </>
+            )}
+          </button>
+        </div>
+
+        {autoLinkError ? (
+          <p
+            role="alert"
+            className="mt-3 rounded-lg border border-red-200 bg-red-50 p-3 text-xs text-red-900 dark:border-red-900 dark:bg-red-950/40 dark:text-red-200"
+          >
+            {autoLinkError}
+          </p>
+        ) : null}
+
+        {autoLinkResult ? (
+          <div
+            role="status"
+            aria-live="polite"
+            className="mt-3 rounded-lg bg-[rgb(var(--surface))] p-3 text-xs text-[rgb(var(--ink-2))]"
+          >
+            {autoLinkResult.skipped_no_concepts ? (
+              <p>
+                Aucun concept disponible pour ce tenant — importe un PDF
+                d&apos;abord pour générer les concepts du chapitre.
+              </p>
+            ) : autoLinkResult.questions_scanned === 0 ? (
+              <p>
+                Toutes les questions sont déjà liées à un concept. Rien à faire !
+              </p>
+            ) : (
+              <p>
+                <strong className="text-[rgb(var(--ink))]">
+                  {autoLinkResult.auto_applied}
+                </strong>{" "}
+                question{autoLinkResult.auto_applied !== 1 ? "s" : ""} liée
+                {autoLinkResult.auto_applied !== 1 ? "s" : ""} automatiquement
+                sur {autoLinkResult.questions_scanned} scannée
+                {autoLinkResult.questions_scanned !== 1 ? "s" : ""}.{" "}
+                {autoLinkResult.to_review > 0
+                  ? `${autoLinkResult.to_review} en attente de révision (confiance moyenne). `
+                  : ""}
+                {autoLinkResult.skipped_low_confidence > 0
+                  ? `${autoLinkResult.skipped_low_confidence} ignorée${autoLinkResult.skipped_low_confidence !== 1 ? "s" : ""} (faible confiance).`
+                  : ""}
+              </p>
+            )}
+          </div>
+        ) : null}
+      </section>
+
+      <ul role="list" className="grid gap-3">
       {concepts.map((c) => {
         const theory = theoryStatus(c.theory_sections_filled);
         return (
@@ -233,6 +387,7 @@ export default function ConceptsList() {
           </li>
         );
       })}
-    </ul>
+      </ul>
+    </>
   );
 }
