@@ -3,6 +3,11 @@ import { SchemaType, type ResponseSchema } from "@google/generative-ai";
 import { createClient as createSupabaseAdminClient } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase-server";
 import { routeAIRequest, GracefulAIError } from "@/lib/ai-router";
+import {
+  proposeConceptLinks,
+  type ConceptForLinking,
+  type QuestionForLinking,
+} from "@/lib/concept-linker";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 120;
@@ -156,10 +161,67 @@ export async function POST(
       origin: "extracted_from_pdf",
     }));
 
-    const { error: insertError } = await admin.from("teacher_questions").insert(rows);
+    const { data: insertedRows, error: insertError } = await admin
+      .from("teacher_questions")
+      .insert(rows)
+      .select("id, question");
     if (insertError) throw insertError;
 
-    return NextResponse.json({ extracted: rows.length });
+    // Fix-forward auto-link concept_id (Feedback Alex 2026-05-25 PR 2/2).
+    // Cf. lib/concept-linker.ts. On garde le flow fast-fail : si Haiku echoue,
+    // les questions restent en NULL et le prof peut relancer via le bouton
+    // 'Lier automatiquement' sur /accueil/curation.
+    let autoLinked = 0;
+    try {
+      const insertedTyped =
+        (insertedRows as Array<{ id: string; question: string }> | null) ?? [];
+      if (insertedTyped.length > 0) {
+        const { data: conceptsData } = await admin
+          .from("concepts")
+          .select("id, name, description, uaa:uaa_id(name)")
+          .eq("school_id", typedCourse.school_id)
+          .order("name", { ascending: true })
+          .limit(200);
+        type CRow = {
+          id: string;
+          name: string;
+          description: string | null;
+          uaa: { name: string | null } | { name: string | null }[] | null;
+        };
+        const concepts: ConceptForLinking[] = ((conceptsData ?? []) as CRow[]).map((c) => {
+          const uaa = Array.isArray(c.uaa) ? c.uaa[0] : c.uaa;
+          return {
+            id: c.id,
+            name: c.name,
+            description: c.description,
+            uaa_name: uaa?.name ?? null,
+          };
+        });
+        if (concepts.length > 0) {
+          const questionsForLink: QuestionForLinking[] = insertedTyped.map((q) => ({
+            id: q.id,
+            question: q.question,
+          }));
+          const proposals = await proposeConceptLinks(questionsForLink, concepts);
+          for (const p of proposals) {
+            if (p.action !== "auto_apply" || !p.concept_id) continue;
+            const { error: updateErr } = await admin
+              .from("teacher_questions")
+              .update({ concept_id: p.concept_id })
+              .eq("id", p.question_id)
+              .eq("school_id", typedCourse.school_id)
+              .is("concept_id", null);
+            if (!updateErr) autoLinked++;
+          }
+        }
+      }
+    } catch (linkErr) {
+      // Non-bloquant : on log + return ok avec les questions inserees mais
+      // sans concept_id. Le prof peut relancer via bouton curation.
+      console.error("[extract-questions] auto-link failed (non-fatal)", linkErr);
+    }
+
+    return NextResponse.json({ extracted: rows.length, auto_linked: autoLinked });
   } catch (err) {
     console.error("[courses/extract-questions]", err);
     if (err instanceof GracefulAIError) {
