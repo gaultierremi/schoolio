@@ -146,6 +146,9 @@ export function ScheduleGrid({ slots, weekFilter, onCellClick, onSlotClick }: Pr
                       {height >= 30 && (
                         <span className="text-white/70 text-[9px] leading-tight">{slot.start_time}–{slot.end_time}</span>
                       )}
+                      {slot.notes && height >= 50 && (
+                        <span className="text-white/70 text-[9px] leading-tight truncate">{slot.notes}</span>
+                      )}
                       {patternBadge && height >= 40 && (
                         <span className="text-white/80 text-[9px] font-bold mt-auto">{patternBadge}</span>
                       )}

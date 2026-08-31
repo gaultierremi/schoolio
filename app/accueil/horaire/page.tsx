@@ -20,7 +20,9 @@ type Slot = {
   classes?: { id: string; name: string; subject: string | null } | null;
 };
 
-type ClassOption = { id: string; name: string; subject: string | null };
+// archived_at est déjà renvoyé par /api/classes ; le type ne le portait pas,
+// d'où l'impossibilité pour SlotModal de filtrer les classes archivées.
+type ClassOption = { id: string; name: string; subject: string | null; archived_at: string | null };
 
 type ModalState = {
   open: boolean;

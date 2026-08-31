@@ -1,16 +1,28 @@
 "use client";
 
-import { useEffect, useId, useState } from "react";
+import { useEffect, useId, useMemo, useState } from "react";
 
+// Toutes les valeurs DOIVENT rester en hex 6 chiffres : ScheduleGrid concatène
+// `+ "cc"` pour l'alpha du fond de créneau, un hex 3 chiffres casserait le rendu.
+// Teintes choisies dans la palette Tailwind, espacées en hue/luminosité pour
+// rester distinguables réduites à une case de ~30px.
 const COLORS = [
-  "#6366f1", // indigo
-  "#8b5cf6", // violet
-  "#ec4899", // pink
-  "#f59e0b", // amber
-  "#10b981", // emerald
-  "#3b82f6", // blue
-  "#ef4444", // red
-  "#64748b", // slate
+  "#6366f1", // indigo-500
+  "#8b5cf6", // violet-500
+  "#ec4899", // pink-500
+  "#f59e0b", // amber-500
+  "#10b981", // emerald-500
+  "#3b82f6", // blue-500
+  "#ef4444", // red-500
+  "#64748b", // slate-500
+  "#0ea5e9", // sky-500
+  "#14b8a6", // teal-500
+  "#65a30d", // lime-600
+  "#f97316", // orange-500
+  "#d946ef", // fuchsia-500
+  "#be123c", // rose-700
+  "#a16207", // yellow-700
+  "#334155", // slate-700
 ];
 
 const DAYS = [
@@ -23,7 +35,7 @@ const DAYS = [
   { label: "Dimanche", value: 0 },
 ];
 
-type ClassOption = { id: string; name: string; subject: string | null };
+type ClassOption = { id: string; name: string; subject: string | null; archived_at: string | null };
 
 type Slot = {
   id: string;
@@ -72,8 +84,12 @@ export function SlotModal({ slot, defaultDay, defaultTime, classes, onClose, onS
   const [weekPattern, setWeekPattern] = useState<"all" | "A" | "B">(
     (slot?.week_pattern as "all" | "A" | "B") ?? "all"
   );
-  const [useClass, setUseClass] = useState(slot ? slot.class_id !== null : classes.length > 0);
-  const [classId, setClassId] = useState(slot?.class_id ?? (classes[0]?.id ?? ""));
+  // Une classe archivée ne doit plus être proposée à la sélection.
+  const currentSlotClassId = slot?.class_id ?? null;
+  const activeClasses = useMemo(() => classes.filter((c) => c.archived_at === null), [classes]);
+
+  const [useClass, setUseClass] = useState(slot ? slot.class_id !== null : activeClasses.length > 0);
+  const [classId, setClassId] = useState(slot?.class_id ?? (activeClasses[0]?.id ?? ""));
   const [subjectLabel, setSubjectLabel] = useState(slot?.subject_label ?? "");
   const [color, setColor] = useState(slot?.custom_color ?? COLORS[0]);
   const [notes, setNotes] = useState(slot?.notes ?? "");
@@ -81,6 +97,18 @@ export function SlotModal({ slot, defaultDay, defaultTime, classes, onClose, onS
   const [deleting, setDeleting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [results, setResults] = useState<{ ok: number; conflicts: number; errors: number } | null>(null);
+
+  // …MAIS on conserve impérativement la classe archivée déjà rattachée au créneau
+  // édité (et, plus généralement, la valeur courante du <select>). Si la value
+  // d'un <select> ne figure pas dans ses <option>, le navigateur sélectionne la
+  // première : une simple sauvegarde réassignerait alors silencieusement le
+  // créneau à une autre classe. On la suffixe "(archivée)" pour être explicite.
+  const selectableClasses = useMemo(() => {
+    const keptArchived = classes.filter(
+      (c) => c.archived_at !== null && (c.id === classId || c.id === currentSlotClassId)
+    );
+    return [...activeClasses, ...keptArchived];
+  }, [classes, activeClasses, classId, currentSlotClassId]);
 
   const sessionListLabelId = useId();
   const dayLabelId = useId();
@@ -317,9 +345,11 @@ export function SlotModal({ slot, defaultDay, defaultTime, classes, onClose, onS
                 onChange={(e) => setClassId(e.target.value)}
                 className="w-full rounded-lg border border-[rgb(var(--border))] bg-[rgb(var(--surface))] px-3 py-2 text-sm text-[rgb(var(--ink))]"
               >
-                {classes.length === 0 && <option value="">Aucune classe</option>}
-                {classes.map((c) => (
-                  <option key={c.id} value={c.id}>{c.name}</option>
+                {selectableClasses.length === 0 && <option value="">Aucune classe</option>}
+                {selectableClasses.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.archived_at !== null ? `${c.name} (archivée)` : c.name}
+                  </option>
                 ))}
               </select>
             ) : (
@@ -337,7 +367,7 @@ export function SlotModal({ slot, defaultDay, defaultTime, classes, onClose, onS
           {/* Color */}
           <div role="group" aria-labelledby={colorLabelId}>
             <span id={colorLabelId} className="mb-1 block text-xs text-[rgb(var(--ink-2))]">Couleur</span>
-            <div className="flex gap-2">
+            <div className="flex flex-wrap gap-2">
               {COLORS.map((c) => (
                 <button
                   key={c}
