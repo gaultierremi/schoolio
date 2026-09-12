@@ -44,6 +44,44 @@ type Member = {
   status: "active" | "removed";
 };
 
+/**
+ * Compteurs de l'invariant anti-destruction, renvoyés par GET /api/classes/[id].
+ * Même jeu exact que celui appliqué par la route DELETE : l'UI ne doit jamais
+ * proposer une suppression que le serveur refuserait, ni l'inverse.
+ */
+type ClassBlockerCounts = {
+  members: number;
+  assignments: number;
+  attendance: number;
+  live_sessions: number;
+  child_classes: number;
+  schedule_slots: number;
+  random_picks: number;
+};
+
+/** Raison chiffrée de l'indisponibilité, ou null si la classe est supprimable. */
+function deleteBlockedReason(
+  counts: ClassBlockerCounts | null,
+  archived: boolean
+): string | null {
+  // Compteurs absents (GET en échec, payload inattendu) => on bloque.
+  // Le fail-safe côté UI est le même que côté route : le refus.
+  if (!counts) return "Indisponible : impossible de vérifier le contenu de la classe";
+  const plural = (n: number, one: string, many: string) => `${n} ${n > 1 ? many : one}`;
+  const parts: string[] = [];
+  if (counts.members > 0) parts.push(plural(counts.members, "élève", "élèves"));
+  if (counts.assignments > 0) parts.push(plural(counts.assignments, "devoir", "devoirs"));
+  if (counts.attendance > 0) parts.push(plural(counts.attendance, "relevé de présence", "relevés de présence"));
+  if (counts.live_sessions > 0) parts.push(plural(counts.live_sessions, "session live", "sessions live"));
+  if (counts.child_classes > 0) parts.push(plural(counts.child_classes, "sous-classe", "sous-classes"));
+  if (counts.schedule_slots > 0) parts.push(plural(counts.schedule_slots, "créneau d'horaire", "créneaux d'horaire"));
+  if (counts.random_picks > 0) parts.push(plural(counts.random_picks, "tirage au sort", "tirages au sort"));
+  if (parts.length > 0) return `Indisponible : ${parts.join(", ")} — archive plutôt`;
+  // Vide, mais pas encore archivée : la route exige l'archivage d'abord.
+  if (!archived) return "Indisponible : archive la classe d'abord";
+  return null;
+}
+
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
 function formatDate(iso: string): string {
@@ -79,11 +117,13 @@ function Skeleton({ className }: { className?: string }) {
 
 function DeleteModal({
   name,
+  classId,
   onConfirm,
   onCancel,
   deleting,
 }: {
   name: string;
+  classId: string;
   onConfirm: () => void;
   onCancel: () => void;
   deleting: boolean;
@@ -92,10 +132,23 @@ function DeleteModal({
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
       <div className="w-full max-w-sm rounded-3xl border border-[rgb(var(--red))]/30 bg-[rgb(var(--surface))] p-6 shadow-2xl">
         <h2 className="serif text-lg font-black text-[rgb(var(--ink))]">Supprimer la classe ?</h2>
+        {/*
+          Cette modale ne s'ouvre que sur une classe archivée ET vide : le
+          bouton est désactivé sinon, et la route refuse en 409. La phrase peut
+          donc être affirmative — c'est le point du chantier, l'ancienne
+          formulation ("tous ses membres seront supprimés") sous-entendait un
+          trombinoscope là où l'année entière partait.
+        */}
         <p className="mt-2 text-sm text-[rgb(var(--ink-2))]">
-          <span className="font-bold text-[rgb(var(--ink))]">&quot;{name}&quot;</span> et tous ses membres seront supprimés.
-          Cette action est irréversible.
+          <span className="font-bold text-[rgb(var(--ink))]">&quot;{name}&quot;</span> est vide : aucun élève,
+          aucun devoir, aucune note. Elle sera définitivement supprimée.
         </p>
+        <a
+          href={`/api/classes/${classId}/export`}
+          className="mt-3 inline-block text-xs font-bold text-[rgb(var(--accent))] underline transition hover:opacity-80"
+        >
+          Exporter les données en CSV d&apos;abord
+        </a>
         <div className="mt-6 flex gap-3">
           <button
             onClick={onCancel}
@@ -428,6 +481,8 @@ export default function ClassDetailPage() {
   const [editing, setEditing] = useState(false);
   const [showDelete, setShowDelete] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [counts, setCounts] = useState<ClassBlockerCounts | null>(null);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
   const [copied, setCopied] = useState<"code" | "link" | null>(null);
   const [regenerating, setRegenerating] = useState<"code" | "link" | null>(null);
   const [memberTab, setMemberTab] = useState<"active" | "removed">("active");
@@ -447,9 +502,17 @@ export default function ClassDetailPage() {
 
     const res = await fetch(`/api/classes/${id}`);
     if (!res.ok) { router.replace("/accueil/classes"); return; }
-    const json = await res.json() as { class: ClassDetail; members: Member[] };
+    // Le parse reste un `as` non validé (pattern du fichier) : `counts` est donc
+    // typé optionnel et traité comme absent si le payload ne le porte pas —
+    // absent => bouton désactivé, jamais l'inverse.
+    const json = await res.json() as {
+      class: ClassDetail;
+      members: Member[];
+      counts?: ClassBlockerCounts | null;
+    };
     setCls(json.class);
     setMembers(json.members ?? []);
+    setCounts(json.counts ?? null);
     setLoading(false);
   }, [id, supabase, router]);
 
@@ -516,13 +579,24 @@ export default function ClassDetailPage() {
   async function handleDelete() {
     if (!cls) return;
     setDeleting(true);
+    setDeleteError(null);
     const res = await fetch(`/api/classes/${cls.id}`, { method: "DELETE" });
     if (res.ok) {
       router.push("/accueil/classes");
-    } else {
-      setDeleting(false);
-      setShowDelete(false);
+      return;
     }
+
+    // 409 = la route a refusé (classe non vide ou non archivée). C'est le cas
+    // de course : quelqu'un a rejoint pendant que le prof lisait la page. On
+    // réaligne l'état local sur les compteurs que le serveur vient de renvoyer,
+    // sinon le bouton resterait actif et le prof recliquerait en boucle.
+    const body = await res.json().catch(() => null) as
+      | { error?: string; code?: string; counts?: ClassBlockerCounts }
+      | null;
+    if (body?.counts) setCounts(body.counts);
+    setDeleteError(body?.error ?? "La suppression a échoué.");
+    setDeleting(false);
+    setShowDelete(false);
   }
 
   async function handleMemberStatusChange(memberId: string, studentUserId: string, status: "active" | "removed") {
@@ -558,6 +632,10 @@ export default function ClassDetailPage() {
 
   const isArchived = cls.archived_at !== null;
   const inviteLink = `${baseUrl}/join/${cls.invite_link_token}`;
+  // Gate du bouton "Supprimer" sur exactement le même jeu de compteurs que la
+  // route DELETE. Non-null => la suppression est refusée, et la chaîne dit
+  // pourquoi. La garantie reste le 409 serveur : ceci n'est que de la lisibilité.
+  const deleteBlocked = deleteBlockedReason(counts, isArchived);
 
   return (
     <main className="min-h-screen bg-[rgb(var(--surface-2))] px-4 py-8 text-[rgb(var(--ink))]">
@@ -599,14 +677,33 @@ export default function ClassDetailPage() {
             >
               {isArchived ? "Restaurer" : "Archiver"}
             </button>
+            {/*
+              Désactivé plutôt qu'absent : un bouton qui disparaît sans
+              explication se lit comme un bug. Désactivé + raison chiffrée,
+              il enseigne l'invariant au lieu de le cacher.
+            */}
             <button
               onClick={() => setShowDelete(true)}
-              className="rounded-xl border border-[rgb(var(--red))]/40 bg-[rgb(var(--surface))] px-3 py-1.5 text-xs font-bold text-[rgb(var(--red))] transition hover:border-[rgb(var(--red))]/70"
+              disabled={deleteBlocked !== null}
+              title={deleteBlocked ?? undefined}
+              aria-label={deleteBlocked ? `Supprimer la classe — ${deleteBlocked}` : "Supprimer la classe"}
+              className="rounded-xl border border-[rgb(var(--red))]/40 bg-[rgb(var(--surface))] px-3 py-1.5 text-xs font-bold text-[rgb(var(--red))] transition hover:border-[rgb(var(--red))]/70 disabled:cursor-not-allowed disabled:border-[rgb(var(--border))] disabled:text-[rgb(var(--ink-3))] disabled:hover:border-[rgb(var(--border))]"
             >
               Supprimer
             </button>
           </div>
         </div>
+
+        {/* Raison chiffrée, visible — le title d'un bouton désactivé n'est ni
+            survolable au clavier ni lu par tous les lecteurs d'écran. */}
+        {deleteBlocked && (
+          <p className="-mt-3 text-right text-xs text-[rgb(var(--ink-3))]">{deleteBlocked}</p>
+        )}
+        {deleteError && (
+          <p className="rounded-2xl border border-[rgb(var(--red))]/30 bg-[rgb(var(--red))]/5 px-4 py-3 text-sm text-[rgb(var(--red))]">
+            {deleteError}
+          </p>
+        )}
 
         {/* Edit form */}
         {editing && (
@@ -787,6 +884,7 @@ export default function ClassDetailPage() {
       {showDelete && (
         <DeleteModal
           name={cls.name}
+          classId={cls.id}
           onConfirm={handleDelete}
           onCancel={() => setShowDelete(false)}
           deleting={deleting}
