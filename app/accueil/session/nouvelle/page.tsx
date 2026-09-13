@@ -39,6 +39,13 @@ export default function NewSchoolSessionPage() {
               .from("teacher_questions")
               .select("id, type, question, subject")
               .eq("teacher_id", user.id)
+              // Même porte que les devoirs : un live ne peut pousser que des
+              // questions actives. Sans ce filtre, le prof choisissait dans un
+              // stock où rien ne distingue une question relue d'une sortie brute
+              // du pipeline IA — et "tout sélectionner" les embarquait toutes.
+              // Le serveur re-vérifie (api/live/start) : ce filtre est du confort,
+              // pas la garantie.
+              .eq("is_active", true)
               .order("created_at", { ascending: false })
           : Promise.resolve({ data: [] }),
         supabase

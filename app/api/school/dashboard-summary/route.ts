@@ -72,8 +72,9 @@ export async function GET() {
         .from("teacher_questions")
         .select("id", { count: "exact", head: true })
         .eq("teacher_id", user.id)
-        .not("validated_at", "is", null)
-        .is("rejected_at", null)
+        // Stock assignable : suit la porte unique (is_active), comme la
+        // création de devoir. C'est le SEUL des deux compteurs qui bouge.
+        .eq("is_active", true)
         .then((r) => r.count ?? 0),
       admin
         .from("exercises")
@@ -85,6 +86,10 @@ export async function GET() {
         .from("teacher_questions")
         .select("id", { count: "exact", head: true })
         .eq("teacher_id", user.id)
+        // File de revue : reste sur le journal (jamais relue = les deux NULL).
+        // NE PAS basculer sur is_active=false : ça agrégerait les rejetées et
+        // les désactivées volontaires, et rendrait la file inexploitable —
+        // au moment précis où elle devient le seul rempart avant diffusion.
         .is("validated_at", null)
         .is("rejected_at", null)
         .then((r) => r.count ?? 0),

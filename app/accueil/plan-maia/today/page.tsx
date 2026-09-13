@@ -61,7 +61,11 @@ export default async function PlanMaiaTodayPage() {
   const { data: questionsData } = await admin
     .from("teacher_questions")
     .select("id, question, type, difficulty_stars, subject_enum, concept_id")
-    .in("id", questionIds);
+    .in("id", questionIds)
+    // Re-gate au service : le plan est figé pour la journée, donc sans ce
+    // filtre une question désactivée par le prof resterait servie jusqu'à 24h.
+    // Même sémantique que start-quiz, qui re-filtre ses ids pré-échantillonnés.
+    .eq("is_active", true);
   type QuestionRow = {
     id: string;
     question: string;

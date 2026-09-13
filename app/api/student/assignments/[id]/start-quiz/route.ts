@@ -78,11 +78,8 @@ export async function POST(
         .from("teacher_questions")
         .select("id, question, options, answer_index, type, difficulty_stars, explanation, concept_page_hint, page_range_start, correction_steps, concept_id, expected_numeric_answer, numeric_tolerance, numeric_unit, expected_text_answers, image_url, image_description_md, image_page_number")
         .in("id", ids)
-        // Sprint 2B : double-gate. Si le prof désactive une question
-        // après création du devoir, elle disparaît du quiz (même sémantique
-        // qu'avant avec validated_at).
-        .not("validated_at", "is", null)
-        .is("rejected_at", null)
+        // Re-gate au service : si le prof désactive une question après création
+        // du devoir, elle disparaît du quiz. Porte unique = is_active.
         .eq("is_active", true);
       if (qErr) throw qErr;
       questions = qs;
@@ -91,9 +88,7 @@ export async function POST(
         .from("teacher_questions")
         .select("id, question, options, answer_index, type, difficulty_stars, explanation, concept_page_hint, page_range_start, correction_steps, concept_id, expected_numeric_answer, numeric_tolerance, numeric_unit, expected_text_answers, image_url, image_description_md, image_page_number")
         .eq("course_id", assignment.resource_id)
-        // Sprint 2B : double-gate is_active + validated_at.
-        .not("validated_at", "is", null)
-        .is("rejected_at", null)
+        // Porte unique : is_active (cf. assignments/route.ts).
         .eq("is_active", true)
         .order("created_at", { ascending: true });
       if (qErr) throw qErr;

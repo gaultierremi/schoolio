@@ -64,18 +64,28 @@ export async function POST(req: NextRequest) {
     }
 
     // Verify questions belong to the school (defense in depth on top of RLS)
+    // ET qu'elles sont actives : le filtre client (session/nouvelle) est
+    // contournable, la garantie de contenu doit tenir ici. Sans ce contrôle, le
+    // live était le seul chemin par lequel une question jamais relue pouvait
+    // atteindre un élève.
     const a = admin();
     const { data: qs, error: qErr } = await a
       .from("teacher_questions")
-      .select("id, school_id")
+      .select("id, school_id, is_active")
       .in("id", questionIds);
     if (qErr) throw qErr;
     if (!qs || qs.length !== questionIds.length) {
       return apiError("Certaines questions sont introuvables", 404);
     }
-    for (const q of qs as { school_id: string }[]) {
+    for (const q of qs as { school_id: string; is_active: boolean }[]) {
       if (q.school_id !== schoolId) {
         return apiError("Une question n'appartient pas à votre école", 403);
+      }
+      if (q.is_active !== true) {
+        return apiError(
+          "Une question sélectionnée est inactive. Active-la dans Questions avant de lancer la session.",
+          400,
+        );
       }
     }
 

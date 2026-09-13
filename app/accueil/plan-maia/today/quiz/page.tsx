@@ -68,7 +68,10 @@ export default async function PlanMaiaQuizPage() {
     .select(
       "id, type, question, options, numeric_unit, difficulty_stars, subject_enum, concept_id, image_url, image_description_md, image_page_number",
     )
-    .in("id", questionIds);
+    .in("id", questionIds)
+    // Re-gate au service (cf. today/page.tsx) : une question désactivée doit
+    // disparaître du plan du jour, pas seulement de celui de demain.
+    .eq("is_active", true);
   if (questionsRes.error) throw questionsRes.error;
 
   type QuestionRow = {

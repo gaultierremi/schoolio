@@ -107,9 +107,20 @@ export async function POST(
   // Update via le client authenticated (RLS s'assure de la propriété teacher_id).
   // Note : on n'utilise pas le service role car RLS suffit ici et c'est l'écriture
   // d'une donnée qui appartient à l'user, pas une opération système.
+  // is_active est désormais la porte unique d'assignabilité : activer une
+  // question, c'est la diffuser. Ce geste DOIT donc horodater la revue, sinon
+  // la question est servie aux élèves tout en restant éternellement dans la
+  // file "à relire" du dashboard — le journal mentirait dès le premier clic.
+  // Même sémantique que teacher-questions/[id]/validation : activer = valider,
+  // désactiver = remettre en attente de revue (et non "rejeter", qui reste un
+  // geste explicite de l'onglet Par état).
+  const reviewJournal = isActive
+    ? { validated_at: new Date().toISOString(), rejected_at: null }
+    : { validated_at: null };
+
   const { data: updated, error } = await supabase
     .from("teacher_questions")
-    .update({ is_active: isActive })
+    .update({ is_active: isActive, ...reviewJournal })
     .eq("id", params.id)
     .eq("teacher_id", user.id)
     .select("id, is_active")
