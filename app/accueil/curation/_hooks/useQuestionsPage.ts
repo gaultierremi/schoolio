@@ -260,7 +260,14 @@ export function useQuestionsPage() {
         .update(payload)
         .eq("id", editingId);
     } else {
-      await supabase.from("teacher_questions").insert(payload);
+      // Saisie, duplication ou import par le prof : relue par définition. On pose
+      // la porte ET le journal à la création — sans ça le nouveau DEFAULT false la
+      // ferait naître inactive et invisible dans la file "à relire" (isPending
+      // exige une origine IA/PDF), donc rangée dans "Validées" tout en étant
+      // éteinte : exactement le piège que cette PR ferme.
+      await supabase
+        .from("teacher_questions")
+        .insert({ ...payload, is_active: true, validated_at: new Date().toISOString() });
     }
 
     await loadMyQuestions();
@@ -290,7 +297,14 @@ export function useQuestionsPage() {
     } = await supabase.auth.getUser();
     if (!user) return;
 
+    // Saisie, duplication ou import par le prof : relue par définition. On pose
+    // la porte ET le journal à la création — sans ça le nouveau DEFAULT false la
+    // ferait naître inactive et invisible dans la file "à relire" (isPending
+    // exige une origine IA/PDF), donc rangée dans "Validées" tout en étant
+    // éteinte : exactement le piège que cette PR ferme.
     await supabase.from("teacher_questions").insert({
+      is_active: true,
+      validated_at: new Date().toISOString(),
       teacher_id: user.id,
       type: q.type,
       question: `Copie — ${q.question}`,
@@ -544,8 +558,15 @@ export function useQuestionsPage() {
       return;
     }
 
+    // Saisie, duplication ou import par le prof : relue par définition. On pose
+    // la porte ET le journal à la création — sans ça le nouveau DEFAULT false la
+    // ferait naître inactive et invisible dans la file "à relire" (isPending
+    // exige une origine IA/PDF), donc rangée dans "Validées" tout en étant
+    // éteinte : exactement le piège que cette PR ferme.
     await supabase.from("teacher_questions").insert(
       toSave.map((d) => ({
+        is_active: true,
+        validated_at: new Date().toISOString(),
         teacher_id: user.id,
         type: d.type,
         question: d.question,
@@ -578,7 +599,14 @@ export function useQuestionsPage() {
       return;
     }
 
+    // Saisie, duplication ou import par le prof : relue par définition. On pose
+    // la porte ET le journal à la création — sans ça le nouveau DEFAULT false la
+    // ferait naître inactive et invisible dans la file "à relire" (isPending
+    // exige une origine IA/PDF), donc rangée dans "Validées" tout en étant
+    // éteinte : exactement le piège que cette PR ferme.
     await supabase.from("teacher_questions").insert({
+      is_active: true,
+      validated_at: new Date().toISOString(),
       teacher_id: user.id,
       type: q.type,
       question: q.question,

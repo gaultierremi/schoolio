@@ -106,6 +106,14 @@ export default async function PlanMaiaQuizPage() {
   // affiche seulement "déjà répondue" sans valeur)
   const answeredSet = new Set(answered.map((a) => a.question_id));
 
+  // Le re-gate is_active peut vider un plan figé le matin (le prof désactive
+  // en cours de journée). Sans cette sortie, totalQuestions = 0 rend la
+  // comparaison ci-dessous vraie (0 >= 0), on redirige vers le bilan — qui
+  // renvoie ici parce qu'il n'a aucune réponse : boucle infinie côté serveur.
+  if (orderedQuestions.length === 0) {
+    redirect("/accueil/plan-maia/today");
+  }
+
   // Si toutes répondues → bilan
   const totalQuestions = orderedQuestions.length;
   if (answeredSet.size >= totalQuestions) {

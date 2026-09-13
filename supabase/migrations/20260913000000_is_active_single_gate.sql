@@ -40,7 +40,8 @@
 --   - 20260515000000_questions_is_active_toggle.sql      -> DEFAULT FALSE
 --   - 2026-05-15-200000-add-is-active-to-teacher-questions.sql -> DEFAULT TRUE
 -- C'est la seconde (appliquée à la main via Management API) qui a gagné en
--- PRODUCTION. Sur une base fraîche (CI, dev local), c'est probablement l'autre.
+-- PRODUCTION. Sur une base fraîche, l'ordre d'application n'est pas garanti (le
+-- repo n'a ni config.toml ni runner de migrations) : on ne suppose donc RIEN.
 -- Corollaire à connaître avant de tester : le scénario des 986 N'EST PAS
 -- reproductible en local — un backfill joué sur une base neuve est un no-op
 -- silencieux. Pour le tester, seeder explicitement des lignes
@@ -63,14 +64,36 @@ ALTER TABLE public.teacher_questions
 -- 2) Les jamais-relues redeviennent inactives.
 --    `is_active = true` ne sert qu'à réduire le volume de writes ; la clause
 --    reste idempotente et le résultat identique sans elle.
---    NE PAS toucher :
---      - les validées (validated_at NOT NULL) — 179 lignes, stock légitime ;
---      - les rejetées (rejected_at NOT NULL) — 4 lignes, déjà exclues.
+--
+--    La clause reproduit EXACTEMENT l'ancien double-gate : tout ce qui n'était
+--    pas assignable avant devient inactif. La migration est donc prouvablement
+--    neutre en surface de diffusion — elle ne peut rien ouvrir.
+--
+--    Ne PAS se contenter de `validated_at IS NULL AND rejected_at IS NULL` :
+--    ça laisserait passer les questions REJETÉES restées actives. La migration
+--    qui a gagné en prod (2026-05-15-200000) a ajouté is_active avec
+--    DEFAULT TRUE et AUCUN backfill : toutes les lignes existant au
+--    2026-05-15 23:59 UTC ont reçu true, y compris celles déjà rejetées à cette
+--    date. Sous la porte unique, elles redeviendraient diffusables — et une
+--    question explicitement refusée par le prof est pire que du non-relu.
+--    (Les rejets postérieurs passent par teacher-questions/[id]/validation,
+--    qui pose is_active = false ; seuls les rejets antérieurs sont concernés.)
+--
+--    Épargnées : les 179 validées + actives, seule population assignable avant
+--    comme après.
 UPDATE public.teacher_questions
    SET is_active = false
  WHERE is_active = true
-   AND validated_at IS NULL
-   AND rejected_at IS NULL;
+   AND NOT (validated_at IS NOT NULL AND rejected_at IS NULL);
+
+-- 3) Index partiel sur la porte. Il n'existe que dans
+--    20260515000000_questions_is_active_toggle.sql, migration qui n'a PAS été
+--    appliquée en prod. Après backfill la grande majorité des lignes passe à
+--    false, et tout le runtime filtre `is_active = true` : c'est exactement son
+--    cas d'usage.
+CREATE INDEX IF NOT EXISTS teacher_questions_is_active_idx
+  ON public.teacher_questions (is_active)
+  WHERE is_active = TRUE;
 
 COMMENT ON COLUMN public.teacher_questions.is_active IS
   'Porte unique d''assignabilité : true = la question peut atteindre un élève. '

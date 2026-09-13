@@ -111,12 +111,16 @@ export async function POST(
   // question, c'est la diffuser. Ce geste DOIT donc horodater la revue, sinon
   // la question est servie aux élèves tout en restant éternellement dans la
   // file "à relire" du dashboard — le journal mentirait dès le premier clic.
-  // Même sémantique que teacher-questions/[id]/validation : activer = valider,
-  // désactiver = remettre en attente de revue (et non "rejeter", qui reste un
-  // geste explicite de l'onglet Par état).
+  // Asymétrie voulue : on n'écrit le journal QU'À L'ACTIVATION.
+  // Éteindre une question est un geste de DIFFUSION ("pas maintenant"), pas un
+  // geste de revue. Effacer validated_at à l'extinction renverrait dans la file
+  // "à relire" des questions déjà relues — typiquement un chapitre éteint en
+  // septembre et rallumé en mars — et le prof n'aurait aucun moyen d'en sortir
+  // sans les rejeter, ce qu'il ne veut pas dire. C'est précisément la confusion
+  // entre journal et diffusion que cette PR sépare.
   const reviewJournal = isActive
     ? { validated_at: new Date().toISOString(), rejected_at: null }
-    : { validated_at: null };
+    : {};
 
   const { data: updated, error } = await supabase
     .from("teacher_questions")
