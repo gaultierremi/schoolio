@@ -68,7 +68,10 @@ export default async function PlanMaiaQuizPage() {
     .select(
       "id, type, question, options, numeric_unit, difficulty_stars, subject_enum, concept_id, image_url, image_description_md, image_page_number",
     )
-    .in("id", questionIds);
+    .in("id", questionIds)
+    // Re-gate au service (cf. today/page.tsx) : une question désactivée doit
+    // disparaître du plan du jour, pas seulement de celui de demain.
+    .eq("is_active", true);
   if (questionsRes.error) throw questionsRes.error;
 
   type QuestionRow = {
@@ -102,6 +105,14 @@ export default async function PlanMaiaQuizPage() {
   // Dedupe : on garde le DERNIER état (si retry → nouvelle insert mais on
   // affiche seulement "déjà répondue" sans valeur)
   const answeredSet = new Set(answered.map((a) => a.question_id));
+
+  // Le re-gate is_active peut vider un plan figé le matin (le prof désactive
+  // en cours de journée). Sans cette sortie, totalQuestions = 0 rend la
+  // comparaison ci-dessous vraie (0 >= 0), on redirige vers le bilan — qui
+  // renvoie ici parce qu'il n'a aucune réponse : boucle infinie côté serveur.
+  if (orderedQuestions.length === 0) {
+    redirect("/accueil/plan-maia/today");
+  }
 
   // Si toutes répondues → bilan
   const totalQuestions = orderedQuestions.length;

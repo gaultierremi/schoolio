@@ -53,17 +53,6 @@ export async function POST(
       .eq("student_user_id", user.id)
       .maybeSingle();
 
-    const now = new Date().toISOString();
-
-    await admin.from("assignment_completions").upsert({
-      assignment_id: params.id,
-      student_user_id: user.id,
-      status: "in_progress",
-      attempts_count: (existing?.attempts_count ?? 0) + 1,
-      last_attempt_at: now,
-      // Preserve best score
-      score: existing?.score ?? null,
-    }, { onConflict: "assignment_id,student_user_id" });
 
     // Check for pre-sampled question list (85/15 mix)
     const { data: sampledRows } = await admin
@@ -78,11 +67,8 @@ export async function POST(
         .from("teacher_questions")
         .select("id, question, options, answer_index, type, difficulty_stars, explanation, concept_page_hint, page_range_start, correction_steps, concept_id, expected_numeric_answer, numeric_tolerance, numeric_unit, expected_text_answers, image_url, image_description_md, image_page_number")
         .in("id", ids)
-        // Sprint 2B : double-gate. Si le prof désactive une question
-        // après création du devoir, elle disparaît du quiz (même sémantique
-        // qu'avant avec validated_at).
-        .not("validated_at", "is", null)
-        .is("rejected_at", null)
+        // Re-gate au service : si le prof désactive une question après création
+        // du devoir, elle disparaît du quiz. Porte unique = is_active.
         .eq("is_active", true);
       if (qErr) throw qErr;
       questions = qs;
@@ -91,9 +77,7 @@ export async function POST(
         .from("teacher_questions")
         .select("id, question, options, answer_index, type, difficulty_stars, explanation, concept_page_hint, page_range_start, correction_steps, concept_id, expected_numeric_answer, numeric_tolerance, numeric_unit, expected_text_answers, image_url, image_description_md, image_page_number")
         .eq("course_id", assignment.resource_id)
-        // Sprint 2B : double-gate is_active + validated_at.
-        .not("validated_at", "is", null)
-        .is("rejected_at", null)
+        // Porte unique : is_active (cf. assignments/route.ts).
         .eq("is_active", true)
         .order("created_at", { ascending: true });
       if (qErr) throw qErr;
@@ -103,6 +87,24 @@ export async function POST(
     if (!questions || questions.length === 0) {
       return NextResponse.json({ error: "Aucune question disponible pour ce quiz" }, { status: 400 });
     }
+
+    // L'upsert vient APRÈS le contrôle ci-dessus. Avant, un devoir dont le prof
+    // a désactivé les questions incrémentait attempts_count à chaque clic et
+    // laissait l'élève en "in_progress" pour toujours — sur une table que la
+    // règle 23 déclare never-DELETE, donc des lignes fausses irrattrapables qui
+    // fausseraient les stats de rétention. Le re-gate is_active rend ce cas
+    // atteignable, d'où le déplacement.
+    const now = new Date().toISOString();
+
+    await admin.from("assignment_completions").upsert({
+      assignment_id: params.id,
+      student_user_id: user.id,
+      status: "in_progress",
+      attempts_count: (existing?.attempts_count ?? 0) + 1,
+      last_attempt_at: now,
+      // Preserve best score
+      score: existing?.score ?? null,
+    }, { onConflict: "assignment_id,student_user_id" });
 
     const { data: clsData } = await admin
       .from("classes")

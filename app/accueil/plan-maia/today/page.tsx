@@ -61,7 +61,11 @@ export default async function PlanMaiaTodayPage() {
   const { data: questionsData } = await admin
     .from("teacher_questions")
     .select("id, question, type, difficulty_stars, subject_enum, concept_id")
-    .in("id", questionIds);
+    .in("id", questionIds)
+    // Re-gate au service : le plan est figé pour la journée, donc sans ce
+    // filtre une question désactivée par le prof resterait servie jusqu'à 24h.
+    // Même sémantique que start-quiz, qui re-filtre ses ids pré-échantillonnés.
+    .eq("is_active", true);
   type QuestionRow = {
     id: string;
     question: string;
@@ -190,6 +194,28 @@ export default async function PlanMaiaTodayPage() {
         </ol>
       </section>
 
+      {/* Plan vidé par le re-gate is_active : le prof a mis ces questions en
+          pause après la génération du matin. Sans cet état, le CTA ci-dessous
+          renverrait vers /quiz, qui rebondit ici — l'élève tournerait en rond
+          sans jamais comprendre pourquoi. */}
+      {orderedQuestions.length === 0 ? (
+        <div className="mt-6 rounded-2xl border border-[rgb(var(--border))] bg-[rgb(var(--surface))] p-5">
+          <p className="text-sm font-bold text-[rgb(var(--ink))]">
+            Ton plan du jour n&apos;est plus disponible.
+          </p>
+          <p className="mt-1 text-sm text-[rgb(var(--ink-2))]">
+            Ton professeur a mis ces questions en pause. Reviens demain pour un
+            nouveau plan.
+          </p>
+          <Link
+            href="/accueil"
+            className="mt-4 inline-flex items-center gap-2 rounded-xl border border-[rgb(var(--border))] px-4 py-2 text-sm font-bold text-[rgb(var(--ink-2))] transition hover:border-[rgb(var(--ink-3))] hover:text-[rgb(var(--ink))]"
+          >
+            Retour à mon espace
+          </Link>
+        </div>
+      ) : (
+      <>
       {/* S5-4 : CTA Démarrer le quiz Plan Maïa (session dédiée) */}
       <nav aria-label="Action principale" className="mt-6 flex flex-wrap gap-3">
         <Link
@@ -223,6 +249,8 @@ export default async function PlanMaiaTodayPage() {
       <p className="mt-2 text-xs italic text-[rgb(var(--ink-3))]">
         Pick-and-choose : skip n&apos;importe quand sans pénalité. Le plan reste équilibré.
       </p>
+      </>
+      )}
     </main>
   );
 }

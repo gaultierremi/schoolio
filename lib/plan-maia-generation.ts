@@ -176,9 +176,8 @@ export async function generatePlanForStudent(
     .select("id, concept_id, subject_enum, difficulty_stars, type")
     .in("course_id", courseIds)
     .eq("school_id", schoolId)
+    // Porte unique : is_active (cf. app/api/classes/[id]/assignments/route.ts).
     .eq("is_active", true)
-    .not("validated_at", "is", null)
-    .is("rejected_at", null)
     .limit(500);
   if (candidatesRes.error) throw candidatesRes.error;
   const allCandidates = ((candidatesRes.data as Array<{

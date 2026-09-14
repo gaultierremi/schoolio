@@ -107,9 +107,24 @@ export async function POST(
   // Update via le client authenticated (RLS s'assure de la propriété teacher_id).
   // Note : on n'utilise pas le service role car RLS suffit ici et c'est l'écriture
   // d'une donnée qui appartient à l'user, pas une opération système.
+  // is_active est désormais la porte unique d'assignabilité : activer une
+  // question, c'est la diffuser. Ce geste DOIT donc horodater la revue, sinon
+  // la question est servie aux élèves tout en restant éternellement dans la
+  // file "à relire" du dashboard — le journal mentirait dès le premier clic.
+  // Asymétrie voulue : on n'écrit le journal QU'À L'ACTIVATION.
+  // Éteindre une question est un geste de DIFFUSION ("pas maintenant"), pas un
+  // geste de revue. Effacer validated_at à l'extinction renverrait dans la file
+  // "à relire" des questions déjà relues — typiquement un chapitre éteint en
+  // septembre et rallumé en mars — et le prof n'aurait aucun moyen d'en sortir
+  // sans les rejeter, ce qu'il ne veut pas dire. C'est précisément la confusion
+  // entre journal et diffusion que cette PR sépare.
+  const reviewJournal = isActive
+    ? { validated_at: new Date().toISOString(), rejected_at: null }
+    : {};
+
   const { data: updated, error } = await supabase
     .from("teacher_questions")
-    .update({ is_active: isActive })
+    .update({ is_active: isActive, ...reviewJournal })
     .eq("id", params.id)
     .eq("teacher_id", user.id)
     .select("id, is_active")
