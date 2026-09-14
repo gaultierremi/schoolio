@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient as createSupabaseAdminClient } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase-server";
+import { apiError, safeError } from "@/lib/api/respond";
 
 export const dynamic = "force-dynamic";
 
@@ -37,10 +38,6 @@ function createAdminClient() {
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE_KEY!
   );
-}
-
-function getErrorMessage(error: unknown) {
-  return error instanceof Error ? error.message : "Erreur inconnue";
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -131,7 +128,11 @@ function parseTagInput(body: unknown): { input?: ParsedTagInput; response?: Next
 }
 
 async function getTagUsage(admin: ReturnType<typeof createAdminClient>, teacherId: string, tagId: string): Promise<TagUsage> {
-  const [coursesResult, questionsResult, classesResult] = await Promise.all([
+  // Seules courses et teacher_questions portent organization_tags
+  // (20260507100000:30-31). classes n'a jamais eu la colonne : la compter
+  // renvoyait 42703 → 500 dès qu'un prof avait un tag. On garde la clé
+  // `classes` à 0 pour ne pas changer le contrat de réponse lu par l'UI.
+  const [coursesResult, questionsResult] = await Promise.all([
     admin
       .from("courses")
       .select("id", { count: "exact", head: true })
@@ -142,21 +143,15 @@ async function getTagUsage(admin: ReturnType<typeof createAdminClient>, teacherI
       .select("id", { count: "exact", head: true })
       .eq("teacher_id", teacherId)
       .contains("organization_tags", [tagId]),
-    admin
-      .from("classes")
-      .select("id", { count: "exact", head: true })
-      .eq("teacher_id", teacherId)
-      .contains("organization_tags", [tagId]),
   ]);
 
   if (coursesResult.error) throw coursesResult.error;
   if (questionsResult.error) throw questionsResult.error;
-  if (classesResult.error) throw classesResult.error;
 
   return {
     courses: coursesResult.count ?? 0,
     questions: questionsResult.count ?? 0,
-    classes: classesResult.count ?? 0,
+    classes: 0,
   };
 }
 
@@ -184,8 +179,7 @@ export async function GET() {
 
     return NextResponse.json({ tags: tagsWithUsage });
   } catch (error) {
-    console.error("[teacher-tags]", error);
-    return NextResponse.json({ error: getErrorMessage(error) }, { status: 500 });
+    return safeError(error, "teacher-tags:GET");
   }
 }
 
@@ -207,6 +201,19 @@ export async function POST(request: NextRequest) {
     const input = parsed.input!;
     const admin = createAdminClient();
 
+    // teacher_organization_tags.school_id est NOT NULL depuis la migration
+    // multi-tenant (20260513140100 + 20260513160000:57). L'insert ne le
+    // posait pas → 23502 → 500. Même correctif que app/api/classes/route.ts.
+    const { data: profile } = await admin
+      .from("user_profiles")
+      .select("school_id")
+      .eq("id", auth.user.id)
+      .maybeSingle();
+    const schoolId = (profile as { school_id?: string | null } | null)?.school_id;
+    if (!schoolId) {
+      return apiError("Aucune école associée à ton compte", 403);
+    }
+
     const { data: existingTag, error: existingError } = await admin
       .from("teacher_organization_tags")
       .select("id")
@@ -227,6 +234,7 @@ export async function POST(request: NextRequest) {
       .from("teacher_organization_tags")
       .insert({
         teacher_id: auth.user.id,
+        school_id: schoolId,
         name: input.name,
         emoji: input.emoji,
         color: input.color ?? "purple",
@@ -239,7 +247,6 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ tag });
   } catch (error) {
-    console.error("[teacher-tags]", error);
-    return NextResponse.json({ error: getErrorMessage(error) }, { status: 500 });
+    return safeError(error, "teacher-tags:POST");
   }
 }
