@@ -33,8 +33,10 @@ Ce que ce plan fait, table par table, en répliquant le pattern déjà en prod s
 4. Une couche **RESTRICTIVE** « écritures = profs uniquement » par table, qui se combine en ET
    avec tout ce qui existe ou existera. C'est elle qui rend la promesse « un élève perd TOUTE
    écriture » vraie même si la prod porte des policies que le repo ne connaît pas (dette C2).
-5. Retrait de la clause `school_id IS NULL OR …` : T7 a mis les huit colonnes `NOT NULL`, la
-   clause est morte, et elle ouvrait toute ligne orpheline à toute l'école de n'importe qui.
+5. Retrait de la clause `school_id IS NULL OR …` : T7 a mis `NOT NULL` sur six des huit
+   colonnes (plus `live_sessions` et `user_profiles`), `concepts` et `theory_blocks` sont nées
+   `NOT NULL` — la clause est morte, et elle ouvrait toute ligne orpheline à toute l'école de
+   n'importe qui.
 
 **Ce qui casserait si on faisait ça naïvement, et pourquoi ce plan ne le fait pas :** il n'existe
 que **deux** chemins d'écriture non-service-role vers ces tables dans tout le produit, tous deux
@@ -131,20 +133,22 @@ clé anon + cookies, RLS s'applique), **service role** (`SUPABASE_SERVICE_ROLE_K
 | W5 | `…/useQuestionsPage.ts:293` | `teacher_questions` | insert (duplication « Copie — ») | navigateur | prof | `teacher_id: user.id`, pas de `school_id` | idem W2 |
 | W6 | `…/useQuestionsPage.ts:547` | `teacher_questions` | insert (drafts PDF) | navigateur | prof | `teacher_id: user.id`, pas de `school_id` | idem W2 |
 | W7 | `…/useQuestionsPage.ts:581` | `teacher_questions` | insert (import depuis `quiz_questions`) | navigateur | prof | `teacher_id: user.id`, pas de `school_id` | idem W2 |
-| W8 | `app/api/curation/[id]/toggle-active/route.ts:46-48` | `teacher_questions` | update (`is_active`, journal) | serveur-utilisateur | prof (`requireTeacher`-équivalent en amont) | `.eq("id").eq("teacher_id", user.id)` | oui : owner + prof |
+| W8 | `app/api/curation/[id]/toggle-active/route.ts:110-116` | `teacher_questions` | update (`is_active`, journal) | serveur-utilisateur | prof (la route gate déjà sur `app_metadata.role`, `:83-86`) | `.eq("id").eq("teacher_id", user.id)` | oui : owner + prof |
 
 **Point W2/W5/W6/W7.** Ces quatre inserts n'envoient pas `school_id`. Or `school_id` est
 `NOT NULL` depuis T7 (`20260513160000:52`) et la policy actuelle exige déjà
 `WITH CHECK (school_id = cus())`. Donc, **aujourd'hui même**, soit ces inserts échouent en prod
-(23502 ou 42501), soit la colonne a un `DEFAULT` posé à la main (typiquement
+(42501 : le `WITH CHECK` est évalué avant `NOT NULL`, et `school_id = cus()` est faux sur
+NULL), soit la colonne a un `DEFAULT` posé à la main (typiquement
 `DEFAULT public.current_user_school_id()`). Le nouveau design ne change rien à cette
 condition — il garde exactement le même `WITH CHECK` sur `school_id` — mais il faut le savoir
 avant d'attribuer une régression au plan. Requête en §7.0.
 
-Aucune autre écriture non-service-role n'existe sur les douze tables. En particulier **aucune
-écriture élève** : les élèves écrivent, côté navigateur, sur `live_session_participants` et
-`live_session_answers` (`app/accueil/rejoindre/[code]/page.tsx:70`, hors périmètre, policies
-propres), et tout le reste (join, leave, quiz, plan Maïa) passe par des routes service role.
+Aucune autre écriture non-service-role n'existe sur les quatorze tables du bloc B. En particulier **aucune
+écriture élève**, sur aucune table : la page live élève ne fait que des SELECT
+(`app/accueil/rejoindre/[code]/page.tsx:69-74`), ses écritures passent par `/api/live/join`
+(`route.ts:57`, service role) et `/api/live/[id]/answer` (`:69`, service role) ; join, leave,
+quiz (`start-quiz:58`, `finish-quiz:111,123`), plan Maïa, `mark-read:61` : tout est service role.
 
 ### 2.2 Écritures service role (non affectées, pour mémoire — 60 sites)
 
@@ -181,7 +185,7 @@ inexistante) : composant jamais importé, code mort. Ignoré.
 | `assignments` | devoirs de ses classes : `EleveHome.tsx:87`, `devoirs/page.tsx:53`, `devoirs/[id]/bilan/page.tsx:51` | service role | `ProfDevoirsView.tsx:80` + routes | service role | `student_sees_class_assignments` existe déjà (`PUBLIC`, membership active) — **conservée** ; prof : école |
 | `courses` | cours de ses devoirs : `devoirs/page.tsx:94`, `lib/student-subjects.ts:34` | service role | `cours/page.tsx` + routes | service role | `student_reads_assigned_courses` existe déjà — **conservée** ; prof : école |
 | `teacher_questions` | **navigateur** : `app/accueil/rejoindre/[code]/page.tsx:60` (session live, lit `question, options, answer_index`) ; plan Maïa, quiz, bilan : service role | navigateur + service role | `useQuestionsPage.ts:91` (navigateur, `teacher_id = user.id`), `session/nouvelle/page.tsx:39` (navigateur, own), `curation/concept/[id]/page.tsx:71` (service role) | navigateur | lecture école pour tout authentifié (`*_tenant_read`, le pattern). La page live élève l'exige. Le fait qu'elle lise `answer_index` est la carte P0 RLS déjà ouverte, pas ce plan. |
-| `concepts` | `EleveHome.tsx:138`, `concepts/[id]/page.tsx:91`, bilans | service role ; **`app/api/snippets/route.ts:48` lit `concepts` avec le client user sous `requireUser`** (élève possible) | curation | service role | lecture école pour tout authentifié |
+| `concepts` | `EleveHome.tsx:138`, `concepts/[id]/page.tsx:91`, bilans, `api/student/concept/[id]/theory/route.ts:41-58` | service role partout | curation ; **`app/api/snippets/route.ts:101` lit `concepts` avec le client user, dans le POST sous `requireTeacher`** (le GET `requireUser` :19 ne lit que `content_snippets` :38) | service role + serveur-utilisateur (prof) | lecture école pour tout authentifié : aucun élève n'en dépend, mais rien de sensible et c'est le pattern `content_snippets_tenant_read`. Restreindre à `teacher()` est possible — décision produit (§11) |
 | `theory_blocks` | `concepts/[id]/page.tsx:96` | service role | `curation/concept/[id]/page.tsx:66` | service role | lecture école pour tout authentifié (aucun besoin client aujourd'hui, mais rien de sensible) |
 | `teacher_schedule_slots` | aucune | — | `api/school/schedule/*` | service role + `teacher_select_own_slots` (owner) | prof de l'école |
 | `teacher_organization_tags` | aucune | — | `api/teacher-tags/*` | service role | prof de l'école |
@@ -190,8 +194,9 @@ inexistante) : composant jamais importé, code mort. Ignoré.
 
 Conclusion lectures : **aucune page élève ne dépend d'un SELECT client sur `classes`,
 `assignments`, `courses`, `concepts` ou `theory_blocks`** ; la seule dépendance élève côté
-navigateur est la page live (`live_sessions` + `teacher_questions`), et la seule dépendance élève
-côté serveur-utilisateur est `api/snippets` sur `concepts`. Les deux sont couvertes.
+navigateur est la page live (`live_sessions` + `teacher_questions`), il n'y a **aucune** dépendance élève
+côté serveur-utilisateur (la lecture de `concepts` par `api/snippets` est dans le POST prof).
+Tout est couvert.
 
 ---
 
@@ -221,22 +226,25 @@ Principe commun à chaque table :
 | `teacher_questions` | `teacher_id` | école, tout authentifié | prof + owner | prof + owner | prof + owner | **précondition** : `ENABLE ROW LEVEL SECURITY` (état inconnu) ; `school_id` DEFAULT (W2) |
 | `teacher_schedule_slots` | `teacher_id` | prof de l'école | prof + owner | prof + owner | aucun (les 3 `*_own_slots` héritées restent, owner) | |
 | `teacher_organization_tags` | `teacher_id` | prof de l'école | prof + owner | prof + owner | aucun | |
-| `concepts` | — | école, tout authentifié | prof | prof | aucun | `api/snippets` lit avec le client user sous `requireUser` |
+| `concepts` | — | école, tout authentifié (ou `teacher()`, §11) | prof | prof | aucun | seul client user : `api/snippets` POST (prof) |
 | `theory_blocks` | — | école, tout authentifié | prof | prof | aucun | |
 
 Tables hors des huit, traitées pour cohérence :
 
 - `class_memberships` : RESTRICTIVE anti-DELETE + remplacement de `teacher_manages_memberships`
   (FOR ALL) par INSERT/UPDATE — c'est le §5 de `docs/PR3-CLASS-LOCK-DESIGN.md`, repris en bloc C.
-- `live_sessions`, `exercises`, `exercise_steps` : policies owner déjà découpées ou owner-only ;
-  seule la couche RESTRICTIVE « profs uniquement » est ajoutée (bloc B), rien d'autre ne bouge.
+- `live_sessions`, `exercises`, `exercise_steps`, et (ajoutées après review)
+  `class_attendance_records`, `student_random_picks` : policies owner déjà découpées ou
+  owner-only, mais sans vérification de rôle ; seule la couche RESTRICTIVE « profs uniquement »
+  est ajoutée (bloc B), rien d'autre ne bouge.
 
 ### 4.1 La clause `school_id IS NULL OR …`
 
 - Elle a été écrite « pour les lignes legacy avant backfill — T7 ferme le trou »
-  (`20260513140200:33`). T7 (`20260513160000`) a backfillé les huit tables vers
-  `FounderTestGround` (`00000000-…-0001`) puis posé `NOT NULL`. `concepts` et `theory_blocks`
-  sont nées `NOT NULL`. Le tenant fondateur est un `school_id` **réel**, pas NULL : la clause ne
+  (`20260513140200:33`). T7 (`20260513160000:23-53`) a backfillé six des huit tables (plus
+  `user_profiles` et `live_sessions`) vers `FounderTestGround` (`00000000-…-0001`) puis posé
+  `NOT NULL` ; `concepts` (`20260513170000:87`) et `theory_blocks` (`20260514100000:45`) sont
+  nées `NOT NULL`. Le tenant fondateur est un `school_id` **réel**, pas NULL : la clause ne
   le protège pas.
 - Conséquence : la clause est morte si T7 est appliqué ; si T7 ne l'est pas, elle donne à tout
   authentifié de toute école la lecture **et l'écriture** des lignes orphelines. Dans les deux
@@ -264,7 +272,10 @@ séparable si Gaultier préfère l'appliquer avec PR 3.
 
 1. **`user_profiles.role`** — si un utilisateur peut l'UPDATE lui-même, tout le plan est
    contournable. Vérifier (§7.0-a) ; si c'est le cas, appliquer d'abord le trigger du §11.1 ou
-   basculer `is_current_user_school_teacher()` sur `app_metadata` (§11.2).
+   basculer `is_current_user_school_teacher()` sur `app_metadata` (§11.2). Source de vérité
+   effective aujourd'hui : `user_profiles.role` est écrit et resynchronisé avec
+   `app_metadata.role` uniquement par `app/auth/callback/route.ts:89-104` (service role) —
+   cohérent, à condition qu'aucune policy client ne permette de l'écrire.
 2. **RLS sur `teacher_questions`** — si elle n'est pas active, les policies ne s'appliquent pas
    du tout aujourd'hui (tout le monde lit et écrit tout) ; l'activer fait passer la table de
    « ouverte » à « scopée » d'un coup : vérifier les lectures §3 juste après.
@@ -325,12 +336,33 @@ FROM pg_proc p JOIN pg_namespace n ON n.oid = p.pronamespace
 WHERE n.nspname = 'public'
   AND p.proname IN ('current_user_school_id','is_current_user_school_teacher');
 
+-- f. Lignes déjà forgées par le trou (review Claudia) : un élève qui a créé une classe,
+--    un devoir, un cours… avant ce plan en reste « owner ». Les policies owner PUBLIC
+--    héritées lui laissent LIRE ces lignes (dont invite_code / invite_link_token d'une
+--    classe forgée) ; le bloc B lui retire l'écriture. À lister, puis à réattribuer ou
+--    archiver À LA MAIN avant d'appliquer — attendu : 0 ligne partout.
+SELECT 'classes' t, c.id, c.teacher_id FROM public.classes c
+  JOIN public.user_profiles p ON p.id = c.teacher_id WHERE p.role IS DISTINCT FROM 'teacher'
+UNION ALL SELECT 'assignments', a.id, a.assigned_by FROM public.assignments a
+  JOIN public.user_profiles p ON p.id = a.assigned_by WHERE p.role IS DISTINCT FROM 'teacher'
+UNION ALL SELECT 'courses', c.id, c.teacher_id FROM public.courses c
+  JOIN public.user_profiles p ON p.id = c.teacher_id WHERE p.role IS DISTINCT FROM 'teacher'
+UNION ALL SELECT 'teacher_questions', q.id, q.teacher_id FROM public.teacher_questions q
+  JOIN public.user_profiles p ON p.id = q.teacher_id WHERE p.role IS DISTINCT FROM 'teacher'
+UNION ALL SELECT 'live_sessions', s.id, s.teacher_id FROM public.live_sessions s
+  JOIN public.user_profiles p ON p.id = s.teacher_id WHERE p.role IS DISTINCT FROM 'teacher'
+UNION ALL SELECT 'teacher_schedule_slots', s.id, s.teacher_id FROM public.teacher_schedule_slots s
+  JOIN public.user_profiles p ON p.id = s.teacher_id WHERE p.role IS DISTINCT FROM 'teacher'
+UNION ALL SELECT 'teacher_organization_tags', t.id, t.teacher_id FROM public.teacher_organization_tags t
+  JOIN public.user_profiles p ON p.id = t.teacher_id WHERE p.role IS DISTINCT FROM 'teacher';
+
 -- e. Photo AVANT (à conserver pour le rollback §9 et le diff après)
 SELECT tablename, policyname, cmd, permissive, roles, qual, with_check
 FROM pg_policies WHERE schemaname = 'public'
   AND tablename IN ('classes','assignments','courses','teacher_questions','teacher_schedule_slots',
                     'teacher_organization_tags','concepts','theory_blocks','class_memberships',
-                    'live_sessions','exercises','exercise_steps')
+                    'live_sessions','exercises','exercise_steps','class_attendance_records',
+                    'student_random_picks')
 ORDER BY 1, 2;
 ```
 
@@ -547,8 +579,9 @@ DROP POLICY IF EXISTS "concepts_tenant_read"    ON public.concepts;
 DROP POLICY IF EXISTS "concepts_teacher_insert" ON public.concepts;
 DROP POLICY IF EXISTS "concepts_teacher_update" ON public.concepts;
 
--- Lecture école pour tout authentifié : api/snippets lit concepts avec le client
--- user sous requireUser (élève possible).
+-- Lecture école pour tout authentifié (pattern content_snippets_tenant_read). Aucune
+-- page élève n'en dépend au client (api/snippets ne lit concepts que dans le POST prof) :
+-- restreindre à is_current_user_school_teacher() est une option, voir §11.
 CREATE POLICY "concepts_tenant_read" ON public.concepts
   FOR SELECT TO authenticated
   USING (school_id = public.current_user_school_id());
@@ -608,7 +641,12 @@ BEGIN
   FOREACH t IN ARRAY ARRAY[
     'classes','assignments','courses','teacher_questions','teacher_schedule_slots',
     'teacher_organization_tags','concepts','theory_blocks',
-    'class_memberships','live_sessions','exercises','exercise_steps'
+    'class_memberships','live_sessions','exercises','exercise_steps',
+    -- ajoutées après review : leurs policies FOR ALL PUBLIC (20260510010000, 20260510030000)
+    -- donnent l'écriture au « prof de la classe » sans vérifier le rôle — un élève qui a
+    -- forgé une classe avant ce plan y écrirait encore. Aucun chemin client n'y écrit
+    -- (attendance/route.ts:64 et live/[id]/host : service role).
+    'class_attendance_records','student_random_picks'
   ] LOOP
     EXECUTE format('DROP POLICY IF EXISTS %I ON public.%I', t || '_writes_teacher_only_ins', t);
     EXECUTE format('DROP POLICY IF EXISTS %I ON public.%I', t || '_writes_teacher_only_upd', t);
@@ -631,7 +669,7 @@ END $$;
 COMMIT;
 ```
 
-Les élèves n'écrivent sur **aucune** de ces douze tables côté client (§2) : ce bloc ne peut
+Les élèves n'écrivent sur **aucune** de ces quatorze tables côté client (§2) : ce bloc ne peut
 casser qu'un chemin qui n'existe pas. Les tables où les élèves écrivent légitimement
 (`assignment_completions`, `assignment_question_answers`, `live_session_answers`,
 `live_session_participants`, `plan_maia_answers`, `hint_evaluations`) ne sont **pas** dans la
@@ -701,10 +739,15 @@ ORDER BY 1, 2;
 SELECT tablename, policyname FROM pg_policies
 WHERE schemaname = 'public' AND policyname LIKE '%\_tenant\_scope' ESCAPE '\';
 
--- 36 restrictives attendues (12 tables × 3), + 2 anti-DELETE si bloc C
+-- 42 restrictives « profs uniquement » attendues (14 tables × 3)
 SELECT count(*) FROM pg_policies
 WHERE schemaname = 'public' AND permissive = 'RESTRICTIVE'
   AND policyname LIKE '%\_writes\_teacher\_only\_%' ESCAPE '\';
+
+-- + 2 anti-DELETE si bloc C appliqué (nommées différemment, comptées à part)
+SELECT tablename, policyname FROM pg_policies
+WHERE schemaname = 'public' AND permissive = 'RESTRICTIVE'
+  AND policyname IN ('classes_no_client_delete','class_memberships_no_client_delete');
 ```
 
 ---
@@ -713,64 +756,107 @@ WHERE schemaname = 'public' AND permissive = 'RESTRICTIVE'
 
 ### 8.1 Dans l'éditeur SQL, sans clé ni compte (impersonation PostgREST)
 
-Remplacer `<STUDENT_UID>`, `<TEACHER_UID>`, `<SCHOOL_ID>`, `<CLASS_ID_MEMBRE>` par des valeurs
-réelles. `set_config` reproduit exactement ce que PostgREST fait avec un JWT.
+Remplacer `<STUDENT_UID>`, `<TEACHER_UID>`, `<SCHOOL_ID>`, `<CLASS_ID_MEMBRE>`, `<PROGRAM_ID>`
+par des valeurs réelles. `set_config` reproduit exactement ce que PostgREST fait avec un JWT.
+
+**Une transaction par écriture** (review Claudia, bloquant B2) : dans Postgres, la première
+erreur 42501 met la transaction en état `aborted` et toutes les instructions suivantes
+échouent avec `current transaction is aborted` — les « 0 ligne » des UPDATE/DELETE ne
+seraient jamais observés. À l'inverse, AVANT le plan, un `DELETE classes` réussi cascade les
+devoirs et memberships, et les UPDATE suivants renvoient 0 ligne pour la mauvaise raison. Donc :
+un bloc `BEGIN … ROLLBACK` par instruction, et le DELETE de classe en dernier.
 
 ```sql
--- ── Session ÉLÈVE ────────────────────────────────────────────────────────────
+-- Préambule commun à chaque bloc ÉLÈVE (à recopier dans chaque BEGIN) :
+--   SET LOCAL ROLE authenticated;
+--   SELECT set_config('request.jwt.claims',
+--     json_build_object('sub','<STUDENT_UID>','role','authenticated')::text, true);
+
+-- ── Session ÉLÈVE — lectures légitimes (une seule transaction suffit, rien n'échoue) ──
 BEGIN;
 SET LOCAL ROLE authenticated;
-SELECT set_config('request.jwt.claims',
-  json_build_object('sub','<STUDENT_UID>','role','authenticated')::text, true);
-
--- Lectures légitimes → lignes
+SELECT set_config('request.jwt.claims', json_build_object('sub','<STUDENT_UID>','role','authenticated')::text, true);
 SELECT count(*) AS mes_classes FROM public.classes;                    -- = nb de classes où membre actif
 SELECT count(*) AS mes_devoirs FROM public.assignments;                -- via student_sees_class_assignments
 SELECT count(*) AS mes_cours   FROM public.courses;                    -- via student_reads_assigned_courses
 SELECT count(*) AS concepts    FROM public.concepts;                   -- école
 SELECT count(*) AS questions   FROM public.teacher_questions;          -- école (page live)
 SELECT count(*) AS sessions    FROM public.live_sessions WHERE ended_at IS NULL;
+ROLLBACK;
 
--- Écritures → chacune doit lever 42501 (new row violates row-level security policy)
+-- ── Session ÉLÈVE — écritures, UNE transaction chacune ──
+-- Attendu : INSERT → erreur 42501 ; UPDATE/DELETE … RETURNING id → 0 ligne.
+BEGIN; SET LOCAL ROLE authenticated; SELECT set_config('request.jwt.claims', json_build_object('sub','<STUDENT_UID>','role','authenticated')::text, true);
 INSERT INTO public.classes (teacher_id, name, school_id, invite_code)
-  VALUES ('<STUDENT_UID>', 'x', '<SCHOOL_ID>', 'ZZZZZZ1');            -- 42501
-UPDATE public.classes SET name = 'pwned' WHERE id = '<CLASS_ID_MEMBRE>'; -- 0 ligne (USING) — vérifier avec RETURNING id
-DELETE FROM public.classes WHERE id = '<CLASS_ID_MEMBRE>' RETURNING id;  -- 0 ligne
-UPDATE public.assignments SET archived_at = now() RETURNING id;         -- 0 ligne
-UPDATE public.teacher_questions SET is_active = false RETURNING id;     -- 0 ligne
+  VALUES ('<STUDENT_UID>', 'x', '<SCHOOL_ID>', 'ZZZZZZ1');                       -- 42501
+ROLLBACK;
+
+BEGIN; SET LOCAL ROLE authenticated; SELECT set_config('request.jwt.claims', json_build_object('sub','<STUDENT_UID>','role','authenticated')::text, true);
+UPDATE public.classes SET name = 'pwned' WHERE id = '<CLASS_ID_MEMBRE>' RETURNING id; -- 0 ligne
+ROLLBACK;
+
+BEGIN; SET LOCAL ROLE authenticated; SELECT set_config('request.jwt.claims', json_build_object('sub','<STUDENT_UID>','role','authenticated')::text, true);
+UPDATE public.assignments SET archived_at = now() RETURNING id;                    -- 0 ligne
+ROLLBACK;
+
+BEGIN; SET LOCAL ROLE authenticated; SELECT set_config('request.jwt.claims', json_build_object('sub','<STUDENT_UID>','role','authenticated')::text, true);
+UPDATE public.teacher_questions SET is_active = false RETURNING id;                -- 0 ligne
+ROLLBACK;
+
+BEGIN; SET LOCAL ROLE authenticated; SELECT set_config('request.jwt.claims', json_build_object('sub','<STUDENT_UID>','role','authenticated')::text, true);
 INSERT INTO public.teacher_questions (teacher_id, school_id, question, type)
-  VALUES ('<STUDENT_UID>', '<SCHOOL_ID>', 'x', 'mcq');                 -- 42501
-DELETE FROM public.class_memberships RETURNING id;                      -- 0 ligne
-INSERT INTO public.concepts (school_id, name) VALUES ('<SCHOOL_ID>', 'x'); -- 42501
+  VALUES ('<STUDENT_UID>', '<SCHOOL_ID>', 'x', 'mcq');                            -- 42501
+ROLLBACK;
+
+BEGIN; SET LOCAL ROLE authenticated; SELECT set_config('request.jwt.claims', json_build_object('sub','<STUDENT_UID>','role','authenticated')::text, true);
+DELETE FROM public.class_memberships RETURNING id;                                 -- 0 ligne
+ROLLBACK;
+
+BEGIN; SET LOCAL ROLE authenticated; SELECT set_config('request.jwt.claims', json_build_object('sub','<STUDENT_UID>','role','authenticated')::text, true);
+INSERT INTO public.concepts (school_id, program_id, name, slug)
+  VALUES ('<SCHOOL_ID>', '<PROGRAM_ID>', 'x', 'x-rls-test');                      -- 42501
+ROLLBACK;
+
+-- Tables ajoutées au bloc B suite à la review (lignes forgées, voir §7.0-f) :
+BEGIN; SET LOCAL ROLE authenticated; SELECT set_config('request.jwt.claims', json_build_object('sub','<STUDENT_UID>','role','authenticated')::text, true);
+INSERT INTO public.class_attendance_records (class_id, student_user_id, recorded_by, date, status)
+  VALUES ('<CLASS_ID_MEMBRE>', '<STUDENT_UID>', '<STUDENT_UID>', current_date, 'present'); -- 42501
+ROLLBACK;
+
+-- EN DERNIER (cascade si le trou est ouvert) :
+BEGIN; SET LOCAL ROLE authenticated; SELECT set_config('request.jwt.claims', json_build_object('sub','<STUDENT_UID>','role','authenticated')::text, true);
+DELETE FROM public.classes WHERE id = '<CLASS_ID_MEMBRE>' RETURNING id;            -- 0 ligne
 ROLLBACK;
 
 -- ── Session PROF ─────────────────────────────────────────────────────────────
 BEGIN;
 SET LOCAL ROLE authenticated;
-SELECT set_config('request.jwt.claims',
-  json_build_object('sub','<TEACHER_UID>','role','authenticated')::text, true);
-
+SELECT set_config('request.jwt.claims', json_build_object('sub','<TEACHER_UID>','role','authenticated')::text, true);
 SELECT count(*) FROM public.classes;                                    -- toutes les classes de l'école
 INSERT INTO public.teacher_questions (teacher_id, school_id, question, type)
-  VALUES ('<TEACHER_UID>', '<SCHOOL_ID>', 'test rls', 'mcq') RETURNING id;   -- 1 ligne
+  VALUES ('<TEACHER_UID>', '<SCHOOL_ID>', 'test rls', 'mcq') RETURNING id;        -- 1 ligne
 UPDATE public.teacher_questions SET question = 'test rls 2'
-  WHERE teacher_id = '<TEACHER_UID>' AND question = 'test rls' RETURNING id;  -- 1 ligne
+  WHERE teacher_id = '<TEACHER_UID>' AND question = 'test rls' RETURNING id;       -- 1 ligne
 DELETE FROM public.teacher_questions
-  WHERE teacher_id = '<TEACHER_UID>' AND question = 'test rls 2' RETURNING id; -- 1 ligne
--- Sur la question d'un COLLÈGUE de la même école :
+  WHERE teacher_id = '<TEACHER_UID>' AND question = 'test rls 2' RETURNING id;     -- 1 ligne
 UPDATE public.teacher_questions SET is_active = false
-  WHERE teacher_id <> '<TEACHER_UID>' RETURNING id;                     -- 0 ligne (owner)
-DELETE FROM public.classes WHERE teacher_id = '<TEACHER_UID>' RETURNING id; -- 0 ligne (bloc C)
+  WHERE teacher_id <> '<TEACHER_UID>' RETURNING id;                      -- 0 ligne (owner : question d'un collègue)
+DELETE FROM public.classes WHERE teacher_id = '<TEACHER_UID>' RETURNING id;        -- 0 ligne (bloc C)
 ROLLBACK;
 ```
 
-Note sur les codes d'erreur : Postgres vérifie les contraintes (`NOT NULL`, `CHECK`) **avant**
-le `WITH CHECK` des policies. Si un INSERT de test renvoie 23502 au lieu de 42501, c'est qu'il
-manque une colonne obligatoire dans le payload de test, pas que la RLS est ouverte : compléter
-le payload (colonnes NOT NULL sans DEFAULT de la table) et rejouer — l'attendu est 42501.
+Note sur les codes d'erreur (corrigée après review) : Postgres évalue le `WITH CHECK` des
+policies **avant** les contraintes `NOT NULL` / `CHECK` (`ExecWithCheckOptions` précède
+`ExecConstraints`). Un INSERT élève renvoie donc 42501 même avec un payload incomplet — c'est
+bien la RLS qui parle. En revanche un INSERT **prof** avec un payload incomplet échoue en 23502
+(la RLS passe, la contrainte non) : compléter les colonnes `NOT NULL` sans DEFAULT
+(`concepts` : `program_id`, `slug`). Corollaire pour W2 (§2.1) : si `teacher_questions.school_id`
+n'a pas de DEFAULT en prod, les inserts du hook de curation échouent **aujourd'hui** en 42501
+(`school_id = cus()` est faux sur NULL), pas en 23502.
 
-Pour comparer : rejouer la session ÉLÈVE **avant** d'appliquer le §7 — les UPDATE/DELETE
-renvoient aujourd'hui des lignes. C'est la preuve du trou, à garder dans la PR de réconciliation.
+Pour comparer : rejouer la session ÉLÈVE **avant** d'appliquer le §7 — l'INSERT passe et les
+UPDATE/DELETE renvoient des lignes. C'est la preuve du trou, à garder dans la PR de
+réconciliation.
 
 ### 8.2 Depuis un navigateur, avec la clé anon (ce que ferait un élève curieux)
 
@@ -837,35 +923,48 @@ END $$;
 
 DROP FUNCTION IF EXISTS public.current_user_is_active_member_of(uuid);
 
--- Recréer les huit tenant_scope telles qu'en prod
+-- Recréer les huit tenant_scope telles qu'en prod (DROP IF EXISTS devant chaque
+-- CREATE : le rollback doit passer aussi bien après A+B seuls qu'après A+B+C, et se
+-- rejouer sans erreur — review Claudia, bloquant B1)
+DROP POLICY IF EXISTS "assignments_tenant_scope" ON public.assignments;
 CREATE POLICY "assignments_tenant_scope" ON public.assignments FOR ALL TO authenticated
   USING ((school_id IS NULL) OR school_id = public.current_user_school_id())
   WITH CHECK (school_id = public.current_user_school_id());
+DROP POLICY IF EXISTS "classes_tenant_scope" ON public.classes;
 CREATE POLICY "classes_tenant_scope" ON public.classes FOR ALL TO authenticated
   USING ((school_id IS NULL) OR school_id = public.current_user_school_id())
   WITH CHECK (school_id = public.current_user_school_id());
+DROP POLICY IF EXISTS "courses_tenant_scope" ON public.courses;
 CREATE POLICY "courses_tenant_scope" ON public.courses FOR ALL TO authenticated
   USING ((school_id IS NULL) OR school_id = public.current_user_school_id())
   WITH CHECK (school_id = public.current_user_school_id());
+DROP POLICY IF EXISTS "teacher_questions_tenant_scope" ON public.teacher_questions;
 CREATE POLICY "teacher_questions_tenant_scope" ON public.teacher_questions FOR ALL TO authenticated
   USING ((school_id IS NULL) OR school_id = public.current_user_school_id())
   WITH CHECK (school_id = public.current_user_school_id());
+DROP POLICY IF EXISTS "teacher_schedule_slots_tenant_scope" ON public.teacher_schedule_slots;
 CREATE POLICY "teacher_schedule_slots_tenant_scope" ON public.teacher_schedule_slots FOR ALL TO authenticated
   USING ((school_id IS NULL) OR school_id = public.current_user_school_id())
   WITH CHECK (school_id = public.current_user_school_id());
+DROP POLICY IF EXISTS "teacher_organization_tags_tenant_scope" ON public.teacher_organization_tags;
 CREATE POLICY "teacher_organization_tags_tenant_scope" ON public.teacher_organization_tags FOR ALL TO authenticated
   USING ((school_id IS NULL) OR school_id = public.current_user_school_id())
   WITH CHECK (school_id = public.current_user_school_id());
+DROP POLICY IF EXISTS "concepts_tenant_scope" ON public.concepts;
 CREATE POLICY "concepts_tenant_scope" ON public.concepts FOR ALL TO authenticated
   USING (school_id = public.current_user_school_id())
   WITH CHECK (school_id = public.current_user_school_id());
+DROP POLICY IF EXISTS "theory_blocks_tenant_scope" ON public.theory_blocks;
 CREATE POLICY "theory_blocks_tenant_scope" ON public.theory_blocks FOR ALL TO authenticated
   USING (school_id = public.current_user_school_id())
   WITH CHECK (school_id = public.current_user_school_id());
 
--- Bloc C : restaurer les deux policies héritées (20260508100000:79 et :90)
+-- Bloc C : restaurer les deux policies héritées (20260508100000:79 et :90).
+-- Idempotent : si le bloc C n'a pas été appliqué, elles existent encore.
+DROP POLICY IF EXISTS "teacher_deletes_own_classes" ON public.classes;
 CREATE POLICY "teacher_deletes_own_classes" ON public.classes FOR DELETE
   USING (teacher_id = auth.uid());
+DROP POLICY IF EXISTS "teacher_manages_memberships" ON public.class_memberships;
 CREATE POLICY "teacher_manages_memberships" ON public.class_memberships FOR ALL
   USING (EXISTS (SELECT 1 FROM public.classes
                  WHERE id = class_memberships.class_id AND teacher_id = auth.uid()));
@@ -879,7 +978,9 @@ Le rollback **ne désactive pas** la RLS sur `teacher_questions` si le bloc A l'
 connaissance de cause, c'est rouvrir la table.
 
 Test du rollback : rejouer la session ÉLÈVE du §8.1 — les UPDATE/DELETE renvoient de nouveau
-des lignes (le trou est de retour, donc le rollback est fidèle).
+des lignes (le trou est de retour, donc le rollback est fidèle). Vérifié par Claudia sur un
+Postgres 16 jetable : après A+B+C puis rollback, `diff` vide entre la photo AVANT et la photo
+APRÈS rollback (38 policies, `qual` / `with_check` / `roles` identiques).
 
 ---
 
@@ -890,7 +991,7 @@ des lignes (le trou est de retour, donc le rollback est fidèle).
    d'abord ; (a) RLS `teacher_questions` ; (b) DEFAULT `school_id` ; (c) zéro ligne NULL.
 2. **§8.1 session ÉLÈVE avant** — constater les lignes touchées (preuve).
 3. **Bloc B d'abord** (RESTRICTIVE). C'est le bloc le moins risqué (il n'ajoute que des ET) et
-   le plus rentable : à lui seul il ferme l'écriture élève sur les douze tables, sans toucher
+   le plus rentable : à lui seul il ferme l'écriture élève sur les quatorze tables, sans toucher
    aux lectures. Rejouer §8.1 ÉLÈVE : les écritures doivent déjà échouer.
 4. **Bloc A** (remplacement des huit `tenant_scope`). Rejouer §8.1 ÉLÈVE et PROF, puis §8.2 en
    prof sur `/accueil/curation` (W1…W8).
@@ -900,7 +1001,8 @@ des lignes (le trou est de retour, donc le rollback est fidèle).
    pleine session live serait visible des élèves.
 8. Ensuite seulement : PR de réconciliation `supabase/migrations/` reprenant le SQL des blocs
    tel qu'appliqué (dette C2), avec le test §8.1 transposé sur un Postgres jetable, comme
-   `scripts/verify-migration-is-active-single-gate.sh`.
+   `scripts/verify-migration-is-active-single-gate.sh` (branche `feat/fix-validation-double-gate`,
+   PR #137 — pas encore sur `main`).
 
 ---
 
@@ -927,13 +1029,68 @@ des lignes (le trou est de retour, donc le rollback est fidèle).
 5. **Hygiène héritée** (hors périmètre, à carder) : ajouter `TO authenticated` aux policies
    `PUBLIC` du §1.2 ; découper les `FOR ALL` owner (`teacher_manages_assignments`,
    `teacher_manages_own_courses`, `teacher_manages_exercises`, `teacher_manages_exercise_steps`)
-   par commande. Sans urgence une fois le bloc B en place.
+   par commande. Les RESTRICTIVE du bloc B sont `TO authenticated` : le rôle `anon` n'est pas
+   couvert, sans effet pratique (`auth.uid()` NULL rend toutes les policies héritées fausses —
+   vérifié par Claudia : 0 ligne). Sans urgence une fois le bloc B en place.
+7. **Lignes forgées** (§7.0-f) : que faire des classes / devoirs / cours dont l'owner n'est pas
+   un prof ? Réattribuer, archiver, ou supprimer via service role — décision au cas par cas,
+   avant l'application (une classe forgée garde ses `invite_code` lisibles par son « owner »).
+8. **`concepts_tenant_read`** : lecture école pour tous (pattern `content_snippets`) ou
+   `teacher()` seulement — aucune page élève ne lit `concepts` au client, les deux marchent.
+9. **Synchroniser `docs/PR3-CLASS-LOCK-DESIGN.md`** (branche `test/class-delete-invariants`,
+   PR #139) : son §5.3 décrit les policies memberships sans `teacher()` et son §1 cite
+   `live_sessions_tenant_scope` comme existante. Le bloc C de ce document est le texte
+   canonique ; PR 3 doit y renvoyer plutôt que porter son propre SQL.
 6. **W2/W5/W6/W7** : si §7.0-b montre l'absence de DEFAULT sur `school_id`, les quatre inserts
    du hook de curation échouent déjà en prod — carte à ouvrir, correctif produit (poser
    `school_id` côté client ou DEFAULT côté base), indépendant de ce plan.
 
 ---
 
-## 12. Review Claudia
+## 12. Review Claudia (2026-09-14)
 
-_(section remplie après la review — voir commit suivant)_
+**Verdict : GO AVEC CORRECTIONS.** Claudia a reproduit le schéma et les policies de `origin/main`
+sur un Postgres 16 jetable (owner non-superuser sans `BYPASSRLS`, l'hypothèse la plus stricte),
+exécuté les blocs A, B, C, les vérifications §7.4, le test §8.1 et le rollback §9 tels quels,
+rejoué A/B/C deux fois (idempotence), et refait indépendamment le balayage des écritures client.
+
+Bloquants, tous intégrés dans cette version :
+
+- **B1** — le rollback §9 échouait si le bloc C n'avait pas été appliqué (`policy
+  "teacher_deletes_own_classes" already exists`, transaction annulée, rien restauré) et n'était
+  pas rejouable. Corrigé : `DROP POLICY IF EXISTS` devant chacun des dix `CREATE POLICY`.
+  Après correction, `diff` vide entre photo AVANT et photo après rollback (38 policies).
+- **B2** — le test §8.1 s'auto-invalidait : une seule transaction, donc `current transaction is
+  aborted` après le premier 42501 ; et AVANT le plan, le `DELETE classes` cascadait les lignes
+  que les UPDATE suivants devaient toucher. Corrigé : une transaction par écriture, DELETE en
+  dernier.
+
+Corrections non bloquantes intégrées : ordre `WITH CHECK` avant contraintes (donc 42501 même
+sur payload incomplet côté élève ; W2 échoue en 42501, pas 23502) ; payload `concepts` complété
+(`program_id`, `slug`) ; justification de `concepts_tenant_read` corrigée (`api/snippets` lit
+`concepts` dans le POST prof, pas dans le GET) ; §2.1 corrigé (la page live élève ne fait que
+des SELECT, les écritures passent par `/api/live/*` en service role) ; W8 recadré aux lignes
+110-116 ; §7.4 : 42 restrictives exactement, les 2 anti-DELETE comptées à part ; formulation T7
+(six tables + `live_sessions` + `user_profiles`, `concepts` / `theory_blocks` nées `NOT NULL`) ;
+chemin du script de vérification (branche `feat/fix-validation-double-gate`).
+
+Points ratés par le plan, intégrés : (1) **lignes déjà forgées** par le trou — un élève ayant
+créé une classe avant le plan en reste owner, lit ses codes d'invitation, et pouvait encore
+écrire `class_attendance_records` / `student_random_picks` (policies `FOR ALL PUBLIC` « prof de
+la classe » sans vérification de rôle) → requête d'inventaire §7.0-f + ces deux tables ajoutées
+au bloc B ; (2) hygiène `anon` notée §11.5 ; (3) source de vérité `user_profiles.role`
+synchronisée par le callback d'auth, notée §6.1 ; (4) divergences avec le doc PR 3, à
+synchroniser (§11.9).
+
+Vérifié OK par Claudia, sans changement : checklist 1 (aucun chemin cassé — mêmes huit
+écritures trouvées indépendamment, zéro `"use server"`, toutes les relations embarquées
+`classes(...)` sous service role, `lib/supabase.ts` et `StudyWizard.tsx` sans importeur),
+2 (élève sans écriture, y compris propriétaire d'une classe forgée : UPDATE 0, DELETE 0,
+INSERT 42501 ; bloc B seul suffit déjà), 3 (`school_id IS NULL`), 4 (SELECT : élève 1 classe
+au lieu de 2, devoirs, cours, concepts, questions, sessions visibles ; aucune récursion de
+policy ; chaînes `student_sees_class_assignments` → memberships → classes acycliques ;
+Realtime `postgres_changes` sur `live_sessions` inchangé), 6 (bloc C = PR 3 §5 étapes 1-3, en
+plus strict ; ordre plan → PR 3 correct). Syntaxe : A, B, C, V passent sur PG 16 ; le nom de
+policy le plus long fait 49 caractères ; `SET LOCAL ROLE authenticated` + helpers
+`SECURITY DEFINER` fonctionnent avec un owner sans `BYPASSRLS` ; `set_config('request.jwt.claims')`
+est bien lu par `auth.uid()`.
