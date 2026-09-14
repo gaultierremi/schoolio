@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient as createSupabaseAdminClient } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase-server";
+import { safeError } from "@/lib/api/respond";
 
 export const dynamic = "force-dynamic";
 
@@ -43,10 +44,6 @@ function createAdminClient() {
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE_KEY!
   );
-}
-
-function getErrorMessage(error: unknown) {
-  return error instanceof Error ? error.message : "Erreur inconnue";
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -165,7 +162,10 @@ async function getOwnedTag(
 }
 
 async function getTagUsage(admin: ReturnType<typeof createAdminClient>, teacherId: string, tagId: string): Promise<TagUsage> {
-  const [coursesResult, questionsResult, classesResult] = await Promise.all([
+  // Seules courses et teacher_questions portent organization_tags
+  // (20260507100000:30-31) ; classes ne l'a jamais eue (42703 → 500).
+  // La clé `classes` reste à 0 pour ne pas changer le contrat de réponse.
+  const [coursesResult, questionsResult] = await Promise.all([
     admin
       .from("courses")
       .select("id", { count: "exact", head: true })
@@ -176,27 +176,21 @@ async function getTagUsage(admin: ReturnType<typeof createAdminClient>, teacherI
       .select("id", { count: "exact", head: true })
       .eq("teacher_id", teacherId)
       .contains("organization_tags", [tagId]),
-    admin
-      .from("classes")
-      .select("id", { count: "exact", head: true })
-      .eq("teacher_id", teacherId)
-      .contains("organization_tags", [tagId]),
   ]);
 
   if (coursesResult.error) throw coursesResult.error;
   if (questionsResult.error) throw questionsResult.error;
-  if (classesResult.error) throw classesResult.error;
 
   return {
     courses: coursesResult.count ?? 0,
     questions: questionsResult.count ?? 0,
-    classes: classesResult.count ?? 0,
+    classes: 0,
   };
 }
 
 async function removeTagReferences(
   admin: ReturnType<typeof createAdminClient>,
-  table: "courses" | "teacher_questions" | "classes",
+  table: "courses" | "teacher_questions",
   teacherId: string,
   tagId: string
 ) {
@@ -278,8 +272,7 @@ export async function PATCH(request: NextRequest, { params }: RouteContext) {
 
     return NextResponse.json({ tag: updatedTag });
   } catch (error) {
-    console.error("[teacher-tags/id]", error);
-    return NextResponse.json({ error: getErrorMessage(error) }, { status: 500 });
+    return safeError(error, "teacher-tags/id:PATCH");
   }
 }
 
@@ -302,12 +295,11 @@ export async function DELETE(request: NextRequest, { params }: RouteContext) {
 
     let cleaned: TagUsage | undefined;
     if (force) {
-      const [courses, questions, classes] = await Promise.all([
+      const [courses, questions] = await Promise.all([
         removeTagReferences(admin, "courses", auth.user.id, params.id),
         removeTagReferences(admin, "teacher_questions", auth.user.id, params.id),
-        removeTagReferences(admin, "classes", auth.user.id, params.id),
       ]);
-      cleaned = { courses, questions, classes };
+      cleaned = { courses, questions, classes: 0 };
     }
 
     const { error: deleteError } = await admin
@@ -319,7 +311,6 @@ export async function DELETE(request: NextRequest, { params }: RouteContext) {
 
     return NextResponse.json(cleaned ? { success: true, cleaned } : { success: true });
   } catch (error) {
-    console.error("[teacher-tags/id]", error);
-    return NextResponse.json({ error: getErrorMessage(error) }, { status: 500 });
+    return safeError(error, "teacher-tags/id:DELETE");
   }
 }
