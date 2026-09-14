@@ -13,6 +13,14 @@ function createAdminClient() {
 
 // POST /api/join — auth required
 // Body: { code: string }
+//
+// Renvoi croisé : jumeau de POST /api/join/link, qui fait le même rattachement
+// indexé sur `classes.invite_link_token` (chemin QR code / lien). Les deux
+// routes sont volontairement auto-portées — carte board « Unifier les deux
+// chemins de join » ouverte pour la fusion à froid. En attendant, tout fix de
+// gate ou d'écriture ici doit être répercuté là-bas, et réciproquement.
+// /api/join/link est la version durcie (chaque write testé, gates séparées avec
+// `reason`, garde prof avant écriture) : s'inspirer d'elle, pas l'inverse.
 export async function POST(req: NextRequest) {
   try {
     const supabase = createClient();
