@@ -8,16 +8,37 @@ import { createClient as createSupabaseAdminClient } from "@supabase/supabase-js
 import { buildSystemPrompt, buildUserPrompt } from "./prompt";
 import { extractPagesFromPdf } from "@/lib/pdf/extract-pages";
 import { logActivity } from "@/lib/activity/log";
-import { isRateLimitError } from "@/lib/rate-limit-utils";
+import { isModelUnavailableError, isRateLimitError } from "@/lib/rate-limit-utils";
+import { GEMINI_FLASH_MODEL, GEMINI_PRO_MODEL } from "@/lib/ai-providers/gemini";
 
-const GEMINI_PRO    = "gemini-2.5-pro";
-const GEMINI_FLASH  = "gemini-2.5-flash";
+// Modèles : source unique dans lib/ai-providers (gemini-2.5-pro a été retiré
+// par Google, voir le commentaire là-bas). Même identifiant Claude que
+// lib/ai-providers/anthropic.ts.
+const GEMINI_PRO    = GEMINI_PRO_MODEL;
+const GEMINI_FLASH  = GEMINI_FLASH_MODEL;
 const ANTHROPIC_MODEL = "claude-sonnet-4-6";
 const MAX_PDF_BYTES = 52428800; // 50 MB — same cap as generate-questions
 const MAX_TOKENS_GEMINI    = 32768;
 const MAX_TOKENS_ANTHROPIC = 16000;
 
 const gemini = new GoogleGenerativeAI(process.env.GOOGLE_AI_API_KEY!);
+
+/**
+ * Erreur métier attendue (pas de PDF, PDF trop gros, PDF introuvable) : la
+ * route la renvoie telle quelle avec son statut 4xx. Tout autre throw reste
+ * une vraie erreur serveur (500 via safeError).
+ */
+export class GenerateExercisesError extends Error {
+  constructor(message: string, public readonly status: number) {
+    super(message);
+    this.name = "GenerateExercisesError";
+  }
+}
+
+/** Un modèle saturé (429) OU retiré/inconnu (404, 400 « model ») → on passe au suivant. */
+function canFallBack(err: unknown): boolean {
+  return isRateLimitError(err) || isModelUnavailableError(err);
+}
 
 function createAdminClient() {
   return createSupabaseAdminClient(
@@ -172,6 +193,9 @@ async function callAnthropic(
 }
 
 // ── Fallback chain: Gemini Pro → Flash → Anthropic → error ────────────────────
+// Un 429 (saturé) comme un 404/400 « modèle inconnu » (retiré par le
+// fournisseur) déclenchent le modèle suivant. Seules les erreurs vraiment
+// fatales (clé invalide, réseau, contenu refusé…) remontent.
 async function callWithFallback(
   pdfBase64: string,
   systemPrompt: string,
@@ -182,8 +206,8 @@ async function callWithFallback(
     const text = await callGemini(GEMINI_PRO, pdfBase64, systemPrompt, userPrompt);
     return { text, modelUsed: GEMINI_PRO };
   } catch (err) {
-    if (!isRateLimitError(err)) throw err;
-    console.log("[generate-exercises] Gemini Pro rate limit → fallback Gemini Flash");
+    if (!canFallBack(err)) throw err;
+    console.log(`[generate-exercises] ${GEMINI_PRO} indisponible ou saturé → fallback ${GEMINI_FLASH}`, err instanceof Error ? err.message : err);
   }
 
   // 2. Gemini Flash
@@ -191,8 +215,8 @@ async function callWithFallback(
     const text = await callGemini(GEMINI_FLASH, pdfBase64, systemPrompt, userPrompt);
     return { text, modelUsed: GEMINI_FLASH };
   } catch (err) {
-    if (!isRateLimitError(err)) throw err;
-    console.log("[generate-exercises] Gemini Flash rate limit → fallback Anthropic Sonnet");
+    if (!canFallBack(err)) throw err;
+    console.log(`[generate-exercises] ${GEMINI_FLASH} indisponible ou saturé → fallback ${ANTHROPIC_MODEL}`, err instanceof Error ? err.message : err);
   }
 
   // 3. Anthropic Sonnet (ultimate fallback)
@@ -201,8 +225,8 @@ async function callWithFallback(
     console.log("[generate-exercises] Falling back to Anthropic Sonnet");
     return { text, modelUsed: ANTHROPIC_MODEL };
   } catch (err) {
-    if (!isRateLimitError(err)) throw err;
-    console.log("[generate-exercises] Anthropic also rate limited — tous les modèles saturés");
+    if (!canFallBack(err)) throw err;
+    console.log("[generate-exercises] Anthropic aussi indisponible ou saturé — plus aucun modèle", err instanceof Error ? err.message : err);
     throw new Error("ALL_MODELS_RATE_LIMITED");
   }
 }
@@ -234,7 +258,10 @@ export async function generateExercises(
 
   // ── Download PDF — same pattern as generate-questions ───────────────────────
   if (!pdfStoragePath) {
-    throw new Error("Aucun PDF associé à ce cours");
+    throw new GenerateExercisesError(
+      "Aucun PDF n'est associé à ce cours. Ajoute le PDF du cours avant de générer des exercices.",
+      400,
+    );
   }
 
   const t0 = Date.now();
@@ -243,14 +270,23 @@ export async function generateExercises(
     .download(pdfStoragePath);
 
   if (downloadError || !pdfBlob) {
-    throw new Error("Impossible de télécharger le PDF du cours");
+    console.error("[generate-exercises] Téléchargement PDF impossible:", pdfStoragePath, downloadError);
+    throw new GenerateExercisesError(
+      "Le PDF de ce cours est introuvable dans le stockage. Ré-importe le PDF puis réessaye.",
+      404,
+    );
   }
 
   const fullPdfBuffer = await pdfBlob.arrayBuffer();
   const pdfSizeKB = Math.round(fullPdfBuffer.byteLength / 1024);
 
   if (fullPdfBuffer.byteLength > MAX_PDF_BYTES) {
-    throw new Error(`PDF trop volumineux (${Math.round(fullPdfBuffer.byteLength / 1024 / 1024)}MB)`);
+    const sizeMb = Math.round(fullPdfBuffer.byteLength / 1024 / 1024);
+    const maxMb = Math.round(MAX_PDF_BYTES / 1024 / 1024);
+    throw new GenerateExercisesError(
+      `Ton PDF est trop volumineux (${sizeMb} Mo, maximum ${maxMb} Mo). Génère sur une plage de pages ou allège le fichier.`,
+      413,
+    );
   }
 
   console.log(`[generate-exercises] PDF téléchargé : ${pdfSizeKB}KB en ${Date.now() - t0}ms`);

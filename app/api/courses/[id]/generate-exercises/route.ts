@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient as createSupabaseAdminClient } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase-server";
-import { generateExercises } from "@/lib/exercises/generate-exercises";
+import { generateExercises, GenerateExercisesError } from "@/lib/exercises/generate-exercises";
 import { apiError, safeError } from "@/lib/api/respond";
 
 export const dynamic = "force-dynamic";
@@ -99,6 +99,11 @@ export async function POST(
 
     return NextResponse.json(result);
   } catch (err) {
+    // Erreur métier attendue (pas de PDF, PDF trop gros, PDF introuvable) :
+    // message écrit pour le prof, statut 4xx — pas un « Erreur serveur ».
+    if (err instanceof GenerateExercisesError) {
+      return apiError(err.message, err.status);
+    }
     // Cas particulier 503 : conserve le message utilisateur friendly (sentinel
     // controle, pas un leak).
     if (err instanceof Error && err.message === "ALL_MODELS_RATE_LIMITED") {
