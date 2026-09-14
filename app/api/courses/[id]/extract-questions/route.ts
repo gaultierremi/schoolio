@@ -178,7 +178,7 @@ export async function POST(
       if (insertedTyped.length > 0) {
         const { data: conceptsData } = await admin
           .from("concepts")
-          .select("id, name, description, uaa:uaa_id(name)")
+          .select("id, name, description, uaa:uaa_id(label)")
           .eq("school_id", typedCourse.school_id)
           .order("name", { ascending: true })
           .limit(200);
@@ -186,7 +186,7 @@ export async function POST(
           id: string;
           name: string;
           description: string | null;
-          uaa: { name: string | null } | { name: string | null }[] | null;
+          uaa: { label: string | null } | { label: string | null }[] | null;
         };
         const concepts: ConceptForLinking[] = ((conceptsData ?? []) as CRow[]).map((c) => {
           const uaa = Array.isArray(c.uaa) ? c.uaa[0] : c.uaa;
@@ -194,7 +194,7 @@ export async function POST(
             id: c.id,
             name: c.name,
             description: c.description,
-            uaa_name: uaa?.name ?? null,
+            uaa_name: uaa?.label ?? null,
           };
         });
         if (concepts.length > 0) {

@@ -80,10 +80,11 @@ export async function POST(request: Request) {
     const schoolId = (profile as { school_id?: string } | null)?.school_id;
     if (!schoolId) return apiError("Profil utilisateur incomplet", 403);
 
-    // 2. Concepts du tenant (avec uaa name pour mieux désambiguïser)
+    // 2. Concepts du tenant (avec le libellé UAA pour mieux désambiguïser —
+    //    la table uaa expose `code` et `label`, pas `name` : 20260513170000:71-79)
     const { data: conceptsData, error: cErr } = await admin
       .from("concepts")
-      .select("id, name, description, uaa:uaa_id(name)")
+      .select("id, name, description, uaa:uaa_id(label)")
       .eq("school_id", schoolId)
       .order("name", { ascending: true })
       .limit(200);
@@ -92,7 +93,7 @@ export async function POST(request: Request) {
       id: string;
       name: string;
       description: string | null;
-      uaa: { name: string | null } | { name: string | null }[] | null;
+      uaa: { label: string | null } | { label: string | null }[] | null;
     };
     const concepts: ConceptForLinking[] = ((conceptsData ?? []) as ConceptRow[]).map((c) => {
       const uaa = Array.isArray(c.uaa) ? c.uaa[0] : c.uaa;
@@ -100,7 +101,7 @@ export async function POST(request: Request) {
         id: c.id,
         name: c.name,
         description: c.description,
-        uaa_name: uaa?.name ?? null,
+        uaa_name: uaa?.label ?? null,
       };
     });
 
